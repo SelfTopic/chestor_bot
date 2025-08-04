@@ -1,0 +1,28 @@
+services:
+
+  postgres:
+
+    image: "postgres:16"
+    environment:
+      POSTGRES_USERNAME: postgres
+      POSTGRES_PASSWORD: changeme
+      POSTGRES_DB: development
+    ports:
+      - 5432:5432
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+  bot:
+    build: .
+    tty: true
+    environment:
+      - BOT_TOKEN=${BOT_TOKEN}
+      - PYTHONUNBUFFERED=1
+
+    restart: unless-stopped
+    depends_on:
+      - postgres
+
+volumes:
+  postgres_data:
+  pgadmin:
