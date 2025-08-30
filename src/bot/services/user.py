@@ -21,7 +21,7 @@ class UserService(Base):
         if telegram_user_data.is_bot == True:
             return None
 
-        user = await self.userRepository\
+        user = await self.user_repository\
             .upsert(
                 telegram_id=telegram_user_data.id,
                 first_name=telegram_user_data.first_name,
@@ -37,7 +37,7 @@ class UserService(Base):
 
         logger.debug("Called method get")
 
-        user = await self.userRepository.get(
+        user = await self.user_repository.get(
             search_parameter=find_by
         )
 

@@ -6,7 +6,7 @@ services:
     environment:
       POSTGRES_USERNAME: postgres
       POSTGRES_PASSWORD: changeme
-      POSTGRES_DB: development
+      POSTGRES_DATABASE: development
     ports:
       - 5432:5432
     volumes:
@@ -23,6 +23,14 @@ services:
     depends_on:
       - postgres
 
+  migrations: 
+    build: .
+    tty: true 
+    depends_on:
+      - bot 
+
+    command: ["/bin/sh", "-c", "sleep 5 && poetry run alembic upgrade head"]
+
+
 volumes:
   postgres_data:
-  pgadmin:

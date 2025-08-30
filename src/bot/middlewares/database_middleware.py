@@ -37,6 +37,7 @@ class DatabaseMiddleware(BaseMiddleware):
             except Exception as e:
                 logger.exception(f"Error processed handler of database session: {e}")
                 await session.rollback()
+                raise 
 
             finally:
                 session_context.reset(token)

@@ -16,7 +16,7 @@ class SyncEntitiesService(Base):
             (isinstance(event.event, Message) or isinstance(event.event, CallbackQuery))
             ) and event.event.from_user:
             logger.debug("Calling method upsert from repo")
-            await self.userRepository.upsert(
+            await self.user_repository.upsert(
                 telegram_id=event.event.from_user.id,
                 first_name=event.event.from_user.first_name,
                 last_name=event.event.from_user.last_name,
