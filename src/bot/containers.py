@@ -8,11 +8,15 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from .services import (
     UserService,
     DialogService,
-    SyncEntitiesService    
+    SyncEntitiesService,
+    GhoulService,
+    CooldownService
 )
 
 from .repositories import (
-    UserRepository    
+    UserRepository,
+    GhoulRepository,
+    UserCooldownRepository
 )
 
 session_context: ContextVar[AsyncSession] = ContextVar("session_context")
@@ -25,7 +29,38 @@ class Container(containers.DeclarativeContainer):
     db_session = providers.Factory(lambda: session_context.get())
 
     user_repository = providers.Factory(UserRepository, session=db_session)
+    ghoul_repository = providers.Factory(GhoulRepository, session=db_session)
+
+    user_cooldown_repository = providers.Factory(
+        UserCooldownRepository,
+        session=db_session
+    )
 
     dialog_service = providers.Factory(DialogService)
-    user_service = providers.Factory(UserService, user_repository)
-    sync_entities_service = providers.Factory(SyncEntitiesService, user_repository)
+    user_service = providers.Factory(
+        UserService, 
+        user_repository,
+        ghoul_repository,
+        user_cooldown_repository
+    )
+
+    sync_entities_service = providers.Factory(
+        SyncEntitiesService, 
+        user_repository,
+        ghoul_repository,
+        user_cooldown_repository
+    )
+
+    ghoul_service = providers.Factory(
+        GhoulService,
+        user_repository,
+        ghoul_repository,
+        user_cooldown_repository
+    )
+
+    cooldown_service = providers.Factory(
+        CooldownService,
+        user_repository,
+        ghoul_repository,
+        user_cooldown_repository    
+    )

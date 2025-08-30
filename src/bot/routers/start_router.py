@@ -21,7 +21,7 @@ async def start_handler(
     message: Message,
     user_service: UserService = Provide[Container.user_service],
     dialog_service: DialogService = Provide[Container.dialog_service]
-):
+) -> Message:
     """Processes the /start command"""
 
     # User is definitely not equal to none
@@ -37,7 +37,7 @@ async def start_handler(
     
     logger.debug(f"User equal {user}")
 
-    await message.answer(
+    return await message.answer(
         text=dialog_service.text(
             key="start", 
             name=user.first_name or "User",

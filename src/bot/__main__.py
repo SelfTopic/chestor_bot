@@ -16,7 +16,7 @@ import dotenv
 import os 
 import sys
 import logging
-import colorlog 
+import colorlog  # type: ignore
 
 def setup_colored_logging():
     console_format = colorlog.ColoredFormatter(
@@ -60,9 +60,11 @@ if not BOT_TOKEN:
     logger.fatal("Bot token is not found")
     sys.exit(1)
 
+ENV = os.environ.get("ENV", default="DEV") == "PROD"
+logger.info(f"ENV is {'PROD' if ENV else 'DEV'}")
 
 # Main point
-async def main(bot_token: str) -> None:
+async def main(bot_token: str, env: bool) -> None:
 
     # Initialize a bot 
     bot = Bot(
@@ -96,14 +98,17 @@ async def main(bot_token: str) -> None:
     include_routers(dp)
 
     # Reset data of database (dev)
-    await flush_database(engine=engine)
+    if not env:
+        await flush_database(engine=engine)
 
     try:
         # Start bot on poolling
         logger.info("Starting polling of updates")
         await dp.start_polling(bot)
+
     except Exception as e:
         logger.error(f"Error polling: {e}")
+        raise
 
     finally: 
         await bot.close()
@@ -113,7 +118,7 @@ async def main(bot_token: str) -> None:
 if __name__ == '__main__':
     try:
         logger.info("Run async main function")
-        asyncio.run(main(BOT_TOKEN))
+        asyncio.run(main(BOT_TOKEN, ENV))
 
     except KeyboardInterrupt:
         logger.info("Bot stopped of ctrl + c")
