@@ -8,7 +8,6 @@ from ..containers import session_context
 
 import logging
 
-# Configure logger 
 logger = logging.getLogger(__name__)
 
 class DatabaseMiddleware(BaseMiddleware):

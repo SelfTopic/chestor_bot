@@ -2,7 +2,7 @@ from .base import Base
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, update, delete, func, and_
 from sqlalchemy.dialects.postgresql import insert
-from typing import Union
+from typing import Union, Optional
 
 from src.database.models import (
     Cooldown,
@@ -27,6 +27,31 @@ class UserCooldownRepository(Base):
         self.session = session
         logger.debug("UserCooldownRepository initialized")
 
+    async def get_user_cooldown(
+        self,
+        telegram_id: int,
+        cooldown_name: str 
+    ) -> Optional[UserCooldown]:
+        
+        cooldown = await self.get_cooldown(
+            search_parameter=cooldown_name
+        )
+
+        if not cooldown:
+            logger.debug("Cooldown not found")
+            raise ValueError(f"Cooldown name {cooldown_name} not found")
+
+        stmt = select(UserCooldown)\
+            .filter(
+                UserCooldown.user_id == telegram_id,
+                UserCooldown.cooldown_id == cooldown.id
+            )
+        
+        user_coolodwn = await self.session.scalar(stmt)
+
+        return user_coolodwn
+    
+
     async def set_cooldown(
         self, 
         user_id: int, 
@@ -39,7 +64,6 @@ class UserCooldownRepository(Base):
             user_id: ID of user
             cooldown_type: Type of cooldown (e.g. 'snap', 'raise_kagune')
         """
-        # Get cooldown duration
         cooldown = await self.session.execute(
             select(Cooldown)
             .filter(
@@ -52,20 +76,23 @@ class UserCooldownRepository(Base):
             logger.error(f"Cooldown type '{cooldown_type}' not found")
             raise ValueError(f"Invalid cooldown type: {cooldown_type}")
         
-        # Calculate end time
         end_at = time.time() + cooldown.duration
         
-        # Upsert record
 
         user_cooldown = await self.session.scalar(
-            
+    
             insert(UserCooldown)
             .values(
                 user_id=user_id,
                 cooldown_id=cooldown.id,
                 end_at=end_at
             )
-            .on_conflict_do_nothing()
+            .on_conflict_do_update(
+                index_elements=["user_id", "cooldown_id"],
+                set_={
+                    "end_at": end_at
+                }
+            )
             .returning(UserCooldown)
 
         )
@@ -183,7 +210,11 @@ class UserCooldownRepository(Base):
         logger.debug(f"Cooldown '{cooldown_type}' reset for user {user_id}")
         return await self.session.scalar(stmt)
 
-    async def get_active_cooldowns(self, user_id: int):
+    async def get_active_cooldown(
+        self, 
+        telegram_id: int,
+        cooldown_name: str 
+        ):
         """
         Get all active cooldowns for user
         
@@ -193,14 +224,14 @@ class UserCooldownRepository(Base):
         Returns:
             list[tuple[str, datetime]]: List of (cooldown_type, end_time)
         """
-        stmt = select(Cooldown, UserCooldown).join(UserCooldown).where(
+        stmt = select(UserCooldown).where(
             and_(
-                UserCooldown.user_id == user_id,
-                UserCooldown.end_at > func.now()
+                UserCooldown.user_id == telegram_id,
+                UserCooldown.end_at > time.time()
             )
         )
-        result = await self.session.execute(stmt)
-        return result.all()
+        result = await self.session.scalar(stmt)
+        return result
 
     async def cleanup_expired_cooldowns(self) -> int:
         """

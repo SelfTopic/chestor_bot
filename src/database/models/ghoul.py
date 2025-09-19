@@ -37,7 +37,7 @@ class Ghoul(Base):
     ) 
 
     kagune_type_bit: Mapped[int] = mapped_column(
-        nullable=False
+        nullable=True
     )
 
     kagune_strength: Mapped[int] = mapped_column(
