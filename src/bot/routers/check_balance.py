@@ -1,6 +1,5 @@
-from aiogram import Router 
+from aiogram import Router, F
 from aiogram.types import Message 
-from aiogram.filters import Command
 
 from dependency_injector.wiring import Provide, inject
 from ..services import UserService, DialogService
@@ -14,8 +13,8 @@ logger = logging.getLogger(__name__)
 router = Router(name=__name__)
 
 
-# Handler for handling the /start command as a decorator
-@router.message(Command('bal', prefix=""))
+# Handler for handling the /бал command as a decorator
+@router.message(F.text.lower() == 'бал')
 @inject
 async def start_handler(
     message: Message,
@@ -41,6 +40,7 @@ async def start_handler(
         text=dialog_service.text(
             key="check_balance", 
             balance=str(user.balance) or "undefined",
+            name=user.first_name or "User"
         )    
     )
 
