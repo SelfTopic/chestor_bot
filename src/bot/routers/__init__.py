@@ -2,10 +2,13 @@ from .start_router import router as StartRouter
 from .bot_router import router as BotRouter
 from .error_router import router as ErrorRouter
 from .check_balance import router as BalanceRouter
+from .help_router import router as HelpRouter 
+
 
 __all__ = [
     "StartRouter",
     "BotRouter",
     "ErrorRouter",
-    "BalanceRouter"
+    "BalanceRouter",
+    "HelpRouter"
 ]

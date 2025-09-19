@@ -16,7 +16,7 @@ router = Router(name=__name__)
 # Handler for handling the /бал command as a decorator
 @router.message(F.text.lower() == 'бал')
 @inject
-async def start_handler(
+async def balance_handler(
     message: Message,
     user_service: UserService = Provide[Container.user_service],
     dialog_service: DialogService = Provide[Container.dialog_service]
