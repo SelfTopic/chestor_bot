@@ -69,6 +69,7 @@ class GhoulMiddleware(BaseMiddleware):
                 return await handler(event, data)
             else:
                 logger.warning(f"Access denied: Unregistered user {user_id}")
+                await event.answer("Ты не гуль. Используй команду 'Растить кагуне' чтобы стать гулем.")
                 return None
                 
         else:
