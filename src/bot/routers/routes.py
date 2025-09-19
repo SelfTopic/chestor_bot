@@ -11,7 +11,8 @@ def include_routers(dp: Dispatcher) -> None:
         BotRouter,
         ErrorRouter,
         GhoulRouter,
-        BalanceRouter
+        BalanceRouter,
+        HelpRouter
     )
     
     GhoulRouter.message.middleware(GhoulMiddleware())
