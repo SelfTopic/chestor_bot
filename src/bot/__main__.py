@@ -9,7 +9,7 @@ from .middlewares import (
 
 from .routers.routes import include_routers
 from .containers import Container
-from ..database import session_factory, flush_database, engine
+from ..database import session_factory, flush_database, engine, create_tables
 
 import asyncio
 import dotenv
@@ -100,6 +100,8 @@ async def main(bot_token: str, env: bool) -> None:
     # Reset data of database (dev)
     if not env:
         await flush_database(engine=engine)
+    else:
+        await create_tables(engine=engine)
 
     try:
         # Start bot on poolling
