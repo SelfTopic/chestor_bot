@@ -170,6 +170,7 @@ class GhoulRepository(Base):
         Returns:
             bool: True if update succeeded, False otherwise
         """
+        
         validated_bit = self._validate_kagune_bit(new_kagune_bit)
         
         result = await self.session.execute(

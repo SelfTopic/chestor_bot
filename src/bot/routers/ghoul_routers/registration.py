@@ -36,6 +36,8 @@ async def registration_ghoul(
                 kagune_type=calculate_kagune(new_ghoul.ghoul.kagune_type_bit)[0].value["name"]    
             )
         )
+    
+    
 
     return await message.reply(
         text=dialog_service.text(
