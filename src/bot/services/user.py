@@ -1,7 +1,9 @@
 from .base import Base 
+
 from aiogram.types import User as TelegramUser
-from ...database.models import User
+from src.database.models import User
 from typing import Optional, Union
+from ..types import Race
 import logging 
 
 logger = logging.getLogger(__name__)
@@ -52,6 +54,14 @@ class UserService(Base):
         )
 
         return user
+    
+    def race(self, bit: int) -> Optional[Race]:
+
+        for race in Race:
+            if race.value['bit'] == bit:
+                return race
+            
+        return None
     
 
 __all__ = ["UserService"]
