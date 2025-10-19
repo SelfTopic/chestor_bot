@@ -1,7 +1,7 @@
 from .base import Base 
 from src.database.models import Ghoul
 from aiogram.types import Message
-from ..types import RegisterGhoulType, KaguneType
+from ..types import RegisterGhoulType, KaguneType, Race
 from ..utils import calculate_kagune
 from typing import Union, Optional, Any
 import random, logging 
@@ -84,6 +84,12 @@ class GhoulService(Base):
             kagune_type_bit=first_kagune
         )
         
+        await self.user_repository\
+            .change_data(
+                telegram_id=telegram_id,
+                race_bit=Race.GHOUL.value['bit']
+            )
+            
         logger.info(f"Successfully registered new ghoul: ID {ghoul.id}")
         return RegisterGhoulType(
             ok=True,

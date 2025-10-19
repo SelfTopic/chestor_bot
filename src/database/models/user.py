@@ -7,6 +7,7 @@ from sqlalchemy.types import BigInteger
 from datetime import datetime
 from typing import Optional
 
+
 class User(Base):
     __tablename__ = "users"
 
@@ -27,6 +28,11 @@ class User(Base):
         nullable=True,
         unique=True 
     ) 
+
+    race_bit: Mapped[int] = mapped_column(
+        nullable=False,
+        default=0
+    )
 
     balance: Mapped[int] = mapped_column(
         nullable=False, 
@@ -54,9 +60,6 @@ class User(Base):
     )
 
     @property
-    def happyness_as_string(self) -> str:
-        return str(self.happyness) # Will be added after the required service is written
-    
-    @property
     def full_name(self) -> str:
         return self.first_name + " " + (self.last_name or "")
+    
