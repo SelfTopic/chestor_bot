@@ -60,6 +60,11 @@ class Ghoul(Base):
         nullable=False     
     )
 
+    health: Mapped[int] = mapped_column(
+        default=5,
+        nullable=False    
+    )
+
     max_health: Mapped[int] = mapped_column(
         default=5,
         nullable=False     

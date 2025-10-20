@@ -50,7 +50,7 @@ class UserService(Base):
 
         user = await self.user_repository.change_data(
             telegram_id=telegram_id,
-            balance=change_balance
+            balance=user.balance + change_balance
         )
 
         return user

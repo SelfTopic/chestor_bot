@@ -58,7 +58,7 @@ class DialogService:
         except FileNotFoundError:
             logger.error(f"Dialog file not found: {self.filename}")
 
-    def text(self, key: str, **kwargs: str) -> str:
+    def text(self, key: str, **kwargs: Any) -> str:
         logger.debug(f"Called text method. Params: key={key}, kwargs={kwargs}")
         
         self._reload_if_needed()
@@ -75,7 +75,7 @@ class DialogService:
         
         class SafeDict(dict):
             def __missing__(self, key):
-                return "{" + key + "}"
+                return "{" + str(key) + "}"
         
         result = value.format_map(SafeDict(kwargs))
         logger.debug(f"Text formatted successfully. Result length: {len(result)}")
