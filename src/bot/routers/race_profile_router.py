@@ -56,7 +56,12 @@ async def profile_handler(
         logger.error("Ghoul not found in database")
         raise ValueError("Ghoul not found in database")
     
-    return_text = "test human profile"
+    return_text = dialog_service.text(
+        key="profile",
+        name=user.full_name,
+        race=race.value['name'],
+        balance=user.balance    
+    )
     
     if isinstance(profile, Ghoul):
         return_text = dialog_service.text(
@@ -66,7 +71,7 @@ async def profile_handler(
             snap_count=profile.snap_count,
             kagune_type=calculate_kagune(profile.kagune_type_bit)[0].value["name"],
             health=profile.health,
-            max_health=profile.max_health,
+            ax_health=profile.max_health,
             coffee_count=profile.coffee_count,
             strength_kagune=profile.kagune_strength,
             rc_count=profile.rc_money,
