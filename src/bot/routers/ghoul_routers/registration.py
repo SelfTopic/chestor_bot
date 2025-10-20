@@ -13,8 +13,12 @@ router = Router(name=__name__)
 @inject
 async def registration_ghoul(
     message: Message,
-    ghoul_service: GhoulService = Provide[Container.ghoul_service],
-    dialog_service: DialogService = Provide[Container.dialog_service]
+    ghoul_service: GhoulService = Provide[
+        Container.ghoul_service
+    ],
+    dialog_service: DialogService = Provide[
+        Container.dialog_service
+    ]
 ):
     
     if not message.from_user:
