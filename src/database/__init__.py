@@ -22,7 +22,7 @@ url = URL.create(
     port=5432
 )
 
-engine = create_async_engine(url=url, echo=False)
+engine = create_async_engine(url=url, echo=False, pool_pre_ping=True)
 session_factory = async_sessionmaker(engine)
 
 
