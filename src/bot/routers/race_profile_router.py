@@ -71,7 +71,7 @@ async def profile_handler(
             snap_count=profile.snap_count,
             kagune_type=calculate_kagune(profile.kagune_type_bit)[0].value["name"],
             health=profile.health,
-            ax_health=profile.max_health,
+            max_health=profile.max_health,
             coffee_count=profile.coffee_count,
             strength_kagune=profile.kagune_strength,
             rc_count=profile.rc_money,

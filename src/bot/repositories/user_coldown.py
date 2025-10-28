@@ -210,23 +210,17 @@ class UserCooldownRepository(Base):
         logger.debug(f"Cooldown '{cooldown_type}' reset for user {user_id}")
         return await self.session.scalar(stmt)
 
-    async def get_active_cooldown(
-        self, 
-        telegram_id: int,
-        cooldown_name: str 
-        ):
+    async def get_active_cooldown(self, telegram_id: int, cooldown_name: str):
         """
-        Get all active cooldowns for user
-        
-        Args:
-            user_id: ID of user
-            
-        Returns:
-            list[tuple[str, datetime]]: List of (cooldown_type, end_time)
+        Get active cooldown for specific type
         """
-        stmt = select(UserCooldown).where(
+        stmt = select(UserCooldown).join(
+            Cooldown, 
+            UserCooldown.cooldown_id == Cooldown.id
+        ).where(
             and_(
                 UserCooldown.user_id == telegram_id,
+                Cooldown.name == cooldown_name, 
                 UserCooldown.end_at > time.time()
             )
         )

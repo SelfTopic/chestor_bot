@@ -40,7 +40,7 @@ class UserService(Base):
         telegram_id: int, 
         change_balance: int
     ) -> User:
-        logger.debug(f"Called method plus_balance. User ID: {telegram_id}")
+        logger.debug(f"Called method plus_balance. User ID: {telegram_id}, change balance: {change_balance}")
 
         user = await self.get(find_by=telegram_id)
 
@@ -53,6 +53,27 @@ class UserService(Base):
             balance=user.balance + change_balance
         )
 
+        return user
+    
+    async def minus_balance(
+        self,
+        telegram_id: int,
+        change_balance: int        
+    ) -> User:
+        
+        logger.debug(f"Called method minus_balance. User ID: {telegram_id}, change balance: {change_balance}")
+
+        user = await self.get(find_by=telegram_id)
+
+        if not user:
+            logger.error("Cannot change balance to nouser")
+            raise ValueError("Cannot change balance to nouser")
+        
+        user = await self.user_repository.change_data(
+            telegram_id=telegram_id,
+            balance=user.balance - change_balance    
+        )
+        
         return user
     
     def race(self, bit: int) -> Optional[Race]:

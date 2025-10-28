@@ -3,6 +3,7 @@ from src.database.models import Ghoul
 from aiogram.types import Message
 from ..types import RegisterGhoulType, KaguneType, Race
 from ..utils import calculate_kagune
+from ..game_configs import KAGUNE_CONFIG
 from typing import Union, Optional, Any
 import random, logging 
 
@@ -55,6 +56,23 @@ class GhoulService(Base):
 
         logger.debug(f"Snap count updated successfully. New count: {ghoul_updated.snap_count}")
         return ghoul_updated
+    
+    async def upgrade_kagune(self, telegram_id: int, change: int = 1) -> Ghoul:
+        logger.debug(f"Called method upsert. Params: telegram_id={telegram_id}, change={change}")
+
+        ghoul = await self.get(find_by=telegram_id)
+
+        if not ghoul:
+            logger.error("Ghoul not found for upgarde_kagune operation")
+            raise ValueError("Ghoul not found")
+        
+
+        ghoul = await self.ghoul_repository.upsert(
+            telegram_id=telegram_id,
+            kagune_strength=ghoul.kagune_strength + change
+        )
+
+        return ghoul
 
     async def upsert(self, telegram_id: int, **kw: Any) -> Ghoul:
         logger.debug(f"Called method upsert. Params: telegram_id={telegram_id}, kwargs={kw}")
@@ -106,5 +124,15 @@ class GhoulService(Base):
         selected = random.choice(bits)
         logger.debug(f"Selected kagune bit: {selected}")
         return selected
+    
+    def calculate_price_upgrade_kagune(
+        self,
+        kagune_strength: int
+    ) -> int:
+        
+        return int(
+            KAGUNE_CONFIG.base_price * (kagune_strength ** KAGUNE_CONFIG.exponent) + 
+            kagune_strength * KAGUNE_CONFIG.linear_multiplier   
+        )
 
 __all__ = ["GhoulService"]

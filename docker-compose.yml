@@ -18,7 +18,7 @@ services:
     build: .
     tty: true
     env_file:
-      - .env
+      -  .env
     environment:
       - BOT_TOKEN=${BOT_TOKEN}
       - PYTHONUNBUFFERED=1
@@ -35,7 +35,7 @@ services:
     depends_on:
       - postgres 
 
-    command: ["/bin/sh", "-c", "sleep 5 && poetry run alembic upgrade head"]
+    command: ["/bin/sh", "-c", "sleep 5 && poetry run alembic downgrade base && poetry run alembic upgrade head"]
 
 
 volumes:
