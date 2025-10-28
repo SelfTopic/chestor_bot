@@ -16,7 +16,7 @@ import dotenv
 import os 
 import sys
 import logging
-import colorlog  # type: ignore
+import colorlog  
 
 def setup_colored_logging():
     console_format = colorlog.ColoredFormatter(
