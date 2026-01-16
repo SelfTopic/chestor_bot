@@ -1,7 +1,7 @@
 import unittest
-from unittest.mock import patch, mock_open, MagicMock
+from unittest.mock import MagicMock, mock_open, patch
 
-from src.bot.services import DialogService 
+from src.bot.services import DialogService
 
 
 class TestDialogService(unittest.TestCase):

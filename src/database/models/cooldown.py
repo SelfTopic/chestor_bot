@@ -1,10 +1,10 @@
-from .base import Base 
+from datetime import datetime
 
 from sqlalchemy import func
-from sqlalchemy.orm import Mapped, mapped_column 
+from sqlalchemy.orm import Mapped, mapped_column
 from sqlalchemy.types import BigInteger
 
-from datetime import datetime
+from .base import Base
 
 
 class Cooldown(Base):

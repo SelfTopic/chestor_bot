@@ -1,7 +1,8 @@
 from dataclasses import dataclass
-from src.database.models import Ghoul 
-
 from typing import Optional
+
+from src.database.models import Ghoul
+
 
 @dataclass
 class RegisterGhoulType:

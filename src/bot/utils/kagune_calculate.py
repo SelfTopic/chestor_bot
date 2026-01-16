@@ -1,5 +1,6 @@
-from ..types import KaguneType
 import logging
+
+from ..types import KaguneType
 
 logger = logging.getLogger(__name__)
 

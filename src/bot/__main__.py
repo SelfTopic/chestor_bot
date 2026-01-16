@@ -1,22 +1,20 @@
+import asyncio
+import logging
+import os
+import sys
+
+import colorlog
+import dotenv
 from aiogram import Bot, Dispatcher
 from aiogram.client.default import DefaultBotProperties
 
-from .middlewares import (
-    LoggingMiddleware,
-    DatabaseMiddleware,
-    SyncEntitiesMiddleware
-)
+from src.config import settings
 
-from .routers.routes import include_routers
+from ..database import create_tables, engine, flush_database, session_factory
 from .containers import Container
-from ..database import session_factory, flush_database, engine, create_tables
+from .middlewares import DatabaseMiddleware, LoggingMiddleware, SyncEntitiesMiddleware
+from .routers.routes import include_routers
 
-import asyncio
-import dotenv
-import os 
-import sys
-import logging
-import colorlog  
 
 def setup_colored_logging():
     console_format = colorlog.ColoredFormatter(
@@ -50,23 +48,18 @@ def setup_colored_logging():
 
 logger = setup_colored_logging()
 
-# Configure envirion loading 
-dotenv.load_dotenv()
 
-# Getting token of bot from .env file
-BOT_TOKEN = os.environ.get("BOT_TOKEN")
 
-if not BOT_TOKEN:
+if not settings.BOT_TOKEN:
     logger.fatal("Bot token is not found")
     sys.exit(1)
 
-ENV = os.environ.get("ENV", default="DEV") == "PROD"
-logger.info(f"ENV is {'PROD' if ENV else 'DEV'}")
 
-# Main point
-async def main(bot_token: str, env: bool) -> None:
+logger.info(f"ENV is {'PROD' if settings.ENV else 'DEV'}")
 
-    # Initialize a bot 
+async def main(bot_token: str, env: str) -> None:
+    
+    ENV = False if env == "DEV" else True
     bot = Bot(
         token=bot_token,
         default=DefaultBotProperties(
@@ -76,37 +69,31 @@ async def main(bot_token: str, env: bool) -> None:
     logger.info("Object of bot is initialize")
 
 
-    # Configure depedency injector container
     container = Container(bot=bot)
     container.wire(
         modules=[__name__], packages=[".routers", ".middlewares"]
     )
 
-    # Initialize a dispatcher
     dp = Dispatcher()
     logger.info("Object of dispatcher is initialize")
 
     
-    # Use dispactcher all middlewares
     dp.update.middleware(LoggingMiddleware())
 
     database_middleware = DatabaseMiddleware(session_factory=session_factory)
     dp.update.middleware(database_middleware)
     dp.update.middleware(SyncEntitiesMiddleware())
 
-    # Include all routers in the dispatcher 
     include_routers(dp)
 
-    # Reset data of database (dev)
-    if not env:
+    if not ENV:
         await flush_database(engine=engine)
     else:
         await create_tables(engine=engine)
 
     try:
-        # Start bot on poolling
         logger.info("Starting polling of updates")
-        await dp.start_polling(bot)
+        await dp.start_polling(bot, allowed_updates=["message", "chat_member", "my_chat_member"])
 
     except Exception as e:
         logger.error(f"Error polling: {e}")
@@ -120,7 +107,7 @@ async def main(bot_token: str, env: bool) -> None:
 if __name__ == '__main__':
     try:
         logger.info("Run async main function")
-        asyncio.run(main(BOT_TOKEN, ENV))
+        asyncio.run(main(settings.BOT_TOKEN.get_secret_value(), settings.ENV))
 
     except KeyboardInterrupt:
         logger.info("Bot stopped of ctrl + c")

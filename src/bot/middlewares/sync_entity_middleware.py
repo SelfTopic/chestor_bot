@@ -1,12 +1,12 @@
-from aiogram import BaseMiddleware 
-from typing import Callable, Awaitable, Dict, Any
+import logging
+from typing import Any, Awaitable, Callable, Dict
+
+from aiogram import BaseMiddleware
 from aiogram.types import TelegramObject
-
-from ..services import SyncEntitiesService
-from ..containers import Container
-
 from dependency_injector.wiring import Provide
-import logging 
+
+from ..containers import Container
+from ..services import SyncEntitiesService
 
 logger = logging.getLogger(__name__)
 
@@ -21,5 +21,5 @@ class SyncEntitiesMiddleware(BaseMiddleware):
     ) -> None:
         
         logger.debug("Calling sync entities")
-        await sync_entites_sevices.sync(event)
+        await sync_entites_sevices.sync(event=event, bot=data["bot"])
         await handler(event, data)

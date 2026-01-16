@@ -1,10 +1,12 @@
-from .base import Base 
+import logging
+from typing import Optional, Union
 
 from aiogram.types import User as TelegramUser
+
 from src.database.models import User
-from typing import Optional, Union
+
 from ..types import Race
-import logging 
+from .base import Base
 
 logger = logging.getLogger(__name__)
 

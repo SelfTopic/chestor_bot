@@ -1,6 +1,8 @@
 import pytest
-from src.bot.repositories.user import UserRepository
 from sqlalchemy.ext.asyncio import AsyncSession
+
+from src.bot.repositories.user import UserRepository
+
 
 @pytest.mark.asyncio
 async def test_user_lifecycle(session: AsyncSession):

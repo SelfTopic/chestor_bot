@@ -2,6 +2,7 @@ import pytest
 
 from src.bot.utils import calculate_kagune
 
+
 def test_kagune_calculation():
 
     assert len(calculate_kagune(3)) == 2

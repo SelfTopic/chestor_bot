@@ -1,10 +1,12 @@
-from .base import Base 
-from sqlalchemy.dialects.postgresql import insert
-from sqlalchemy import select, exists
-from sqlalchemy.ext.asyncio import AsyncSession
-from ...database.models import User
-from typing import Optional, Union, Any
 import logging
+from typing import Any, Optional, Union
+
+from sqlalchemy import exists, select
+from sqlalchemy.dialects.postgresql import insert
+from sqlalchemy.ext.asyncio import AsyncSession
+
+from ...database.models import User
+from .base import Base
 
 logger = logging.getLogger(__name__)
 

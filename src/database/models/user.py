@@ -1,11 +1,11 @@
-from .base import Base 
-
-from sqlalchemy import func
-from sqlalchemy.orm import Mapped, mapped_column 
-from sqlalchemy.types import BigInteger
-
 from datetime import datetime
 from typing import Optional
+
+from sqlalchemy import func
+from sqlalchemy.orm import Mapped, mapped_column
+from sqlalchemy.types import BigInteger
+
+from .base import Base
 
 
 class User(Base):

@@ -1,16 +1,14 @@
-from .base import Base 
-from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import select, update, delete, func, and_
-from sqlalchemy.dialects.postgresql import insert
-from typing import Union, Optional
-
-from src.database.models import (
-    Cooldown,
-    UserCooldown
-)
-
-import logging 
+import logging
 import time
+from typing import Optional, Union
+
+from sqlalchemy import and_, delete, func, select, update
+from sqlalchemy.dialects.postgresql import insert
+from sqlalchemy.ext.asyncio import AsyncSession
+
+from src.database.models import Cooldown, UserCooldown
+
+from .base import Base
 
 logger = logging.getLogger(__name__)
 

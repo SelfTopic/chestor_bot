@@ -1,0 +1,6 @@
+
+class ChatNotFound(Exception):
+    """Common base class for not found chats""" 
+    
+class ChatNotFoundInDatabase(ChatNotFound): ...
+class ChatNotFoundInMessage(ChatNotFound): ...

@@ -1,22 +1,22 @@
-from aiogram import Bot
-
-from dependency_injector import containers, providers 
-
 from contextvars import ContextVar
+
+from aiogram import Bot
+from dependency_injector import containers, providers
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from .services import (
-    UserService,
-    DialogService,
-    SyncEntitiesService,
-    GhoulService,
-    CooldownService
-)
-
 from .repositories import (
-    UserRepository,
+    ChatRepository,
     GhoulRepository,
-    UserCooldownRepository
+    UserCooldownRepository,
+    UserRepository,
+)
+from .services import (
+    ChatService,
+    CooldownService,
+    DialogService,
+    GhoulService,
+    SyncEntitiesService,
+    UserService,
 )
 
 session_context: ContextVar[AsyncSession] = ContextVar("session_context")
@@ -35,32 +35,46 @@ class Container(containers.DeclarativeContainer):
         UserCooldownRepository,
         session=db_session
     )
+    chat_repository = providers.Factory(ChatRepository, session=db_session)
 
     dialog_service = providers.Factory(DialogService)
+    
     user_service = providers.Factory(
         UserService, 
         user_repository,
         ghoul_repository,
-        user_cooldown_repository
+        user_cooldown_repository,
+        chat_repository
     )
 
     sync_entities_service = providers.Factory(
         SyncEntitiesService, 
         user_repository,
         ghoul_repository,
-        user_cooldown_repository
+        user_cooldown_repository,
+        chat_repository
     )
 
     ghoul_service = providers.Factory(
         GhoulService,
         user_repository,
         ghoul_repository,
-        user_cooldown_repository
+        user_cooldown_repository,
+        chat_repository
     )
 
     cooldown_service = providers.Factory(
         CooldownService,
         user_repository,
         ghoul_repository,
-        user_cooldown_repository    
+        user_cooldown_repository,
+        chat_repository
+    )
+
+    chat_service = providers.Factory(
+        ChatService,
+        user_repository,
+        ghoul_repository,
+        user_cooldown_repository,
+        chat_repository
     )

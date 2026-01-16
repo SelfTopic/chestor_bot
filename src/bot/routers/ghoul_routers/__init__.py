@@ -1,4 +1,5 @@
-from aiogram import Router 
+from aiogram import Router
+
 from .routes import include_ghoul_routers
 
 router = Router(name=__name__)
