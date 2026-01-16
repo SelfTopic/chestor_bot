@@ -1,10 +1,10 @@
-from .base import Base 
-from .dialog import DialogService 
-from .user import UserService 
+from .base import Base
+from .chat import ChatService
+from .cooldown import CooldownService
+from .dialog import DialogService
+from .ghoul import GhoulService
 from .sync_entity import SyncEntitiesService
-from .ghoul import GhoulService 
-from .cooldown import CooldownService 
-
+from .user import UserService
 
 __all__ = [
     "Base",
@@ -12,5 +12,6 @@ __all__ = [
     "UserService",
     "SyncEntitiesService",
     "GhoulService",
-    "CooldownService"    
+    "CooldownService",
+    "ChatService",
 ]

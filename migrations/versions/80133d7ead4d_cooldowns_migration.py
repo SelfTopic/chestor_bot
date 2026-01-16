@@ -5,13 +5,14 @@ Revises:
 Create Date: 2025-08-16 03:17:50.829892
 
 """
+import logging
 from typing import Sequence, Union
 
-from alembic import op
 import sqlalchemy as sa
+from alembic import op
 from sqlalchemy.dialects.postgresql import insert
+
 from src.database.models import Cooldown
-import logging
 
 logger = logging.getLogger(__name__)
 

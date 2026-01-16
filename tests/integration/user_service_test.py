@@ -1,8 +1,10 @@
 import pytest
+from aiogram.types import User
+from sqlalchemy.ext.asyncio import AsyncSession
+
 from src.bot.repositories.user import UserRepository
 from src.bot.services.user import UserService
-from sqlalchemy.ext.asyncio import AsyncSession
-from aiogram.types import User
+
 
 @pytest.mark.asyncio
 async def test_user_service(session: AsyncSession):

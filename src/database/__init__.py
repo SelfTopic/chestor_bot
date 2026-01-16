@@ -2,11 +2,7 @@ from os import environ
 
 from dotenv import load_dotenv
 from sqlalchemy import URL
-from sqlalchemy.ext.asyncio import (
-    async_sessionmaker, 
-    create_async_engine, 
-    AsyncEngine
-)
+from sqlalchemy.ext.asyncio import AsyncEngine, async_sessionmaker, create_async_engine
 
 from .models import Base
 

@@ -1,3 +1,4 @@
+import logging
 from typing import Any, Awaitable, Callable, Dict
 
 from aiogram import BaseMiddleware
@@ -6,16 +7,13 @@ from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 
 from ..containers import session_context
 
-import logging
-
 logger = logging.getLogger(__name__)
 
-class DatabaseMiddleware(BaseMiddleware):
-    """Middleware for connect database """
 
-    def __init__(
-        self, session_factory: async_sessionmaker[AsyncSession]
-    ) -> None:
+class DatabaseMiddleware(BaseMiddleware):
+    """Middleware for connect database"""
+
+    def __init__(self, session_factory: async_sessionmaker[AsyncSession]) -> None:
         self.session_factory = session_factory
 
     async def __call__(
@@ -27,7 +25,7 @@ class DatabaseMiddleware(BaseMiddleware):
         async with self.session_factory() as session:
             token = session_context.set(session)
 
-            try: 
+            try:
                 await handler(event, data)
                 logger.debug("Processed handler of database session")
                 await session.commit()
@@ -36,9 +34,10 @@ class DatabaseMiddleware(BaseMiddleware):
             except Exception as e:
                 logger.exception(f"Error processed handler of database session: {e}")
                 await session.rollback()
-                raise 
+                raise
 
             finally:
                 session_context.reset(token)
+
 
 __all__ = ["DatabaseMiddleware"]

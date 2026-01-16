@@ -1,8 +1,9 @@
-from .base import Base 
-from src.database.models import UserCooldown
+import logging
 from typing import Optional
 
-import logging 
+from src.database.models import UserCooldown
+
+from .base import Base
 
 logger = logging.getLogger(__name__)
 

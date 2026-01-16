@@ -1,50 +1,47 @@
-from aiogram import Router, F
-from aiogram.types import Message 
+import logging
+
+from aiogram import F, Router
 from aiogram.filters import Command
+from aiogram.types import Message
 from dependency_injector.wiring import Provide, inject
+
 from src.database.models import Ghoul
-from ..services import DialogService, UserService, GhoulService
-from ..utils import calculate_kagune
-from ..containers import Container
-from ..types import Race
-import logging 
+
+from ...containers import Container
+from ...services import DialogService, GhoulService, UserService
+from ...types import Race
+from ...utils import calculate_kagune
 
 logger = logging.getLogger(__name__)
 
 router = Router(name=__name__)
+
 
 @router.message(F.text.lower() == "распрофиль")
 @router.message(Command("race_profile"))
 @inject
 async def profile_handler(
     message: Message,
-    user_service: UserService = Provide[
-        Container.user_service  
-    ],
-    dialog_service: DialogService = Provide[
-        Container.dialog_service
-    ],
-    ghoul_service: GhoulService = Provide[
-        Container.ghoul_service    
-    ]
+    user_service: UserService = Provide[Container.user_service],
+    dialog_service: DialogService = Provide[Container.dialog_service],
+    ghoul_service: GhoulService = Provide[Container.ghoul_service],
 ) -> Message:
-    
     if not message.from_user:
         logger.error("User not found in message.")
         raise ValueError("User not found in message")
-    
+
     user = await user_service.get(message.from_user.id)
 
     if not user:
         logger.error("User not found in database.")
         raise ValueError("User not found in database")
-    
+
     race = user_service.race(user.race_bit)
 
-    if not race: 
-        raise 
+    if not race:
+        raise
 
-    profile = None 
+    profile = None
 
     if race == Race.GHOUL:
         profile = await ghoul_service.get(message)
@@ -55,14 +52,14 @@ async def profile_handler(
     if not profile:
         logger.error("Ghoul not found in database")
         raise ValueError("Ghoul not found in database")
-    
+
     return_text = dialog_service.text(
         key="profile",
         name=user.full_name,
-        race=race.value['name'],
-        balance=user.balance    
+        race=race.value["name"],
+        balance=user.balance,
     )
-    
+
     if isinstance(profile, Ghoul):
         return_text = dialog_service.text(
             key="ghoul_profile",
@@ -81,10 +78,10 @@ async def profile_handler(
             dexterity=profile.dexterity,
             speed=profile.speed,
             is_kakuja="Есть" if profile.is_kakuja else "Нет",
-            level=profile.level
+            level=profile.level,
         )
 
     return await message.answer(text=return_text)
 
-__all__ = ["router"]
 
+__all__ = ["router"]

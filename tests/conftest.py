@@ -1,8 +1,10 @@
-import pytest
-import docker
-from sqlalchemy.ext.asyncio import create_async_engine, async_sessionmaker, AsyncEngine
-from src.database.models import Base
 import time
+
+import docker
+import pytest
+from sqlalchemy.ext.asyncio import AsyncEngine, async_sessionmaker, create_async_engine
+
+from src.database.models import Base
 
 TEST_DB_URL = "postgresql+psycopg://test:test@localhost:5433/test_db"
 

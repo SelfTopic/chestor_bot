@@ -1,11 +1,12 @@
 from aiogram import Dispatcher
+
+from ..middlewares import GhoulMiddleware, ModeratorMiddleware
 from . import *
-from .ghoul_routers import include_ghoul_routers, router as GhoulRouter
-from ..middlewares import GhoulMiddleware
+from .ghoul_routers import include_ghoul_routers
+from .ghoul_routers import router as GhoulRouter
+
 
 def include_routers(dp: Dispatcher) -> None:
-    """Connects all routers on the dispatcher"""
-
     dp.include_routers(
         StartRouter,
         BotRouter,
@@ -14,12 +15,20 @@ def include_routers(dp: Dispatcher) -> None:
         BalanceRouter,
         HelpRouter,
         ProfileRouter,
-        RaceProfileRouter
+        RaceProfileRouter,
+        ModeratorRouter,
+        CheckRulesRouter,
+        UpdateChatMemberRouter,
+        CreatorRouter,
     )
-    
+
+    ModeratorRouter.message.middleware(ModeratorMiddleware())
+    ModeratorRouter.callback_query.middleware(ModeratorMiddleware())
+
     GhoulRouter.message.middleware(GhoulMiddleware())
     GhoulRouter.callback_query.middleware(GhoulMiddleware())
 
     include_ghoul_routers(GhoulRouter)
+
 
 __all__ = ["include_routers"]

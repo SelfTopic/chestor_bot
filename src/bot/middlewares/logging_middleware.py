@@ -1,9 +1,9 @@
-from aiogram import BaseMiddleware 
-from aiogram.types import CallbackQuery, Message, Update, TelegramObject
-from typing import Self, Any, Dict, Awaitable, Callable
-
+import logging
 import time
-import logging 
+from typing import Any, Awaitable, Callable, Dict, Self
+
+from aiogram import BaseMiddleware
+from aiogram.types import CallbackQuery, Message, TelegramObject, Update
 
 logger = logging.getLogger(__name__)
 

@@ -1,11 +1,15 @@
-from .base import Base 
-from src.database.models import Ghoul
+import logging
+import random
+from typing import Any, Optional, Union
+
 from aiogram.types import Message
-from ..types import RegisterGhoulType, KaguneType, Race
-from ..utils import calculate_kagune
+
+from src.database.models import Ghoul
+
 from ..game_configs import KAGUNE_CONFIG
-from typing import Union, Optional, Any
-import random, logging 
+from ..types import KaguneType, Race, RegisterGhoulType
+from ..utils import calculate_kagune
+from .base import Base
 
 logger = logging.getLogger(__name__)
 

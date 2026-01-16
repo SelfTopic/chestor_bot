@@ -1,6 +1,8 @@
-from aiogram import Router 
-from .upgrade_kagune import router as RaiseKaguneRouter
+from aiogram import Router
+
 from .snap import router as SnapFingerRouter
+from .upgrade_kagune import router as RaiseKaguneRouter
+
 
 def include_ghoul_routers(rt: Router) -> None:
 

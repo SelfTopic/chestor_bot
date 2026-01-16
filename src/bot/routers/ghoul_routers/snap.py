@@ -1,20 +1,14 @@
-from aiogram import Router, F
-from aiogram.types import Message
-from dependency_injector.wiring import inject, Provide 
-
-from src.bot.services import (
-    DialogService,
-    GhoulService,
-    CooldownService,
-    UserService
-)
-
-from src.bot.containers import Container
-from src.bot.utils import parse_seconds
-
-import logging 
+import logging
 import random
 import time
+
+from aiogram import F, Router
+from aiogram.types import Message
+from dependency_injector.wiring import Provide, inject
+
+from src.bot.containers import Container
+from src.bot.services import CooldownService, DialogService, GhoulService, UserService
+from src.bot.utils import parse_seconds
 
 router = Router(name=__name__)
 

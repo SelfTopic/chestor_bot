@@ -1,10 +1,12 @@
-from .base import Base 
-
-from sqlalchemy import func, ForeignKey, BigInteger
-from sqlalchemy.orm import Mapped, mapped_column, relationship
-from .user import User 
-from .cooldown import Cooldown
 from datetime import datetime
+
+from sqlalchemy import BigInteger, ForeignKey, func
+from sqlalchemy.orm import Mapped, mapped_column, relationship
+
+from .base import Base
+from .cooldown import Cooldown
+from .user import User
+
 
 class UserCooldown(Base):
     __tablename__ = "users_cooldowns"

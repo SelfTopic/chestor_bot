@@ -1,12 +1,12 @@
-from aiogram import Router, F
-from aiogram.types import Message
-
-from dependency_injector.wiring import inject, Provide 
-from ...containers import Container
-from ...services import GhoulService, DialogService, UserService, CooldownService
-
-from ...utils import calculate_kagune, parse_seconds
 import time
+
+from aiogram import F, Router
+from aiogram.types import Message
+from dependency_injector.wiring import Provide, inject
+
+from ...containers import Container
+from ...services import CooldownService, DialogService, GhoulService, UserService
+from ...utils import calculate_kagune, parse_seconds
 
 router = Router(name=__name__)
 
