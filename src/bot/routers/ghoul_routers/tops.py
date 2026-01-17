@@ -50,6 +50,8 @@ async def top_snap_handler(
     for c, i in enumerate(top, start=1):
         user = await user_service.get(find_by=i.telegram_id)
 
-        answer_text += f"{c}. {user.first_name if user else 'Unknown'} - {i.snap_count}"
+        answer_text += (
+            f"{c}. {user.first_name if user else 'Unknown'} - {i.snap_count}\n"
+        )
 
     await message.answer(answer_text)
