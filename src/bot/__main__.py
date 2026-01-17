@@ -61,6 +61,8 @@ async def main(bot_token: str, env: str) -> None:
     bot = Bot(
         token=bot_token, default=DefaultBotProperties(link_preview_is_disabled=True)
     )
+
+    await bot.delete_webhook(drop_pending_updates=True)
     logger.info("Object of bot is initialize")
 
     container = Container(bot=bot)
