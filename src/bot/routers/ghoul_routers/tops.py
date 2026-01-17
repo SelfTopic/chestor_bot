@@ -27,7 +27,7 @@ async def top_snap_handler(
         raise
 
     if message.text != "топ щелк":
-        count = message.text.split("топ щелк")[1]
+        count = message.text.split("топ щелк ")[1]
 
         if not count.isdigit():
             await message.answer("Топ нужно указывать цифрой")
