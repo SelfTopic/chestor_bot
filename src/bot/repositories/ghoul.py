@@ -1,7 +1,7 @@
 import logging
 from typing import Any, List, Optional
 
-from sqlalchemy import exists, func, select, update
+from sqlalchemy import desc, exists, func, select, update
 from sqlalchemy.dialects.postgresql import insert
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -120,7 +120,7 @@ class GhoulRepository(Base):
         return cleaned_bit
 
     async def get_top_snap(self, count: int) -> List[Ghoul]:
-        stmt = select(Ghoul).order_by(Ghoul.snap_count).limit(count)
+        stmt = select(Ghoul).order_by(desc(Ghoul.snap_count)).limit(count)
 
         execute = await self.session.scalars(stmt)
 
