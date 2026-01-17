@@ -1,10 +1,12 @@
+from typing import List
+
 from pydantic import Field, SecretStr
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
 class Settings(BaseSettings):
     BOT_TOKEN: SecretStr = Field(default=...)
-    ADMIN_IDS: list[int] = Field(default=...) 
+    ADMIN_IDS: List[int] = Field(default_factory=list)
     ENV: str = Field(default="DEV")
 
     POSTGRES_DATABASE: str = Field(default=...)
@@ -13,6 +15,7 @@ class Settings(BaseSettings):
     POSTGRES_HOSTNAME: str = Field(default=...)
 
     model_config = SettingsConfigDict(env_file=".env", env_file_encoding="utf8")
+
 
 settings = Settings()
 
