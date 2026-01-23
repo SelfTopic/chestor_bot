@@ -30,7 +30,7 @@ async def top_snap_handler(
         count = message.text.split("топ щелк ")[1]
 
         if not count.isdigit():
-            await message.answer("Топ нужно указывать цифрой")
+            await message.answer("Топ нужно указывать положительной цифрой")
             return
 
         count = int(count)

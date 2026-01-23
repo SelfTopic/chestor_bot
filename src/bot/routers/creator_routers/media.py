@@ -1,20 +1,50 @@
 from aiogram import Router
 from aiogram.filters import Command, CommandObject
-from aiogram.types import Message
+from aiogram.types import FSInputFile, Message
+from dependency_injector.wiring import Provide, inject
+
+from ...containers import Container
+from ...exceptions import CollectionNotFoundError, MediaNotFoundError
+from ...services import MediaService
 
 router = Router(name=__name__)
 
 
-@router.message(Command("/add_gif"))
-async def add_gif(message: Message, command: CommandObject) -> None:
+@router.message(Command("add_gif"))
+@inject
+async def add_gif(
+    message: Message,
+    command: CommandObject,
+    media_service: MediaService = Provide[Container.media_service],
+) -> None:
+    if not message.reply_to_message:
+        raise MediaNotFoundError(
+            "Эта команда используется в ответ на гиф для скачивания"
+        )
+
+    if not message.reply_to_message.animation:
+        raise MediaNotFoundError("В выбранном вами сообщении отсутствует гиф")
+
     args = command.args
 
     if not args:
-        await message.reply("Нет указателей для медиа")
-        return None
+        raise CollectionNotFoundError("Нет указателей для медиа")
 
-    args = args.split()
+    path = await media_service.download_from_message(
+        message=message.reply_to_message, collection_args=args
+    )
+    if not path.exists():
+        await message.reply("А путь неправильный")
 
-    type_gif = args[0]
+    if not path.is_file():
+        await message.reply(f"Ошибка: {path} не является файлом.")
+        return
 
-    # TODO - Нужно скачать гиф и сохранить в нужную папку в assets/, но для этого нужно написать сервис для скачивания, инициализации и тд.
+    if path.stat().st_size == 0:
+        await message.reply("Ошибка: Скачанный файл пуст.")
+        return
+
+    await message.answer_animation(
+        animation=FSInputFile(path),
+        caption=f"Эта гиф успешено скачана в путь {path}",
+    )

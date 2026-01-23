@@ -15,14 +15,16 @@ from .services import (
     CooldownService,
     DialogService,
     GhoulService,
+    MediaDownloader,
+    MediaService,
     SyncEntitiesService,
     UserService,
 )
 
 session_context: ContextVar[AsyncSession] = ContextVar("session_context")
 
-class Container(containers.DeclarativeContainer):
 
+class Container(containers.DeclarativeContainer):
     config = providers.Configuration()
     bot = providers.Dependency(instance_of=Bot)
 
@@ -32,27 +34,30 @@ class Container(containers.DeclarativeContainer):
     ghoul_repository = providers.Factory(GhoulRepository, session=db_session)
 
     user_cooldown_repository = providers.Factory(
-        UserCooldownRepository,
-        session=db_session
+        UserCooldownRepository, session=db_session
     )
     chat_repository = providers.Factory(ChatRepository, session=db_session)
 
     dialog_service = providers.Factory(DialogService)
-    
+
+    media_downloader = providers.Factory(MediaDownloader, bot=bot)
+
+    media_service = providers.Factory(MediaService, downloader=media_downloader)
+
     user_service = providers.Factory(
-        UserService, 
+        UserService,
         user_repository,
         ghoul_repository,
         user_cooldown_repository,
-        chat_repository
+        chat_repository,
     )
 
     sync_entities_service = providers.Factory(
-        SyncEntitiesService, 
+        SyncEntitiesService,
         user_repository,
         ghoul_repository,
         user_cooldown_repository,
-        chat_repository
+        chat_repository,
     )
 
     ghoul_service = providers.Factory(
@@ -60,7 +65,7 @@ class Container(containers.DeclarativeContainer):
         user_repository,
         ghoul_repository,
         user_cooldown_repository,
-        chat_repository
+        chat_repository,
     )
 
     cooldown_service = providers.Factory(
@@ -68,7 +73,7 @@ class Container(containers.DeclarativeContainer):
         user_repository,
         ghoul_repository,
         user_cooldown_repository,
-        chat_repository
+        chat_repository,
     )
 
     chat_service = providers.Factory(
@@ -76,5 +81,5 @@ class Container(containers.DeclarativeContainer):
         user_repository,
         ghoul_repository,
         user_cooldown_repository,
-        chat_repository
+        chat_repository,
     )
