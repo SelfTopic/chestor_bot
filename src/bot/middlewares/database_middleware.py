@@ -11,8 +11,6 @@ logger = logging.getLogger(__name__)
 
 
 class DatabaseMiddleware(BaseMiddleware):
-    """Middleware for connect database"""
-
     def __init__(self, session_factory: async_sessionmaker[AsyncSession]) -> None:
         self.session_factory = session_factory
 
@@ -27,12 +25,9 @@ class DatabaseMiddleware(BaseMiddleware):
 
             try:
                 await handler(event, data)
-                logger.debug("Processed handler of database session")
                 await session.commit()
-                logger.debug("Database session commited")
 
-            except Exception as e:
-                logger.exception(f"Error processed handler of database session: {e}")
+            except Exception:
                 await session.rollback()
                 raise
 

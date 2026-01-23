@@ -1,3 +1,33 @@
-from .chat import *
-from .chat_not_found import *
-from .user_not_found import *
+from .chat import ChatError, ChatMemberUpdateMessageError, ChatRulesError
+from .chat_not_found import ChatNotFound, ChatNotFoundInDatabase, ChatNotFoundInMessage
+from .media_download import (
+    CollectionNotFoundError,
+    InvalidMediaRequestError,
+    MediaError,
+    MediaNotFoundError,
+    ValidationMediaError,
+)
+from .user_not_found import (
+    UserNotFound,
+    UserNotFoundInChat,
+    UserNotFoundInDatabase,
+    UserNotFoundInMessage,
+)
+
+__all__ = [
+    "ChatError",
+    "ChatMemberUpdateMessageError",
+    "ChatRulesError",
+    "ChatNotFound",
+    "ChatNotFoundInDatabase",
+    "ChatNotFoundInMessage",
+    "MediaError",
+    "MediaNotFoundError",
+    "InvalidMediaRequestError",
+    "UserNotFound",
+    "UserNotFoundInChat",
+    "UserNotFoundInDatabase",
+    "UserNotFoundInMessage",
+    "CollectionNotFoundError",
+    "ValidationMediaError",
+]

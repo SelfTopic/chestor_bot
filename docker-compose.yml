@@ -24,6 +24,7 @@ services:
       - PYTHONUNBUFFERED=1
     volumes:
       - .:/app 
+      - ./src/assets:/app/src/assets
     working_dir: /app
     restart: unless-stopped
     depends_on:
