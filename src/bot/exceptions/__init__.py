@@ -7,6 +7,7 @@ from .media_download import (
     MediaNotFoundError,
     ValidationMediaError,
 )
+from .media_not_found import MediaNotFound, MediaNotFoundInDatabase
 from .user_not_found import (
     UserNotFound,
     UserNotFoundInChat,
@@ -30,4 +31,6 @@ __all__ = [
     "UserNotFoundInMessage",
     "CollectionNotFoundError",
     "ValidationMediaError",
+    "MediaNotFoundInDatabase",
+    "MediaNotFound",
 ]

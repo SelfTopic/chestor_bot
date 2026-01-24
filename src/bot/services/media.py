@@ -1,7 +1,9 @@
 import logging
+import random
 from io import BytesIO
 from pathlib import Path
 
+import aiofiles
 from aiogram import Bot
 from aiogram.types import Message
 
@@ -12,7 +14,9 @@ from ..exceptions import (
     MediaError,
     ValidationMediaError,
 )
+from ..repositories import MediaRepository
 from ..types import MediaCollection, MediaDownloadType, MediaSaveRequest
+from ..types.insert import MediaInsert
 
 logger = logging.getLogger(name=__name__)
 
@@ -25,29 +29,33 @@ class MediaDownloader:
         bytes_media = None
         type_media = None
         original_filename = None
+        file_id = None
         io_object = BytesIO()
 
         if message.animation:
             bytes_media = await self._bot.download(
                 file=message.animation.file_id, destination=io_object
             )
+            file_id = message.animation.file_id
             logger.debug(f"Downloaded data: {bytes_media}")
             type_media = MediaDownloadType.ANIMATION
-            original_filename = f"{type_media.value}_{message.animation.file_id}"
+            original_filename = f"{type_media.value}_{file_id}"
 
         elif message.video:
             bytes_media = await self._bot.download(
                 file=message.video.file_id, destination=io_object
             )
+            file_id = message.video.file_id
             type_media = MediaDownloadType.VIDEO
-            original_filename = f"{type_media.value}_{message.video.file_id}"
+            original_filename = f"{type_media.value}_{file_id}"
 
         elif message.photo:
             bytes_media = await self._bot.download(
                 file=message.photo[-1].file_id, destination=io_object
             )
+            file_id = message.photo[-1].file_id
             type_media = MediaDownloadType.PHOTO
-            original_filename = f"{type_media.value}_{message.photo[-1].file_id}"
+            original_filename = f"{type_media.value}_{file_id}"
 
         if not bytes_media:
             raise MediaError("Байты в медиа не найдены")
@@ -58,6 +66,7 @@ class MediaDownloader:
             bytes_media=bytes_media.read(),
             type_media=type_media,
             original_filename=original_filename,
+            file_id=file_id,
         )
 
 
@@ -90,24 +99,73 @@ class CollectionParser:
 
 class MediaService:
     def __init__(
-        self, downloader: MediaDownloader, parser: CollectionParser = CollectionParser()
+        self,
+        downloader: MediaDownloader,
+        media_repository: MediaRepository,
+        parser: CollectionParser = CollectionParser(),
     ) -> None:
         self._downloader = downloader
         self._parser = parser
+        self.media_repository = media_repository
 
-    async def download_from_message(self, message: Message, collection_args: str):
+    async def get_random_gif(self, collection_string: str):
+        collection = self._parser.parse(collection_string)
+        type_media = MediaDownloadType.ANIMATION
+
+        media_request = MediaSaveRequest(type_media=type_media, collection=collection)
+
+        folder_path = self._generate_path(media_save_request=media_request)
+        folder_path.mkdir(parents=True, exist_ok=True)
+        files = [f for f in folder_path.iterdir() if f.is_file()]
+
+        file_path = random.choice(files) if files else None
+
+        logger.debug(f"Generated path to media: {file_path}")
+
+        media = await self.media_repository.get_by_path(path=str(file_path))
+
+        if not media:
+            return None
+
+        return media
+
+    async def update_telegram_file_id(self, path: str, new_file_id: str):
+        await self.media_repository.update_file_id(path=path, new_file_id=new_file_id)
+
+    async def download_from_message(
+        self, message: Message, collection_args: str, uploaded_by: int
+    ):
         media_request = await self._downloader.download_media_from_message(
             message=message
         )
 
-        if not media_request.bytes_media or not media_request.type_media:
+        if (
+            not media_request.bytes_media
+            or not media_request.type_media
+            or not media_request.file_id
+        ):
             raise InvalidMediaRequestError("В сообщении не найдено медиа")
 
         collection = self._parser.parse(collection_args)
 
         media_request.collection = collection
 
-        path = self._save_media(media_save_request=media_request)
+        path = await self._async_save_media(media_save_request=media_request)
+
+        media_insert = MediaInsert(
+            media_type=media_request.type_media.value,
+            telegram_file_id=media_request.file_id,
+            collection=collection.value,
+            path=str(path),
+            uploaded_by=uploaded_by,
+        )
+
+        exists = await self.media_repository.exists_by_path(str(path))
+
+        if exists:
+            raise MediaError("Запись в базе данных с таким файлом уже существует")
+
+        await self.media_repository.insert(media_insert=media_insert)
 
         return path
 
@@ -128,7 +186,7 @@ class MediaService:
                 "Ошибка валидации: не найден тип скачиваемого медиа"
             )
 
-    def _save_media(self, media_save_request: MediaSaveRequest):
+    async def _async_save_media(self, media_save_request: MediaSaveRequest):
         EXT_MAP = {
             MediaDownloadType.ANIMATION: ".mp4",
             MediaDownloadType.PHOTO: ".png",
@@ -152,14 +210,16 @@ class MediaService:
 
         final_file_path = folder_path / f"{filename_raw}{target_ext}"
 
-        with open(final_file_path, "wb") as file:
-            file.write(media_save_request.bytes_media)
+        async with aiofiles.open(final_file_path, "wb") as file:
+            await file.write(media_save_request.bytes_media)
 
         return final_file_path
 
     def _generate_path(self, media_save_request: MediaSaveRequest):
         if not media_save_request.collection or not media_save_request.type_media:
-            raise
+            raise InvalidMediaRequestError(
+                "Не указаны коллекция или тип медиа в запросе медиа"
+            )
 
         type_media = media_save_request.collection.sub_type
 

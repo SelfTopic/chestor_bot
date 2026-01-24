@@ -2,12 +2,19 @@ import logging
 import time
 
 from aiogram import F, Router
-from aiogram.types import Message
+from aiogram.exceptions import TelegramBadRequest
+from aiogram.types import FSInputFile, Message
 from dependency_injector.wiring import Provide, inject
 
 from src.bot.containers import Container
 from src.bot.game_configs import SNAP_CONFIG
-from src.bot.services import CooldownService, DialogService, GhoulService, UserService
+from src.bot.services import (
+    CooldownService,
+    DialogService,
+    GhoulService,
+    MediaService,
+    UserService,
+)
 from src.bot.utils import parse_seconds
 
 router = Router(name=__name__)
@@ -23,6 +30,7 @@ async def snap_handler(
     ghoul_service: GhoulService = Provide[Container.ghoul_service],
     cooldown_service: CooldownService = Provide[Container.cooldown_service],
     user_service: UserService = Provide[Container.user_service],
+    media_service: MediaService = Provide[Container.media_service],
 ) -> None:
     if not message.from_user:
         logger.warning("User not found")
@@ -47,14 +55,38 @@ async def snap_handler(
             telegram_id=message.from_user.id, cooldown_type="SNAP"
         )
 
-        await message.reply(
-            text=dialog_service.text(
-                key="snap_finger_accept",
-                name=message.from_user.first_name or "Ghoul",
-                count=str(new_ghoul.snap_count),
-                money=str(change_balance),
-            )
+        caption = dialog_service.text(
+            key="snap_finger_accept",
+            count=str(new_ghoul.snap_count),
+            money=str(change_balance),
         )
+
+        media = await media_service.get_random_gif("snap finger")
+
+        if not media:
+            await message.reply(
+                text=dialog_service.text(
+                    key="snap_finger_accept",
+                    count=str(new_ghoul.snap_count),
+                    money=str(change_balance),
+                )
+            )
+            return
+        try:
+            await message.reply_animation(
+                animation=media.telegram_file_id, caption=caption
+            )
+
+        except TelegramBadRequest:
+            my_message = await message.reply_animation(
+                animation=FSInputFile(media.path), caption=caption
+            )
+
+            if not my_message.animation:
+                raise
+            await media_service.update_telegram_file_id(
+                path=media.path, new_file_id=my_message.animation.file_id
+            )
 
         return None
 

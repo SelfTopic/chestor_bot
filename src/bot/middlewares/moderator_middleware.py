@@ -30,7 +30,7 @@ class ModeratorMiddleware(BaseMiddleware):
             user = event.from_user
 
         if chat_type != "supergroup":
-            pass
+            return
 
         if (not chat) or (not user):
             raise ValueError("Chat or User objects not found")

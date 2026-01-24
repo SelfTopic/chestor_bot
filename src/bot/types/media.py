@@ -40,6 +40,7 @@ class MediaDownloadType(str, Enum):
 class MediaSaveRequest:
     type_media: Optional[MediaDownloadType]
     bytes_media: Optional[bytes] = None
+    file_id: Optional[str] = None
     collection: Optional[MediaCollection] = None
     original_filename: Optional[str] = None
     downloaded_by: Optional[int] = None
