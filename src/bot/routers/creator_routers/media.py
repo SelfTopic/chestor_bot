@@ -4,7 +4,7 @@ from aiogram.types import FSInputFile, Message
 from dependency_injector.wiring import Provide, inject
 
 from ...containers import Container
-from ...exceptions import CollectionNotFoundError, MediaNotFoundError
+from ...exceptions import CollectionNotFoundError, MediaNotFoundError, UserNotFound
 from ...services import MediaService
 
 router = Router(name=__name__)
@@ -22,6 +22,9 @@ async def add_gif(
             "Эта команда используется в ответ на гиф для скачивания"
         )
 
+    if not message.from_user:
+        raise UserNotFound()
+
     if not message.reply_to_message.animation:
         raise MediaNotFoundError("В выбранном вами сообщении отсутствует гиф")
 
@@ -31,7 +34,9 @@ async def add_gif(
         raise CollectionNotFoundError("Нет указателей для медиа")
 
     path = await media_service.download_from_message(
-        message=message.reply_to_message, collection_args=args
+        message=message.reply_to_message,
+        collection_args=args,
+        uploaded_by=message.from_user.id,
     )
     if not path.exists():
         await message.reply("А путь неправильный")

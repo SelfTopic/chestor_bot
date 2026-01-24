@@ -7,6 +7,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from .repositories import (
     ChatRepository,
     GhoulRepository,
+    MediaRepository,
     UserCooldownRepository,
     UserRepository,
 )
@@ -38,11 +39,15 @@ class Container(containers.DeclarativeContainer):
     )
     chat_repository = providers.Factory(ChatRepository, session=db_session)
 
+    media_repository = providers.Factory(MediaRepository, session=db_session)
+
     dialog_service = providers.Factory(DialogService)
 
     media_downloader = providers.Factory(MediaDownloader, bot=bot)
 
-    media_service = providers.Factory(MediaService, downloader=media_downloader)
+    media_service = providers.Factory(
+        MediaService, downloader=media_downloader, media_repository=media_repository
+    )
 
     user_service = providers.Factory(
         UserService,

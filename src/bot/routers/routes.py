@@ -7,6 +7,11 @@ from .ghoul_routers import router as GhoulRouter
 
 
 def include_routers(dp: Dispatcher) -> None:
+    ModeratorRouter.message.middleware(ModeratorMiddleware())
+    ModeratorRouter.callback_query.middleware(ModeratorMiddleware())
+
+    GhoulRouter.message.middleware(GhoulMiddleware())
+    GhoulRouter.callback_query.middleware(GhoulMiddleware())
     dp.include_routers(
         StartRouter,
         BotRouter,
@@ -21,12 +26,6 @@ def include_routers(dp: Dispatcher) -> None:
         UpdateChatMemberRouter,
         CreatorRouter,
     )
-
-    ModeratorRouter.message.middleware(ModeratorMiddleware())
-    ModeratorRouter.callback_query.middleware(ModeratorMiddleware())
-
-    GhoulRouter.message.middleware(GhoulMiddleware())
-    GhoulRouter.callback_query.middleware(GhoulMiddleware())
 
     include_ghoul_routers(GhoulRouter)
 
