@@ -30,7 +30,7 @@ class CoffeeConfig:
     min_award: int = 5000
     max_award: int = 9000
 
-    snap_limit = 0
+    snap_limit = 100
 
     @property
     def award(self) -> int:
