@@ -16,7 +16,25 @@ KAGUNE_CONFIG = KaguneConfig()
 class SnapConfig:
     min_award: int = 500
     max_award: int = 1500
-    award: int = randint(min_award, max_award)
+
+    @property
+    def award(self) -> int:
+        return randint(self.min_award, self.max_award)
 
 
 SNAP_CONFIG = SnapConfig()
+
+
+@dataclass
+class CoffeeConfig:
+    min_award: int = 5000
+    max_award: int = 9000
+
+    snap_limit = 0
+
+    @property
+    def award(self) -> int:
+        return randint(self.min_award, self.max_award)
+
+
+COFFEE_CONFIG = CoffeeConfig()
