@@ -34,7 +34,7 @@ def upgrade() -> None:
 
     op.execute(
         insert(Cooldown)
-        .values(id=2, name="COFFEE", duration=1800)
+        .values(id=4, name="COFFEE", duration=1800)
         .on_conflict_do_nothing()
     )
 
