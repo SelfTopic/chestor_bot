@@ -1,5 +1,6 @@
 from .chat import ChatError, ChatMemberUpdateMessageError, ChatRulesError
 from .chat_not_found import ChatNotFound, ChatNotFoundInDatabase, ChatNotFoundInMessage
+from .ghoul_not_found import GhoulNotFound, GhoulNotFoundInDatabase
 from .media_download import (
     CollectionNotFoundError,
     InvalidMediaRequestError,
@@ -33,4 +34,6 @@ __all__ = [
     "ValidationMediaError",
     "MediaNotFoundInDatabase",
     "MediaNotFound",
+    "GhoulNotFoundInDatabase",
+    "GhoulNotFound",
 ]

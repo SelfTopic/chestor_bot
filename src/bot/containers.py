@@ -21,6 +21,7 @@ from .services import (
     SyncEntitiesService,
     UserService,
 )
+from .services.ghoul_game import CoffeeService
 
 session_context: ContextVar[AsyncSession] = ContextVar("session_context")
 
@@ -87,4 +88,13 @@ class Container(containers.DeclarativeContainer):
         ghoul_repository,
         user_cooldown_repository,
         chat_repository,
+    )
+
+    coffee_service = providers.Factory(
+        CoffeeService,
+        user_service=user_service,
+        ghoul_service=ghoul_service,
+        cooldown_service=cooldown_service,
+        media_service=media_service,
+        dialog_service=dialog_service,
     )

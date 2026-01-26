@@ -62,6 +62,23 @@ class GhoulService(Base):
         )
         return ghoul_updated
 
+    async def coffee(self, telegram_id: int, change: int = 1) -> Ghoul:
+        logger.debug(
+            f"Called method coffee. Params: telegram_id={telegram_id}, change={change}"
+        )
+
+        ghoul = await self.get(find_by=telegram_id)
+
+        if not ghoul:
+            logger.error("Ghoul not found for coffee operation")
+            raise ValueError("Ghoul not found")
+
+        ghoul = await self.ghoul_repository.upsert(
+            telegram_id=telegram_id, coffee_count=ghoul.coffee_count + change
+        )
+
+        return ghoul
+
     async def upgrade_kagune(self, telegram_id: int, change: int = 1) -> Ghoul:
         logger.debug(
             f"Called method upsert. Params: telegram_id={telegram_id}, change={change}"
