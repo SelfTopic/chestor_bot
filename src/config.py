@@ -13,6 +13,8 @@ class Settings(BaseSettings):
     POSTGRES_USERNAME: str = Field(default=...)
     POSTGRES_PASSWORD: str = Field(default=...)
     POSTGRES_HOSTNAME: str = Field(default=...)
+    PGADMIN_DEFAULT_EMAIL: str = Field(default=...)
+    PGADMIN_DEFAULT_PASSWORD: str = Field(default=...)
 
     model_config = SettingsConfigDict(env_file=".env", env_file_encoding="utf8")
 
