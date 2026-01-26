@@ -47,6 +47,9 @@ class CoffeeService:
             telegram_id=user_id, cooldown_name="COFFEE_DAY"
         )
 
+        if cooldown_day:
+            return cooldown_day
+
         if cooldown:
             if cooldown_day:
                 return cooldown_day
