@@ -1,5 +1,5 @@
 class Config:
-    path_to_assets = "/assets"
+    path_to_assets = "src/assets"
     path_to_gif = path_to_assets + "/animation"
     path_to_video = path_to_assets + "/video"
     path_to_photo = path_to_assets + "/photo"
