@@ -5,6 +5,8 @@ import sys
 import colorlog
 from aiogram import Bot, Dispatcher
 from aiogram.client.default import DefaultBotProperties
+from aiogram.webhook.aiohttp_server import SimpleRequestHandler, setup_application
+from aiohttp import web
 
 from src.config import settings
 
@@ -55,6 +57,17 @@ if not settings.BOT_TOKEN:
 
 logger.info(f"ENV is {'PROD' if settings.ENV else 'DEV'}")
 
+WEBHOOK_HOST = "https://chestor.site"
+WEBHOOK_PATH = f"/webhook/{settings.BOT_TOKEN.get_secret_value()}"
+WEBHOOK_URL = f"{WEBHOOK_HOST}{WEBHOOK_PATH}"
+
+
+async def on_startup(bot: Bot):
+    await bot.set_webhook(
+        url=WEBHOOK_URL,
+        allowed_updates=["message", "callback_query", "chat_member", "my_chat_member"],
+    )
+
 
 async def main(bot_token: str, env: str) -> None:
     ENV = False if env == "DEV" else True
@@ -95,19 +108,46 @@ async def main(bot_token: str, env: str) -> None:
     else:
         await create_tables(engine=engine)
 
-    try:
-        logger.info("Starting polling of updates")
-        await dp.start_polling(
-            bot, allowed_updates=["message", "chat_member", "my_chat_member"]
+    if ENV:
+        webhook_requests_handler = SimpleRequestHandler(
+            dispatcher=dp,
+            bot=bot,
         )
 
-    except Exception as e:
-        logger.error(f"Error polling: {e}")
-        raise
+        app = web.Application()
 
-    finally:
-        await bot.close()
-        logger.info("Bot session is closed")
+        webhook_requests_handler.register(app, path=WEBHOOK_PATH)
+        setup_application(app, dp, bot=bot)
+        dp.startup.register(on_startup)
+
+        runner = web.AppRunner(app)
+
+        await runner.setup()
+        site = web.TCPSite(runner, host="0.0.0.0", port=8999)
+
+        try:
+            await site.start()
+            await asyncio.Event().wait()
+        finally:
+            await bot.session.close()
+            await runner.cleanup()
+            logger.info("Bot session and server closed")
+
+    else:
+        try:
+            await bot.delete_webhook(drop_pending_updates=True)
+            await dp.start_polling(
+                bot,
+                allowed_updates=[
+                    "message",
+                    "callback_query",
+                    "chat_member",
+                    "my_chat_member",
+                ],
+            )
+
+        except Exception as e:
+            logger.error(f"Error start bot: {e}")
 
 
 if __name__ == "__main__":
