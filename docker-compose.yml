@@ -69,14 +69,14 @@ services:
 
   rclone_backup:
     image: rclone/rclone
+    restart: always
     volumes:
       - ./backups:/data:ro
-      - ./rclone.conf:/config/rclone/rclone.conf:ro
-    command: sync /data gdrive:my_db_backups
-    entrypoint: /bin/sh -c "while true; do sleep 3600; rclone sync /data gdrive:my_db_backups; done"
+      - ./rclone.conf:/rclone.conf:ro  
+    entrypoint: /bin/sh -c "while true; do rclone sync /data gdrive:my_project_backups -L --config /rclone.conf -v; sleep 3600; done"
+
     depends_on:
       - db_backup
-
 volumes:
   postgres_data:
   pgadmin_data:

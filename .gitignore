@@ -8,3 +8,4 @@ data/
 alembic.ini
 !.alembic.ini.example
 rclone.conf
+/backups
