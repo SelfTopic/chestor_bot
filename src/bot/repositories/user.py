@@ -1,7 +1,7 @@
 import logging
 from typing import Any, Optional, Union
 
-from sqlalchemy import exists, select
+from sqlalchemy import desc, exists, select
 from sqlalchemy.dialects.postgresql import insert
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -10,8 +10,8 @@ from .base import Base
 
 logger = logging.getLogger(__name__)
 
+
 class UserRepository(Base):
-    
     session: AsyncSession
 
     def __init__(self, session: AsyncSession) -> None:
@@ -25,8 +25,10 @@ class UserRepository(Base):
         last_name: Optional[str] = None,
         username: Optional[str] = None,
     ) -> User:
-        logger.debug(f"Called method upsert. Params: telegram_id={telegram_id}, first_name={first_name}, last_name={last_name}, username={username}")
-        
+        logger.debug(
+            f"Called method upsert. Params: telegram_id={telegram_id}, first_name={first_name}, last_name={last_name}, username={username}"
+        )
+
         upsert_stmt = (
             insert(User)
             .values(
@@ -36,29 +38,29 @@ class UserRepository(Base):
                 username=username,
             )
             .on_conflict_do_update(
-                index_elements=['telegram_id'],
+                index_elements=["telegram_id"],
                 set_={
-                    'first_name': first_name,
-                    'last_name': last_name,
-                    'username': username,
-                }
+                    "first_name": first_name,
+                    "last_name": last_name,
+                    "username": username,
+                },
             )
             .returning(User)
         )
-        
+
         user = await self.session.scalar(upsert_stmt)
-        
+
         if user is None:
             logger.error(f"User ({telegram_id}) not found after UPSERT operation")
             raise Exception(f"User ({telegram_id}) not found after UPSERT operation")
-            
+
         await self.session.refresh(user)
         logger.debug(f"User record upserted successfully: ID {user.id}")
         return user
-    
+
     async def get(self, search_parameter: Union[str, int]) -> Optional[User]:
         logger.debug(f"Called method get. Search parameter: {search_parameter}")
-        
+
         if isinstance(search_parameter, int):
             search_column = User.telegram_id
             search_type = "Telegram ID"
@@ -69,17 +71,22 @@ class UserRepository(Base):
         user = await self.session.scalar(
             select(User).where(search_column == search_parameter)
         )
-        
+
         if not user:
             logger.debug(f"User not found by {search_type}: {search_parameter}")
             return None
-            
+
         logger.debug(f"User found: ID {user.id}")
         return user
-    
+
+    async def get_top_balance(self, limit: int):
+        stmt = select(User).order_by(desc(User.balance)).limit(limit)
+        result = await self.session.scalars(stmt)
+        return list(result)
+
     async def exists(self, telegram_id: int) -> bool:
         logger.debug(f"Called method exists. Params: telegram_id={telegram_id}")
-        
+
         exists_query = await self.session.scalar(
             select(exists().where(User.telegram_id == telegram_id))
         )
@@ -87,16 +94,14 @@ class UserRepository(Base):
         if not exists_query:
             logger.error("Exists query returned None (anomaly)")
             raise ValueError("Exists query is not found (anomaly)")
-        
+
         logger.debug(f"User existence check result: {bool(exists_query)}")
         return bool(exists_query)
-    
-    async def change_data(
-        self, 
-        telegram_id: int, 
-        **kw: Any
-    ) -> User:
-        logger.debug(f"Called method change_data. Params: telegram_id={telegram_id}. Kwargs={kw}")
+
+    async def change_data(self, telegram_id: int, **kw: Any) -> User:
+        logger.debug(
+            f"Called method change_data. Params: telegram_id={telegram_id}. Kwargs={kw}"
+        )
 
         exists = await self.exists(telegram_id=telegram_id)
 
@@ -104,16 +109,13 @@ class UserRepository(Base):
             logger.error("Cannot change data to nouser")
             raise ValueError("Cannot change data to nouser")
 
-        stmt = insert(User)\
-            .values(
-                telegram_id=telegram_id,
-                first_name="Mock data"
-            )\
-            .on_conflict_do_update(
-                index_elements=['telegram_id'],
-                set_=kw    
-            ).returning(User)
-        
+        stmt = (
+            insert(User)
+            .values(telegram_id=telegram_id, first_name="Mock data")
+            .on_conflict_do_update(index_elements=["telegram_id"], set_=kw)
+            .returning(User)
+        )
+
         user = await self.session.scalar(stmt)
 
         if not user:
@@ -122,5 +124,5 @@ class UserRepository(Base):
 
         return user
 
-    
+
 __all__ = ["UserRepository"]

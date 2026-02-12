@@ -71,6 +71,10 @@ class UserService(Base):
 
         return user
 
+    async def get_top_balance(self, limit: int = 20):
+        result = await self.user_repository.get_top_balance(limit)
+        return result
+
     def race(self, bit: int) -> Optional[Race]:
         for race in Race:
             if race.value["bit"] == bit:

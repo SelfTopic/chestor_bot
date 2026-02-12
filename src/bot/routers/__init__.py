@@ -7,6 +7,7 @@ from .common.help_router import router as HelpRouter
 from .common.profile_router import router as ProfileRouter
 from .common.race_profile_router import router as RaceProfileRouter
 from .common.start_router import router as StartRouter
+from .common.tops import router as CommonTopsRouter
 from .creator_routers import CreatorRouter
 from .moderator_routers import moderator_router as ModeratorRouter
 
@@ -22,4 +23,5 @@ __all__ = [
     "ModeratorRouter",
     "UpdateChatMemberRouter",
     "CreatorRouter",
+    "CommonTopsRouter",
 ]

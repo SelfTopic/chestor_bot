@@ -25,6 +25,7 @@ def include_routers(dp: Dispatcher) -> None:
         CheckRulesRouter,
         UpdateChatMemberRouter,
         CreatorRouter,
+        CommonTopsRouter,
     )
 
     include_ghoul_routers(GhoulRouter)
