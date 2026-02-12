@@ -41,6 +41,6 @@ async def top_balance_handler(
 
     start_message = f"Топ {count} самых богатих гулий: \n\n"
     for i, user in enumerate(top, start=1):
-        start_message += f"{i}. {user.first_name} - {user.balance} CheSton"
+        start_message += f"{i}. {user.first_name} - {user.balance} CheSton\n"
 
     await message.answer(text=start_message)
