@@ -15,6 +15,7 @@ from .services import (
     ChatService,
     CooldownService,
     DialogService,
+    GhoulQuizService,
     GhoulService,
     MediaDownloader,
     MediaService,
@@ -98,3 +99,5 @@ class Container(containers.DeclarativeContainer):
         media_service=media_service,
         dialog_service=dialog_service,
     )
+
+    ghoul_quiz_service = providers.Factory(GhoulQuizService)

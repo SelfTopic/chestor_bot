@@ -755,6 +755,28 @@ files = [
 ]
 
 [[package]]
+name = "ghoul-quiz-lib"
+version = "0.1.0"
+description = "Async Python library for Questions Ghoul API"
+optional = false
+python-versions = ">=3.8"
+groups = ["main"]
+files = []
+develop = false
+
+[package.dependencies]
+aiohttp = ">=3.8.0"
+
+[package.extras]
+dev = ["pytest (>=7.0)", "pytest-asyncio (>=0.20.0)"]
+
+[package.source]
+type = "git"
+url = "https://github.com/SelfTopic/questions_ghoul_api_lib.git"
+reference = "HEAD"
+resolved_reference = "53a4ed203205a94326f68cb5a2127f1f606a5715"
+
+[[package]]
 name = "greenlet"
 version = "3.2.4"
 description = "Lightweight in-process concurrent programming"
@@ -2294,4 +2316,4 @@ testing = ["coverage[toml]", "zope.event", "zope.testing"]
 [metadata]
 lock-version = "2.1"
 python-versions = ">=3.10"
-content-hash = "9bafbf3bac51a14024cc91967fa0074f5e82bcb1a038ef24debab743dc920a41"
+content-hash = "b4e651f41662ddaf36b098e44a279599f9fcd6caf4e31fc66ab41e11f88dc78f"

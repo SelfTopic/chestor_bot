@@ -38,3 +38,16 @@ class CoffeeConfig:
 
 
 COFFEE_CONFIG = CoffeeConfig()
+
+
+@dataclass
+class QuizConfig:
+    min_award: int = 5000
+    max_award: int = 10000
+
+    @property
+    def award(self) -> int:
+        return randint(self.min_award, self.max_award)
+
+
+QUIZ_CONFIG = QuizConfig()

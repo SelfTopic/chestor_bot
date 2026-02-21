@@ -33,6 +33,7 @@ dependencies = [
     "alembic (>=1.16.4,<2.0.0)",
     "pydantic-settings (>=2.12.0,<3.0.0)",
     "psycopg2 (>=2.9.11,<3.0.0)",
+    "ghoul-quiz-lib @ git+https://github.com/SelfTopic/questions_ghoul_api_lib.git",
 ]
 
 
