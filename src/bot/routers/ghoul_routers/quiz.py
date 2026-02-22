@@ -100,8 +100,7 @@ async def quiz_restart_handler(
 ):
     await state.set_state(QuizStates.waiting_for_answer)
     question = await ghoul_quiz_service.get_random_quiz()
-    options = question.answer_options
-    random.shuffle(options)
+    options = random.sample(question.answer_options, k=4)
     builder = InlineKeyboardBuilder()
 
     for option in options:
