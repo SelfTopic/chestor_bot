@@ -100,4 +100,13 @@ class Container(containers.DeclarativeContainer):
         dialog_service=dialog_service,
     )
 
+    from .services.stat_upgrade import StatUpgradeService
+
+    stat_upgrade_service = providers.Factory(
+        StatUpgradeService,
+        ghoul_service=ghoul_service,
+        user_service=user_service,
+        dialog_service=dialog_service,
+    )
+
     ghoul_quiz_service = providers.Factory(GhoulQuizService)

@@ -51,3 +51,24 @@ class QuizConfig:
 
 
 QUIZ_CONFIG = QuizConfig()
+
+
+@dataclass
+class StatUpgradeConfig:
+    price_multiplier: int = 2
+    multipliers: tuple = (1, 5, 10)
+
+    def price(self, cur_stat: int, count: int = 1) -> int:
+        total = 1500 + int(sum((cur_stat + i) ** 1.35 for i in range(count)))
+        return total
+
+
+STAT_UPGRADE_CONFIG = StatUpgradeConfig()
+
+STATS = [
+    ("Сила", "strength", "💪"),
+    ("Ловкость", "dexterity", "🤸‍♂️"),
+    ("Скорость", "speed", "🏃"),
+    ("Макс. здоровье", "max_health", "❤️"),
+    ("Регенерация", "regeneration", "❣️"),
+]

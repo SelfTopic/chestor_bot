@@ -146,5 +146,39 @@ class GhoulService(Base):
             + kagune_strength * KAGUNE_CONFIG.linear_multiplier
         )
 
+    def calculate_power(self, ghoul: Ghoul) -> int:
+        logger.debug(f"Called method calculate_power. Ghoul ID: {ghoul.id}")
+        power = (
+            ghoul.strength
+            + ghoul.dexterity
+            + ghoul.speed
+            + ghoul.max_health
+            + ghoul.regeneration
+            + ghoul.kagune_strength
+        )
+        logger.debug(f"Calculated power: {power}")
+        return power
+
+    def get_danger_rank(self, power: int) -> str:
+        logger.debug(f"Called method get_danger_rank. Power: {power}")
+        if power < 500:
+            return "F"
+        elif power < 1000:
+            return "D"
+        elif power < 1500:
+            return "C"
+        elif power < 2000:
+            return "B"
+        elif power < 3500:
+            return "A"
+        elif power < 5000:
+            return "S"
+        elif power < 7500:
+            return "SS"
+        elif power < 10000:
+            return "SSS"
+        else:
+            return "SSS+"
+
 
 __all__ = ["GhoulService"]

@@ -61,6 +61,8 @@ async def profile_handler(
     )
 
     if isinstance(profile, Ghoul):
+        power = ghoul_service.calculate_power(profile)
+        danger_rank = ghoul_service.get_danger_rank(power)
         return_text = dialog_service.text(
             key="ghoul_profile",
             name=user.full_name,
@@ -79,6 +81,8 @@ async def profile_handler(
             speed=profile.speed,
             is_kakuja="Есть" if profile.is_kakuja else "Нет",
             level=profile.level,
+            power=power,
+            danger_rank=danger_rank,
         )
 
     return await message.answer(text=return_text)
