@@ -22,7 +22,6 @@ async def upgrade_stat_handler(
     if not message.from_user:
         raise ValueError("User from message not found")
 
-    # only in private chats
     if message.chat.type != "private":
         await message.reply(
             text="Эта команда работает только в личных сообщениях с ботом."
@@ -54,7 +53,6 @@ async def stat_upgrade_callback(
         await callback_query.answer("Невозможно обработать запрос")
         return
 
-    # ensure private chat
     if callback_query.message.chat.type != "private":
         await callback_query.answer("Эта операция доступна только в личных сообщениях.")
         return
@@ -64,7 +62,6 @@ async def stat_upgrade_callback(
         await callback_query.answer("Достигнут предел прокачки для этого стата.")
         return
 
-    # expected payload: stat_buy_{stat_key}_{count}
     payload = data[len("stat_buy_") :]
     try:
         stat_key, count_str = payload.rsplit("_", 1)

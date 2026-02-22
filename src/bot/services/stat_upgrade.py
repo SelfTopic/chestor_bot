@@ -39,13 +39,13 @@ class StatUpgradeService:
                 else:
                     prices.append(str(STAT_UPGRADE_CONFIG.price(cur, buy)))
 
-            lines.append(f"{emoji}{label}: {cur}  ")
+            lines.append(f"{emoji}{label}: {cur}  х5: {prices[1]} х10: {prices[2]}")
 
         lines.append("")
 
         inline_rows = []
         for label, key, emoji in STATS:
-            cur = getattr(ghoul, key)
+            cur: int = getattr(ghoul, key)
             remaining = max(0, cap - cur)
             buttons = []
             for m in STAT_UPGRADE_CONFIG.multipliers:

@@ -59,8 +59,9 @@ class StatUpgradeConfig:
     multipliers: tuple = (1, 5, 10)
 
     def price(self, cur_stat: int, count: int = 1) -> int:
-        total = 1500 + int(sum((cur_stat + i) ** 1.35 for i in range(count)))
-        return total
+        base_total = count * 1500
+        scaling_total = int(sum((cur_stat + i) ** 1.35 for i in range(count)))
+        return base_total + scaling_total
 
 
 STAT_UPGRADE_CONFIG = StatUpgradeConfig()
