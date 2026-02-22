@@ -1,3 +1,5 @@
+import random
+
 from aiogram import Router
 from aiogram.filters import Command
 from aiogram.fsm.context import FSMContext
@@ -32,7 +34,7 @@ async def quiz_handler(
 ):
     await state.set_state(QuizStates.waiting_for_answer)
     question = await ghoul_quiz_service.get_random_quiz()
-    options = question.answer_options
+    options = random.choices(question.answer_options, k=4)
 
     builder = InlineKeyboardBuilder()
 
@@ -99,7 +101,7 @@ async def quiz_restart_handler(
     await state.set_state(QuizStates.waiting_for_answer)
     question = await ghoul_quiz_service.get_random_quiz()
     options = question.answer_options
-
+    random.shuffle(options)
     builder = InlineKeyboardBuilder()
 
     for option in options:
