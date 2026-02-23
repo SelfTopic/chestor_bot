@@ -64,12 +64,15 @@ class LotteryService:
         if user.balance < bet_amount:
             raise ValueError("Недостаточно денег для такой ставки")
 
-        winning_color = DepColor(random.choice(LOTTERY_CONFIG.colors))
+        # Выбираем победный цвет с учётом шансов
+        winning_color = self._get_random_color_by_chance()
 
         is_won = chosen_color == winning_color
 
         if is_won:
-            earned = int(bet_amount * LOTTERY_CONFIG.win_multiplier)
+            # Используем коэффициент для конкретного цвета
+            multiplier = LOTTERY_CONFIG.get_multiplier(winning_color.value)
+            earned = int(bet_amount * multiplier)
             user = await self.user_service.plus_balance(
                 telegram_id=user_id, change_balance=earned
             )
@@ -106,6 +109,17 @@ class LotteryService:
             video_file_id=video_file_id,
         )
 
+    def _get_random_color_by_chance(self) -> DepColor:
+        """Выбрать случайный цвет с учётом шансов выпадения"""
+        colors = LOTTERY_CONFIG.colors
+        if not colors:
+            raise ValueError("Список цветов для лотереи не может быть пустым")
+        chances = [LOTTERY_CONFIG.get_chance(color) for color in colors]
+
+        # Используем random.choices для взвешенного выбора
+        chosen_color_str = random.choices(colors, weights=chances, k=1)[0]
+        return DepColor(chosen_color_str)
+
     def parse_color(self, color_str: str) -> DepColor:
         color_str = color_str.lower().strip()
 
@@ -127,6 +141,9 @@ class LotteryService:
 
         if not video_path:
             if dep_result.is_won:
+                multiplier = LOTTERY_CONFIG.get_multiplier(
+                    dep_result.winning_color.value
+                )
                 text = self.dialog_service.text(
                     key="lottery_win",
                     chosen_color=dep_result.chosen_color.value,
@@ -134,6 +151,7 @@ class LotteryService:
                     bet=dep_result.bet_amount,
                     earned=dep_result.earned,
                     balance=dep_result.user.balance,
+                    multiplier=f"{multiplier}x",
                 )
             else:
                 text = self.dialog_service.text(
@@ -175,6 +193,7 @@ class LotteryService:
 
         # Отправляем результат
         if dep_result.is_won:
+            multiplier = LOTTERY_CONFIG.get_multiplier(dep_result.winning_color.value)
             text = self.dialog_service.text(
                 key="lottery_win",
                 chosen_color=dep_result.chosen_color.value,
@@ -182,6 +201,7 @@ class LotteryService:
                 bet=dep_result.bet_amount,
                 earned=dep_result.earned,
                 balance=dep_result.user.balance,
+                multiplier=f"{multiplier}x",
             )
         else:
             text = self.dialog_service.text(

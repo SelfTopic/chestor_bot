@@ -56,14 +56,39 @@ QUIZ_CONFIG = QuizConfig()
 
 @dataclass
 class LotteryConfig:
+    """Конфиг для команды депнуть"""
+
     min_bet: int = 100
     max_bet: int = 100000
-    win_multiplier: float = 2.0
     colors: Optional[list[str]] = None
+
+    # Коэффициенты выигрыша и шансы для каждого цвета
+    # formato: {цвет: (коэффициент, шанс_в_процентах)}
+    color_multipliers: Optional[dict] = None
 
     def __post_init__(self):
         if self.colors is None:
             self.colors = ["красный", "синий", "зелёный", "белый", "жёлтый"]
+
+        if self.color_multipliers is None:
+            self.color_multipliers = {
+                "красный": (1.8, 28),
+                "синий": (2.5, 22),
+                "зелёный": (3.0, 20),
+                "жёлтый": (5.0, 13),
+                "белый": (
+                    10.0,
+                    10,
+                ),
+            }
+
+    def get_multiplier(self, color: str) -> float:
+        """Получить коэффициент для цвета"""
+        return self.color_multipliers.get(color, 2.0)[0]
+
+    def get_chance(self, color: str) -> int:
+        """Получить шанс выпадения цвета в процентах"""
+        return self.color_multipliers.get(color, 25)[1]
 
 
 LOTTERY_CONFIG = LotteryConfig()

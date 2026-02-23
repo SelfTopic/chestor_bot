@@ -80,7 +80,7 @@
 
     "coffee_accept": "☕️ Ты выпил чашечку кофе. \n\n💵 Деняк получено: {money}\n🔍 Всего выпито кофе: {count}\n\n🕰 Следующую чашку советуем пить не менее чем через 30 минут.",
 
-    "lottery_win": "🎰 Депнул на {chosen_color}! \n\n🎯 Выиграл! Победный цвет был {winning_color}!\n💰 Выигрыш: {earned} CheSton (ставка: {bet})\n💵 Баланс: {balance} CheSton",
+    "lottery_win": "🎰 Депнул на {chosen_color}! \n\n🎯 Выиграл! Победный цвет был {winning_color}!\n💰 Выигрыш: {earned} CheSton (ставка {bet} × {multiplier})\n💵 Баланс: {balance} CheSton",
 
     "lottery_lose": "🎰 Депнул на {chosen_color}! \n\n❌ Проиграл! Победный цвет был {winning_color}!\n💸 Проигрыш: {bet} CheSton\n💵 Баланс: {balance} CheSton"
 }
