@@ -1,3 +1,5 @@
+from .coffee import CoffeeResult
+from .dep import DepColor, DepResult
 from .kagune import KaguneType
 from .media import MediaCollection, MediaDownloadType, MediaSaveRequest
 from .race import Race
@@ -12,4 +14,7 @@ __all__ = [
     "MediaSaveRequest",
     "MediaCollection",
     "MediaDownloadType",
+    "CoffeeResult",
+    "DepColor",
+    "DepResult",
 ]

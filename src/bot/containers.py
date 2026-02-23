@@ -7,6 +7,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from .repositories import (
     ChatRepository,
     GhoulRepository,
+    LotteryRepository,
     MediaRepository,
     UserCooldownRepository,
     UserRepository,
@@ -22,7 +23,7 @@ from .services import (
     SyncEntitiesService,
     UserService,
 )
-from .services.ghoul_game import CoffeeService
+from .services.ghoul_game import CoffeeService, LotteryService
 
 session_context: ContextVar[AsyncSession] = ContextVar("session_context")
 
@@ -42,6 +43,8 @@ class Container(containers.DeclarativeContainer):
     chat_repository = providers.Factory(ChatRepository, session=db_session)
 
     media_repository = providers.Factory(MediaRepository, session=db_session)
+
+    lottery_repository = providers.Factory(LotteryRepository, session=db_session)
 
     dialog_service = providers.Factory(DialogService)
 
@@ -98,6 +101,16 @@ class Container(containers.DeclarativeContainer):
         cooldown_service=cooldown_service,
         media_service=media_service,
         dialog_service=dialog_service,
+    )
+
+    lottery_service = providers.Factory(
+        LotteryService,
+        user_service=user_service,
+        ghoul_service=ghoul_service,
+        cooldown_service=cooldown_service,
+        media_service=media_service,
+        dialog_service=dialog_service,
+        lottery_repository=lottery_repository,
     )
 
     from .services.stat_upgrade import StatUpgradeService

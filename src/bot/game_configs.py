@@ -54,6 +54,17 @@ QUIZ_CONFIG = QuizConfig()
 
 
 @dataclass
+class LotteryConfig:
+    min_bet: int = 100
+    max_bet: int = 100000
+    win_multiplier: float = 2.0
+    colors: list[str] = ["красный", "синий", "зелёный", "белый", "жёлтый"]
+
+
+LOTTERY_CONFIG = LotteryConfig()
+
+
+@dataclass
 class StatUpgradeConfig:
     price_multiplier: int = 2
     multipliers: tuple = (1, 5, 10)

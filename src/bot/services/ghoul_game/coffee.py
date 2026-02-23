@@ -3,13 +3,11 @@ from aiogram.types import FSInputFile, Message
 
 from ...exceptions import GhoulNotFoundInDatabase
 from ...game_configs import COFFEE_CONFIG
-from ...services import (
-    CooldownService,
-    DialogService,
-    GhoulService,
-    MediaService,
-    UserService,
-)
+from ...services.cooldown import CooldownService
+from ...services.dialog import DialogService
+from ...services.ghoul import GhoulService
+from ...services.media import MediaService
+from ...services.user import UserService
 from ...types.coffee import CoffeeResult
 
 
