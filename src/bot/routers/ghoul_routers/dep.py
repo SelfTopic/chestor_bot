@@ -16,7 +16,7 @@ logger = logging.getLogger(__name__)
 DEPNUT_PATTERN = r"^депнуть\s+(\S+)\s+(\d+)$"
 
 
-@router.message(Text(command="депнуть", startswith=True, pattern=DEPNUT_PATTERN))
+@router.message(Text(command="депнуть", startswith=True))
 @inject
 async def depnut_handler(
     message: Message,
@@ -26,12 +26,18 @@ async def depnut_handler(
         return
 
     match = re.match(DEPNUT_PATTERN, message.text.lower())
+    logger.debug(
+        f"Received depnut command: {message.text}, parsed values: {match.groups() if match else 'No match'}"
+    )
     if not match:
+        logger.debug("Depnut command did not match the expected pattern")
         await message.reply(
             text="❌ Неверный формат команды. Используйте: депнуть <цвет> <ставка>"
         )
         return
-
+    logger.debug(
+        f"Parsed depnut command successfully: color={match.group(1)}, bet={match.group(2)}"
+    )
     color_str = match.group(1)
     bet_str = match.group(2)
 

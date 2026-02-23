@@ -34,7 +34,7 @@ async def quiz_handler(
 ):
     await state.set_state(QuizStates.waiting_for_answer)
     question = await ghoul_quiz_service.get_random_quiz()
-    options = random.choices(question.answer_options, k=4)
+    options = random.sample(question.answer_options, k=4)
 
     builder = InlineKeyboardBuilder()
 

@@ -28,7 +28,9 @@ class Text(Filter):
             filtred_text = filtred_text.lower()
 
         if self.pattern:
-            return bool(re.match(self.pattern, filtred_text))
+            match = re.match(self.pattern, filtred_text)
+            if match is None:
+                return False
 
         if self.startswith:
             return filtred_text.startswith(self.command)
