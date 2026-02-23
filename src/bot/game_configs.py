@@ -1,5 +1,6 @@
 from dataclasses import dataclass
 from random import randint
+from typing import Optional
 
 
 @dataclass
@@ -58,7 +59,11 @@ class LotteryConfig:
     min_bet: int = 100
     max_bet: int = 100000
     win_multiplier: float = 2.0
-    colors: list[str] = ["красный", "синий", "зелёный", "белый", "жёлтый"]
+    colors: Optional[list[str]] = None
+
+    def __post_init__(self):
+        if self.colors is None:
+            self.colors = ["красный", "синий", "зелёный", "белый", "жёлтый"]
 
 
 LOTTERY_CONFIG = LotteryConfig()
