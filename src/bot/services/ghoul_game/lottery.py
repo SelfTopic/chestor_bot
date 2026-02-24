@@ -64,13 +64,11 @@ class LotteryService:
         if user.balance < bet_amount:
             raise ValueError("Недостаточно денег для такой ставки")
 
-        # Выбираем победный цвет с учётом шансов
         winning_color = self._get_random_color_by_chance()
 
         is_won = chosen_color == winning_color
 
         if is_won:
-            # Используем коэффициент для конкретного цвета
             multiplier = LOTTERY_CONFIG.get_multiplier(winning_color.value)
             earned = int(bet_amount * multiplier)
             user = await self.user_service.plus_balance(
@@ -116,7 +114,6 @@ class LotteryService:
             raise ValueError("Список цветов для лотереи не может быть пустым")
         chances = [LOTTERY_CONFIG.get_chance(color) for color in colors]
 
-        # Используем random.choices для взвешенного выбора
         chosen_color_str = random.choices(colors, weights=chances, k=1)[0]
         return DepColor(chosen_color_str)
 
@@ -191,7 +188,6 @@ class LotteryService:
 
         await asyncio.sleep(animation_duration + 1)
 
-        # Отправляем результат
         if dep_result.is_won:
             multiplier = LOTTERY_CONFIG.get_multiplier(dep_result.winning_color.value)
             text = self.dialog_service.text(

@@ -1,4 +1,5 @@
 import logging
+from datetime import datetime
 from typing import Any, Optional, Union
 
 from sqlalchemy import desc, exists, select
@@ -24,6 +25,7 @@ class UserRepository(Base):
         first_name: str,
         last_name: Optional[str] = None,
         username: Optional[str] = None,
+        has_private_chat: Optional[bool] = None,
     ) -> User:
         logger.debug(
             f"Called method upsert. Params: telegram_id={telegram_id}, first_name={first_name}, last_name={last_name}, username={username}"
@@ -36,6 +38,9 @@ class UserRepository(Base):
                 first_name=first_name,
                 last_name=last_name,
                 username=username,
+                has_private_chat=has_private_chat
+                if has_private_chat is not None
+                else False,
             )
             .on_conflict_do_update(
                 index_elements=["telegram_id"],
@@ -43,6 +48,9 @@ class UserRepository(Base):
                     "first_name": first_name,
                     "last_name": last_name,
                     "username": username,
+                    "has_private_chat": has_private_chat
+                    if has_private_chat is not None
+                    else User.has_private_chat,
                 },
             )
             .returning(User)
@@ -117,12 +125,62 @@ class UserRepository(Base):
         )
 
         user = await self.session.scalar(stmt)
+        await self.session.refresh(user)
 
         if not user:
             logger.error("Cannot change data to nouser")
             raise ValueError("Cannot change data to nouser")
 
         return user
+
+    async def ban(
+        self,
+        telegram_id: int,
+        reason: Optional[str] = None,
+        banned_until: Optional[datetime] = None,
+    ) -> User:
+        logger.debug(
+            f"Banning user {telegram_id}. Reason: {reason}, Until: {banned_until}"
+        )
+        return await self.change_data(
+            telegram_id,
+            is_banned=True,
+            ban_reason=reason,
+            banned_until=banned_until,
+        )
+
+    async def unban(self, telegram_id: int) -> User:
+        logger.debug(f"Unbanning user {telegram_id}")
+        return await self.change_data(
+            telegram_id,
+            is_banned=False,
+            ban_reason=None,
+            banned_until=None,
+        )
+
+    async def get_ban_info(self, telegram_id: int) -> Optional[User]:
+        """Возвращает пользователя только если он забанен, иначе None"""
+        user = await self.get(telegram_id)
+        if user and user.is_banned:
+            return user
+        return None
+
+    async def get_all(self) -> list[User]:
+        result = await self.session.scalars(select(User))
+        return list(result)
+
+    async def delete(self, telegram_id: int) -> bool:
+        user = await self.get(telegram_id)
+        if not user:
+            return False
+        await self.session.delete(user)
+        return True
+
+    async def get_all_with_private_chat(self) -> list[User]:
+        result = await self.session.scalars(
+            select(User).where(User.has_private_chat == True)
+        )
+        return list(result)
 
 
 __all__ = ["UserRepository"]

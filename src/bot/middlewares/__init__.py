@@ -1,3 +1,4 @@
+from .ban_middleware import BanMiddleware
 from .creator_middleware import CreatorMiddleware
 from .database_middleware import DatabaseMiddleware
 from .ghoul_middleware import GhoulMiddleware
@@ -12,4 +13,5 @@ __all__ = [
     "GhoulMiddleware",
     "ModeratorMiddleware",
     "CreatorMiddleware",
+    "BanMiddleware",
 ]

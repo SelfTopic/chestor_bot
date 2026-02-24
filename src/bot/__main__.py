@@ -12,7 +12,12 @@ from src.config import settings
 
 from ..database import create_tables, engine, flush_database, session_factory
 from .containers import Container
-from .middlewares import DatabaseMiddleware, LoggingMiddleware, SyncEntitiesMiddleware
+from .middlewares import (
+    BanMiddleware,
+    DatabaseMiddleware,
+    LoggingMiddleware,
+    SyncEntitiesMiddleware,
+)
 from .routers.routes import include_routers
 
 
@@ -99,6 +104,7 @@ async def main(bot_token: str, env: str) -> None:
 
     database_middleware = DatabaseMiddleware(session_factory=session_factory)
     dp.update.middleware(database_middleware)
+    dp.update.middleware(BanMiddleware())
     dp.update.middleware(SyncEntitiesMiddleware())
 
     include_routers(dp)

@@ -159,3 +159,7 @@ class ChatRepository(Base):
             raise ChatNotFoundInDatabase()
 
         return chat
+
+    async def get_all(self) -> list[Chat]:
+        result = await self.session.scalars(select(Chat))
+        return list(result)

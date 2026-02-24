@@ -13,6 +13,8 @@ from .repositories import (
     UserRepository,
 )
 from .services import (
+    BanService,
+    BroadcastService,
     ChatService,
     CooldownService,
     DialogService,
@@ -20,10 +22,14 @@ from .services import (
     GhoulService,
     MediaDownloader,
     MediaService,
+    PlayerLookupService,
+    ResetService,
+    StatsEditService,
     SyncEntitiesService,
     UserService,
 )
 from .services.ghoul_game import CoffeeService, LotteryService
+from .services.stat_upgrade import StatUpgradeService
 
 session_context: ContextVar[AsyncSession] = ContextVar("session_context")
 
@@ -113,8 +119,6 @@ class Container(containers.DeclarativeContainer):
         lottery_repository=lottery_repository,
     )
 
-    from .services.stat_upgrade import StatUpgradeService
-
     stat_upgrade_service = providers.Factory(
         StatUpgradeService,
         ghoul_service=ghoul_service,
@@ -123,3 +127,30 @@ class Container(containers.DeclarativeContainer):
     )
 
     ghoul_quiz_service = providers.Factory(GhoulQuizService)
+
+    player_lookup_service = providers.Factory(
+        PlayerLookupService,
+        user_repo=user_repository,
+        ghoul_repo=ghoul_repository,
+    )
+    ban_service = providers.Factory(
+        BanService,
+        user_repo=user_repository,
+    )
+    stats_edit_service = providers.Factory(
+        StatsEditService,
+        user_repo=user_repository,
+        ghoul_repo=ghoul_repository,
+    )
+    broadcast_service = providers.Factory(
+        BroadcastService,
+        user_repo=user_repository,
+        chat_repo=chat_repository,
+        bot=bot,
+    )
+
+    reset_service = providers.Factory(
+        ResetService,
+        user_repo=user_repository,
+        ghoul_repo=ghoul_repository,
+    )

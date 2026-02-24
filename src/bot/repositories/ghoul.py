@@ -93,6 +93,9 @@ class GhoulRepository(Base):
         return result.rowcount > 0
 
     def _validate_kagune_bit(self, bit: int) -> int:
+        if bit is None:
+            return 0
+
         if bit < 0:
             logger.warning(f"Negative kagune bitmask: {bit}. Resetting to 0.")
             return 0
@@ -133,3 +136,10 @@ class GhoulRepository(Base):
                 result.append(kagune)
 
         return result
+
+    async def delete(self, telegram_id: int) -> bool:
+        ghoul = await self.get(telegram_id)
+        if not ghoul:
+            return False
+        await self.session.delete(ghoul)
+        return True

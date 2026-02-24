@@ -1,3 +1,10 @@
+from .admin import (
+    BanService,
+    PlayerLookupService,
+    StatsEditService,
+    ResetService,
+    BroadcastService,
+)
 from .base import Base
 from .chat import ChatService
 from .cooldown import CooldownService
@@ -22,4 +29,9 @@ __all__ = [
     "CoffeeService",
     "LotteryService",
     "GhoulQuizService",
+    "PlayerLookupService",
+    "BanService",
+    "StatsEditService",
+    "ResetService",
+    "BroadcastService",
 ]

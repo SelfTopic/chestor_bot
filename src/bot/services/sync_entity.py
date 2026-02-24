@@ -28,6 +28,10 @@ class SyncEntitiesService(Base):
                 first_name=event.event.from_user.first_name,
                 last_name=event.event.from_user.last_name,
                 username=event.event.from_user.username,
+                has_private_chat=True
+                if isinstance(event.event, Message)
+                and event.event.chat.type == "private"
+                else None,
             )
 
         if (
