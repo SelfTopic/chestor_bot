@@ -1,38 +1,33 @@
 import logging
 from pathlib import Path
-from typing import List
+from typing import Iterator, List
 
+import av
 import numpy as np
-from moviepy import VideoClip, concatenate_videoclips
 from PIL import Image, ImageDraw, ImageFont
 
-from src.bot.services.battle.effects import (
-    _add_arrays,
-    render_block,
-    render_crit,
-    render_hit,
-    render_miss,
-    render_regen,
+from src.bot.services.battle.animation_loader import (
+    get_animation_path,
+    get_clip_frame,
 )
 from src.bot.services.battle.models import TimelineEvent
 from src.bot.services.battle.renderer import (
     BG_COLOR,
+    DMG_Y,
     FONT_CYR,
     FONT_MONO,
     H,
     W,
+    draw_action_overlay,
     draw_damage_number,
     draw_event_label,
     make_base_frame,
 )
+from src.bot.services.battle.sprite_animator import animate_idle
+from src.bot.services.battle.sprites import get_sprite
 
 logger = logging.getLogger(__name__)
-FPS = 30
-
-
-# ==========================================================
-# Battle Video Generator
-# ==========================================================
+FPS = 24
 
 
 class BattleVideoGenerator:
@@ -40,219 +35,275 @@ class BattleVideoGenerator:
         self.output_dir = Path(output_dir)
         self.output_dir.mkdir(parents=True, exist_ok=True)
 
-    # ------------------------------------------------------
-    # PUBLIC ENTRY
-    # ------------------------------------------------------
+    # ======================================================
+    # MAIN ENTRY
+    # ======================================================
 
     def generate_timeline(
         self,
         timeline: List[TimelineEvent],
         output_path: str | Path,
-        left_fighter_name: str,
+        left_fighter_name: str = "",
     ) -> Path:
-        clips = []
-
-        for item in timeline:
-            if item.type == "intro":
-                clips.append(self._render_intro(item))
-
-            elif item.type == "pause":
-                clips.append(self._render_pause(item))
-
-            elif item.type == "turn":
-                clips.append(self._render_turn(item, left_fighter_name))
-
-            elif item.type == "outro":
-                clips.append(self._render_outro(item))
-
-            else:
-                clips.append(self._render_battle_event(item))
-
-        final = concatenate_videoclips(clips)
         output_path = Path(output_path)
 
-        final.write_videofile(
-            str(output_path),
-            fps=FPS,
-            codec="libx264",
-            audio=False,
-            logger=None,
-            ffmpeg_params=["-crf", "28", "-preset", "fast"],
-        )
+        container = av.open(str(output_path), mode="w")
+        stream = container.add_stream("libx264", rate=FPS)
+        stream.width = W
+        stream.height = H
+        stream.pix_fmt = "yuv420p"
+        stream.options = {"preset": "fast", "crf": "28", "tune": "animation"}
 
-        for clip in clips:
-            clip.close()
-        final.close()
+        for frame in self._timeline_frames(timeline):
+            video_frame = av.VideoFrame.from_ndarray(frame, format="rgb24")
+            for packet in stream.encode(video_frame):
+                container.mux(packet)
 
-        logger.info(f"Final battle video saved: {output_path}")
+        for packet in stream.encode():
+            container.mux(packet)
+
+        container.close()
+        logger.info(f"Battle video saved: {output_path}")
         return output_path
+
+    # ======================================================
+    # Async обёртка для aiogram
+    # ======================================================
+
+    async def generate_timeline_async(
+        self,
+        timeline: List[TimelineEvent],
+        output_path: str | Path,
+        left_fighter_name: str = "",
+    ) -> Path:
+        import asyncio
+        from concurrent.futures import ThreadPoolExecutor
+
+        loop = asyncio.get_event_loop()
+        with ThreadPoolExecutor(max_workers=1) as executor:
+            return await loop.run_in_executor(
+                executor,
+                lambda: self.generate_timeline(
+                    timeline, output_path, left_fighter_name
+                ),
+            )
+
+    # ======================================================
+    # Timeline → frames
+    # ======================================================
+
+    def _timeline_frames(self, timeline: List[TimelineEvent]) -> Iterator[np.ndarray]:
+        for item in timeline:
+            if item.type == "intro":
+                yield from self._frames_intro(item)
+            elif item.type == "pause":
+                yield from self._frames_pause(item)
+            elif item.type == "outro":
+                yield from self._frames_outro(item)
+            else:
+                yield from self._frames_battle_event(item)
 
     # ======================================================
     # INTRO
     # ======================================================
 
-    def _render_intro(self, item: TimelineEvent) -> VideoClip:
-        duration = item.duration
-        if not duration:
-            raise ValueError("Duration is required for intro event type")
+    def _frames_intro(self, item):
+        duration = item.duration or 2.5
+        total = int(duration * FPS)
         left = item.data.left
         right = item.data.right
 
-        def make_frame(t: float):
-            progress = min(t / (duration * 0.5), 1.0)
+        font_name = ImageFont.truetype(FONT_CYR, int(H * 0.1))
+        font_vs = ImageFont.truetype(FONT_MONO, int(H * 0.13))
+
+        for i in range(total):
+            progress = i / total
             ease = 1 - (1 - progress) ** 3
 
             img = Image.new("RGB", (W, H), BG_COLOR)
             draw = ImageDraw.Draw(img)
 
-            font_name = ImageFont.truetype(FONT_CYR, 36)
-            font_vs = ImageFont.truetype(FONT_MONO, 48)
-
             center_y = H // 2
-
-            # Left
-            a_target = W // 4
-            a_start = -200
-            a_x = int(a_start + (a_target - a_start) * ease)
+            lx = int(-W * 0.4 + (W // 4 + W * 0.4) * ease)
+            rx = int(W + W * 0.4 - (W // 4 + W * 0.4) * ease)
 
             draw.text(
-                (a_x, center_y),
-                left.name,
-                font=font_name,
-                fill=left.color,
-                anchor="mm",
+                (lx, center_y), left.name, font=font_name, fill=left.color, anchor="mm"
             )
-
-            # Right
-            b_target = W * 3 // 4
-            b_start = W + 200
-            b_x = int(b_start + (b_target - b_start) * ease)
-
             draw.text(
-                (b_x, center_y),
+                (rx, center_y),
                 right.name,
                 font=font_name,
                 fill=right.color,
                 anchor="mm",
             )
 
-            # VS
             if progress > 0.7:
                 alpha = (progress - 0.7) / 0.3
                 vs_color = (int(220 * alpha),) * 3
                 draw.text(
-                    (W // 2, center_y),
-                    "VS",
-                    font=font_vs,
-                    fill=vs_color,
-                    anchor="mm",
+                    (W // 2, center_y), "VS", font=font_vs, fill=vs_color, anchor="mm"
                 )
 
-            return np.array(img)
-
-        return VideoClip(make_frame, duration=duration)
+            yield np.array(img, dtype=np.uint8)
 
     # ======================================================
     # PAUSE
     # ======================================================
 
-    def _render_pause(self, item: TimelineEvent) -> VideoClip:
-        duration = item.duration
+    def _frames_pause(self, item: TimelineEvent):
+        duration = item.duration or 0.8
+        total = int(duration * FPS)
         data = item.data
 
-        def make_frame(t: float):
-            return make_base_frame(
-                attacker_hp=data.left.hp,
-                defender_hp=data.right.hp,
-                attacker_max_hp=data.left.max_hp,
-                defender_max_hp=data.right.max_hp,
-                attacker_name=data.left.name,
-                defender_name=data.right.name,
-                attacker_color=data.left.color,
-                defender_color=data.right.color,
+        left_path = get_animation_path(
+            "idle", data.left.name, data.left.kagune_type, role="attacker"
+        )
+        right_path = get_animation_path(
+            "idle", data.right.name, data.right.kagune_type, role="defender"
+        )
+
+        left_png = None if left_path else get_sprite(data.left, flip=False)
+        right_png = None if right_path else get_sprite(data.right, flip=True)
+
+        for i in range(total):
+            progress = i / total
+
+            if left_path:
+                l_spr = get_clip_frame(left_path, progress, flip=False)
+                ldx = ldy = la = 0
+            else:
+                l_spr, ldx, ldy, la = animate_idle(left_png, progress)
+
+            if right_path:
+                r_spr = get_clip_frame(right_path, progress, flip=True)
+                rdx = rdy = ra = 0
+            else:
+                r_spr, rdx, rdy, ra = animate_idle(right_png, progress)
+
+            frame = make_base_frame(
+                left_hp=data.left_hp_before,
+                right_hp=data.right_hp_before,
+                left_max_hp=data.left.max_hp,
+                right_max_hp=data.right.max_hp,
+                left_name=data.left.name,
+                right_name=data.right.name,
+                left_color=data.left.color,
+                right_color=data.right.color,
+                left_sprite=l_spr,
+                right_sprite=r_spr,
+                left_sprite_offset=(ldx, ldy),
+                right_sprite_offset=(rdx, rdy),
+                left_sprite_angle=la,
+                right_sprite_angle=ra,
+                attacker_left=None,
             )
-
-        return VideoClip(make_frame, duration=duration)
+            yield frame
 
     # ======================================================
-    # TURN ARROW
+    # BATTLE EVENT
     # ======================================================
 
-    def _render_turn(self, item: TimelineEvent, left_name: str) -> VideoClip:
-        duration = item.duration
-        if not duration:
-            raise ValueError("Duration is required for turn event type")
-        attacker = item.data.left if item.data.attacker_left else item.data.right
-
+    def _frames_battle_event(self, item):
+        event = item.data.battle_event
         left = item.data.left
         right = item.data.right
-        left_hp = item.data.left.hp
-        right_hp = item.data.right.hp
+        attacker_left = item.data.attacker_left or False
 
-        def make_frame(t: float):
-            base = make_base_frame(
-                attacker_hp=left_hp,
-                defender_hp=right_hp,
-                attacker_max_hp=left.max_hp,
-                defender_max_hp=right.max_hp,
-                attacker_name=left.name,
-                defender_name=right.name,
-                attacker_color=left.color,
-                defender_color=right.color,
+        duration_map = {
+            "hit": 1.0,
+            "miss": 0.8,
+            "block": 1.0,
+            "crit": 2.0,
+            "regen": 2.0,
+        }
+        total = int(duration_map[event.type] * FPS)
+
+        attacker = left if attacker_left else right
+        defender = right if attacker_left else left
+
+        attacker_path = get_animation_path(
+            event.type, attacker.name, attacker.kagune_type, role="attacker"
+        )
+        defender_path = get_animation_path(
+            event.type, defender.name, defender.kagune_type, role="defender"
+        )
+
+        for i in range(total):
+            progress = i / total
+
+            left_hp = int(
+                item.data.left_hp_before
+                + (item.data.left_hp_after - item.data.left_hp_before) * progress
+            )
+            right_hp = int(
+                item.data.right_hp_before
+                + (item.data.right_hp_after - item.data.right_hp_before) * progress
             )
 
-            progress = t / duration
-            pulse = abs(np.sin(progress * np.pi * 4))
-            intensity = int(150 + pulse * 100)
+            if attacker_left:
+                left_sprite = get_clip_frame(attacker_path, progress, flip=False)
+                right_sprite = get_clip_frame(defender_path, progress, flip=True)
+            else:
+                right_sprite = get_clip_frame(attacker_path, progress, flip=True)
+                left_sprite = get_clip_frame(defender_path, progress, flip=False)
 
-            overlay = np.zeros_like(base)
-            img = Image.fromarray(overlay)
+            base = make_base_frame(
+                left_hp=left_hp,
+                right_hp=right_hp,
+                left_max_hp=left.max_hp,
+                right_max_hp=right.max_hp,
+                left_name=left.name,
+                right_name=right.name,
+                left_color=left.color,
+                right_color=right.color,
+                left_sprite=left_sprite,
+                right_sprite=right_sprite,
+                attacker_left=attacker_left,
+            )
+
+            img = Image.fromarray(base)
             draw = ImageDraw.Draw(img)
 
-            y = H // 2
-            size = 40
+            draw_event_label(draw, event.type, progress)
+            draw_damage_number(
+                draw,
+                event.damage if event.type != "regen" else event.heal,
+                event.type,
+                progress,
+                W // 2,
+                DMG_Y,
+            )
+            draw_action_overlay(
+                draw,
+                event.type,
+                event.attacker.name,
+                event.defender.name,
+                event.attacker.color,
+                event.defender.color,
+                attacker_left,
+                progress,
+            )
 
-            attacker_left = attacker.name == left_name
-
-            if attacker_left:
-                points = [
-                    (W // 4 + size, y),
-                    (W // 4, y - size),
-                    (W // 4, y + size),
-                ]
-            else:
-                x = W * 3 // 4
-                points = [
-                    (x - size, y),
-                    (x, y - size),
-                    (x, y + size),
-                ]
-
-            draw.polygon(points, fill=(255, 255, 255, intensity))
-
-            return _add_arrays(base, np.array(img))
-
-        return VideoClip(make_frame, duration=duration)
+            yield np.array(img, dtype=np.uint8)
 
     # ======================================================
     # OUTRO
     # ======================================================
 
-    def _render_outro(self, item: TimelineEvent) -> VideoClip:
-        duration = item.duration
+    def _frames_outro(self, item):
+        duration = item.duration or 3.0
+        total = int(duration * FPS)
         winner = item.data.winner
-
-        if not winner or not duration:
-            raise ValueError("Winner and duration are required for outro event type")
-
         is_draw = item.data.is_draw
 
-        def make_frame(t: float):
+        font_big = ImageFont.truetype(FONT_CYR, int(H * 0.117))
+        font_small = ImageFont.truetype(FONT_CYR, int(H * 0.078))
+
+        for i in range(total):
+            t = i / FPS
             img = Image.new("RGB", (W, H), BG_COLOR)
             draw = ImageDraw.Draw(img)
-
-            font_big = ImageFont.truetype(FONT_CYR, 42)
-            font_small = ImageFont.truetype(FONT_CYR, 28)
 
             center_y = H // 2
 
@@ -267,102 +318,19 @@ class BattleVideoGenerator:
             else:
                 pulse = 0.7 + 0.3 * abs(np.sin(t * np.pi * 2))
                 color = tuple(int(c * pulse) for c in winner.color)
-
                 draw.text(
-                    (W // 2, center_y - 40),
+                    (W // 2, center_y - int(H * 0.11)),
                     "ПОБЕДИТЕЛЬ",
                     font=font_small,
                     fill=(200, 200, 200),
                     anchor="mm",
                 )
-
                 draw.text(
-                    (W // 2, center_y + 10),
+                    (W // 2, center_y + int(H * 0.03)),
                     winner.name,
                     font=font_big,
                     fill=color,
                     anchor="mm",
                 )
 
-            return np.array(img)
-
-        return VideoClip(make_frame, duration=duration)
-
-    # ======================================================
-    # BATTLE EVENT
-    # ======================================================
-
-    def _render_battle_event(self, item: TimelineEvent) -> VideoClip:
-        event = item.battle_event
-        if not event:
-            raise ValueError("Battle event data is required for battle event type")
-        left = item.data.left
-        right = item.data.right
-
-        left_hp = item.data.left.hp
-        right_hp = item.data.right.hp
-
-        attacker_left = item.data.attacker_left
-        left_hp_before = item.data.left_hp_before
-        right_hp_before = item.data.right_hp_before
-        right_hp_after = item.data.right_hp_after
-        left_hp_after = item.data.left_hp_after
-
-        duration = {
-            "hit": 1.5,
-            "miss": 1.0,
-            "block": 1.5,
-            "crit": 2.5,
-            "regen": 3.0,
-        }[event.type]
-
-        def make_frame(t: float):
-            progress = min(max(t / duration, 0), 1)
-
-            # плавная интерполяция
-            left_hp = int(left_hp_before + (left_hp_after - left_hp_before) * progress)
-            right_hp = int(
-                right_hp_before + (right_hp_after - right_hp_before) * progress
-            )
-            # ВСЕГДА рисуем одних и тех же бойцов слева и справа
-            base = make_base_frame(
-                attacker_hp=left_hp,
-                defender_hp=right_hp,
-                attacker_max_hp=left.max_hp,
-                defender_max_hp=right.max_hp,
-                attacker_name=left.name,
-                defender_name=right.name,
-                attacker_color=left.color,
-                defender_color=right.color,
-            )
-
-            cx = W // 4 if attacker_left else W * 3 // 4
-            cy = H // 2
-
-            if event.type == "hit":
-                base = render_hit(base, t, duration, event.attacker.color, cx, cy)
-            elif event.type == "miss":
-                base = render_miss(base, t, duration, cx, cy)
-            elif event.type == "block":
-                base = render_block(base, t, duration, event.defender.color, cx, cy)
-            elif event.type == "crit":
-                base = render_crit(base, t, duration, event.attacker.color, cx, cy)
-            elif event.type == "regen":
-                base = render_regen(base, t, duration, cx, cy)
-
-            img = Image.fromarray(base)
-            draw = ImageDraw.Draw(img)
-
-            draw_event_label(draw, event.type, t / duration)
-            draw_damage_number(
-                draw,
-                event.damage,
-                event.type,
-                t / duration,
-                cx,
-                cy - 40,
-            )
-
-            return np.array(img)
-
-        return VideoClip(make_frame, duration=duration)
+            yield np.array(img, dtype=np.uint8)

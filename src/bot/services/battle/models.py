@@ -29,8 +29,6 @@ class BattleFighter:
     hp: int
     max_hp: int
     kagune_type: KaguneType
-    hp_delta_attacker: int = 0
-    hp_delta_defender: int = 0
 
     strength: int = 1
     dexterity: int = 1
@@ -39,6 +37,8 @@ class BattleFighter:
     regeneration: int = 1
 
     regen_used: bool = False
+
+    sprite_path: Optional[str] = None
 
     @property
     def color(self) -> Tuple[int, int, int]:
@@ -54,14 +54,18 @@ class BattleEvent:
     type: EventType
     attacker: BattleFighter
     defender: BattleFighter
-    damage: int
-    defender_hp_before: int
-    defender_hp_after: int
-    attacker_hp_before: int = 0
-    attacker_hp_after: int = 0
-    attacker_hp_snapshot: int = 0
     hp_delta_attacker: int = 0
     hp_delta_defender: int = 0
+
+    @property
+    def damage(self) -> int:
+        """Урон по защищающемуся (положительное число для отображения)."""
+        return abs(self.hp_delta_defender)
+
+    @property
+    def heal(self) -> int:
+        """Хил атакующего при регене."""
+        return max(0, self.hp_delta_attacker)
 
 
 @dataclass
@@ -76,7 +80,7 @@ class TimelineEventData:
     right_hp_after: int
 
     attacker_left: Optional[bool] = None
-    battle_event: Optional[BattleEvent] = None
+    battle_event: Optional["BattleEvent"] = None
     winner: Optional[BattleFighter] = None
     is_draw: Optional[bool] = None
 
@@ -86,4 +90,3 @@ class TimelineEvent:
     type: str
     duration: Optional[float]
     data: TimelineEventData
-    battle_event: Optional[BattleEvent] = None

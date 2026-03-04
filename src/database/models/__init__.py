@@ -6,6 +6,7 @@ from .lottery import Lottery
 from .media import Media
 from .user import User
 from .user_cooldowns import UserCooldown
+from .rp_commands import Rp
 
 __all__ = [
     "Base",
@@ -16,4 +17,5 @@ __all__ = [
     "UserCooldown",
     "Media",
     "Lottery",
+    "Rp",
 ]

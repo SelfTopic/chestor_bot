@@ -9,6 +9,7 @@ from .repositories import (
     GhoulRepository,
     LotteryRepository,
     MediaRepository,
+    RpCommandsRepository,
     UserCooldownRepository,
     UserRepository,
 )
@@ -24,6 +25,7 @@ from .services import (
     MediaService,
     PlayerLookupService,
     ResetService,
+    RpCommandsService,
     StatsEditService,
     SyncEntitiesService,
     UserService,
@@ -153,4 +155,11 @@ class Container(containers.DeclarativeContainer):
         ResetService,
         user_repo=user_repository,
         ghoul_repo=ghoul_repository,
+    )
+
+    rp_commands_repository = providers.Factory(RpCommandsRepository, session=db_session)
+
+    rp_commands_service = providers.Singleton(
+        RpCommandsService,
+        rp_commands_repository_factory=rp_commands_repository.provider,
     )

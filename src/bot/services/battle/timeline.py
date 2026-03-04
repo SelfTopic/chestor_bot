@@ -7,8 +7,6 @@ from src.bot.services.battle.models import (
     TimelineEventData,
 )
 
-# timeline.py
-
 
 class BattleTimelineBuilder:
     def build(
@@ -22,10 +20,6 @@ class BattleTimelineBuilder:
         left_hp = left.max_hp
         right_hp = right.max_hp
 
-        left_hp_before = left_hp
-        right_hp_before = right_hp
-
-        # Интро
         events.append(
             TimelineEvent(
                 type="intro",
@@ -40,8 +34,32 @@ class BattleTimelineBuilder:
                 ),
             )
         )
+
         for event in result.events:
-            # Пауза перед действием
+            # Считаем новые HP ДО создания события
+            left_hp_after = left_hp
+            right_hp_after = right_hp
+
+            attacker_left = event.attacker.name == left.name
+
+            if attacker_left:
+                right_hp_after = max(
+                    0, min(right.max_hp, right_hp + event.hp_delta_defender)
+                )
+                if event.type == "regen":
+                    left_hp_after = max(
+                        0, min(left.max_hp, left_hp + event.hp_delta_attacker)
+                    )
+            else:
+                left_hp_after = max(
+                    0, min(left.max_hp, left_hp + event.hp_delta_defender)
+                )
+                if event.type == "regen":
+                    right_hp_after = max(
+                        0, min(right.max_hp, right_hp + event.hp_delta_attacker)
+                    )
+
+            # Пауза — показываем HP до события
             events.append(
                 TimelineEvent(
                     type="pause",
@@ -53,14 +71,12 @@ class BattleTimelineBuilder:
                         right_hp_before=right_hp,
                         left_hp_after=left_hp,
                         right_hp_after=right_hp,
+                        attacker_left=attacker_left,
                     ),
                 )
             )
 
-            # Определяем сторону
-            attacker_left = event.attacker.name == left.name
-
-            # Боевое событие
+            # Боевое событие — HP плавно меняется от before к after
             events.append(
                 TimelineEvent(
                     type=event.type,
@@ -72,32 +88,15 @@ class BattleTimelineBuilder:
                         right_hp_before=right_hp,
                         left_hp_after=left_hp_after,
                         right_hp_after=right_hp_after,
+                        attacker_left=attacker_left,
+                        battle_event=event,
                     ),
                 )
             )
 
-            # Обновляем HP
-            if event.attacker.name == left.name:
-                # атакует левый
-                right_hp_after = event.defender_hp_after
-                left_hp_after = left_hp
-                if event.type == "regen":
-                    left_hp_after = event.attacker_hp_after
-            else:
-                # атакует правый
-                left_hp_after = event.defender_hp_after
-                right_hp_after = right_hp
-                if event.type == "regen":
-                    right_hp_after = event.attacker_hp_after
-
-            # сохраняем финальные
             left_hp = left_hp_after
             right_hp = right_hp_after
 
-            events[-1].data.left_hp_after = left_hp_after
-            events[-1].data.right_hp_after = right_hp_after
-
-        # Аутро
         events.append(
             TimelineEvent(
                 type="outro",

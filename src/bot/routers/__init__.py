@@ -6,6 +6,7 @@ from .common.error_router import router as ErrorRouter
 from .common.help_router import router as HelpRouter
 from .common.profile_router import router as ProfileRouter
 from .common.race_profile_router import router as RaceProfileRouter
+from .common.role_play_router import router as RolePlayRouter
 from .common.start_router import router as StartRouter
 from .common.tops import router as CommonTopsRouter
 from .creator_routers import CreatorRouter
@@ -24,4 +25,5 @@ __all__ = [
     "UpdateChatMemberRouter",
     "CreatorRouter",
     "CommonTopsRouter",
+    "RolePlayRouter",
 ]

@@ -28,10 +28,10 @@ fighter_a = BattleFighter(
 )
 
 fighter_b = BattleFighter(
-    name="Ями",
+    name="Тоже канеки",
     hp=120,
     max_hp=120,
-    kagune_type=KaguneType.KOUKAKU,
+    kagune_type=KaguneType.RINKAKU,
     strength=10,
     dexterity=8,
     speed=8,
@@ -61,7 +61,7 @@ print(f"Ничья: {result.is_draw}")
 print("Построение timeline...")
 
 timeline_builder = BattleTimelineBuilder()
-timeline = timeline_builder.build(fighter_a, fighter_b, result)
+timeline = timeline_builder.build(left=fighter_a, right=fighter_b, result=result)
 
 print(f"Событий в таймлайне: {len(timeline)}")
 
@@ -84,5 +84,6 @@ generator.generate_timeline(
     output_path=output_path,
     left_fighter_name=fighter_a.name,
 )
+
 
 print(f"\n✓ Готово: {output_path}")

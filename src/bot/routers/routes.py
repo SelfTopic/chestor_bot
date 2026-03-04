@@ -1,6 +1,11 @@
 from aiogram import Dispatcher
 
-from ..middlewares import CreatorMiddleware, GhoulMiddleware, ModeratorMiddleware
+from ..middlewares import (
+    CreatorMiddleware,
+    GhoulMiddleware,
+    ModeratorMiddleware,
+    RpCommandsMiddleware,
+)
 from . import *
 from .ghoul_routers import include_ghoul_routers
 from .ghoul_routers import router as GhoulRouter
@@ -16,6 +21,8 @@ def include_routers(dp: Dispatcher) -> None:
     CreatorRouter.message.middleware(CreatorMiddleware())
     CreatorRouter.callback_query.middleware(CreatorMiddleware())
 
+    RolePlayRouter.message.middleware(RpCommandsMiddleware())
+
     dp.include_routers(
         StartRouter,
         BotRouter,
@@ -30,6 +37,7 @@ def include_routers(dp: Dispatcher) -> None:
         UpdateChatMemberRouter,
         CreatorRouter,
         CommonTopsRouter,
+        RolePlayRouter,
     )
 
     include_ghoul_routers(GhoulRouter)

@@ -94,6 +94,7 @@ async def main(bot_token: str, env: str) -> None:
             "src.bot.routers.ghoul_routers",
             "src.bot.routers.moderator_routers",
             "src.bot.middlewares",
+            "src.bot.filters.rp_command",
         ],
     )
 

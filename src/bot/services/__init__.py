@@ -15,6 +15,7 @@ from .ghoul_quiz import GhoulQuizService
 from .media import MediaDownloader, MediaService
 from .sync_entity import SyncEntitiesService
 from .user import UserService
+from .rp_commands import RpCommandsService
 
 __all__ = [
     "Base",
@@ -34,4 +35,5 @@ __all__ = [
     "StatsEditService",
     "ResetService",
     "BroadcastService",
+    "RpCommandsService"
 ]

@@ -10,3 +10,4 @@ alembic.ini
 rclone.conf
 /backups
 videos/
+*.pstats

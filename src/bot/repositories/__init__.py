@@ -5,6 +5,7 @@ from .lottery import LotteryRepository
 from .media import MediaRepository
 from .user import UserRepository
 from .user_coldown import UserCooldownRepository
+from .rp_commands import RpCommandsRepository
 
 __all__ = [
     "Base",
@@ -14,4 +15,5 @@ __all__ = [
     "ChatRepository",
     "MediaRepository",
     "LotteryRepository",
+    "RpCommandsRepository"
 ]

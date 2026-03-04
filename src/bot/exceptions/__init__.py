@@ -9,6 +9,7 @@ from .media_download import (
     ValidationMediaError,
 )
 from .media_not_found import MediaNotFound, MediaNotFoundInDatabase
+from .rp_commands import RpCommandError, RpCommandNotFound, RpCommandValidateError
 from .user_not_found import (
     UserNotFound,
     UserNotFoundInChat,
@@ -36,4 +37,7 @@ __all__ = [
     "MediaNotFound",
     "GhoulNotFoundInDatabase",
     "GhoulNotFound",
+    "RpCommandValidateError",
+    "RpCommandNotFound",
+    "RpCommandError",
 ]

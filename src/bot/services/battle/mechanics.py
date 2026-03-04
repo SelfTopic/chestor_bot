@@ -2,7 +2,7 @@ import random
 from dataclasses import dataclass, field
 from typing import Optional
 
-from src.bot.services.battle.models import BattleEvent, BattleFighter
+from src.bot.services.battle.models import BattleEvent, BattleFighter, EventType
 from src.bot.types import KaguneType
 
 MAX_ROUNDS = 20
@@ -56,7 +56,7 @@ class BattleMechanics:
         self,
         attacker: BattleFighter,
         defender: BattleFighter,
-    ) -> str:
+    ) -> EventType:
         total_speed = attacker.speed + defender.speed
         total_dex = attacker.dexterity + defender.dexterity
 
@@ -89,6 +89,7 @@ class BattleMechanics:
     ) -> BattleEvent:
         event_type = self._roll_event_type(attacker, defender)
 
+        damage = 0
         if event_type == "miss":
             damage = 0
         elif event_type == "block":
@@ -100,19 +101,15 @@ class BattleMechanics:
                 attacker, defender, is_crit=(event_type == "crit")
             )
 
-        hp_before = defender.hp
-        defender.hp = max(0, defender.hp - damage)
+        hp_delta_attacker = 0
+        hp_delta_defender = -damage
 
         return BattleEvent(
             type=event_type,
             attacker=attacker,
             defender=defender,
-            damage=damage,
-            defender_hp_before=hp_before,
-            defender_hp_after=defender.hp,
-            attacker_hp_snapshot=attacker.hp,
-            hp_delta_attacker=0,
-            hp_delta_defender=-damage,
+            hp_delta_defender=hp_delta_defender,
+            hp_delta_attacker=hp_delta_attacker,
         )
 
     def _check_regen(
@@ -124,32 +121,21 @@ class BattleMechanics:
             return None
 
         regen_amount = fighter.regeneration * 10
-        atk_hp_before = fighter.hp
-        fighter.hp = min(fighter.max_hp, fighter.hp + regen_amount)
         fighter.regen_used = True
 
-        event_type = self._roll_event_type(fighter, opponent)
-        damage = (
-            0
-            if event_type == "miss"
-            else self._calculate_damage(
-                fighter, opponent, is_crit=(event_type == "crit")
-            )
-        )
-
-        def_hp_before = opponent.hp
-        opponent.hp = max(0, opponent.hp - damage)
+        hp_delta_attacker = regen_amount
 
         return BattleEvent(
             type="regen",
             attacker=fighter,
             defender=opponent,
-            damage=damage,
-            defender_hp_before=def_hp_before,
-            defender_hp_after=opponent.hp,
-            attacker_hp_before=atk_hp_before,
-            attacker_hp_after=fighter.hp,
+            hp_delta_defender=0,
+            hp_delta_attacker=hp_delta_attacker,
         )
+
+    def _apply_event(self, event: BattleEvent) -> None:
+        event.attacker.hp += event.hp_delta_attacker
+        event.defender.hp += event.hp_delta_defender
 
     def simulate(
         self,
@@ -170,26 +156,29 @@ class BattleMechanics:
         while fighter_left.hp > 0 and fighter_right.hp > 0 and round_num < MAX_ROUNDS:
             round_num += 1
 
-            # Первый ходит
-            events.append(self._make_round(first, second))
+            event = self._make_round(first, second)
+            self._apply_event(event)
+            events.append(event)
             if fighter_left.hp <= 0 or fighter_right.hp <= 0:
                 break
 
             regen = self._check_regen(second, first)
             if regen:
+                self._apply_event(regen)
                 events.append(regen)
             if fighter_left.hp <= 0 or fighter_right.hp <= 0:
                 break
 
-            # Второй ходит
-            events.append(self._make_round(second, first))
+            event = self._make_round(second, first)
+            self._apply_event(event)
+            events.append(event)
             if fighter_left.hp <= 0 or fighter_right.hp <= 0:
                 break
 
             regen = self._check_regen(first, second)
             if regen:
+                self._apply_event(regen)
                 events.append(regen)
-
         # Определение победителя
         if fighter_left.hp > 0 and fighter_right.hp <= 0:
             winner = fighter_left
