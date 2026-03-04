@@ -5,11 +5,54 @@ from dependency_injector.wiring import Provide, inject
 
 from src.bot.containers import Container
 from src.bot.exceptions import RpCommandValidateError, UserNotFound
-from src.bot.filters import RpCommandFilter
+from src.bot.filters import (
+    NewRpCommandOnMedia,
+    RpCommandFilter,
+)
 from src.bot.services import RpCommandsService, UserService
 from src.bot.types.rp_commands import RpCommandDTO, TypeRpCommandEnum
+from src.config import settings
 
 router = Router(name=__name__)
+
+
+@router.message(NewRpCommandOnMedia(TypeRpCommandEnum.PHOTO))
+@router.message(NewRpCommandOnMedia(TypeRpCommandEnum.ANIMATION))
+@inject
+async def new_rp_on_media(
+    message: Message,
+    command: str,
+    action: str,
+    type_command: TypeRpCommandEnum,
+    rp_command_service: RpCommandsService = Provide[Container.rp_commands_service],
+) -> None:
+    await message.forward(settings.ADMIN_IDS[0])
+    file_id = ""
+    if message.photo:
+        answer_method = message.answer_photo
+        file_id = message.photo[-1].file_id
+        answer_kwargs = {"photo": file_id}
+
+    elif message.animation:
+        answer_method = message.answer_animation
+        file_id = message.animation.file_id
+        answer_kwargs = {"animation": file_id}
+
+    else:
+        raise RuntimeError()
+
+    rp = await rp_command_service.insert(
+        chat_id=message.chat.id,
+        command=command,
+        action=action,
+        type_command=type_command,
+        file_id=file_id,
+    )
+
+    await answer_method(
+        caption=f"Установлена Role-Play команда {rp.command} с действием {rp.action}",
+        **answer_kwargs,  # type: ignore
+    )
 
 
 @router.message(Command("set_rp"))
@@ -111,4 +154,11 @@ async def role_play_handler(
             raise ValueError("user is empty")
         name2 = reply.from_user.first_name
 
-    await message.reply(f"{name1} {rp_command.action} {name2}")
+    answer_text = f"{name1} {rp_command.action} {name2}"
+
+    if rp_command.type_command == TypeRpCommandEnum.TEXT:
+        await message.reply(answer_text)
+    elif rp_command.type_command == TypeRpCommandEnum.ANIMATION and rp_command.file_id:
+        await message.reply_animation(animation=rp_command.file_id, caption=answer_text)
+    elif rp_command.type_command == TypeRpCommandEnum.PHOTO and rp_command.file_id:
+        await message.reply_photo(photo=rp_command.file_id, caption=answer_text)
