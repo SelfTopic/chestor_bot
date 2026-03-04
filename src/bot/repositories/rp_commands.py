@@ -5,7 +5,7 @@ from sqlalchemy import delete, select
 from sqlalchemy.dialects.postgresql import insert
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from src.bot.types.rp_commands import TypeRpCommandEnum
+from src.bot.types.rp_commands import RpCommandDTO, TypeRpCommandEnum
 from src.database.models import Rp
 
 from .base import Base
@@ -58,9 +58,9 @@ class RpCommandsRepository(Base):
         )
 
         result = await self.session.execute(stmt)
-        await self.session.commit()
         rp = result.scalar_one()
-        logger.debug(f"Inserted/updated RP command: {rp}")
+        logger.debug(f"Inserted/updated RP command: {RpCommandDTO(**rp.to_kwargs())}")
+        await self.session.commit()
         return rp
 
     async def delete_by_chat_id_and_command(
