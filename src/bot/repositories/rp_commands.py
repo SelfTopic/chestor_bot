@@ -60,7 +60,6 @@ class RpCommandsRepository(Base):
         result = await self.session.execute(stmt)
         rp = result.scalar_one()
         logger.debug(f"Inserted/updated RP command: {RpCommandDTO(**rp.to_kwargs())}")
-        await self.session.commit()
         return rp
 
     async def delete_by_chat_id_and_command(
