@@ -58,7 +58,7 @@ class RpCommandsRepository(Base):
         )
 
         result = await self.session.execute(stmt)
-        await self.session.flush()
+        await self.session.commit()
         rp = result.scalar_one()
         logger.debug(f"Inserted/updated RP command: {rp}")
         return rp
