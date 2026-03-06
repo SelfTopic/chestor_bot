@@ -43,11 +43,10 @@ class MediaRepository(Base):
 
         media = await self.session.scalar(stmt)
 
-        await self.session.commit()
-
         if not media:
             raise MediaNotFoundInDatabase()
 
+        await self.session.refresh(media)
         return media
 
     async def get_by_file_id(self, file_id: int) -> Optional[Media]:

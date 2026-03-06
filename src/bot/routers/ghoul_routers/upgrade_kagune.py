@@ -1,3 +1,4 @@
+import logging
 import time
 
 from aiogram import F, Router
@@ -16,6 +17,7 @@ from ...services import (
 from ...utils import calculate_kagune, parse_seconds
 
 router = Router(name=__name__)
+logger = logging.getLogger(__name__)
 
 
 @router.message(F.text.lower() == "растить кагуне")
@@ -110,9 +112,9 @@ async def upgrade_kagune(
         await message.answer_animation(animation=media.telegram_file_id, caption=text)
 
     except TelegramBadRequest:
-        my_message = await message.answer_animation(
-            animation=FSInputFile(media.path), caption=text
-        )
+        aniamtion = FSInputFile(media.path)
+        logger.debug(f"Animation path: {aniamtion.path}")
+        my_message = await message.answer_animation(animation=aniamtion, caption=text)
 
         if not my_message.animation:
             raise
