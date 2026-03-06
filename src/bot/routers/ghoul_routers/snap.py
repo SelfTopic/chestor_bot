@@ -61,7 +61,9 @@ async def snap_handler(
             money=str(change_balance),
         )
 
-        media = await media_service.get_random_gif("snap finger")
+        media = await media_service.get_random_gif(
+            "snap finger", user_id=message.from_user.id
+        )
 
         if not media:
             await message.reply(

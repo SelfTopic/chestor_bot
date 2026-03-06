@@ -13,7 +13,7 @@ class Media(Base):
 
     media_type: Mapped[str] = mapped_column(nullable=False)
 
-    telegram_file_id: Mapped[str] = mapped_column(nullable=False)
+    telegram_file_id: Mapped[str] = mapped_column(nullable=True)
 
     collection: Mapped[str] = mapped_column(nullable=False)
 

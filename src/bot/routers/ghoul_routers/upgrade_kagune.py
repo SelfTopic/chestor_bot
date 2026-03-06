@@ -91,7 +91,9 @@ async def upgrade_kagune(
 
     kagune = calculate_kagune(ghoul.kagune_type_bit)[0].value["name_english"]
 
-    media = await media_service.get_random_gif(f"kagune {kagune}")
+    media = await media_service.get_random_gif(
+        f"kagune {kagune}", user_id=message.from_user.id
+    )
 
     text = dialog_service.text(
         key="upgrade_kagune_accept",
