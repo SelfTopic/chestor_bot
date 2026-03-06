@@ -126,6 +126,7 @@ class MediaService:
             await self.media_repository.delete_by_path(path=str(file_path))
             file_path = random.choice(files) if files else None
             media = await self.media_repository.get_by_path(path=str(file_path))
+            logger.debug(f"Generated path to media: {file_path}. Media: {media}")
 
         logger.debug(f"Generated path to media: {file_path}")
         return media
