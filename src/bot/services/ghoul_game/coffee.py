@@ -80,13 +80,18 @@ class CoffeeService:
         return True
 
     async def send_answer(self, message: Message, coffee_result: CoffeeResult):
+        if not message.from_user:
+            raise RuntimeError("user not found")
+
         text = self.dialog_service.text(
             key="coffee_accept",
             count=coffee_result.ghoul.coffee_count,
             money=coffee_result.award,
         )
 
-        media = await self.media_service.get_random_gif(collection_string="coffee")
+        media = await self.media_service.get_random_gif(
+            collection_string="coffee", user_id=message.from_user.id
+        )
 
         if not media:
             return await message.reply(text=text)
