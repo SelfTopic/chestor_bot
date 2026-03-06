@@ -108,7 +108,7 @@ class MediaService:
         self._parser = parser
         self.media_repository = media_repository
 
-    async def get_random_gif(self, collection_string: str):
+    async def get_random_gif(self, collection_string: str, user_id: int):
         collection = self._parser.parse(collection_string)
         type_media = MediaDownloadType.ANIMATION
 
@@ -122,11 +122,16 @@ class MediaService:
 
         media = await self.media_repository.get_by_path(path=str(file_path))
 
-        while not media:
-            await self.media_repository.delete_by_path(path=str(file_path))
-            file_path = random.choice(files) if files else None
-            media = await self.media_repository.get_by_path(path=str(file_path))
-            logger.debug(f"Generated path to media: {file_path}. Media: {media}")
+        if not media:
+            media_insert = MediaInsert(
+                media_type=type_media,
+                telegram_file_id=media_request.file_id,
+                collection=collection.value,
+                path=str(file_path),
+                uploaded_by=user_id,
+            )
+
+            media = await self.media_repository.insert(media_insert=media_insert)
 
         logger.debug(f"Generated path to media: {file_path}")
         return media
