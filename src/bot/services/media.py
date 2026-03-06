@@ -122,7 +122,7 @@ class MediaService:
 
         media = await self.media_repository.get_by_path(path=str(file_path))
 
-        if not media:
+        if not media and file_path:
             media_insert = MediaInsert(
                 media_type=type_media,
                 telegram_file_id=media_request.file_id,
@@ -133,7 +133,7 @@ class MediaService:
 
             media = await self.media_repository.insert(media_insert=media_insert)
 
-        logger.debug(f"Generated path to media: {file_path}")
+        logger.debug(f"Generated path to media: {file_path}, media={media}")
         return media
 
     async def get_random_lottery_video(
