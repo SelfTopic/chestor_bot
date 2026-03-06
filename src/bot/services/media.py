@@ -120,13 +120,14 @@ class MediaService:
 
         file_path = random.choice(files) if files else None
 
-        logger.debug(f"Generated path to media: {file_path}")
-
         media = await self.media_repository.get_by_path(path=str(file_path))
 
-        if not media:
-            return None
+        while not media:
+            await self.media_repository.delete_by_path(path=str(file_path))
+            file_path = random.choice(files) if files else None
+            media = await self.media_repository.get_by_path(path=str(file_path))
 
+        logger.debug(f"Generated path to media: {file_path}")
         return media
 
     async def get_random_lottery_video(
