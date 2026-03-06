@@ -29,10 +29,21 @@ class MediaRepository(Base):
                 path=media_insert.path,
                 uploaded_by=media_insert.uploaded_by,
             )
+            .on_conflict_do_update(
+                index_elements=["id"],
+                set_={
+                    "media_type": media_insert.media_type,
+                    "telegram_file_id": media_insert.telegram_file_id,
+                    "collection": media_insert.collection,
+                    "path": media_insert.path,
+                },
+            )
             .returning(Media)
         )
 
         media = await self.session.scalar(stmt)
+
+        await self.session.commit()
 
         if not media:
             raise MediaNotFoundInDatabase()
