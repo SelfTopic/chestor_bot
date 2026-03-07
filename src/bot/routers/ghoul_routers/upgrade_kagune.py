@@ -108,8 +108,12 @@ async def upgrade_kagune(
         await message.reply(text=text)
         return
 
+    logger.debug(f"Media path: {media.path}, media file_id: {media.telegram_file_id}")
+
     try:
-        await message.answer_animation(animation=media.telegram_file_id, caption=text)
+        await message.answer_animation(
+            animation=media.telegram_file_id or FSInputFile(media.path), caption=text
+        )
 
     except TelegramBadRequest:
         aniamtion = FSInputFile(media.path)

@@ -74,9 +74,14 @@ async def snap_handler(
                 )
             )
             return
+
+        logger.debug(
+            f"Media path: {media.path}, media file_id: {media.telegram_file_id}"
+        )
         try:
             await message.reply_animation(
-                animation=media.telegram_file_id, caption=caption
+                animation=media.telegram_file_id or FSInputFile(media.path),
+                caption=caption,
             )
 
         except TelegramBadRequest:

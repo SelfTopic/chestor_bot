@@ -1,3 +1,5 @@
+import logging
+
 from aiogram.exceptions import TelegramBadRequest
 from aiogram.types import FSInputFile, Message
 
@@ -9,6 +11,8 @@ from ...services.ghoul import GhoulService
 from ...services.media import MediaService
 from ...services.user import UserService
 from ...types.coffee import CoffeeResult
+
+logger = logging.getLogger(__name__)
 
 
 class CoffeeService:
@@ -96,9 +100,14 @@ class CoffeeService:
         if not media:
             return await message.reply(text=text)
 
+        logger.debug(
+            f"Media path: {media.path}, media file_id: {media.telegram_file_id}"
+        )
+
         try:
             return await message.reply_animation(
-                animation=media.telegram_file_id, caption=text
+                animation=media.telegram_file_id or FSInputFile(media.path),
+                caption=text,
             )
 
         except TelegramBadRequest:
