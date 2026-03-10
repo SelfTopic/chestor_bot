@@ -9,7 +9,7 @@ from .renderer import _render_board
 
 logger = logging.getLogger(__name__)
 
-words_file = open("/src/assets/data/wordle/words.txt")
+words_file = open("src/assets/data/wordle/words.txt")
 WORD_LIST: list[str] = words_file.readlines()
 words_file.close()
 WORD_LIST = [w.upper() for w in WORD_LIST if len(w) == WORDLE_CONFIG.WORD_LENGTH]
