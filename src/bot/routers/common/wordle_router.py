@@ -169,6 +169,6 @@ async def wordle_game_handler(
     except TelegramBadRequest:
         pass
 
-    sent = await message.reply_photo(photo=photo, caption=caption, parse_mode="HTML")
+    sent = await message.answer_photo(photo=photo, caption=caption, parse_mode="HTML")
     wordle_service.set_board_message_id(user_id, sent.message_id)
     await _notify_finish(message, result, user_service)
