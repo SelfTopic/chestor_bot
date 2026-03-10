@@ -10,6 +10,7 @@ from .media_download import (
 )
 from .media_not_found import MediaNotFound, MediaNotFoundInDatabase
 from .rp_commands import RpCommandError, RpCommandNotFound, RpCommandValidateError
+from .time import DurationParseError
 from .user_not_found import (
     UserNotFound,
     UserNotFoundInChat,
@@ -40,4 +41,5 @@ __all__ = [
     "RpCommandValidateError",
     "RpCommandNotFound",
     "RpCommandError",
+    "DurationParseError",
 ]

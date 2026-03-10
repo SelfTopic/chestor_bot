@@ -9,4 +9,10 @@ class TimeComponents:
     minutes_remaining: int
     total_minutes: int
     seconds_remaining: int
+    total_seconds: int
 
+
+@dataclass
+class Duration:
+    components: TimeComponents
+    raw: str

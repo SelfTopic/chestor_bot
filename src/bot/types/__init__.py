@@ -4,7 +4,7 @@ from .kagune import KaguneType
 from .media import MediaCollection, MediaDownloadType, MediaSaveRequest
 from .race import Race
 from .register_ghoul import RegisterGhoulType
-from .time_components import TimeComponents
+from .time_components import Duration, TimeComponents
 
 __all__ = [
     "KaguneType",
@@ -17,4 +17,5 @@ __all__ = [
     "CoffeeResult",
     "DepColor",
     "DepResult",
+    "Duration",
 ]
