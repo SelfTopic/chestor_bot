@@ -29,6 +29,7 @@ from .services import (
     StatsEditService,
     SyncEntitiesService,
     UserService,
+    WordleService,
 )
 from .services.ghoul_game import CoffeeService, LotteryService
 from .services.stat_upgrade import StatUpgradeService
@@ -163,3 +164,5 @@ class Container(containers.DeclarativeContainer):
         RpCommandsService,
         rp_commands_repository_factory=rp_commands_repository.provider,
     )
+
+    wordle_service = providers.Singleton(WordleService)

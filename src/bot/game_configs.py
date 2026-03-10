@@ -114,3 +114,18 @@ STATS = [
     ("Макс. здоровье", "max_health", "❤️"),
     ("Регенерация", "regeneration", "❣️"),
 ]
+
+
+@dataclass
+class WordleConfig:
+    WORD_LENGTH = 5
+    MAX_ATTEMPTS = 6
+    min_award = 3000
+    max_award = 7000
+
+    @property
+    def award(self) -> int:
+        return randint(self.min_award, self.max_award)
+
+
+WORDLE_CONFIG = WordleConfig()

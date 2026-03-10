@@ -38,6 +38,7 @@ def include_routers(dp: Dispatcher) -> None:
         CreatorRouter,
         CommonTopsRouter,
         RolePlayRouter,
+        WordleRouter,
     )
 
     include_ghoul_routers(GhoulRouter)
