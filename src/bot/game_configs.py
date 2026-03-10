@@ -120,8 +120,8 @@ STATS = [
 class WordleConfig:
     WORD_LENGTH = 5
     MAX_ATTEMPTS = 6
-    min_award = 3000
-    max_award = 7000
+    min_award = 7000
+    max_award = 14000
 
     @property
     def award(self) -> int:
