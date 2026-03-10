@@ -78,8 +78,8 @@ async def _notify_finish(
         )
         await message.answer(
             f"🎉 Поздравляем! Слово <b>{result.target}</b> угадано "
-            f"за {result.attempts_used} {_attempts_word(result.attempts_used)}!\n"
-            f"Заработано {award} CheSton's"
+            f"за {result.attempts_used} {_attempts_word(result.attempts_used)}!\n\n"
+            f"Заработано {award} CheSton's\n"
             "Сыграть ещё: /wordle",
             parse_mode="HTML",
         )
