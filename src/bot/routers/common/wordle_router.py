@@ -1,6 +1,7 @@
 import logging
 
 from aiogram import Bot, Router
+from aiogram.exceptions import TelegramBadRequest
 from aiogram.filters import Command
 from aiogram.types import BufferedInputFile, Message
 from dependency_injector.wiring import Provide, inject
@@ -161,6 +162,12 @@ async def wordle_game_handler(
             await message.delete()
             await _notify_finish(message, result, user_service)
             return
+
+    try:
+        await message.delete()
+
+    except TelegramBadRequest:
+        pass
 
     sent = await message.reply_photo(photo=photo, caption=caption, parse_mode="HTML")
     wordle_service.set_board_message_id(user_id, sent.message_id)
