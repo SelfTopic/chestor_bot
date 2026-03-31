@@ -29,9 +29,6 @@ services:
       - 5050:80
     volumes:
       - pgadmin_data:/var/lib/pgadmin
-    deploy:
-      mem_limit: 256m
-      cpu_shares: 512
     depends_on:
       - postgres
     networks:
