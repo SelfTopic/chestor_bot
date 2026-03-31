@@ -2,7 +2,7 @@ import logging
 
 from aiogram import Bot, Router
 from aiogram.exceptions import TelegramBadRequest
-from aiogram.filters import Command
+from aiogram.filters import Command, or_f
 from aiogram.types import BufferedInputFile, Message
 from dependency_injector.wiring import Provide, inject
 
@@ -92,9 +92,7 @@ async def _notify_finish(
         )
 
 
-@router.message(Text("вротли"))
-@router.message(Text("вордли"))
-@router.message(Command("wordle"))
+@router.message(or_f(Text("вордли"), Text("wordle"), Command("wordle")))
 @inject
 async def wordle_start_handler(
     message: Message,

@@ -3,6 +3,7 @@ import time
 
 from aiogram import Router
 from aiogram.exceptions import TelegramBadRequest
+from aiogram.filters import or_f
 from aiogram.types import FSInputFile, Message
 from dependency_injector.wiring import Provide, inject
 
@@ -23,8 +24,7 @@ router = Router(name=__name__)
 logger = logging.getLogger(__name__)
 
 
-@router.message(Text("щёлк"))
-@router.message(Text("щелк"))
+@router.message(or_f(Text("щелк"), Text("щёлк")))
 @inject
 async def snap_handler(
     message: Message,
