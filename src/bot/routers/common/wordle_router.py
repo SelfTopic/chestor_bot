@@ -92,7 +92,7 @@ async def _notify_finish(
         )
 
 
-@router.message(or_f(Text("вордли"), Text("wordle"), Command("wordle")))
+@router.message(or_f(Text("вордли"), Text("вротли"), Command("wordle")))
 @inject
 async def wordle_start_handler(
     message: Message,
