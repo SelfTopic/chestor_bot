@@ -92,6 +92,7 @@ async def _notify_finish(
         )
 
 
+@router.message(Text("вротли"))
 @router.message(Text("вордли"))
 @router.message(Command("wordle"))
 @inject

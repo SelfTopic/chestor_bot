@@ -1,12 +1,13 @@
 import logging
 import time
 
-from aiogram import F, Router
+from aiogram import Router
 from aiogram.exceptions import TelegramBadRequest
 from aiogram.types import FSInputFile, Message
 from dependency_injector.wiring import Provide, inject
 
 from src.bot.containers import Container
+from src.bot.filters import Text
 from src.bot.game_configs import SNAP_CONFIG
 from src.bot.services import (
     CooldownService,
@@ -22,7 +23,8 @@ router = Router(name=__name__)
 logger = logging.getLogger(__name__)
 
 
-@router.message(F.text.lower() == "щелк")
+@router.message(Text("щёлк"))
+@router.message(Text("щелк"))
 @inject
 async def snap_handler(
     message: Message,
