@@ -43,7 +43,11 @@ services:
       - BOT_TOKEN=${BOT_TOKEN}
       - PYTHONUNBUFFERED=1
       - PORT=8999
-      - POSTGRES_HOSTNAME=postgres  # Явно указываем хост
+      - POSTGRES_HOSTNAME=postgres 
+      - HTTP_PROXY=${HTTP_PROXY}
+      - HTTPS_PROXY=${HTTPS_PROXY}
+      - http_proxy=${HTTP_PROXY}
+      - https_proxy=${HTTPS_PROXY}
     ports:
       - "127.0.0.1:8999:8999"
     volumes:

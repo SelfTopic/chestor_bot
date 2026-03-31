@@ -17,6 +17,8 @@ class Settings(BaseSettings):
     PGADMIN_DEFAULT_PASSWORD: str = Field(default=...)
 
     GHOUL_QUIZ_API_KEY: SecretStr = Field(default=...)
+    HTTP_PROXY: str = Field(default="")
+    HTTPS_PROXY: str = Field(default="")
 
     model_config = SettingsConfigDict(env_file=".env", env_file_encoding="utf8")
 
