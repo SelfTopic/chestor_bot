@@ -96,6 +96,12 @@ class GhoulService(Base):
 
         return ghoul
 
+    async def get_top_kagune(self, count=20) -> List[Ghoul]:
+        logger.debug(f"Called method get_top_kagune. Params: count={count}")
+        top_kagune = await self.ghoul_repository.get_top_kagune(count)
+        logger.debug(f"Retrieved top kagune list with {len(top_kagune)} entries")
+        return top_kagune
+
     async def upsert(self, telegram_id: int, **kw: Any) -> Ghoul:
         logger.debug(
             f"Called method upsert. Params: telegram_id={telegram_id}, kwargs={kw}"

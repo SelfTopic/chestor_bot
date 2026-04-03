@@ -55,3 +55,46 @@ async def top_snap_handler(
         )
 
     await message.answer(answer_text)
+
+
+@router.message(Text("топ кагуне", startswith=True))
+@inject
+async def top_kagune_handler(
+    message: Message,
+    ghoul_service: GhoulService = Provide[Container.ghoul_service],
+    user_service: UserService = Provide[Container.user_service],
+) -> None:
+    count = 20
+
+    if not message.text:
+        raise
+
+    if message.text.lower() != "топ кагуне":
+        count = message.text.split()[2]
+
+        if not count.isdigit():
+            await message.answer("Топ нужно указывать положительной цифрой")
+            return
+
+        count = int(count)
+
+    if count < 1 or count > 50:
+        await message.answer("Топ не может выходить за пределы значений 1-50")
+        return
+
+    top = await ghoul_service.get_top_kagune(count)
+
+    if not top:
+        await message.answer("А нету топа прикинь нахуй.")
+        return
+
+    answer_text = f"Топ {count} самых сильных кагуне в сумме\n\n"
+
+    for c, i in enumerate(top, start=1):
+        user = await user_service.get(find_by=i.telegram_id)
+
+        answer_text += (
+            f"{c}. {user.first_name if user else 'Unknown'} - {i.kagune_strength}\n"
+        )
+
+    await message.answer(answer_text)

@@ -129,6 +129,13 @@ class GhoulRepository(Base):
 
         return list(execute)
 
+    async def get_top_kagune(self, count: int) -> List[Ghoul]:
+        stmt = select(Ghoul).order_by(desc(Ghoul.kagune_strength)).limit(count)
+
+        execute = await self.session.scalars(stmt)
+
+        return list(execute)
+
     def _calculate_kagune(self, bit: int) -> List[KaguneType]:
         result = []
         for kagune in KaguneType:
