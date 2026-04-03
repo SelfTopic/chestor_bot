@@ -21,7 +21,7 @@ async def help_handler(
     return await message.answer(
         text=dialog_service.text(
             key="help",
-            commands_link="https://github.com/SelfTopic/chestor_bot/blob/main/src/assets/data/wordle/words.txt",
+            commands_link="https://t.me/CheStorCommands",
             lore_link="Временно отсутствует",
         )
     )
