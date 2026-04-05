@@ -14,11 +14,16 @@ logger = logging.getLogger(__name__)
 
 class RpCommandsService:
     def __init__(
-        self, rp_commands_repository_factory: Callable[[], RpCommandsRepository]
+        self,
+        rp_commands_repository_factory: Callable[[], RpCommandsRepository],
     ):
-        self.rp_commands_repository = rp_commands_repository_factory()
+        self._factory = rp_commands_repository_factory
         self.cache: dict[int, dict[str, RpCommandDTO]] = {}
         self._locks: dict[int, asyncio.Lock] = defaultdict(asyncio.Lock)
+
+    @property
+    def rp_commands_repository(self):
+        return self._factory()
 
     def _normalize_command(self, command: str) -> str:
         return command.strip().lower()
