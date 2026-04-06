@@ -3,7 +3,7 @@ from datetime import datetime, timezone
 from typing import Any, Awaitable, Callable, Dict
 
 from aiogram import BaseMiddleware
-from aiogram.types import CallbackQuery, Message, TelegramObject
+from aiogram.types import CallbackQuery, Message, TelegramObject, Update
 from dependency_injector.wiring import Provide
 
 from src.bot.containers import Container
@@ -20,19 +20,35 @@ class BanMiddleware(BaseMiddleware):
         data: Dict[str, Any],
         user_service: UserService = Provide[Container.user_service],
     ) -> None:
+        logger.debug("BanMiddleware called for event: %s", type(event).__name__)
         user = None
 
-        if isinstance(event, Message):
-            user = event.from_user
-        elif isinstance(event, CallbackQuery):
-            user = event.from_user
+        if isinstance(event, Update):
+            if event.message and event.message.from_user:
+                user = event.message.from_user
+            elif event.callback_query and event.callback_query.from_user:
+                user = event.callback_query.from_user
 
-        if not user:
+            if not isinstance(event.event, Message) and not isinstance(
+                event.event, CallbackQuery
+            ):
+                logger.warning("Unsupported event type for BanMiddleware")
+                await handler(event, data)
+                return
+            user = (
+                event.message.from_user
+                if event.message
+                else event.callback_query.from_user
+                if event.callback_query
+                else None
+            )
+
+        else:
+            logger.warning("Event is not an Update, skipping BanMiddleware")
             await handler(event, data)
             return
 
-        session = data.get("session")
-        if not session:
+        if not user:
             await handler(event, data)
             return
 
@@ -58,6 +74,11 @@ class BanMiddleware(BaseMiddleware):
                     f"🚫 Вы заблокированы ({until}). Причина: {reason}",
                     show_alert=True,
                 )
+
+            logger.info(
+                "User %s is banned until %s. Reason: %s", user.id, until, reason
+            )
             return
 
+        logger.debug("User %s is not banned, proceeding with handler", user.id)
         await handler(event, data)
