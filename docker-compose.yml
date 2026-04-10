@@ -55,6 +55,8 @@ services:
       - ./src/assets:/app/src/assets
     working_dir: /app
     restart: unless-stopped
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
     depends_on:
       postgres:
         condition: service_healthy
