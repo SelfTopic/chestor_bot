@@ -5,6 +5,7 @@ import sys
 import colorlog
 from aiogram import Bot, Dispatcher
 from aiogram.client.default import DefaultBotProperties
+from aiogram.client.session.aiohttp import AiohttpSession
 from aiogram.webhook.aiohttp_server import SimpleRequestHandler, setup_application
 from aiohttp import web
 
@@ -76,8 +77,12 @@ async def on_startup(bot: Bot):
 
 async def main(bot_token: str, env: str) -> None:
     ENV = False if env == "DEV" else True
+    proxy = settings.HTTP_PROXY if settings.HTTPS_PROXY else None
+
     bot = Bot(
-        token=bot_token, default=DefaultBotProperties(link_preview_is_disabled=True)
+        token=bot_token,
+        default=DefaultBotProperties(link_preview_is_disabled=True),
+        session=AiohttpSession(proxy=proxy) if proxy else None,
     )
 
     await bot.delete_webhook(drop_pending_updates=True)
@@ -105,8 +110,8 @@ async def main(bot_token: str, env: str) -> None:
 
     database_middleware = DatabaseMiddleware(session_factory=session_factory)
     dp.update.middleware(database_middleware)
-    dp.update.middleware(BanMiddleware())
     dp.update.middleware(SyncEntitiesMiddleware())
+    dp.update.middleware(BanMiddleware())
 
     include_routers(dp)
 
