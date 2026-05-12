@@ -19,6 +19,7 @@ class Settings(BaseSettings):
     GHOUL_QUIZ_API_KEY: SecretStr = Field(default=...)
     HTTP_PROXY: str = Field(default="")
     HTTPS_PROXY: str = Field(default="")
+    ALL_PROXY: str = Field(default="")
 
     model_config = SettingsConfigDict(env_file=".env", env_file_encoding="utf8")
 
