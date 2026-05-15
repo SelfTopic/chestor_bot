@@ -1,5 +1,16 @@
 services:
 
+  xray:
+    image: teddysun/xray
+    container_name: xray
+    restart: unless-stopped
+    volumes:
+      - /usr/local/etc/xray:/etc/xray
+    ports:
+      - "1080:1080"
+    networks:
+      - chestor_bot_app_network
+
   postgres:
     image: "postgres:16"
     env_file:
@@ -110,3 +121,6 @@ volumes:
 networks:
   app_network:
     driver: bridge
+
+  chestor_bot_app_network:
+    external: true
