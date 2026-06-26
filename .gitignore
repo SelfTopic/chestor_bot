@@ -11,3 +11,4 @@ rclone.conf
 /backups
 videos/
 *.pstats
+assets/

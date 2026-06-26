@@ -1,16 +1,5 @@
 services:
 
-  xray:
-    image: teddysun/xray
-    container_name: xray
-    restart: unless-stopped
-    volumes:
-      - /usr/local/etc/xray:/etc/xray
-    ports:
-      - "1080:1080"
-    networks:
-      - chestor_bot_app_network
-
   postgres:
     image: "postgres:16"
     env_file:
@@ -63,7 +52,6 @@ services:
       - "127.0.0.1:8999:8999"
     volumes:
       - .:/app 
-      - ./src/assets:/app/src/assets
     working_dir: /app
     restart: unless-stopped
     extra_hosts:
@@ -81,8 +69,8 @@ services:
       postgres:
         condition: service_healthy
     environment:
-      - POSTGRES_HOSTNAME=postgres  # Явно указываем хост
-    command: ["/bin/sh", "-c", "sleep 5 && poetry run alembic downgrade base && poetry run alembic upgrade head"]
+      - POSTGRES_HOSTNAME=postgres  
+    command: ["/bin/sh", "-c", "sleep 5 && poetry run alembic upgrade head"]
     networks:
       - app_network
 
