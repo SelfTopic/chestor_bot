@@ -8,6 +8,8 @@ services:
       - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
       - POSTGRES_USER=${POSTGRES_USERNAME}
       - POSTGRES_DB=${POSTGRES_DATABASE}
+
+    restart: unless-stopped
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USERNAME}"]
       interval: 5s
@@ -44,10 +46,7 @@ services:
       - PYTHONUNBUFFERED=1
       - PORT=8999
       - POSTGRES_HOSTNAME=postgres 
-      - HTTP_PROXY=${HTTP_PROXY}
-      - HTTPS_PROXY=${HTTPS_PROXY}
-      - http_proxy=${HTTP_PROXY}
-      - https_proxy=${HTTPS_PROXY}
+      - DB_HOST=postgres
     ports:
       - "127.0.0.1:8999:8999"
     volumes:
@@ -58,6 +57,8 @@ services:
       - "host.docker.internal:host-gateway"
     depends_on:
       postgres:
+        condition: service_healthy
+      warp:
         condition: service_healthy
     networks:
       - app_network
@@ -82,7 +83,7 @@ services:
       - POSTGRES_USER=${POSTGRES_USERNAME}
       - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
       - SCHEDULE=@daily
-      - BACKUP_KEEP_DAYS=7
+      - BACKUP_KEEP_DAYS=90
     volumes:
       - ./backups:/backups
     depends_on:
@@ -102,13 +103,11 @@ services:
     networks:
       - app_network
 
+      
+
 volumes:
   postgres_data:
   pgadmin_data:
-
 networks:
   app_network:
     driver: bridge
-
-  chestor_bot_app_network:
-    external: true
