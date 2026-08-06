@@ -77,7 +77,13 @@ async def on_startup(bot: Bot):
 
 async def main(bot_token: str, env: str) -> None:
     ENV = False if env == "DEV" else True
-    proxy = settings.HTTP_PROXY if settings.HTTPS_PROXY else None
+    proxy = (
+        settings.HTTP_PROXY
+        if settings.HTTPS_PROXY
+        else settings.ALL_PROXY
+        if settings.ALL_PROXY
+        else None
+    )
 
     bot = Bot(
         token=bot_token,
@@ -116,8 +122,10 @@ async def main(bot_token: str, env: str) -> None:
     include_routers(dp)
 
     if not ENV:
+        logging.info("Flushing database")
         await flush_database(engine=engine)
     else:
+        logging.info("Create tables")
         await create_tables(engine=engine)
 
     if ENV:
