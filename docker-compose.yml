@@ -58,8 +58,6 @@ services:
     depends_on:
       postgres:
         condition: service_healthy
-      warp:
-        condition: service_healthy
     networks:
       - app_network
 
