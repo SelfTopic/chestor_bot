@@ -69,7 +69,7 @@ services:
         condition: service_healthy
     environment:
       - POSTGRES_HOSTNAME=postgres  
-    command: ["/bin/sh", "-c", "sleep 5 && poetry run alembic upgrade head"]
+    command: ["/bin/sh", "-c", "sleep 5 && poetry run alembic downgrade base && poetry run alembic upgrade head"]
     networks:
       - app_network
 
