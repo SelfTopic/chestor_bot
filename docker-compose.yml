@@ -103,7 +103,7 @@ services:
 
   userbot_parser:
     build: .
-    command: ["poetry", "run", "python", "-m", "src.userbot_parser.main"]
+    command: ["poetry", "run", "python", "-m", "src.userbot_parser.src.main"]
     env_file:
       - src/userbot_parser/.env
     volumes:
