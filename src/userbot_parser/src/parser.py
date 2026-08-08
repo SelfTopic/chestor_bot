@@ -79,7 +79,7 @@ class TelegramParser:
 
         try:
             await message.download(str(file_path))
-            logger.info(f"Скачано: {season}x{episode}")
+            logger.info(f"Скачано: {season}x{episode} по пути {file_path}")
             return True
         except Exception as e:
             logger.error(f"Ошибка скачивания {season}x{episode}: {e}")

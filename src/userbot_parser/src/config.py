@@ -14,7 +14,7 @@ class Config:
     PHONE_NUMBER: str = os.getenv("PHONE_NUMBER", "")
     PASSWORD: str = os.getenv("PASSWORD", "")
     CHANNEL_ID: str = os.getenv("CHANNEL_ID", "")
-    DOWNLOAD_PATH: str = os.getenv("DOWNLOAD_PATH", "")
+    DOWNLOAD_PATH: str | Path = os.getenv("DOWNLOAD_PATH", "")
 
     SEASONS_COUNT = 4
     SERIES_COUNT = 12
@@ -30,6 +30,7 @@ class Config:
             raise ValueError(
                 "API_ID, API_HASH, PHONE_NUMBER, CHANNEL_ID, and DOWNLOAD_PATH must be set in environment variables."
             )
+        self.DOWNLOAD_PATH = Path(self.DOWNLOAD_PATH).resolve()
 
 
 config = Config()
