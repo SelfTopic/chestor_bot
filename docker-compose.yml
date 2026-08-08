@@ -107,7 +107,7 @@ services:
     env_file:
       - src/userbot_parser/.env
     volumes:
-      - ./assets/videos/tokio_ghoul:/app/assets/videos/tokio_ghoul
+      - .:/app 
     restart: "no"
     networks:
       - app_network
