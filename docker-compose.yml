@@ -101,7 +101,18 @@ services:
     networks:
       - app_network
 
-      
+  userbot_parser:
+    build: .
+    command: ["poetry", "run", "python", "-m", "src.userbot_parser.main"]
+    env_file:
+      - src/userbot_parser/.env
+    volumes:
+      - ./assets/videos/tokio_ghoul:/app/assets/videos/tokio_ghoul
+    restart: "no"
+    networks:
+      - app_network
+
+        
 
 volumes:
   postgres_data:

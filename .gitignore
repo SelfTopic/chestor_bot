@@ -4,7 +4,7 @@ __pycache__/
 .vscode/
 *.log
 .env
-
+src/userbot_parser/.env
 alembic.ini
 !.alembic.ini.example
 rclone.conf
