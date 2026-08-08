@@ -55,7 +55,7 @@ class TelegramParser:
         """Получает все сообщения из канала"""
         result_messages = []
         try:
-            messages = await self.app.get_chat_history(channel_id, limit=limit)
+            messages = self.app.get_chat_history(channel_id, limit=limit)
 
             if messages is None:
                 logger.warning("В канале нет сообщений")
@@ -68,6 +68,7 @@ class TelegramParser:
         except Exception as e:
             logger.error(f"Ошибка при получении сообщений: {e}")
 
+        logger.info(f"Result messages: {result_messages}")
         return result_messages
 
     async def download_series(

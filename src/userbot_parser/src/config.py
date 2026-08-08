@@ -1,4 +1,11 @@
 import os
+from pathlib import Path
+
+from dotenv import load_dotenv
+
+env_path = Path(__file__).parent.parent / ".env"
+print(f"Loading environment variables from: {env_path}")
+load_dotenv(env_path)
 
 
 class Config:
@@ -6,7 +13,7 @@ class Config:
     API_HASH: str = os.getenv("API_HASH", "")
     PHONE_NUMBER: str = os.getenv("PHONE_NUMBER", "")
     PASSWORD: str = os.getenv("PASSWORD", "")
-    CHANNEL_ID: int = int(os.getenv("CHANNEL_ID", 0))
+    CHANNEL_ID: str = os.getenv("CHANNEL_ID", "")
     DOWNLOAD_PATH: str = os.getenv("DOWNLOAD_PATH", "")
 
     SEASONS_COUNT = 4

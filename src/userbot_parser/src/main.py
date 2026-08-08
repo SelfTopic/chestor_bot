@@ -20,11 +20,14 @@ app = Client(
 
 
 async def main():
+    await app.start()
     logger.info("Starting Telegram Parser...")
     parser = TelegramParser(app)
 
     await parser.parse_channel()
     logger.info("Parsing completed.")
+
+    await app.stop()
 
 
 _ = [tgcrypto]
