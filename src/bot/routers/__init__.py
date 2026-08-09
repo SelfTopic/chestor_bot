@@ -31,6 +31,6 @@ __all__ = [
     "CommonTopsRouter",
     "RolePlayRouter",
     "WordleRouter",
-    "SearchMusicRouter",
+    #   "SearchMusicRouter",
     "AnimeRouter",
 ]
