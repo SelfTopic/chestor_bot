@@ -109,65 +109,74 @@ async def main(bot_token: str, env: str) -> None:
         ],
     )
 
-    dp = Dispatcher()
-    logger.info("Object of dispatcher is initialize")
+    video_worker = container.video_worker()
 
-    dp.update.middleware(LoggingMiddleware())
+    try:
+        await video_worker.start()
 
-    database_middleware = DatabaseMiddleware(session_factory=session_factory)
-    dp.update.middleware(database_middleware)
-    dp.update.middleware(SyncEntitiesMiddleware())
-    dp.update.middleware(BanMiddleware())
+        dp = Dispatcher()
+        logger.info("Object of dispatcher is initialize")
 
-    include_routers(dp)
+        dp.update.middleware(LoggingMiddleware())
 
-    if not ENV:
-        logging.info("Flushing database")
-        await flush_database(engine=engine)
-    else:
-        logging.info("Create tables")
-        await create_tables(engine=engine)
+        database_middleware = DatabaseMiddleware(session_factory=session_factory)
+        dp.update.middleware(database_middleware)
+        dp.update.middleware(SyncEntitiesMiddleware())
+        dp.update.middleware(BanMiddleware())
 
-    if ENV:
-        webhook_requests_handler = SimpleRequestHandler(
-            dispatcher=dp,
-            bot=bot,
-        )
+        include_routers(dp)
 
-        app = web.Application()
+        if not ENV:
+            logging.info("Flushing database")
+            await flush_database(engine=engine)
+        else:
+            logging.info("Create tables")
+            await create_tables(engine=engine)
 
-        webhook_requests_handler.register(app, path=WEBHOOK_PATH)
-        setup_application(app, dp, bot=bot)
-        dp.startup.register(on_startup)
-
-        runner = web.AppRunner(app)
-
-        await runner.setup()
-        site = web.TCPSite(runner, host="0.0.0.0", port=8999)
-
-        try:
-            await site.start()
-            await asyncio.Event().wait()
-        finally:
-            await bot.session.close()
-            await runner.cleanup()
-            logger.info("Bot session and server closed")
-
-    else:
-        try:
-            await bot.delete_webhook(drop_pending_updates=True)
-            await dp.start_polling(
-                bot,
-                allowed_updates=[
-                    "message",
-                    "callback_query",
-                    "chat_member",
-                    "my_chat_member",
-                ],
+        if ENV:
+            webhook_requests_handler = SimpleRequestHandler(
+                dispatcher=dp,
+                bot=bot,
             )
 
-        except Exception as e:
-            logger.error(f"Error start bot: {e}")
+            app = web.Application()
+
+            webhook_requests_handler.register(app, path=WEBHOOK_PATH)
+            setup_application(app, dp, bot=bot)
+            dp.startup.register(on_startup)
+
+            runner = web.AppRunner(app)
+
+            await runner.setup()
+            site = web.TCPSite(runner, host="0.0.0.0", port=8999)
+
+            try:
+                await site.start()
+                await asyncio.Event().wait()
+            finally:
+                await bot.session.close()
+                await runner.cleanup()
+                logger.info("Bot session and server closed")
+
+        else:
+            try:
+                await bot.delete_webhook(drop_pending_updates=True)
+                await dp.start_polling(
+                    bot,
+                    allowed_updates=[
+                        "message",
+                        "callback_query",
+                        "chat_member",
+                        "my_chat_member",
+                    ],
+                )
+
+            except Exception as e:
+                logger.error(f"Error start bot: {e}")
+    finally:
+        await video_worker.stop()
+
+        await bot.session.close()
 
 
 if __name__ == "__main__":

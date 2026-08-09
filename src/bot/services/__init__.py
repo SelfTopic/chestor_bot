@@ -6,6 +6,7 @@ from .admin import (
     StatsEditService,
 )
 from .base import Base
+from .battle import BattleMechanics, BattleTextGenerator
 from .chat import ChatService
 from .cooldown import CooldownService
 from .dialog import DialogService
@@ -17,6 +18,7 @@ from .media import MediaDownloader, MediaService
 from .rp_commands import RpCommandsService
 from .sync_entity import SyncEntitiesService
 from .user import UserService
+from .video import VideoCutterService, VideoWorker
 from .wordle_game import WordleService
 
 __all__ = [
@@ -40,4 +42,8 @@ __all__ = [
     "RpCommandsService",
     "DurationParser",
     "WordleService",
+    "BattleMechanics",
+    "BattleTextGenerator",
+    "VideoCutterService",
+    "VideoWorker",
 ]

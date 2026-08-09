@@ -1,4 +1,5 @@
 from .chat_member_update_routers import UpdateChatMemberRouter
+from .common.anime_router import router as AnimeRouter
 from .common.bot_router import router as BotRouter
 from .common.check_balance import router as BalanceRouter
 from .common.check_rules_router import router as CheckRulesRouter
@@ -12,6 +13,7 @@ from .common.tops import router as CommonTopsRouter
 from .common.wordle_router import router as WordleRouter
 from .creator_routers import CreatorRouter
 from .moderator_routers import moderator_router as ModeratorRouter
+from .music_routers import SearchMusicRouter
 
 __all__ = [
     "StartRouter",
@@ -28,4 +30,6 @@ __all__ = [
     "CommonTopsRouter",
     "RolePlayRouter",
     "WordleRouter",
+    "SearchMusicRouter",
+    "AnimeRouter",
 ]

@@ -1,5 +1,7 @@
-from dataclasses import dataclass
+import asyncio
+from dataclasses import dataclass, field
 from enum import Enum
+from pathlib import Path
 from typing import Optional
 
 
@@ -44,3 +46,16 @@ class MediaSaveRequest:
     collection: Optional[MediaCollection] = None
     original_filename: Optional[str] = None
     downloaded_by: Optional[int] = None
+
+
+@dataclass(slots=True)
+class VideoCutJob:
+    input_file_path: str | Path
+    output_file_path: str | Path
+    start_time: str
+    end_time: str
+    result: asyncio.Future[Path] = field(default_factory=asyncio.Future)
+    duration: Optional[float] = None
+
+    chat_id: Optional[int] = None
+    caption: Optional[str] = None
