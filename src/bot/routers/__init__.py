@@ -13,7 +13,8 @@ from .common.tops import router as CommonTopsRouter
 from .common.wordle_router import router as WordleRouter
 from .creator_routers import CreatorRouter
 from .moderator_routers import moderator_router as ModeratorRouter
-from .music_routers import SearchMusicRouter
+
+# from .music_routers import SearchMusicRouter
 
 __all__ = [
     "StartRouter",
