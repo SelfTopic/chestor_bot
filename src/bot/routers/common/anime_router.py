@@ -43,7 +43,7 @@ async def anime_handler(
     episode = args[2]
 
     input_path = Path(
-        f"src/bot/assets/video/tokio_ghoul/Season_{season}_Episode_{episode}.mp4"
+        f"src/assets/videos/tokio_ghoul/Season_{season}_Episode_{episode}.mp4"
     )
 
     if not input_path.exists():
