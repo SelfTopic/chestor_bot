@@ -74,15 +74,31 @@ class VideoCutterService:
         start_time: str,
         duration: int,
     ) -> None:
-        (
-            ffmpeg.input(
-                input_file_path,
-                ss=start_time,
+        try:
+            (
+                ffmpeg.input(
+                    input_file_path,
+                    ss=start_time,
+                )
+                .output(
+                    output_file_path,
+                    t=duration,
+                )
+                .overwrite_output()
+                .run()
             )
-            .output(output_file_path, t=duration, vcodec="copy", acodec="copy")
-            .overwrite_output()
-            .run(quiet=True)
-        )
+
+        except ffmpeg.Error as error:
+            stderr = error.stderr.decode("utf-8", errors="replace")
+
+            logger.error(
+                "FFmpeg failed while cutting video %s -> %s:\n%s",
+                input_file_path,
+                output_file_path,
+                stderr,
+            )
+
+            raise
 
     async def cut_video(
         self,
