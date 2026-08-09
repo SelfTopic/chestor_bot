@@ -1,12 +1,16 @@
 .git
 .venv
-venv
 __pycache__
-*.py[cod]
+.ruff_cache
 .pytest_cache
 .mypy_cache
 
-logs.log
+*.log
+.env
+.env.*
+!.env.example
 
-# Media files — mounted from host at runtime
-src/bot/assets/videos/tokio_ghoul/
+backups/
+rclone.conf
+
+src/assets/videos/tokio_ghoul/
