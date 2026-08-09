@@ -10,7 +10,10 @@ logger = logging.getLogger(__name__)
 
 
 class VideoCutterService:
-    PATH_TO_CUTTED = "src/assets/videos/cutter"
+    PATH_TO_CUTTED = Path("src/assets/videos/cutter")
+
+    def __init__(self) -> None:
+        self.PATH_TO_CUTTED.mkdir(exist_ok=True, parents=True)
 
     def parse_duration(
         self,
@@ -89,13 +92,11 @@ class VideoCutterService:
             )
 
         except ffmpeg.Error as error:
-            stderr = error.stderr.decode("utf-8", errors="replace")
-
             logger.error(
                 "FFmpeg failed while cutting video %s -> %s:\n%s",
                 input_file_path,
                 output_file_path,
-                stderr,
+                error.stderr,
             )
 
             raise
