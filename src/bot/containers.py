@@ -31,7 +31,7 @@ from .services import (
     UserService,
     WordleService,
 )
-from .services.ghoul_game import BattleService, CoffeeService, LotteryService
+from .services.ghoul_game import CoffeeService, LotteryService
 from .services.stat_upgrade import StatUpgradeService
 from .services.video import VideoCutterService, VideoWorker
 
@@ -168,9 +168,9 @@ class Container(containers.DeclarativeContainer):
 
     wordle_service = providers.Singleton(WordleService)
 
-    battle_service = providers.Factory(
-        BattleService,
-    )
+    # battle_service = providers.Factory(
+    #     BattleService,
+    # )
 
     video_cutter_service = providers.Singleton(VideoCutterService)
     video_worker = providers.Singleton(VideoWorker, video_cutter_service)

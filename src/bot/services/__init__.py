@@ -6,7 +6,8 @@ from .admin import (
     StatsEditService,
 )
 from .base import Base
-from .battle import BattleMechanics, BattleTextGenerator
+
+# from .battle import BattleMechanics, BattleTextGenerator
 from .chat import ChatService
 from .cooldown import CooldownService
 from .dialog import DialogService
