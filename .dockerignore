@@ -1,2 +1,13 @@
-__pycache__
+.git
+.venv
 venv
+__pycache__
+*.py[cod]
+.pytest_cache
+.mypy_cache
+
+logs.log
+
+# Media files — mounted from host at runtime
+src/bot/assets/video/
+src/assets/videos/cutter/
