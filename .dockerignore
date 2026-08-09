@@ -9,5 +9,4 @@ __pycache__
 logs.log
 
 # Media files — mounted from host at runtime
-src/bot/assets/video/
-src/assets/videos/cutter/
+src/bot/assets/videos/tokio_ghoul/
