@@ -91,7 +91,7 @@ async def anime_handler(
         await message.answer("❌ Конечный таймкод должен быть больше начального.")
         return
 
-    output_path = video_cutter.generate_output_path(input_path.name)
+    output_path = video_cutter.generate_output_path(input_path.name, is_gif=is_gif)
 
     job = VideoCutJob(
         input_file_path=input_path,

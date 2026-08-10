@@ -44,10 +44,14 @@ class VideoCutterService:
 
         return duration
 
-    def generate_output_path(self, input_filename: str | Path) -> Path:
+    def generate_output_path(
+        self, input_filename: str | Path, is_gif: bool = False
+    ) -> Path:
         """Генерирует уникальный путь для выходного файла"""
         return self.PATH_TO_CUTTED / (
-            Path(input_filename).stem + "_" + str(uuid.uuid4()) + ".mp4"
+            Path(input_filename).stem + "_" + str(uuid.uuid4()) + ".gif"
+            if is_gif
+            else ".mp4"
         )
 
     async def cut_video_async(
