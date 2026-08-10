@@ -1,3 +1,4 @@
+import asyncio
 import logging
 from pathlib import Path
 
@@ -11,7 +12,6 @@ from ...services import VideoCutterService, VideoWorker
 from ...types import VideoCutJob
 
 logger = logging.getLogger(__name__)
-
 router = Router(name=__name__)
 
 
@@ -22,12 +22,11 @@ async def anime_handler(
     video_worker: VideoWorker = Provide[Container.video_worker],
     video_cutter: VideoCutterService = Provide[Container.video_cutter_service],
 ):
-    command = message.text
+    if not message.text:
+        await message.answer("Пожалуйста, укажите параметры команды.")
+        return
 
-    if not command:
-        raise ValueError("Command text is empty")
-
-    args = command.split()
+    args = message.text.split()
 
     if len(args) < 3:
         await message.answer(
@@ -47,33 +46,49 @@ async def anime_handler(
     )
 
     if not input_path.exists():
-        await message.answer("Такого видео не найдено.")
+        await message.answer(f"❌ Видео сезона {season} серии {episode} не найдено.")
         return
 
-    # Полная серия
     if len(args) == 3:
         await message.reply_video(
             FSInputFile(input_path),
-            caption=(f"Сезон {season}. Серия {episode}"),
+            caption=f"🎬 Сезон {season}. Серия {episode}",
         )
         return
 
-    # Отрывок
-    if len(args) != 5:
+    if len(args) < 5:
         await message.answer(
-            "Неверный формат команды.\n\nПример:\n/anime 1 12 18:37 18:47"
+            "❌ Неверный формат команды.\n\n"
+            "Пример для отрывка:\n"
+            "/anime 1 12 18:37 18:47\n"
+            "или\n"
+            "/anime  12 18:37 18:47 gif\n"
+            "чтобы получить отрывок сразу гифкой"
         )
         return
 
     start_time = args[3]
     end_time = args[4]
 
+    is_gif = False
+    if len(args) == 6 and args[5] == "gif":
+        is_gif = True
+
     if not video_cutter.validate_time_format(start_time):
-        await message.answer("Неверный начальный таймкод.\n\nПример: 18:37")
+        await message.answer("❌ Неверный начальный таймкод.\n\nПример: 18:37")
         return
 
     if not video_cutter.validate_time_format(end_time):
-        await message.answer("Неверный конечный таймкод.\n\nПример: 18:47")
+        await message.answer("❌ Неверный конечный таймкод.\n\nПример: 18:47")
+        return
+
+    try:
+        duration = video_cutter.parse_duration(start_time, end_time)
+        if duration <= 0:
+            raise ValueError
+
+    except ValueError:
+        await message.answer("❌ Конечный таймкод должен быть больше начального.")
         return
 
     output_path = video_cutter.generate_output_path(input_path.name)
@@ -83,27 +98,55 @@ async def anime_handler(
         output_file_path=output_path,
         start_time=start_time,
         end_time=end_time,
+        chat_id=message.chat.id,
+        caption=f"🎬 Сезон {season}. Серия {episode}. Отрывок с {start_time} до {end_time}",
     )
 
-    await video_worker.enqueue(job)
+    processing_msg = await message.reply(
+        "⏳ Начинаю нарезку видео...\n"
+        f"Сезон {season}, серия {episode}\n"
+        f"Отрывок: {start_time} - {end_time}\n\n"
+        "Это может занять несколько секунд."
+    )
 
     try:
-        await job.result
+        await video_worker.enqueue(job)
 
-        await message.reply_video(
-            FSInputFile(job.output_file_path),
-            caption=(
-                f"Сезон {season}. Серия {episode}. Отрывок с {start_time} до {end_time}"
-            ),
+        result_path = await asyncio.wait_for(job.result, timeout=60.0)
+
+        await processing_msg.delete()
+
+        if not is_gif:
+            await message.reply_video(
+                FSInputFile(result_path),
+                caption=job.caption,
+            )
+        else:
+            await message.reply_animation(
+                FSInputFile(result_path),
+                caption=job.caption,
+            )
+
+    except asyncio.TimeoutError:
+        await processing_msg.edit_text(
+            "❌ Превышено время ожидания нарезки видео.\n"
+            "Попробуйте выбрать меньший фрагмент или повторите позже."
         )
+        job.cancel()
 
-    except Exception:
-        logger.exception(
-            "Failed to process video: %s",
-            job.output_file_path,
+    except asyncio.CancelledError:
+        await processing_msg.edit_text("❌ Нарезка видео была отменена.")
+
+    except Exception as e:
+        logger.error(f"Error processing video: {e}", exc_info=True)
+        await processing_msg.edit_text(
+            f"❌ Произошла ошибка при нарезке видео: {str(e)}"
         )
-
-        await message.answer("Произошла ошибка во время обработки видео.")
 
     finally:
-        Path(job.output_file_path).unlink(missing_ok=True)
+        if Path(job.output_file_path).exists():
+            try:
+                Path(job.output_file_path).unlink(missing_ok=True)
+                logger.debug(f"Cleaned up temp file: {job.output_file_path}")
+            except Exception as e:
+                logger.warning(f"Failed to delete temp file: {e}")

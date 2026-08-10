@@ -59,3 +59,17 @@ class VideoCutJob:
 
     chat_id: Optional[int] = None
     caption: Optional[str] = None
+
+    def cancel(self) -> bool:
+        if not self.result.done():
+            self.result.cancel()
+            return True
+        return False
+
+    @property
+    def is_done(self) -> bool:
+        return self.result.done()
+
+    @property
+    def is_cancelled(self) -> bool:
+        return self.result.cancelled()
