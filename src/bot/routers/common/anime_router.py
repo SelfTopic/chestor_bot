@@ -119,12 +119,12 @@ async def anime_handler(
         if not is_gif:
             await message.reply_video(
                 FSInputFile(result_path),
-                caption=job.caption,
+                caption="Video\n" + job.caption if job.caption else "",
             )
         else:
             await message.reply_animation(
                 FSInputFile(result_path),
-                caption=job.caption,
+                caption="Gif\n" + job.caption if job.caption else "",
             )
 
     except asyncio.TimeoutError:
