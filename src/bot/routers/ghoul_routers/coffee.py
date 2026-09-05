@@ -36,7 +36,7 @@ async def coffee_handler(
         await message.reply(
             text=coffee_service.dialog_service.text(
                 key="coffee_cooldown_error",
-                hours=cooldown_remaining.hours_remaining,
+                hours=cooldown_remaining.total_hours,
                 minutes=cooldown_remaining.minutes_remaining,
                 seconds=cooldown_remaining.seconds_remaining,
             )
