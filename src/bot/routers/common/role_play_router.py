@@ -39,7 +39,7 @@ async def new_rp_on_media(
         answer_kwargs = {"animation": file_id}
 
     else:
-        raise RuntimeError()
+        raise RuntimeError("Неподдерживаемый тип медиа для RP-команды")
 
     rp = await rp_command_service.insert(
         chat_id=message.chat.id,

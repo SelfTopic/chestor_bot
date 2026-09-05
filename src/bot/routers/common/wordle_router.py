@@ -7,6 +7,7 @@ from aiogram.types import BufferedInputFile, Message
 from dependency_injector.wiring import Provide, inject
 
 from src.bot.containers import Container
+from src.bot.exceptions import UserNotFound
 from src.bot.filters import Text, WordleGameFilter
 from src.bot.game_configs import WORDLE_CONFIG
 from src.bot.services import UserService, WordleService
@@ -99,7 +100,7 @@ async def wordle_start_handler(
     wordle_service: WordleService = Provide[Container.wordle_service],
 ) -> None:
     if not message.from_user:
-        raise RuntimeError()
+        raise UserNotFound()
 
     user_id = message.from_user.id
 
@@ -139,7 +140,7 @@ async def wordle_game_handler(
     user_service: UserService = Provide[Container.user_service],
 ) -> None:
     if not message.from_user or not message.text:
-        raise RuntimeError()
+        raise UserNotFound()
 
     user_id = message.from_user.id
     word = message.text.strip()
