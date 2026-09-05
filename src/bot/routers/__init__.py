@@ -14,8 +14,6 @@ from .common.wordle_router import router as WordleRouter
 from .creator_routers import CreatorRouter
 from .moderator_routers import moderator_router as ModeratorRouter
 
-# from .music_routers import SearchMusicRouter
-
 __all__ = [
     "StartRouter",
     "BotRouter",
@@ -31,6 +29,5 @@ __all__ = [
     "CommonTopsRouter",
     "RolePlayRouter",
     "WordleRouter",
-    #   "SearchMusicRouter",
     "AnimeRouter",
 ]

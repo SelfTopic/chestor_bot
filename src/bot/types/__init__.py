@@ -1,11 +1,3 @@
-# from .battle import (
-# BattleEvent,
-# BattleFighter,
-# BattleResult,
-# EventType,
-# TimelineEvent,
-# TimelineEventData,
-# )
 from .coffee import CoffeeResult
 from .dep import DepColor, DepResult
 from .kagune import KaguneType
@@ -26,11 +18,5 @@ __all__ = [
     "DepColor",
     "DepResult",
     "Duration",
-    "BattleFighter",
-    "BattleEvent",
-    "BattleResult",
-    "TimelineEvent",
-    "TimelineEventData",
-    "EventType",
     "VideoCutJob",
 ]

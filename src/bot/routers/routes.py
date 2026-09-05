@@ -39,7 +39,6 @@ def include_routers(dp: Dispatcher) -> None:
         CommonTopsRouter,
         RolePlayRouter,
         WordleRouter,
-        #       SearchMusicRouter,   TODO: починить шазам
         AnimeRouter,
     )
 
