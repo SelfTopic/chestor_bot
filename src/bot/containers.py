@@ -151,6 +151,7 @@ class Container(containers.DeclarativeContainer):
         StatsEditService,
         user_repo=user_repository,
         ghoul_repo=ghoul_repository,
+        balances_log_repo=balances_log_repository,
     )
     broadcast_service = providers.Factory(
         BroadcastService,

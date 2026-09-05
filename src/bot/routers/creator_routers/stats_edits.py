@@ -21,6 +21,10 @@ async def set_stat(
     if not message.text:
         raise ValueError("Сообщение не содержит текста")
 
+    if not message.from_user:
+        await message.answer("❌ Не удалось определить автора команды.")
+        return
+
     query = None
     reply = message.reply_to_message
 
@@ -43,7 +47,9 @@ async def set_stat(
         return
 
     try:
-        result = await stats_service.set_stat(query, field, int(raw_value))
+        result = await stats_service.set_stat(
+            query, field, int(raw_value), admin_id=message.from_user.id
+        )
     except ValueError as e:
         await message.answer(f"❌ {e}")
         return
