@@ -1,6 +1,7 @@
 # src/bot/services/video/cutter.py
 import asyncio
 import logging
+import os
 import re
 import uuid
 from pathlib import Path
@@ -15,6 +16,10 @@ class VideoCutterService:
 
     def __init__(self) -> None:
         self.PATH_TO_CUTTED.mkdir(exist_ok=True, parents=True)
+        # Always leave at least 1 core free for the bot's event loop,
+        # otherwise ffmpeg's full-core re-encode starves the process
+        # scheduler and the bot stops responding to everyone.
+        self._encode_threads = max(1, (os.cpu_count() or 2) - 1)
 
     @staticmethod
     def validate_time_format(time_str: str) -> bool:
@@ -73,7 +78,12 @@ class VideoCutterService:
 
         cmd = (
             ffmpeg.input(str(input_file_path), ss=start_time)
-            .output(str(output_file_path), t=duration)
+            .output(
+                str(output_file_path),
+                t=duration,
+                preset="ultrafast",
+                threads=self._encode_threads,
+            )
             .overwrite_output()
             .compile()
         )

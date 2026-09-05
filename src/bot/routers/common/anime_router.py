@@ -14,6 +14,10 @@ from ...types import VideoCutJob
 logger = logging.getLogger(__name__)
 router = Router(name=__name__)
 
+# Guards against a single user queueing multiple simultaneous cut jobs and
+# piling up unbounded ffmpeg work while spamming /anime.
+_active_cut_users: set[int] = set()
+
 
 @router.message(Command("anime"))
 @inject
@@ -91,6 +95,14 @@ async def anime_handler(
         await message.answer("❌ Конечный таймкод должен быть больше начального.")
         return
 
+    user_id = message.from_user.id if message.from_user else message.chat.id
+
+    if user_id in _active_cut_users:
+        await message.answer(
+            "⏳ У тебя уже есть нарезка в процессе. Дождись её завершения."
+        )
+        return
+
     output_path = video_cutter.generate_output_path(input_path.name, is_gif=is_gif)
 
     job = VideoCutJob(
@@ -109,6 +121,7 @@ async def anime_handler(
         "Это может занять несколько секунд."
     )
 
+    _active_cut_users.add(user_id)
     try:
         await video_worker.enqueue(job)
 
@@ -137,6 +150,11 @@ async def anime_handler(
     except asyncio.CancelledError:
         await processing_msg.edit_text("❌ Нарезка видео была отменена.")
 
+    except asyncio.QueueFull:
+        await processing_msg.edit_text(
+            "❌ Сейчас слишком много запросов на нарезку. Попробуй чуть позже."
+        )
+
     except Exception as e:
         logger.error(f"Error processing video: {e}", exc_info=True)
         await processing_msg.edit_text(
@@ -144,6 +162,8 @@ async def anime_handler(
         )
 
     finally:
+        _active_cut_users.discard(user_id)
+
         if Path(job.output_file_path).exists():
             try:
                 Path(job.output_file_path).unlink(missing_ok=True)
