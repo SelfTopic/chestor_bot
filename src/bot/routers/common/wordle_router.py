@@ -1,3 +1,4 @@
+import html
 import logging
 
 from aiogram import Bot, Router
@@ -9,7 +10,7 @@ from dependency_injector.wiring import Provide, inject
 from src.bot.containers import Container
 from src.bot.filters import Text, WordleGameFilter
 from src.bot.game_configs import WORDLE_CONFIG
-from src.bot.services import UserService, WordleService
+from src.bot.services import UserService, WikipediaService, WordleService
 from src.bot.types.wordle import WordleGuessResult
 
 router = Router(name=__name__)
@@ -65,12 +66,30 @@ async def _delete_board(
         return False
 
 
+async def _word_info_block(wikipedia_service: WikipediaService, word: str) -> str:
+    """Короткое описание загаданного слова из Википедии, если удалось найти."""
+    summary = await wikipedia_service.get_summary(word)
+    if not summary:
+        return ""
+
+    return f"\n\n📖 {html.escape(summary.extract)}\n🔗 {html.escape(summary.url)}"
+
+
 async def _notify_finish(
-    message: Message, result: WordleGuessResult, user_service: UserService
+    message: Message,
+    result: WordleGuessResult,
+    user_service: UserService,
+    wikipedia_service: WikipediaService,
 ) -> None:
     """Отправить финальное уведомление о победе или поражении."""
 
     assert message.from_user is not None
+
+    if not (result.is_won or result.is_lost):
+        return
+
+    word_info = await _word_info_block(wikipedia_service, result.target)
+
     if result.is_won:
         award = WORDLE_CONFIG.award
         await user_service.plus_balance(
@@ -81,13 +100,13 @@ async def _notify_finish(
             f"🎉 Поздравляем! Слово <b>{result.target}</b> угадано "
             f"за {result.attempts_used} {_attempts_word(result.attempts_used)}!\n\n"
             f"Заработано {award} CheSton's\n"
-            "Сыграть ещё: /wordle",
+            f"Сыграть ещё: /wordle{word_info}",
             parse_mode="HTML",
         )
-    elif result.is_lost:
+    else:
         await message.answer(
             f"😔 Не получилось. Загаданное слово: <b>{result.target}</b>\n"
-            "Попробовать ещё раз: /wordle",
+            f"Попробовать ещё раз: /wordle{word_info}",
             parse_mode="HTML",
         )
 
@@ -137,6 +156,7 @@ async def wordle_game_handler(
     bot: Bot,
     wordle_service: WordleService = Provide[Container.wordle_service],
     user_service: UserService = Provide[Container.user_service],
+    wikipedia_service: WikipediaService = Provide[Container.wikipedia_service],
 ) -> None:
     if not message.from_user or not message.text:
         raise RuntimeError()
@@ -159,7 +179,7 @@ async def wordle_game_handler(
         )
         if edited:
             await message.delete()
-            await _notify_finish(message, result, user_service)
+            await _notify_finish(message, result, user_service, wikipedia_service)
             return
 
     try:
@@ -170,4 +190,4 @@ async def wordle_game_handler(
 
     sent = await message.answer_photo(photo=photo, caption=caption, parse_mode="HTML")
     wordle_service.set_board_message_id(user_id, sent.message_id)
-    await _notify_finish(message, result, user_service)
+    await _notify_finish(message, result, user_service, wikipedia_service)

@@ -18,6 +18,7 @@ from .rp_commands import RpCommandsService
 from .sync_entity import SyncEntitiesService
 from .user import UserService
 from .video import VideoCutterService, VideoWorker
+from .wikipedia import WikipediaService
 from .wordle_game import WordleService
 
 __all__ = [
@@ -43,4 +44,5 @@ __all__ = [
     "WordleService",
     "VideoCutterService",
     "VideoWorker",
+    "WikipediaService",
 ]
