@@ -76,6 +76,7 @@ async def _notify_finish(
         await user_service.plus_balance(
             telegram_id=message.from_user.id,
             change_balance=award,
+            log="wordle win",
         )
         await message.answer(
             f"🎉 Поздравляем! Слово <b>{result.target}</b> угадано "

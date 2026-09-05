@@ -5,6 +5,7 @@ from dependency_injector import containers, providers
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from .repositories import (
+    BalancesLogRepository,
     ChatRepository,
     GhoulRepository,
     LotteryRepository,
@@ -56,6 +57,10 @@ class Container(containers.DeclarativeContainer):
 
     lottery_repository = providers.Factory(LotteryRepository, session=db_session)
 
+    balances_log_repository = providers.Factory(
+        BalancesLogRepository, session=db_session
+    )
+
     dialog_service = providers.Factory(DialogService)
 
     media_downloader = providers.Factory(MediaDownloader, bot=bot)
@@ -70,6 +75,7 @@ class Container(containers.DeclarativeContainer):
         ghoul_repository,
         user_cooldown_repository,
         chat_repository,
+        balances_log_repository,
     )
 
     sync_entities_service = providers.Factory(

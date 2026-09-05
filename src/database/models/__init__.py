@@ -1,3 +1,4 @@
+from .balances_log import BalancesLog
 from .base import Base
 from .chat import Chat
 from .cooldown import Cooldown
@@ -18,4 +19,5 @@ __all__ = [
     "Media",
     "Lottery",
     "Rp",
+    "BalancesLog",
 ]

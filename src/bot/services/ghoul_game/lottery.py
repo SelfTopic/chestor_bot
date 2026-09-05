@@ -72,12 +72,12 @@ class LotteryService:
             multiplier = LOTTERY_CONFIG.get_multiplier(winning_color.value)
             earned = int(bet_amount * multiplier)
             user = await self.user_service.plus_balance(
-                telegram_id=user_id, change_balance=earned
+                telegram_id=user_id, change_balance=earned, log="lottery win"
             )
         else:
             earned = 0
             user = await self.user_service.minus_balance(
-                telegram_id=user_id, change_balance=bet_amount
+                telegram_id=user_id, change_balance=bet_amount, log="lottery bet"
             )
 
         folder_name = COLOR_TO_FOLDER.get(winning_color.value, "red")

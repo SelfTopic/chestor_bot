@@ -94,7 +94,7 @@ class StatUpgradeService:
             return ghoul, user, 0, price
 
         await self.user_service.minus_balance(
-            telegram_id=telegram_id, change_balance=price
+            telegram_id=telegram_id, change_balance=price, log="stat upgrade"
         )
 
         new_value = cur + to_buy

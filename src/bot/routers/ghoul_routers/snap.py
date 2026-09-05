@@ -50,7 +50,9 @@ async def snap_handler(
         change_balance = SNAP_CONFIG.award
 
         await user_service.plus_balance(
-            telegram_id=message.from_user.id, change_balance=change_balance
+            telegram_id=message.from_user.id,
+            change_balance=change_balance,
+            log="snap finger award",
         )
 
         await cooldown_service.set_cooldown(

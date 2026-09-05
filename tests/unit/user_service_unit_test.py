@@ -1,5 +1,6 @@
 import pytest
 
+from src.bot.repositories.balances_log import BalancesLogRepository
 from src.bot.repositories.chat import ChatRepository
 from src.bot.repositories.ghoul import GhoulRepository
 from src.bot.repositories.user import UserRepository
@@ -15,6 +16,7 @@ def user_service(session):
         ghoul_repository=GhoulRepository(session),
         user_cooldown_repository=UserCooldownRepository(session),
         chat_repository=ChatRepository(session),
+        balances_log_repository=BalancesLogRepository(session),
     )
 
 
@@ -40,25 +42,29 @@ async def test_get_by_username(user_service, make_user):
 async def test_plus_balance(user_service, make_user):
     await make_user(telegram_id=100_000_200)
     result = await user_service.plus_balance(
-        telegram_id=100_000_200, change_balance=500
+        telegram_id=100_000_200, change_balance=500, log="test"
     )
     assert result.balance == 500
 
 
 async def test_plus_balance_accumulates(user_service, make_user):
     await make_user(telegram_id=100_000_201)
-    await user_service.plus_balance(telegram_id=100_000_201, change_balance=100)
+    await user_service.plus_balance(
+        telegram_id=100_000_201, change_balance=100, log="test"
+    )
     result = await user_service.plus_balance(
-        telegram_id=100_000_201, change_balance=200
+        telegram_id=100_000_201, change_balance=200, log="test"
     )
     assert result.balance == 300
 
 
 async def test_minus_balance(user_service, make_user):
     await make_user(telegram_id=100_000_202)
-    await user_service.plus_balance(telegram_id=100_000_202, change_balance=1000)
+    await user_service.plus_balance(
+        telegram_id=100_000_202, change_balance=1000, log="test"
+    )
     result = await user_service.minus_balance(
-        telegram_id=100_000_202, change_balance=400
+        telegram_id=100_000_202, change_balance=400, log="test"
     )
     assert result.balance == 600
 
@@ -67,14 +73,16 @@ async def test_minus_balance_can_go_negative(user_service, make_user):
     """Сервис не запрещает уход в минус — это ответственность вызывающего кода."""
     await make_user(telegram_id=100_000_203)
     result = await user_service.minus_balance(
-        telegram_id=100_000_203, change_balance=100
+        telegram_id=100_000_203, change_balance=100, log="test"
     )
     assert result.balance == -100
 
 
 async def test_plus_balance_raises_for_unknown_user(user_service):
     with pytest.raises(ValueError):
-        await user_service.plus_balance(telegram_id=999_999_001, change_balance=100)
+        await user_service.plus_balance(
+            telegram_id=999_999_001, change_balance=100, log="test"
+        )
 
 
 async def test_race_returns_correct_enum(user_service):
@@ -91,7 +99,9 @@ async def test_race_returns_none_for_unknown_bit(user_service):
 async def test_get_top_balance(user_service, make_user):
     await make_user(telegram_id=100_000_300)
     await make_user(telegram_id=100_000_301, username="rich")
-    await user_service.plus_balance(telegram_id=100_000_301, change_balance=9999)
+    await user_service.plus_balance(
+        telegram_id=100_000_301, change_balance=9999, log="test"
+    )
     top = await user_service.get_top_balance(limit=5)
     assert len(top) >= 1
     assert top[0].balance >= top[-1].balance

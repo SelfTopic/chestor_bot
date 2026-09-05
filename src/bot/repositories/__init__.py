@@ -1,3 +1,4 @@
+from .balances_log import BalancesLogRepository
 from .base import Base
 from .chat import ChatRepository
 from .ghoul import GhoulRepository
@@ -15,5 +16,6 @@ __all__ = [
     "ChatRepository",
     "MediaRepository",
     "LotteryRepository",
-    "RpCommandsRepository"
+    "RpCommandsRepository",
+    "BalancesLogRepository",
 ]
