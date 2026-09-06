@@ -1,7 +1,8 @@
 import logging
 from datetime import timedelta
+from typing import Optional
 
-from src.database.models import Transfer
+from src.database.models import Transfer, User
 
 from ..exceptions import (
     InsufficientBalanceError,
@@ -27,6 +28,14 @@ class TransferService:
         self.user_repository = user_repository
         self.transfer_repository = transfer_repository
         self.balances_log_repository = balances_log_repository
+
+    async def resolve_user(self, query: str) -> Optional[User]:
+        """
+        Резолвит id/@username в User, как в BanService._resolve_user /
+        StatsEditService.set_stat - для указания получателя без reply.
+        """
+        search = int(query) if query.lstrip("-").isdigit() else query.lstrip("@")
+        return await self.user_repository.get(search)
 
     async def validate(self, sender_id: int, receiver_id: int, amount: int) -> None:
         """

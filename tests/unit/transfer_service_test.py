@@ -40,6 +40,30 @@ def transfer_service(session):
     )
 
 
+async def test_resolve_user_by_id(transfer_service, make_user):
+    await make_user(telegram_id=42, username="someone")
+
+    user = await transfer_service.resolve_user("42")
+
+    assert user is not None
+    assert user.telegram_id == 42
+
+
+async def test_resolve_user_by_username(transfer_service, make_user):
+    await make_user(telegram_id=42, username="someone")
+
+    user = await transfer_service.resolve_user("@someone")
+
+    assert user is not None
+    assert user.telegram_id == 42
+
+
+async def test_resolve_user_not_found(transfer_service):
+    user = await transfer_service.resolve_user("@nobody")
+
+    assert user is None
+
+
 async def test_validate_rejects_amount_out_of_bounds(
     transfer_service, make_user, session
 ):

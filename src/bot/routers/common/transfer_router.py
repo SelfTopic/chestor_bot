@@ -5,7 +5,12 @@ from aiogram import Router
 from aiogram.filters import Command, StateFilter
 from aiogram.fsm.context import FSMContext
 from aiogram.fsm.state import State, StatesGroup
-from aiogram.types import CallbackQuery, InlineKeyboardButton, InlineKeyboardMarkup, Message
+from aiogram.types import (
+    CallbackQuery,
+    InlineKeyboardButton,
+    InlineKeyboardMarkup,
+    Message,
+)
 from dependency_injector.wiring import Provide, inject
 
 from ...containers import Container
@@ -53,27 +58,47 @@ async def transfer_handler(
     state: FSMContext,
     transfer_service: TransferService = Provide[Container.transfer_service],
 ) -> None:
-    if not message.from_user:
-        return
-
-    if not message.reply_to_message or not message.reply_to_message.from_user:
-        await message.reply(
-            "Ответь этой командой на сообщение того, кому хочешь перевести деньги.\n\n"
-            "Пример: /transfer 500 (в ответ на сообщение получателя)"
-        )
-        return
-
-    if not message.text:
+    if not message.from_user or not message.text:
         return
 
     args = message.text.split()
-    if len(args) < 2 or not args[1].isdigit():
-        await message.reply("Укажи сумму перевода. Пример: /transfer 500")
-        return
+    reply = message.reply_to_message
 
-    amount = int(args[1])
+    receiver_id: int | None = None
+    receiver_name: str = ""
+
+    if reply and reply.from_user:
+        # /transfer <сумма> - в ответ на сообщение получателя
+        if len(args) < 2 or not args[1].isdigit():
+            await message.reply("Укажи сумму перевода. Пример: /transfer 500")
+            return
+
+        amount = int(args[1])
+        receiver_id = reply.from_user.id
+        receiver_name = reply.from_user.full_name
+    else:
+        # /transfer <id или @username> <сумма> - без reply
+        if len(args) < 3 or not args[2].isdigit():
+            await message.reply(
+                "Использование:\n"
+                "/transfer <сумма> — в ответ на сообщение получателя\n"
+                "/transfer <id или @username> <сумма>\n\n"
+                "Пример: /transfer @username 500"
+            )
+            return
+
+        query = args[1].strip()
+        amount = int(args[2])
+
+        receiver = await transfer_service.resolve_user(query)
+        if not receiver:
+            await message.reply(f"❌ Пользователь не найден: {query}")
+            return
+
+        receiver_id = receiver.telegram_id
+        receiver_name = receiver.username or receiver.first_name
+
     sender_id = message.from_user.id
-    receiver_id = message.reply_to_message.from_user.id
 
     try:
         await transfer_service.validate(sender_id, receiver_id, amount)
@@ -84,7 +109,6 @@ async def transfer_handler(
     await state.update_data(receiver_id=receiver_id, amount=amount)
     await state.set_state(TransferStates.confirm_step_1)
 
-    receiver_name = message.reply_to_message.from_user.full_name
     await message.reply(
         f"Перевести {amount} CheSton's пользователю {receiver_name}?\n\n"
         f"Выбери именно кнопку «{_CONFIRM_LABEL}» — остальные отменяют перевод.",
@@ -96,7 +120,9 @@ async def transfer_handler(
     StateFilter(TransferStates.confirm_step_1),
     lambda c: c.data in ("transfer_confirm_1", "transfer_cancel_1"),
 )
-async def transfer_confirm_step_1(callback_query: CallbackQuery, state: FSMContext) -> None:
+async def transfer_confirm_step_1(
+    callback_query: CallbackQuery, state: FSMContext
+) -> None:
     if not isinstance(callback_query.message, Message):
         return
 
