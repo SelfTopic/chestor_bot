@@ -2,6 +2,7 @@ import asyncio
 
 from sqlalchemy.ext.asyncio import AsyncEngine, async_sessionmaker
 
+from src.bot.repositories.balances_log import BalancesLogRepository
 from src.bot.repositories.chat import ChatRepository
 from src.bot.repositories.ghoul import GhoulRepository
 from src.bot.repositories.user import UserRepository
@@ -19,8 +20,11 @@ async def _plus_balance_in_own_session(
             GhoulRepository(session),
             UserCooldownRepository(session),
             ChatRepository(session),
+            BalancesLogRepository(session),
         )
-        await service.plus_balance(telegram_id=telegram_id, change_balance=amount)
+        await service.plus_balance(
+            telegram_id=telegram_id, change_balance=amount, log="race test"
+        )
         await session.commit()
 
 

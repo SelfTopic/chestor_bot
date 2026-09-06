@@ -1,5 +1,6 @@
 import pytest
 
+from src.bot.repositories.balances_log import BalancesLogRepository
 from src.bot.repositories.chat import ChatRepository
 from src.bot.repositories.ghoul import GhoulRepository
 from src.bot.repositories.user import UserRepository
@@ -16,6 +17,7 @@ def user_service(session):
         ghoul_repository=GhoulRepository(session),
         user_cooldown_repository=UserCooldownRepository(session),
         chat_repository=ChatRepository(session),
+        balances_log_repository=BalancesLogRepository(session),
     )
 
 
@@ -73,7 +75,9 @@ async def test_balance_change_does_not_affect_ghoul(
     await make_user(telegram_id=700_000_100)
     await ghoul_service.register(telegram_id=700_000_100)
 
-    await user_service.plus_balance(telegram_id=700_000_100, change_balance=500)
+    await user_service.plus_balance(
+        telegram_id=700_000_100, change_balance=500, log="test"
+    )
 
     ghoul = await ghoul_service.get(find_by=700_000_100)
     user = await user_service.get(find_by=700_000_100)
@@ -87,7 +91,9 @@ async def test_ghoul_snap_does_not_affect_user_balance(
 ):
     await make_user(telegram_id=700_000_101)
     await ghoul_service.register(telegram_id=700_000_101)
-    await user_service.plus_balance(telegram_id=700_000_101, change_balance=1000)
+    await user_service.plus_balance(
+        telegram_id=700_000_101, change_balance=1000, log="test"
+    )
 
     await ghoul_service.snap_finger(telegram_id=700_000_101)
 
@@ -124,7 +130,7 @@ async def test_full_player_lifecycle(user_service, ghoul_service, make_user):
     assert reg.ok is True
 
     # Начисляем баланс
-    await user_service.plus_balance(telegram_id=tid, change_balance=2000)
+    await user_service.plus_balance(telegram_id=tid, change_balance=2000, log="test")
 
     # Снапаем несколько раз
     for _ in range(3):
@@ -149,7 +155,9 @@ async def test_user_lookup_by_username_after_register(
     """Пользователь доступен по username после всех операций."""
     await make_user(telegram_id=700_000_400, username="findme")
     await ghoul_service.register(telegram_id=700_000_400)
-    await user_service.plus_balance(telegram_id=700_000_400, change_balance=100)
+    await user_service.plus_balance(
+        telegram_id=700_000_400, change_balance=100, log="test"
+    )
 
     user = await user_service.get(find_by="findme")
     assert user is not None
@@ -165,9 +173,9 @@ async def test_minus_balance_after_ghoul_operations(
     await make_user(telegram_id=tid)
     await ghoul_service.register(telegram_id=tid)
 
-    await user_service.plus_balance(telegram_id=tid, change_balance=1000)
+    await user_service.plus_balance(telegram_id=tid, change_balance=1000, log="test")
     await ghoul_service.snap_finger(telegram_id=tid)
-    await user_service.minus_balance(telegram_id=tid, change_balance=300)
+    await user_service.minus_balance(telegram_id=tid, change_balance=300, log="test")
 
     user = await user_service.get(find_by=tid)
     ghoul = await ghoul_service.get(find_by=tid)
@@ -195,9 +203,15 @@ async def test_top_balance_ordering(user_service, make_user):
     await make_user(telegram_id=700_000_701, username="rich")
     await make_user(telegram_id=700_000_702, username="medium")
 
-    await user_service.plus_balance(telegram_id=700_000_700, change_balance=100)
-    await user_service.plus_balance(telegram_id=700_000_701, change_balance=9999)
-    await user_service.plus_balance(telegram_id=700_000_702, change_balance=500)
+    await user_service.plus_balance(
+        telegram_id=700_000_700, change_balance=100, log="test"
+    )
+    await user_service.plus_balance(
+        telegram_id=700_000_701, change_balance=9999, log="test"
+    )
+    await user_service.plus_balance(
+        telegram_id=700_000_702, change_balance=500, log="test"
+    )
 
     top = await user_service.get_top_balance(limit=3)
 

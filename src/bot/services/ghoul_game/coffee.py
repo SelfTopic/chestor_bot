@@ -35,7 +35,7 @@ class CoffeeService:
 
         ghoul = await self.ghoul_service.coffee(telegram_id=user_id)
         user = await self.user_service.plus_balance(
-            telegram_id=user_id, change_balance=money
+            telegram_id=user_id, change_balance=money, log="coffee award"
         )
 
         return CoffeeResult(ghoul=ghoul, user=user, award=money)
@@ -60,7 +60,9 @@ class CoffeeService:
                 telegram_id=user_id, cooldown_type="COFFEE_DAY"
             )
             await self.user_service.minus_balance(
-                telegram_id=user_id, change_balance=COFFEE_CONFIG.award
+                telegram_id=user_id,
+                change_balance=COFFEE_CONFIG.award,
+                log="coffee refund on cooldown",
             )
             return result_cooldown
 

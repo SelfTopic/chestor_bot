@@ -1,6 +1,7 @@
 import logging
 from dataclasses import dataclass
 
+from src.bot.repositories.balances_log import BalancesLogRepository
 from src.bot.repositories.ghoul import GhoulRepository
 from src.bot.repositories.user import UserRepository
 from src.database.models import Ghoul, User
@@ -35,9 +36,15 @@ class StatEditResult:
 
 
 class StatsEditService:
-    def __init__(self, user_repo: UserRepository, ghoul_repo: GhoulRepository):
+    def __init__(
+        self,
+        user_repo: UserRepository,
+        ghoul_repo: GhoulRepository,
+        balances_log_repo: BalancesLogRepository,
+    ):
         self.user_repo = user_repo
         self.ghoul_repo = ghoul_repo
+        self.balances_log_repo = balances_log_repo
 
     def resolve_field(self, field: str) -> tuple[bool, bool]:
         """Возвращает (is_valid, is_ghoul_field)."""
@@ -47,7 +54,9 @@ class StatsEditService:
             return True, True
         return False, False
 
-    async def set_stat(self, query: str, field: str, value: int) -> StatEditResult:
+    async def set_stat(
+        self, query: str, field: str, value: int, admin_id: int
+    ) -> StatEditResult:
         search = int(query) if query.lstrip("-").isdigit() else query.lstrip("@")
         user = await self.user_repo.get(search)
 
@@ -59,9 +68,22 @@ class StatsEditService:
             raise ValueError(f"Неизвестное поле: {field}")
 
         if not is_ghoul_field:
-            updated = await self.user_repo.change_data(
-                user.telegram_id, **{field: value}
-            )
+            if field == "balance":
+                before_balance = user.balance
+                updated = await self.user_repo.change_data(
+                    user.telegram_id, balance=value
+                )
+                await self.balances_log_repo.insert(
+                    telegram_id=user.telegram_id,
+                    change_balance=value - before_balance,
+                    before_balance=before_balance,
+                    after_balance=value,
+                    log=f"admin override by {admin_id}",
+                )
+            else:
+                updated = await self.user_repo.change_data(
+                    user.telegram_id, **{field: value}
+                )
             return StatEditResult(
                 target=updated, field=field, value=value, is_ghoul_field=False
             )

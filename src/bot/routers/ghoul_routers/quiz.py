@@ -77,7 +77,9 @@ async def quiz_answer_handler(
     if selected_option == correct_answer.answer:
         award = QUIZ_CONFIG.award
         await user_service.plus_balance(
-            telegram_id=callback_query.from_user.id, change_balance=award
+            telegram_id=callback_query.from_user.id,
+            change_balance=award,
+            log="ghoul quiz win",
         )
         await callback_query.message.edit_text(
             text=f"Вопрос: {correct_answer.question} \nОтвет: {correct_answer.answer}.\nТвой выбор: {selected_option}\nСтатус: верно\n\nПолучено CheSton: {award}",

@@ -5,6 +5,13 @@ from aiogram.types import User as TelegramUser
 
 from src.database.models import User
 
+from ..repositories import (
+    BalancesLogRepository,
+    ChatRepository,
+    GhoulRepository,
+    UserCooldownRepository,
+    UserRepository,
+)
 from ..types import Race
 from .base import Base
 
@@ -12,6 +19,22 @@ logger = logging.getLogger(__name__)
 
 
 class UserService(Base):
+    def __init__(
+        self,
+        user_repository: UserRepository,
+        ghoul_repository: GhoulRepository,
+        user_cooldown_repository: UserCooldownRepository,
+        chat_repository: ChatRepository,
+        balances_log_repository: BalancesLogRepository,
+    ) -> None:
+        super().__init__(
+            user_repository=user_repository,
+            ghoul_repository=ghoul_repository,
+            user_cooldown_repository=user_cooldown_repository,
+            chat_repository=chat_repository,
+        )
+        self.balances_log_repository = balances_log_repository
+
     async def upsert(self, telegram_user_data: TelegramUser) -> Optional[User]:
         logger.debug(f"Called method upsert. User ID: {telegram_user_data.id}")
 
@@ -37,7 +60,9 @@ class UserService(Base):
         logger.debug(f"User found: {user is not None}")
         return user
 
-    async def plus_balance(self, telegram_id: int, change_balance: int) -> User:
+    async def plus_balance(
+        self, telegram_id: int, change_balance: int, log: str
+    ) -> User:
         logger.debug(
             f"Called method plus_balance. User ID: {telegram_id}, change balance: {change_balance}"
         )
@@ -50,9 +75,22 @@ class UserService(Base):
             logger.error("Cannot change balance to nouser")
             raise ValueError("Cannot change balance to nouser")
 
+        after_balance = user.balance
+        before_balance = after_balance - change_balance
+
+        await self.balances_log_repository.insert(
+            telegram_id=telegram_id,
+            change_balance=change_balance,
+            before_balance=before_balance,
+            after_balance=after_balance,
+            log=log,
+        )
+
         return user
 
-    async def minus_balance(self, telegram_id: int, change_balance: int) -> User:
+    async def minus_balance(
+        self, telegram_id: int, change_balance: int, log: str
+    ) -> User:
         logger.debug(
             f"Called method minus_balance. User ID: {telegram_id}, change balance: {change_balance}"
         )
@@ -64,6 +102,17 @@ class UserService(Base):
         if not user:
             logger.error("Cannot change balance to nouser")
             raise ValueError("Cannot change balance to nouser")
+
+        after_balance = user.balance
+        before_balance = after_balance + change_balance
+
+        await self.balances_log_repository.insert(
+            telegram_id=telegram_id,
+            change_balance=-change_balance,
+            before_balance=before_balance,
+            after_balance=after_balance,
+            log=log,
+        )
 
         return user
 

@@ -82,7 +82,9 @@ async def upgrade_kagune(
         )
 
     await user_service.minus_balance(
-        telegram_id=message.from_user.id, change_balance=price_upgrade
+        telegram_id=message.from_user.id,
+        change_balance=price_upgrade,
+        log="upgrade kagune",
     )
 
     new_ghoul = await ghoul_service.upgrade_kagune(telegram_id=message.from_user.id)
