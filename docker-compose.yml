@@ -48,7 +48,7 @@ services:
       - POSTGRES_HOSTNAME=postgres 
       - DB_HOST=postgres
     ports:
-      - "127.0.0.1:8999:8999"
+      - "127.0.0.1:${BOT_EXTERNAL_PORT:-8999}:8999"
     volumes:
       - .:/app 
     working_dir: /app
