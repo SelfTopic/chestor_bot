@@ -21,7 +21,9 @@ class Settings(BaseSettings):
     HTTPS_PROXY: str = Field(default="")
     ALL_PROXY: str = Field(default="")
 
-    model_config = SettingsConfigDict(env_file=".env", env_file_encoding="utf8")
+    model_config = SettingsConfigDict(
+        env_file=".env", env_file_encoding="utf8", extra="ignore"
+    )
 
 
 settings = Settings()

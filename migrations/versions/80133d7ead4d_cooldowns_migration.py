@@ -1,7 +1,7 @@
 """cooldowns_migration
 
 Revision ID: 80133d7ead4d
-Revises:
+Revises: e8483e5941fe
 Create Date: 2025-08-16 03:17:50.829892
 
 """
@@ -20,7 +20,7 @@ logger.debug("Logger is configure")
 
 # revision identifiers, used by Alembic.
 revision: str = "80133d7ead4d"
-down_revision: Union[str, Sequence[str], None] = None
+down_revision: Union[str, Sequence[str], None] = "e8483e5941fe"
 branch_labels: Union[str, Sequence[str], None] = None
 depends_on: Union[str, Sequence[str], None] = None
 
