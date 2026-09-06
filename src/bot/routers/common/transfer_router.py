@@ -98,6 +98,8 @@ async def transfer_handler(
         receiver_id = receiver.telegram_id
         receiver_name = receiver.username or receiver.first_name
 
+    assert receiver_id is not None
+
     sender_id = message.from_user.id
 
     try:
@@ -135,6 +137,14 @@ async def transfer_confirm_step_1(
     data = await state.get_data()
     amount = data.get("amount")
 
+    if not isinstance(amount, int):
+        await state.clear()
+        await callback_query.message.edit_text(
+            "❌ Сессия перевода устарела, начните заново."
+        )
+        await callback_query.answer()
+        return
+
     await state.set_state(TransferStates.confirm_step_2)
     await callback_query.message.edit_text(
         f"Последнее подтверждение: перевести {amount} CheSton's? Это нельзя отменить.\n\n"
@@ -168,6 +178,13 @@ async def transfer_confirm_step_2(
     amount = data.get("amount")
     sender_id = callback_query.from_user.id
     await state.clear()
+
+    if not isinstance(receiver_id, int) or not isinstance(amount, int):
+        await callback_query.message.edit_text(
+            "❌ Сессия перевода устарела, начните заново."
+        )
+        await callback_query.answer()
+        return
 
     try:
         await transfer_service.validate(sender_id, receiver_id, amount)
