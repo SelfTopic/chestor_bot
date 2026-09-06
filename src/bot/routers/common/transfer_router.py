@@ -74,7 +74,10 @@ async def transfer_handler(
     if reply and reply.from_user:
         # /transfer <сумма> - в ответ на сообщение получателя
         if len(args) < 2 or not args[1].isdigit():
-            await message.reply("Укажи сумму перевода. Пример: /transfer 500")
+            await message.reply(
+                "Укажи сумму перевода. Пример: /transfer 500 "
+                "(или «перевести 500», «подать 500», «кинуть 500»)"
+            )
             return
 
         amount = int(args[1])
@@ -87,7 +90,8 @@ async def transfer_handler(
                 "Использование:\n"
                 "/transfer <сумма> — в ответ на сообщение получателя\n"
                 "/transfer <id или @username> <сумма>\n\n"
-                "Пример: /transfer @username 500"
+                "Команду можно вызывать и так: перевести, подать, кинуть.\n"
+                "Пример: /transfer @username 500 (или «кинуть @username 500»)"
             )
             return
 
