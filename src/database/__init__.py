@@ -2,9 +2,7 @@ from os import environ
 
 from dotenv import load_dotenv
 from sqlalchemy import URL
-from sqlalchemy.ext.asyncio import AsyncEngine, async_sessionmaker, create_async_engine
-
-from .models import Base
+from sqlalchemy.ext.asyncio import async_sessionmaker, create_async_engine
 
 load_dotenv()
 
@@ -20,8 +18,3 @@ url = URL.create(
 
 engine = create_async_engine(url=url, echo=False, pool_pre_ping=True)
 session_factory = async_sessionmaker(engine, expire_on_commit=False)
-
-
-async def create_tables(engine: AsyncEngine):
-    async with engine.begin() as conn:
-        await conn.run_sync(Base.metadata.create_all)

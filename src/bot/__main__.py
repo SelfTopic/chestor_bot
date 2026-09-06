@@ -11,7 +11,7 @@ from aiohttp import web
 
 from src.config import settings
 
-from ..database import create_tables, engine, session_factory
+from ..database import session_factory
 from .containers import Container
 from .middlewares import (
     BanMiddleware,
@@ -125,9 +125,6 @@ async def main(bot_token: str, env: str) -> None:
         dp.update.middleware(BanMiddleware())
 
         include_routers(dp)
-
-        logging.info("Create tables")
-        await create_tables(engine=engine)
 
         if ENV:
             webhook_requests_handler = SimpleRequestHandler(

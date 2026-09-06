@@ -58,18 +58,20 @@ services:
     depends_on:
       postgres:
         condition: service_healthy
+      migrations:
+        condition: service_completed_successfully
     networks:
       - app_network
 
-  migrations: 
+  migrations:
     build: .
-    tty: true 
+    tty: true
     depends_on:
       postgres:
         condition: service_healthy
     environment:
-      - POSTGRES_HOSTNAME=postgres  
-    command: ["/bin/sh", "-c", "sleep 5 && poetry run alembic downgrade base && poetry run alembic upgrade head"]
+      - POSTGRES_HOSTNAME=postgres
+    command: ["poetry", "run", "alembic", "upgrade", "head"]
     networks:
       - app_network
 
