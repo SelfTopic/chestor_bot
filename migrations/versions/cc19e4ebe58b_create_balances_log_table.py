@@ -1,7 +1,7 @@
 """create balances_log table
 
 Revision ID: cc19e4ebe58b
-Revises: ce79a54250c9
+Revises: 0a8aa89b6acb
 Create Date: 2026-09-05 00:00:00.000000
 
 """
@@ -12,7 +12,7 @@ from alembic import op
 
 # revision identifiers, used by Alembic.
 revision: str = "cc19e4ebe58b"
-down_revision: Union[str, Sequence[str], None] = "ce79a54250c9"
+down_revision: Union[str, Sequence[str], None] = "0a8aa89b6acb"
 branch_labels: Union[str, Sequence[str], None] = None
 depends_on: Union[str, Sequence[str], None] = None
 
