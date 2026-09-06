@@ -2,7 +2,7 @@ import logging
 from datetime import datetime
 from typing import Any, Optional, Union
 
-from sqlalchemy import desc, exists, select
+from sqlalchemy import desc, exists, select, update
 from sqlalchemy.dialects.postgresql import insert
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -131,6 +131,31 @@ class UserRepository(Base):
             logger.error("Cannot change data to nouser")
             raise ValueError("Cannot change data to nouser")
 
+        return user
+
+    async def change_balance_atomic(self, telegram_id: int, delta: int) -> Optional[User]:
+        """
+        Атомарно меняет баланс на delta одним SQL-запросом
+        (UPDATE ... SET balance = balance + delta), без промежуточного
+        чтения. Это защищает от гонки при конкурентных изменениях баланса
+        одного и того же пользователя — Postgres сам сериализует
+        конкурентные UPDATE одной строки.
+
+        Returns:
+            User с уже обновлённым балансом, или None если пользователь не найден.
+        """
+        logger.debug(
+            f"Called method change_balance_atomic. Params: telegram_id={telegram_id}, delta={delta}"
+        )
+
+        stmt = (
+            update(User)
+            .where(User.telegram_id == telegram_id)
+            .values(balance=User.balance + delta)
+            .returning(User)
+        )
+
+        user = await self.session.scalar(stmt)
         return user
 
     async def ban(
