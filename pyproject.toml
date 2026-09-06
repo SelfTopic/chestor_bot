@@ -28,6 +28,7 @@ dependencies = [
     "pyrogram (>=2.0.106,<3.0.0)",
     "tgcrypto (>=1.2.5,<2.0.0)",
     "ffmpeg-python (>=0.2.0,<0.3.0)",
+    "pyyaml (>=6.0.3,<7.0.0)",
 ]
 
 
