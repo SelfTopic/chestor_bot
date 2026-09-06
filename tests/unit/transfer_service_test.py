@@ -100,6 +100,7 @@ async def test_validate_allows_brand_new_receiver(transfer_service, make_user, s
     await make_user(telegram_id=1, username="sender")
     await make_user(telegram_id=2, username="receiver")
     await _age_account(session, 1, days=10)
+    await UserRepository(session).change_balance_atomic(1, delta=1000)
 
     await transfer_service.validate(1, 2, 100)
 
@@ -110,6 +111,7 @@ async def test_validate_rejects_when_receiver_limit_exceeded(
     await make_user(telegram_id=1, username="sender")
     await make_user(telegram_id=2, username="receiver")
     await _age_account(session, 1, days=10)
+    await UserRepository(session).change_balance_atomic(1, delta=1000)
 
     transfer_repo = TransferRepository(session)
     for _ in range(TRANSFER_CONFIG.max_received_per_day):
@@ -118,6 +120,24 @@ async def test_validate_rejects_when_receiver_limit_exceeded(
 
     with pytest.raises(ReceiverLimitExceededError):
         await transfer_service.validate(1, 2, 100)
+
+
+async def test_validate_rejects_insufficient_balance_early(
+    transfer_service, make_user, session
+):
+    """
+    Регрессия: раньше нехватка средств обнаруживалась только внутри
+    transfer() (атомарный debit_if_sufficient), уже после того как юзер
+    прошёл весь флоу подтверждения. validate() должен ловить это сразу,
+    до показа клавиатуры подтверждения - используя уже загруженный sender
+    для age-check, без лишнего запроса к БД.
+    """
+    await make_user(telegram_id=1, username="sender")
+    await make_user(telegram_id=2, username="receiver")
+    await _age_account(session, 1, days=10)
+
+    with pytest.raises(InsufficientBalanceError):
+        await transfer_service.validate(1, 2, 500)
 
 
 async def test_transfer_moves_balance_and_logs(transfer_service, make_user, session):

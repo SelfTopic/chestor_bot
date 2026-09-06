@@ -67,6 +67,14 @@ class TransferService:
                 f"{TRANSFER_CONFIG.min_sender_account_age_days} дн."
             )
 
+        if sender.balance < amount:
+            # Ранняя, "мягкая" проверка - чтобы не заставлять юзера пройти
+            # весь троллинг-квест подтверждения и только потом узнать, что
+            # денег не хватает. Не заменяет атомарный debit_if_sufficient в
+            # transfer() - баланс мог измениться между этим вызовом и самим
+            # списанием, тот чек остаётся единственным источником истины.
+            raise InsufficientBalanceError()
+
         receiver = await self.user_repository.get(receiver_id)
         if not receiver:
             raise SenderTooNewError("Получатель не найден")
