@@ -11,7 +11,7 @@ from aiohttp import web
 
 from src.config import settings
 
-from ..database import create_tables, engine, flush_database, session_factory
+from ..database import session_factory
 from .containers import Container
 from .middlewares import (
     BanMiddleware,
@@ -61,7 +61,7 @@ if not settings.BOT_TOKEN:
     sys.exit(1)
 
 
-logger.info(f"ENV is {'PROD' if settings.ENV else 'DEV'}")
+logger.info(f"ENV is {settings.ENV}")
 
 WEBHOOK_HOST = "https://chestor.site"
 WEBHOOK_PATH = f"/webhook/{settings.BOT_TOKEN.get_secret_value()}"
@@ -125,13 +125,6 @@ async def main(bot_token: str, env: str) -> None:
         dp.update.middleware(BanMiddleware())
 
         include_routers(dp)
-
-        if not ENV:
-            logging.info("Flushing database")
-            await flush_database(engine=engine)
-        else:
-            logging.info("Create tables")
-            await create_tables(engine=engine)
 
         if ENV:
             webhook_requests_handler = SimpleRequestHandler(
