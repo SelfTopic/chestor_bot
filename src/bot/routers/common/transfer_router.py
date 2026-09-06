@@ -53,9 +53,9 @@ def _build_confirmation_keyboard(step: int) -> InlineKeyboardMarkup:
 
 
 @router.message(Command("transfer"))
-@router.message(Text("подать"))
-@router.message(Text("перевести"))
-@router.message(Text("кинуть"))
+@router.message(Text("подать", startswith=True))
+@router.message(Text("перевести", startswith=True))
+@router.message(Text("кинуть", startswith=True))
 @inject
 async def transfer_handler(
     message: Message,
