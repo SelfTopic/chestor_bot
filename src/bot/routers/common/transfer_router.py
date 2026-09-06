@@ -15,6 +15,7 @@ from dependency_injector.wiring import Provide, inject
 
 from ...containers import Container
 from ...exceptions import TransferError
+from ...filters import Text
 from ...services import TransferService
 
 logger = logging.getLogger(__name__)
@@ -52,6 +53,7 @@ def _build_confirmation_keyboard(step: int) -> InlineKeyboardMarkup:
 
 
 @router.message(Command("transfer"))
+@router.message(Text("подать"))
 @inject
 async def transfer_handler(
     message: Message,
