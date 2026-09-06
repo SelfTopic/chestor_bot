@@ -129,3 +129,14 @@ class WordleConfig:
 
 
 WORDLE_CONFIG = WordleConfig()
+
+
+@dataclass
+class TransferConfig:
+    min_amount: int = 1
+    max_amount: int = 100_000
+    min_sender_account_age_days: int = 3
+    max_received_per_day: int = 10
+
+
+TRANSFER_CONFIG = TransferConfig()

@@ -158,6 +158,32 @@ class UserRepository(Base):
         user = await self.session.scalar(stmt)
         return user
 
+    async def debit_if_sufficient(self, telegram_id: int, amount: int) -> Optional[User]:
+        """
+        Атомарно списывает amount с баланса, но только если баланса хватает -
+        проверка "balance >= amount" встроена прямо в WHERE того же UPDATE,
+        так что не может произойти гонки между "проверили, что хватает" и
+        "списали" (в отличие от change_balance_atomic, эта операция никогда
+        не уводит баланс в минус).
+
+        Returns:
+            User с уже списанным балансом, или None если пользователя нет
+            или баланса не хватает.
+        """
+        logger.debug(
+            f"Called method debit_if_sufficient. Params: telegram_id={telegram_id}, amount={amount}"
+        )
+
+        stmt = (
+            update(User)
+            .where(User.telegram_id == telegram_id, User.balance >= amount)
+            .values(balance=User.balance - amount)
+            .returning(User)
+        )
+
+        user = await self.session.scalar(stmt)
+        return user
+
     async def ban(
         self,
         telegram_id: int,

@@ -11,6 +11,7 @@ from .repositories import (
     LotteryRepository,
     MediaRepository,
     RpCommandsRepository,
+    TransferRepository,
     UserCooldownRepository,
     UserRepository,
 )
@@ -29,6 +30,7 @@ from .services import (
     RpCommandsService,
     StatsEditService,
     SyncEntitiesService,
+    TransferService,
     UserService,
     WikipediaService,
     WordleService,
@@ -61,6 +63,8 @@ class Container(containers.DeclarativeContainer):
     balances_log_repository = providers.Factory(
         BalancesLogRepository, session=db_session
     )
+
+    transfer_repository = providers.Factory(TransferRepository, session=db_session)
 
     dialog_service = providers.Factory(DialogService)
 
@@ -177,6 +181,13 @@ class Container(containers.DeclarativeContainer):
     wordle_service = providers.Singleton(WordleService)
 
     wikipedia_service = providers.Factory(WikipediaService)
+
+    transfer_service = providers.Factory(
+        TransferService,
+        user_repository=user_repository,
+        transfer_repository=transfer_repository,
+        balances_log_repository=balances_log_repository,
+    )
 
     video_cutter_service = providers.Singleton(VideoCutterService)
     video_worker = providers.Singleton(VideoWorker, video_cutter_service)

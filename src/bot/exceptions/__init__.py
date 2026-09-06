@@ -11,6 +11,14 @@ from .media_download import (
 from .media_not_found import MediaNotFound, MediaNotFoundInDatabase
 from .rp_commands import RpCommandError, RpCommandNotFound, RpCommandValidateError
 from .time import DurationParseError
+from .transfer import (
+    InsufficientBalanceError,
+    InvalidTransferAmountError,
+    ReceiverLimitExceededError,
+    SelfTransferError,
+    SenderTooNewError,
+    TransferError,
+)
 from .user_not_found import (
     UserNotFound,
     UserNotFoundInChat,
@@ -42,4 +50,10 @@ __all__ = [
     "RpCommandNotFound",
     "RpCommandError",
     "DurationParseError",
+    "TransferError",
+    "InvalidTransferAmountError",
+    "SelfTransferError",
+    "InsufficientBalanceError",
+    "SenderTooNewError",
+    "ReceiverLimitExceededError",
 ]

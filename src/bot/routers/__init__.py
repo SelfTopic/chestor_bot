@@ -10,6 +10,7 @@ from .common.race_profile_router import router as RaceProfileRouter
 from .common.role_play_router import router as RolePlayRouter
 from .common.start_router import router as StartRouter
 from .common.tops import router as CommonTopsRouter
+from .common.transfer_router import router as TransferRouter
 from .common.wordle_router import router as WordleRouter
 from .creator_routers import CreatorRouter
 from .moderator_routers import moderator_router as ModeratorRouter
@@ -30,4 +31,5 @@ __all__ = [
     "RolePlayRouter",
     "WordleRouter",
     "AnimeRouter",
+    "TransferRouter",
 ]

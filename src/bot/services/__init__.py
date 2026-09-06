@@ -16,6 +16,7 @@ from .ghoul_quiz import GhoulQuizService
 from .media import MediaDownloader, MediaService
 from .rp_commands import RpCommandsService
 from .sync_entity import SyncEntitiesService
+from .transfer import TransferService
 from .user import UserService
 from .video import VideoCutterService, VideoWorker
 from .wikipedia import WikipediaService
@@ -45,4 +46,5 @@ __all__ = [
     "VideoCutterService",
     "VideoWorker",
     "WikipediaService",
+    "TransferService",
 ]

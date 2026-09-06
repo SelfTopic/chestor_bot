@@ -4,6 +4,7 @@ from .chat import ChatRepository
 from .ghoul import GhoulRepository
 from .lottery import LotteryRepository
 from .media import MediaRepository
+from .transfer import TransferRepository
 from .user import UserRepository
 from .user_coldown import UserCooldownRepository
 from .rp_commands import RpCommandsRepository
@@ -18,4 +19,5 @@ __all__ = [
     "LotteryRepository",
     "RpCommandsRepository",
     "BalancesLogRepository",
+    "TransferRepository",
 ]
