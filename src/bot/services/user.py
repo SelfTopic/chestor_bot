@@ -67,18 +67,16 @@ class UserService(Base):
             f"Called method plus_balance. User ID: {telegram_id}, change balance: {change_balance}"
         )
 
-        user = await self.get(find_by=telegram_id)
+        user = await self.user_repository.change_balance_atomic(
+            telegram_id=telegram_id, delta=change_balance
+        )
 
         if not user:
             logger.error("Cannot change balance to nouser")
             raise ValueError("Cannot change balance to nouser")
 
-        before_balance = user.balance
-        after_balance = before_balance + change_balance
-
-        user = await self.user_repository.change_data(
-            telegram_id=telegram_id, balance=after_balance
-        )
+        after_balance = user.balance
+        before_balance = after_balance - change_balance
 
         await self.balances_log_repository.insert(
             telegram_id=telegram_id,
@@ -97,18 +95,16 @@ class UserService(Base):
             f"Called method minus_balance. User ID: {telegram_id}, change balance: {change_balance}"
         )
 
-        user = await self.get(find_by=telegram_id)
+        user = await self.user_repository.change_balance_atomic(
+            telegram_id=telegram_id, delta=-change_balance
+        )
 
         if not user:
             logger.error("Cannot change balance to nouser")
             raise ValueError("Cannot change balance to nouser")
 
-        before_balance = user.balance
-        after_balance = before_balance - change_balance
-
-        user = await self.user_repository.change_data(
-            telegram_id=telegram_id, balance=after_balance
-        )
+        after_balance = user.balance
+        before_balance = after_balance + change_balance
 
         await self.balances_log_repository.insert(
             telegram_id=telegram_id,
