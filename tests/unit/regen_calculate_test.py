@@ -2,6 +2,7 @@ from datetime import timedelta
 
 from src.bot.types import KaguneType
 from src.bot.utils import (
+    apply_hunger_restore,
     compute_health,
     compute_hunger,
     get_hunger_tier,
@@ -154,3 +155,8 @@ def test_hours_until_full_health():
     assert hours_until_full_health(health=5, max_health=5, hp_per_hour=1.0) == 0.0
     assert hours_until_full_health(health=0, max_health=5, hp_per_hour=1.0) == 5.0
     assert hours_until_full_health(health=0, max_health=5, hp_per_hour=0.0) is None
+
+
+def test_apply_hunger_restore_clamps_at_100():
+    assert apply_hunger_restore(hunger=50, restore_percent=25) == 75
+    assert apply_hunger_restore(hunger=90, restore_percent=25) == 100

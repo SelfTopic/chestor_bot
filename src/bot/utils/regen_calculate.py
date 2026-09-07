@@ -152,6 +152,13 @@ def compute_health(
     return new_health, new_updated_at
 
 
+def apply_hunger_restore(hunger: int, restore_percent: int) -> int:
+    """Голод не может уйти выше 100% - клэмп сверху. Случайную величину
+    восстановления (5-25%, см. EAT_HUMAN_CONFIG) катает вызывающий код -
+    здесь только чистое применение."""
+    return min(100, hunger + restore_percent)
+
+
 def health_regen_per_hour(
     regeneration: int, hunger: int, kagune_type_bit: int, is_kakuja: bool
 ) -> float:

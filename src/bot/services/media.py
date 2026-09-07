@@ -79,6 +79,7 @@ class CollectionParser:
         "kagune rinkaku": MediaCollection.UPGRADE_KAGUNE_RINKAKU,
         "kagune bikaku": MediaCollection.UPGRADE_KAGUNE_BIKAKU,
         "coffee": MediaCollection.COFFEE,
+        "eat human": MediaCollection.EAT_HUMAN,
         "welcome gif": MediaCollection.WELCOME_GIF,
         "welcome photo": MediaCollection.WELCOME_PHOTO,
         "welcome video": MediaCollection.WELCOME_VIDEO,

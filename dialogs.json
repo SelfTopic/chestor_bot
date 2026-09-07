@@ -93,5 +93,9 @@
 
     "regen_status": "❤️ Здоровье: {health}/{max_health}\n⚡ Скорость регенерации сейчас: {hp_per_hour} HP/ч\n🕰 {time_left}",
 
-    "hunger_status": "🍖 Голод: {hunger}% ({tier})\n🕰 {time_left}"
+    "hunger_status": "🍖 Голод: {hunger}% ({tier})\n🕰 {time_left}",
+
+    "eat_human_accept": "🍽 Ты сожрал человека. \n\n🍖 Голод восстановлен на {restored}%, теперь: {hunger}%\n🥩 Всего съедено людей: {count}",
+
+    "eat_human_cooldown_error": "Ты слишком сыт, чтобы есть ещё людей. Попробуй через {hours} часов, {minutes} минут и {seconds} секунд"
 }

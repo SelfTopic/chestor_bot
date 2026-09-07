@@ -1,14 +1,20 @@
 import logging
 import random
-from typing import Any, List, Optional, Union
+from typing import Any, List, Optional, Tuple, Union
 
 from aiogram.types import Message
 
 from src.database.models import Ghoul
 
-from ..game_configs import KAGUNE_CONFIG
+from ..game_configs import EAT_HUMAN_CONFIG, KAGUNE_CONFIG
 from ..types import KaguneType, Race, RegisterGhoulType
-from ..utils import compute_health, compute_hunger, health_regen_per_hour, utcnow_naive
+from ..utils import (
+    apply_hunger_restore,
+    compute_health,
+    compute_hunger,
+    health_regen_per_hour,
+    utcnow_naive,
+)
 from .base import Base
 
 logger = logging.getLogger(__name__)
@@ -90,6 +96,38 @@ class GhoulService(Base):
             health=new_health,
             health_updated_at=new_health_at,
         )
+
+    async def eat_human(self, telegram_id: int) -> Tuple[Ghoul, int]:
+        """Фаза 3a ("Поесть человека" в BATTLE_DESIGN.md) - без риска
+        нападения моба, это 3b, требует боевого движка. Кулдаун (1 сутки)
+        проверяется в роутере через CooldownService, не здесь.
+
+        Возвращает (обновлённый_гуль, сколько_голода_восстановлено)."""
+
+        logger.debug(f"Called method eat_human. Params: telegram_id={telegram_id}")
+
+        ghoul = await self.get(telegram_id)
+
+        if not ghoul:
+            logger.error("Ghoul not found for eat_human operation")
+            raise ValueError("Ghoul not found")
+
+        restore = EAT_HUMAN_CONFIG.hunger_restore
+        new_hunger = apply_hunger_restore(ghoul.hunger, restore)
+
+        updated_ghoul = await self.ghoul_repository.upsert(
+            telegram_id=telegram_id,
+            hunger=new_hunger,
+            hunger_updated_at=utcnow_naive(),
+            eat_humans=ghoul.eat_humans + 1,
+        )
+
+        logger.debug(
+            f"eat_human: hunger {ghoul.hunger}->{new_hunger} (+{restore}), "
+            f"eat_humans={updated_ghoul.eat_humans}"
+        )
+
+        return updated_ghoul, restore
 
     async def snap_finger(self, telegram_id: int) -> Ghoul:
         logger.debug(f"Called method snap_finger. Params: telegram_id={telegram_id}")

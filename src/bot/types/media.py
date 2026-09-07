@@ -12,6 +12,7 @@ class MediaCollection(str, Enum):
     UPGRADE_KAGUNE_BIKAKU = "upgrade_kagune:bikaku"
     SNAP_FINGER = "snap_finger:animation"
     COFFEE = "coffee:animation"
+    EAT_HUMAN = "eat:humans"
     FIGHT = "fight:animation"
     WELCOME_GIF = "welcome:animation"
     WELCOME_PHOTO = "welcome:photo"

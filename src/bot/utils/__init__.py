@@ -1,6 +1,7 @@
 from .kagune_calculate import calculate_kagune
 from .parse_time import format_duration, parse_seconds
 from .regen_calculate import (
+    apply_hunger_restore,
     compute_health,
     compute_hunger,
     effective_regeneration,
@@ -15,6 +16,7 @@ __all__ = [
     "calculate_kagune",
     "parse_seconds",
     "format_duration",
+    "apply_hunger_restore",
     "compute_health",
     "compute_hunger",
     "effective_regeneration",

@@ -154,3 +154,20 @@ class PassiveStatsConfig:
 
 
 PASSIVE_STATS_CONFIG = PassiveStatsConfig()
+
+
+@dataclass
+class EatHumanConfig:
+    """Фаза 3a из BATTLE_DESIGN.md - без риска нападения моба (это 3b, после
+    боевого движка). Кулдаун (1 сутки) живёт в таблице cooldowns, см.
+    migrations/versions/*_insert_new_cooldown_type_eat_human.py."""
+
+    min_hunger_restore: int = 5
+    max_hunger_restore: int = 25
+
+    @property
+    def hunger_restore(self) -> int:
+        return randint(self.min_hunger_restore, self.max_hunger_restore)
+
+
+EAT_HUMAN_CONFIG = EatHumanConfig()
