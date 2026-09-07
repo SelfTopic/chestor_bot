@@ -33,7 +33,11 @@ async def regen_status_handler(
     ghoul = await ghoul_service.get(message)
 
     if not ghoul:
-        return await message.answer(text=dialog_service.text(key="not_a_ghoul"))
+        # GhoulMiddleware уже отсеивает не-гулей до хандлера - если сюда всё
+        # же попали без гуля, это не "не гуль", а что-то хуже (гонка, битые
+        # данные), см. тот же паттерн в GhoulService.snap_finger.
+        logger.error(f"Ghoul not found for {message.from_user.id} despite GhoulMiddleware")
+        raise ValueError("Ghoul not found")
 
     hp_per_hour = health_regen_per_hour(
         regeneration=ghoul.regeneration,
@@ -75,7 +79,8 @@ async def hunger_status_handler(
     ghoul = await ghoul_service.get(message)
 
     if not ghoul:
-        return await message.answer(text=dialog_service.text(key="not_a_ghoul"))
+        logger.error(f"Ghoul not found for {message.from_user.id} despite GhoulMiddleware")
+        raise ValueError("Ghoul not found")
 
     hours_left = hours_until_starved(ghoul.hunger, ghoul.is_kakuja)
     tier = get_hunger_tier(ghoul.hunger)

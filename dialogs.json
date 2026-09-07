@@ -93,7 +93,5 @@
 
     "regen_status": "❤️ Здоровье: {health}/{max_health}\n⚡ Скорость регенерации сейчас: {hp_per_hour} HP/ч\n🕰 {time_left}",
 
-    "hunger_status": "🍖 Голод: {hunger}% ({tier})\n🕰 {time_left}",
-
-    "not_a_ghoul": "Это доступно только гулям."
+    "hunger_status": "🍖 Голод: {hunger}% ({tier})\n🕰 {time_left}"
 }
