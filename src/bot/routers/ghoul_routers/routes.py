@@ -2,6 +2,7 @@ from aiogram import Router
 
 from .coffee import router as CoffeeRouter
 from .dep import router as DepRouter
+from .passive_status import router as PassiveStatusRouter
 from .quiz import router as QuizRouter
 from .snap import router as SnapFingerRouter
 from .tops import router as TopsGhoulRouter
@@ -18,6 +19,7 @@ def include_ghoul_routers(rt: Router) -> None:
         DepRouter,
         QuizRouter,
         UpgradeStatRouter,
+        PassiveStatusRouter,
     )
 
 

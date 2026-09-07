@@ -1,4 +1,4 @@
-from src.bot.utils import parse_seconds
+from src.bot.utils import format_duration, parse_seconds
 
 
 def test_parse_seconds_basic():
@@ -27,3 +27,20 @@ def test_parse_seconds_beyond_a_day():
     tc = parse_seconds(total_seconds=90000)  # 25h
     assert tc.hours_remaining == 1
     assert tc.total_hours == 25
+
+
+def test_format_duration_minutes_only():
+    assert format_duration(300) == "5м"
+
+
+def test_format_duration_hours_and_minutes():
+    assert format_duration(3661) == "1ч 1м"
+
+
+def test_format_duration_days_hours_minutes():
+    assert format_duration(90000) == "1д 1ч 0м"  # 25h
+
+
+def test_format_duration_non_positive_clamped():
+    assert format_duration(0) == "0м"
+    assert format_duration(-10) == "0м"

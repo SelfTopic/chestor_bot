@@ -1,7 +1,13 @@
 from datetime import timedelta
 
 from src.bot.types import KaguneType
-from src.bot.utils import compute_health, compute_hunger, get_hunger_tier
+from src.bot.utils import (
+    compute_health,
+    compute_hunger,
+    get_hunger_tier,
+    hours_until_full_health,
+    hours_until_starved,
+)
 from src.bot.utils.regen_calculate import health_regen_per_hour
 from src.bot.utils.time_now import utcnow_naive
 
@@ -136,3 +142,15 @@ def test_health_regen_per_hour_uses_hunger_tier_and_kagune_and_kakuja():
         regeneration=10, hunger=100, kagune_type_bit=0, is_kakuja=True
     )
     assert kakuja == 30.0
+
+
+def test_hours_until_starved():
+    assert hours_until_starved(hunger=50, is_kakuja=False) == 84.0  # половина от 168ч
+    assert hours_until_starved(hunger=50, is_kakuja=True) == 21.0  # в 4 раза быстрее
+    assert hours_until_starved(hunger=0, is_kakuja=False) == 0.0
+
+
+def test_hours_until_full_health():
+    assert hours_until_full_health(health=5, max_health=5, hp_per_hour=1.0) == 0.0
+    assert hours_until_full_health(health=0, max_health=5, hp_per_hour=1.0) == 5.0
+    assert hours_until_full_health(health=0, max_health=5, hp_per_hour=0.0) is None

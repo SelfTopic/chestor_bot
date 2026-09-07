@@ -89,5 +89,11 @@
 
     "lottery_win": "🎰 Депнул на {chosen_color}! \n\n🎯 Выиграл! Победный цвет был {winning_color}!\n💰 Выигрыш: {earned} CheSton (ставка {bet} × {multiplier})\n💵 Баланс: {balance} CheSton",
 
-    "lottery_lose": "🎰 Депнул на {chosen_color}! \n\n❌ Проиграл! Победный цвет был {winning_color}!\n💸 Проигрыш: {bet} CheSton\n💵 Баланс: {balance} CheSton"
+    "lottery_lose": "🎰 Депнул на {chosen_color}! \n\n❌ Проиграл! Победный цвет был {winning_color}!\n💸 Проигрыш: {bet} CheSton\n💵 Баланс: {balance} CheSton",
+
+    "regen_status": "❤️ Здоровье: {health}/{max_health}\n⚡ Скорость регенерации сейчас: {hp_per_hour} HP/ч\n🕰 {time_left}",
+
+    "hunger_status": "🍖 Голод: {hunger}% ({tier})\n🕰 {time_left}",
+
+    "not_a_ghoul": "Это доступно только гулям."
 }

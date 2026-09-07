@@ -18,6 +18,7 @@ timestamp снапшота продвигается только на то вр�
 
 from dataclasses import dataclass
 from datetime import datetime, timedelta
+from typing import Optional
 
 from ..game_configs import PASSIVE_STATS_CONFIG
 from ..types import KaguneType
@@ -72,11 +73,30 @@ def effective_regeneration(
     return value
 
 
-def _hunger_decay_per_hour(is_kakuja: bool) -> float:
+def hunger_decay_per_hour(is_kakuja: bool) -> float:
     rate = 100.0 / PASSIVE_STATS_CONFIG.hunger_full_decay_hours
     if is_kakuja:
         rate *= PASSIVE_STATS_CONFIG.kakuja_hunger_decay_multiplier
     return rate
+
+
+def hours_until_starved(hunger: int, is_kakuja: bool) -> float:
+    """Прогноз "через сколько часов голод дойдёт до 0", если ничего не есть.
+    Само по себе смерть не вызывает (см. "Смерть и сброс" в BATTLE_DESIGN.md) -
+    только оценка для отображения игроку."""
+    return hunger / hunger_decay_per_hour(is_kakuja)
+
+
+def hours_until_full_health(
+    health: int, max_health: int, hp_per_hour: float
+) -> Optional[float]:
+    """None значит "никогда не долечится при текущей скорости регена" -
+    например regeneration=0 (обычно достижимо только через /set_stat)."""
+    if health >= max_health:
+        return 0.0
+    if hp_per_hour <= 0:
+        return None
+    return (max_health - health) / hp_per_hour
 
 
 def compute_hunger(
@@ -92,7 +112,7 @@ def compute_hunger(
     Здесь только сигнализируется - вызывающий код пока НЕ обязан на это
     реагировать (смерть/сброс - отдельный, ещё не реализованный шаг)."""
 
-    decay_per_hour = _hunger_decay_per_hour(is_kakuja)
+    decay_per_hour = hunger_decay_per_hour(is_kakuja)
     elapsed_hours = max(0.0, (now - hunger_updated_at).total_seconds() / 3600)
 
     raw_points_lost = int(elapsed_hours * decay_per_hour)
