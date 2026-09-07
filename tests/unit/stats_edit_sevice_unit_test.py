@@ -103,3 +103,52 @@ async def test_set_ghoul_stat_does_not_write_balance_log(
         select(BalancesLog).filter(BalancesLog.telegram_id == 400_000_007)
     )
     assert result.scalar_one_or_none() is None
+
+
+async def test_set_hunger_hours_ago_moves_snapshot_into_the_past(
+    stats_service, make_user, make_ghoul
+):
+    """Служебное поле для теста ленивого расчёта - двигает hunger_updated_at
+    на N часов назад, а не пишет N в саму колонку hunger."""
+    from datetime import timedelta
+
+    from src.bot.utils import utcnow_naive
+
+    await make_user(telegram_id=400_000_008)
+    await make_ghoul(telegram_id=400_000_008)
+
+    before = utcnow_naive()
+    result = await stats_service.set_stat(
+        "400000008", "hunger_hours_ago", 10, admin_id=ADMIN_ID
+    )
+    after = utcnow_naive()
+
+    assert result.is_ghoul_field is True
+    assert before - timedelta(hours=10) <= result.target.hunger_updated_at
+    assert result.target.hunger_updated_at <= after - timedelta(hours=10)
+
+
+async def test_set_health_hours_ago_moves_snapshot_into_the_past(
+    stats_service, make_user, make_ghoul
+):
+    from datetime import timedelta
+
+    from src.bot.utils import utcnow_naive
+
+    await make_user(telegram_id=400_000_009)
+    await make_ghoul(telegram_id=400_000_009)
+
+    before = utcnow_naive()
+    result = await stats_service.set_stat(
+        "400000009", "health_hours_ago", 2, admin_id=ADMIN_ID
+    )
+    after = utcnow_naive()
+
+    assert before - timedelta(hours=2) <= result.target.health_updated_at
+    assert result.target.health_updated_at <= after - timedelta(hours=2)
+
+
+def test_format_fields_help_mentions_time_fields(stats_service):
+    text = stats_service.format_fields_help()
+    assert "hunger_hours_ago" in text
+    assert "health_hours_ago" in text

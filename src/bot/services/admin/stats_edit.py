@@ -1,9 +1,11 @@
 import logging
 from dataclasses import dataclass
+from datetime import timedelta
 
 from src.bot.repositories.balances_log import BalancesLogRepository
 from src.bot.repositories.ghoul import GhoulRepository
 from src.bot.repositories.user import UserRepository
+from src.bot.utils import utcnow_naive
 from src.database.models import Ghoul, User
 
 logger = logging.getLogger(__name__)
@@ -24,6 +26,15 @@ ALLOWED_GHOUL_FIELDS = {
     "eat_humans",
     "eat_ghouls",
     "coffee_count",
+}
+
+# Служебные поля - не настоящие колонки, а сдвиг снапшота голода/регена
+# назад на N часов. Нужны для ручного теста ленивого расчёта (голод/реген
+# без реального ожидания суток), см. BATTLE_DESIGN.md. Значение - целое
+# число часов "в прошлое".
+ALLOWED_GHOUL_TIME_FIELDS = {
+    "hunger_hours_ago": "hunger_updated_at",
+    "health_hours_ago": "health_updated_at",
 }
 
 
@@ -50,7 +61,7 @@ class StatsEditService:
         """Возвращает (is_valid, is_ghoul_field)."""
         if field in ALLOWED_USER_FIELDS:
             return True, False
-        if field in ALLOWED_GHOUL_FIELDS:
+        if field in ALLOWED_GHOUL_FIELDS or field in ALLOWED_GHOUL_TIME_FIELDS:
             return True, True
         return False, False
 
@@ -92,7 +103,17 @@ class StatsEditService:
         if not ghoul:
             raise ValueError("У пользователя нет профиля гуля.")
 
-        updated_ghoul = await self.ghoul_repo.upsert(user.telegram_id, **{field: value})
+        if field in ALLOWED_GHOUL_TIME_FIELDS:
+            column = ALLOWED_GHOUL_TIME_FIELDS[field]
+            new_timestamp = utcnow_naive() - timedelta(hours=value)
+            updated_ghoul = await self.ghoul_repo.upsert(
+                user.telegram_id, **{column: new_timestamp}
+            )
+        else:
+            updated_ghoul = await self.ghoul_repo.upsert(
+                user.telegram_id, **{field: value}
+            )
+
         return StatEditResult(
             target=updated_ghoul, field=field, value=value, is_ghoul_field=True
         )
@@ -100,5 +121,7 @@ class StatsEditService:
     def format_fields_help(self) -> str:
         return (
             f"Поля пользователя: {', '.join(sorted(ALLOWED_USER_FIELDS))}\n"
-            f"Поля гуля: {', '.join(sorted(ALLOWED_GHOUL_FIELDS))}"
+            f"Поля гуля: {', '.join(sorted(ALLOWED_GHOUL_FIELDS))}\n"
+            f"Служебные поля гуля (сдвиг снапшота назад на N часов, для теста "
+            f"голода/регена): {', '.join(sorted(ALLOWED_GHOUL_TIME_FIELDS))}"
         )
