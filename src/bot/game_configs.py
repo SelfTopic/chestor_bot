@@ -140,3 +140,17 @@ class TransferConfig:
 
 
 TRANSFER_CONFIG = TransferConfig()
+
+
+@dataclass
+class PassiveStatsConfig:
+    """Параметры ленивого расчёта голода/регенерации, см. BATTLE_DESIGN.md."""
+
+    hunger_full_decay_hours: float = 168.0  # 100% -> 0% за 7 суток на обычном голоде
+    kakuja_hunger_decay_multiplier: float = 4.0  # какудже голодает в 4 раза быстрее
+    health_regen_per_point_per_hour: float = 1.0  # HP в час за 1 очко эфф. regeneration
+    kagune_type_multiplier: float = 1.8  # см. "Множители типов кагуне"
+    kakuja_multiplier: float = 3.0  # см. порядок применения множителей
+
+
+PASSIVE_STATS_CONFIG = PassiveStatsConfig()

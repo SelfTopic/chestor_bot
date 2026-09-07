@@ -8,6 +8,7 @@ from src.database.models import Ghoul
 
 from ..game_configs import KAGUNE_CONFIG
 from ..types import KaguneType, Race, RegisterGhoulType
+from ..utils import compute_health, compute_hunger, health_regen_per_hour, utcnow_naive
 from .base import Base
 
 logger = logging.getLogger(__name__)
@@ -37,10 +38,58 @@ class GhoulService(Base):
                 ghoul = await self.ghoul_repository.get_by_id(search_parameter)
 
             logger.debug(f"Ghoul found: {ghoul is not None}")
+            if ghoul:
+                ghoul = await self.materialize_passive_stats(ghoul)
             return ghoul
 
         logger.error(f"Invalid parameter type: {type(search_parameter)}")
         raise ValueError(f"Invalid type parameter: {type(search_parameter)}")
+
+    async def materialize_passive_stats(self, ghoul: Ghoul) -> Ghoul:
+        """Досчитывает голод/здоровье на текущий момент (ленивый расчёт,
+        см. BATTLE_DESIGN.md) и, если что-то изменилось, сохраняет.
+
+        Смерть от голода (would_starve) сюда пока не подключена - это
+        отдельный шаг, требующий готовой логики сброса гуля."""
+
+        now = utcnow_naive()
+
+        new_hunger, new_hunger_at, _would_starve = compute_hunger(
+            hunger=ghoul.hunger,
+            hunger_updated_at=ghoul.hunger_updated_at,
+            is_kakuja=ghoul.is_kakuja,
+            now=now,
+        )
+
+        hp_per_hour = health_regen_per_hour(
+            regeneration=ghoul.regeneration,
+            hunger=new_hunger,
+            kagune_type_bit=ghoul.kagune_type_bit or 0,
+            is_kakuja=ghoul.is_kakuja,
+        )
+        new_health, new_health_at = compute_health(
+            health=ghoul.health,
+            health_updated_at=ghoul.health_updated_at,
+            max_health=ghoul.max_health,
+            hp_per_hour=hp_per_hour,
+            now=now,
+        )
+
+        if new_hunger == ghoul.hunger and new_health == ghoul.health:
+            return ghoul
+
+        logger.debug(
+            f"Materializing passive stats for ghoul {ghoul.telegram_id}: "
+            f"hunger {ghoul.hunger}->{new_hunger}, health {ghoul.health}->{new_health}"
+        )
+
+        return await self.ghoul_repository.upsert(
+            telegram_id=ghoul.telegram_id,
+            hunger=new_hunger,
+            hunger_updated_at=new_hunger_at,
+            health=new_health,
+            health_updated_at=new_health_at,
+        )
 
     async def snap_finger(self, telegram_id: int) -> Ghoul:
         logger.debug(f"Called method snap_finger. Params: telegram_id={telegram_id}")

@@ -62,17 +62,22 @@ class Ghoul(Base):
 
     health: Mapped[int] = mapped_column(
         default=5,
-        nullable=False    
+        nullable=False
+    )
+
+    health_updated_at: Mapped[datetime] = mapped_column(
+        server_default=func.now(),
+        nullable=False
     )
 
     max_health: Mapped[int] = mapped_column(
         default=5,
-        nullable=False     
+        nullable=False
     )
 
     regeneration: Mapped[int] = mapped_column(
         default=1,
-        nullable=False    
+        nullable=False
     )
 
     eat_humans: Mapped[int] = mapped_column(
@@ -97,7 +102,12 @@ class Ghoul(Base):
 
     hunger: Mapped[int] = mapped_column(
         default=100,
-        nullable=False    
+        nullable=False
+    )
+
+    hunger_updated_at: Mapped[datetime] = mapped_column(
+        server_default=func.now(),
+        nullable=False
     )
 
     created_at: Mapped[datetime] = mapped_column(
