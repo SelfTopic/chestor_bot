@@ -188,34 +188,55 @@ async def test_add_progress_accumulates_without_levelup(make_user, make_ghoul, s
     assert result.ghoul.level == 1
 
 
-async def test_add_progress_triggers_levelup_on_overflow(make_user, make_ghoul, session):
+async def test_add_progress_triggers_levelup_on_overflow_and_discards_excess(
+    make_user, make_ghoul, session
+):
+    """Уровень не должен перепрыгивать значения - излишек выше 100%
+    (здесь 15%) отбрасывается, а не переносится на новый уровень."""
     await make_user(telegram_id=700_000_011)
     await make_ghoul(telegram_id=700_000_011, level=1, level_progress=90.0)
 
     service = _make_level_up_service(session, FakeBot())
-    result = await service.add_progress(700_000_011, 25.0)  # 90+25=115 -> +1 уровень, 15%
+    result = await service.add_progress(700_000_011, 25.0)  # 90+25=115 -> +1 уровень
 
     assert result.levels_gained == 1
-    assert result.progress == 15.0
+    assert result.progress == 0.0
     assert result.ghoul.level == 2
     assert len(result.level_up_results) == 1
     assert result.level_up_results[0].ghoul.level == 2
 
 
-async def test_add_progress_triggers_multiple_levelups_in_one_call(
+async def test_add_progress_huge_delta_still_gives_only_one_levelup(
     make_user, make_ghoul, session
 ):
+    """Даже огромная дельта за один вызов не должна давать больше одного
+    уровня - см. правку "уровень никогда не перепрыгивает значения"."""
     await make_user(telegram_id=700_000_012)
     await make_ghoul(telegram_id=700_000_012, level=1, level_progress=0.0)
 
     service = _make_level_up_service(session, FakeBot())
-    result = await service.add_progress(700_000_012, 100.0)  # ровно 100 -> +1 уровень
+    result = await service.add_progress(700_000_012, 100.0)  # максимум по /add_progress
 
+    assert result.levels_gained == 1
+    assert result.progress == 0.0
+    assert result.ghoul.level == 2
+    assert len(result.level_up_results) == 1
+
+
+async def test_add_progress_can_levelup_repeatedly_across_separate_calls(
+    make_user, make_ghoul, session
+):
+    await make_user(telegram_id=700_000_015)
+    await make_ghoul(telegram_id=700_000_015, level=1, level_progress=0.0)
+
+    service = _make_level_up_service(session, FakeBot())
+
+    result = await service.add_progress(700_000_015, 100.0)
     assert result.levels_gained == 1
     assert result.ghoul.level == 2
 
-    # ещё раз, уже с уровня 2 - подряд два уровня за один вызов
-    result2 = await service.add_progress(700_000_012, 100.0)
+    # отдельный, второй вызов - снова ровно один уровень, не два сразу
+    result2 = await service.add_progress(700_000_015, 100.0)
     assert result2.levels_gained == 1
     assert result2.ghoul.level == 3
 
