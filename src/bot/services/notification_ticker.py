@@ -98,9 +98,10 @@ class NotificationTicker:
             due = await notification_repository.get_due(now)
 
             if not due:
+                logger.debug(f"NotificationTicker tick at {now}: nothing due")
                 return
 
-            logger.debug(f"NotificationTicker: {len(due)} due notification(s)")
+            logger.info(f"NotificationTicker tick at {now}: {len(due)} due notification(s)")
 
             death_log_repository = DeathLogRepository(session)
 
@@ -139,6 +140,11 @@ class NotificationTicker:
         threshold = row.threshold
         telegram_id = row.telegram_id
 
+        logger.info(
+            f"NotificationTicker: handling {notification_type} for {telegram_id} "
+            f"(threshold={threshold})"
+        )
+
         ghoul = await ghoul_service.get(telegram_id)
 
         if not ghoul:
@@ -151,12 +157,26 @@ class NotificationTicker:
         if notification_type == NotificationType.HEALTH_FULL:
             if ghoul.health >= ghoul.max_health:
                 await self._send(telegram_id, key="notify_health_full")
+            else:
+                logger.info(
+                    f"NotificationTicker: health_full for {telegram_id} stale "
+                    f"(health={ghoul.health}/{ghoul.max_health}), skipping"
+                )
             return
 
         if notification_type == NotificationType.HUNGER_THRESHOLD:
             if threshold is None or threshold == -1:
-                return  # "будильник" смерти - не текстовое уведомление, см. ниже
+                logger.debug(
+                    f"NotificationTicker: {telegram_id} hunger death-alarm fired "
+                    f"(hunger={ghoul.hunger}, is_dead={ghoul.is_dead}) - no text, "
+                    f"materialize already handled it above if it was time"
+                )
+                return  # "будильник" смерти - не текстовое уведомление, см. выше
             if ghoul.hunger > threshold:
+                logger.info(
+                    f"NotificationTicker: hunger_threshold={threshold} for {telegram_id} "
+                    f"stale (hunger={ghoul.hunger}), skipping"
+                )
                 return  # состояние уже успело измениться - расписание само поправилось
             await self._send(
                 telegram_id, key="notify_hunger_threshold", threshold=threshold
@@ -167,6 +187,10 @@ class NotificationTicker:
             await notification_repository.delete(telegram_id, NotificationType.DEATH)
 
             if not ghoul.is_dead:
+                logger.info(
+                    f"NotificationTicker: {telegram_id} already reborn before DEATH "
+                    f"row was handled, skipping obituary"
+                )
                 return  # успел возродиться раньше, чем дошла очередь - некролог не нужен
 
             death = await death_log_repository.get_latest(telegram_id)
@@ -174,6 +198,10 @@ class NotificationTicker:
                 logger.warning(f"Death notification for {telegram_id} with no DeathLog row")
                 return
 
+            logger.info(
+                f"NotificationTicker: sending obituary to {telegram_id} "
+                f"(cause={death.cause}, level={death.level})"
+            )
             await self._send_death(telegram_id, death, media_service)
             return
 
@@ -184,6 +212,7 @@ class NotificationTicker:
             await self._bot.send_message(
                 chat_id=telegram_id, text=self._dialog_service.text(key=key, **kwargs)
             )
+            logger.info(f"NotificationTicker: sent '{key}' to {telegram_id}")
         except Exception:
             logger.warning(
                 f"Failed to send notification '{key}' to {telegram_id}", exc_info=True
@@ -213,9 +242,15 @@ class NotificationTicker:
         except Exception:
             logger.warning("Failed to look up death video", exc_info=True)
 
+        logger.info(
+            f"NotificationTicker: death video for {telegram_id}: "
+            f"{'found, ' + str(media.path) if media else 'none uploaded yet, text-only'}"
+        )
+
         try:
             if not media:
                 await self._bot.send_message(chat_id=telegram_id, text=text)
+                logger.info(f"NotificationTicker: sent obituary (text-only) to {telegram_id}")
                 return
 
             try:
@@ -225,6 +260,10 @@ class NotificationTicker:
                     caption=text,
                 )
             except TelegramBadRequest:
+                logger.info(
+                    f"NotificationTicker: cached file_id for death video stale, "
+                    f"re-uploading for {telegram_id}"
+                )
                 sent = await self._bot.send_video(
                     chat_id=telegram_id, video=FSInputFile(media.path), caption=text
                 )
@@ -232,6 +271,7 @@ class NotificationTicker:
                     await media_service.update_telegram_file_id(
                         path=media.path, new_file_id=sent.video.file_id
                     )
+            logger.info(f"NotificationTicker: sent obituary (with video) to {telegram_id}")
         except Exception:
             logger.warning(
                 f"Failed to send death notification to {telegram_id}", exc_info=True
