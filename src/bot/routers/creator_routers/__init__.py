@@ -2,6 +2,7 @@ from aiogram import Router
 
 from .ban import router as BanRouter
 from .broadcast import router as BroadcastRouter
+from .level_up import router as LevelUpRouter
 from .media import router as MediaRouter
 from .players_lookup import router as PlayersLookupRouter
 from .reset import router as ResetRouter
@@ -15,6 +16,7 @@ CreatorRouter.include_routers(
     StatsEditRouter,
     ResetRouter,
     BroadcastRouter,
+    LevelUpRouter,
 )
 
 __all__ = ["CreatorRouter"]

@@ -13,6 +13,7 @@ from .duration_parser import DurationParser
 from .ghoul import GhoulService
 from .ghoul_game import CoffeeService, LotteryService
 from .ghoul_quiz import GhoulQuizService
+from .level_up import LevelUpService
 from .media import MediaDownloader, MediaService
 from .notification_ticker import NotificationTicker
 from .rp_commands import RpCommandsService
@@ -49,4 +50,5 @@ __all__ = [
     "WikipediaService",
     "TransferService",
     "NotificationTicker",
+    "LevelUpService",
 ]

@@ -94,6 +94,13 @@ class LotteryConfig:
 LOTTERY_CONFIG = LotteryConfig()
 
 
+def stat_cap_for_level(level: int) -> int:
+    """Потолок upgrade_stat для данного уровня. Вынесено из
+    StatUpgradeService, чтобы не дублировать формулу там же, где нужно
+    посчитать сдвиг пределов при левел-апе (LevelUpService)."""
+    return level * 100
+
+
 @dataclass
 class StatUpgradeConfig:
     price_multiplier: int = 2
@@ -171,3 +178,28 @@ class EatHumanConfig:
 
 
 EAT_HUMAN_CONFIG = EatHumanConfig()
+
+
+@dataclass
+class LevelUpConfig:
+    """Награда за левел-ап, см. LevelUpService. Диапазоны масштабируются
+    множителем на НОВЫЙ (уже достигнутый) уровень - на 2м уровне это
+    2000-20000 CheSton и 10-40 RC."""
+
+    cheston_min_per_level: int = 1000
+    cheston_max_per_level: int = 10000
+    rc_min_per_level: int = 5
+    rc_max_per_level: int = 20
+
+    def cheston_reward(self, new_level: int) -> int:
+        return randint(
+            self.cheston_min_per_level * new_level, self.cheston_max_per_level * new_level
+        )
+
+    def rc_reward(self, new_level: int) -> int:
+        return randint(
+            self.rc_min_per_level * new_level, self.rc_max_per_level * new_level
+        )
+
+
+LEVEL_UP_CONFIG = LevelUpConfig()

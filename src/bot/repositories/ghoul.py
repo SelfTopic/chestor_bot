@@ -51,6 +51,30 @@ class GhoulRepository(Base):
         logger.debug(f"Upserted ghoul ({telegram_id})")
         return ghoul
 
+    async def increment_fields(self, telegram_id: int, **deltas: int) -> Optional[Ghoul]:
+        """Атомарно увеличивает (или уменьшает, при отрицательной delta)
+        сразу несколько числовых колонок ОДНИМ UPDATE - без промежуточного
+        чтения, без гонки между отдельными изменениями одной строки (тот же
+        принцип, что и UserRepository.change_balance_atomic).
+
+        Пример: increment_fields(tid, level=1, rc_money=250).
+        """
+        if not deltas:
+            raise ValueError("No fields to increment")
+
+        values = {
+            field: getattr(Ghoul, field) + delta for field, delta in deltas.items()
+        }
+
+        stmt = (
+            update(Ghoul)
+            .where(Ghoul.telegram_id == telegram_id)
+            .values(**values)
+            .returning(Ghoul)
+        )
+
+        return await self.session.scalar(stmt)
+
     async def get(self, telegram_id: int) -> Optional[Ghoul]:
         ghoul = await self.session.scalar(
             select(Ghoul).where(Ghoul.telegram_id == telegram_id)

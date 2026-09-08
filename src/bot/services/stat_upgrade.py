@@ -2,7 +2,7 @@ from typing import Tuple
 
 from aiogram.types import InlineKeyboardButton, InlineKeyboardMarkup
 
-from ..game_configs import STAT_UPGRADE_CONFIG, STATS
+from ..game_configs import STAT_UPGRADE_CONFIG, STATS, stat_cap_for_level
 from ..services import DialogService, GhoulService, UserService
 
 
@@ -18,7 +18,7 @@ class StatUpgradeService:
         self.dialog_service = dialog_service
 
     def _cap(self, ghoul) -> int:
-        return ghoul.level * 100
+        return stat_cap_for_level(ghoul.level)
 
     def price_and_actual(self, cur_stat: int, want: int) -> Tuple[int, int]:
         price = STAT_UPGRADE_CONFIG.price(cur_stat, want)

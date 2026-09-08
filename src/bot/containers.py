@@ -24,6 +24,7 @@ from .services import (
     DialogService,
     GhoulQuizService,
     GhoulService,
+    LevelUpService,
     MediaDownloader,
     MediaService,
     NotificationTicker,
@@ -201,4 +202,12 @@ class Container(containers.DeclarativeContainer):
 
     notification_ticker = providers.Singleton(
         NotificationTicker, bot=bot, dialog_service=dialog_service
+    )
+
+    level_up_service = providers.Factory(
+        LevelUpService,
+        user_service=user_service,
+        ghoul_service=ghoul_service,
+        dialog_service=dialog_service,
+        bot=bot,
     )

@@ -170,6 +170,12 @@ class GhoulService(Base):
                 threshold=threshold,
             )
 
+    async def increment_fields(self, telegram_id: int, **deltas: int) -> Optional[Ghoul]:
+        """Тонкая обёртка над GhoulRepository.increment_fields - атомарный
+        UPDATE нескольких числовых колонок сразу (level, rc_money, ...),
+        без промежуточного чтения. Используется, например, LevelUpService."""
+        return await self.ghoul_repository.increment_fields(telegram_id, **deltas)
+
     async def eat_human(self, telegram_id: int) -> Tuple[Ghoul, int]:
         """Фаза 3a ("Поесть человека" в BATTLE_DESIGN.md) - без риска
         нападения моба, это 3b, требует боевого движка. Кулдаун (1 сутки)
