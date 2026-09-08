@@ -109,12 +109,12 @@ async def test_kagune_strength_upgrades_independently(ghoul_service, make_user):
     await ghoul_service.register(telegram_id=700_000_200)
 
     ghoul_before = await ghoul_service.get(find_by=700_000_200)
-    strength_before = ghoul_before.kagune_strength
+    strength_before = ghoul_service.total_kagune_strength(ghoul_before)
 
     await ghoul_service.upgrade_kagune(telegram_id=700_000_200)
 
     ghoul_after = await ghoul_service.get(find_by=700_000_200)
-    assert ghoul_after.kagune_strength == strength_before + 1
+    assert ghoul_service.total_kagune_strength(ghoul_after) == strength_before + 1
 
 
 # --- Консистентность данных после нескольких операций ---
@@ -192,8 +192,9 @@ async def test_power_calculation_after_register(ghoul_service, make_user):
 
     power = ghoul_service.calculate_power(ghoul)
 
-    # Дефолтные значения: strength=1, dexterity=1, speed=1,
-    # max_health=5, regeneration=1, kagune_strength=1 -> сумма = 10
+    # Дефолтные значения: strength=1, dexterity=1, speed=1, max_health=5,
+    # regeneration=1, сила единственного открытого при регистрации типа
+    # кагуне=1 -> сумма = 10
     assert power == 10
 
 

@@ -94,7 +94,8 @@ async def top_kagune_handler(
         user = await user_service.get(find_by=i.telegram_id)
 
         answer_text += (
-            f"{c}. {user.first_name if user else 'Unknown'} - {i.kagune_strength}\n"
+            f"{c}. {user.first_name if user else 'Unknown'} - "
+            f"{ghoul_service.total_kagune_strength(i)}\n"
         )
 
     await message.answer(answer_text)

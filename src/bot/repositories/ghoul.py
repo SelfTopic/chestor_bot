@@ -99,23 +99,6 @@ class GhoulRepository(Base):
         )
         return bool(exist)
 
-    async def update_kagune(
-        self, telegram_id: int, new_kagune_bit: int, kagune_strength: int
-    ) -> bool:
-        validated_bit = self._validate_kagune_bit(new_kagune_bit)
-
-        result = await self.session.execute(
-            update(Ghoul)
-            .where(Ghoul.telegram_id == telegram_id)
-            .values(
-                kagune_type_int=validated_bit,
-                kagune_strength=kagune_strength,
-                updated_at=func.now(),
-            )
-        )
-
-        return result.rowcount > 0
-
     def _validate_kagune_bit(self, bit: int) -> int:
         if bit is None:
             return 0
@@ -154,7 +137,16 @@ class GhoulRepository(Base):
         return list(execute)
 
     async def get_top_kagune(self, count: int) -> List[Ghoul]:
-        stmt = select(Ghoul).order_by(desc(Ghoul.kagune_strength)).limit(count)
+        # Сила кагуне теперь по 4 отдельным (nullable) колонкам - сортируем
+        # по сумме (NULL = тип не открыт = 0), см. BATTLE_DESIGN.md.
+        total_strength = (
+            func.coalesce(Ghoul.kagune_strength_ukaku, 0)
+            + func.coalesce(Ghoul.kagune_strength_koukaku, 0)
+            + func.coalesce(Ghoul.kagune_strength_rinkaku, 0)
+            + func.coalesce(Ghoul.kagune_strength_bikaku, 0)
+        )
+
+        stmt = select(Ghoul).order_by(desc(total_strength)).limit(count)
 
         execute = await self.session.scalars(stmt)
 

@@ -72,7 +72,7 @@ async def profile_handler(
             health=profile.health,
             max_health=profile.max_health,
             coffee_count=profile.coffee_count,
-            strength_kagune=profile.kagune_strength,
+            strength_kagune=ghoul_service.total_kagune_strength(profile),
             rc_count=profile.rc_money,
             regeneration=profile.regeneration,
             eat_ghouls=profile.eat_ghouls,

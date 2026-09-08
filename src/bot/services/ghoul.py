@@ -257,22 +257,60 @@ class GhoulService(Base):
 
         return ghoul
 
-    async def upgrade_kagune(self, telegram_id: int, change: int = 1) -> Ghoul:
+    async def upgrade_kagune(
+        self,
+        telegram_id: int,
+        kagune_type: Optional[KaguneType] = None,
+        change: int = 1,
+    ) -> Ghoul:
         logger.debug(
-            f"Called method upsert. Params: telegram_id={telegram_id}, change={change}"
+            f"Called method upgrade_kagune. Params: telegram_id={telegram_id}, "
+            f"kagune_type={kagune_type}, change={change}"
         )
 
         ghoul = await self.get(find_by=telegram_id)
 
         if not ghoul:
-            logger.error("Ghoul not found for upgarde_kagune operation")
+            logger.error("Ghoul not found for upgrade_kagune operation")
             raise ValueError("Ghoul not found")
 
-        ghoul = await self.ghoul_repository.upsert(
-            telegram_id=telegram_id, kagune_strength=ghoul.kagune_strength + change
-        )
+        if kagune_type is None:
+            owned = self.owned_kagune_types(ghoul)
+            if len(owned) != 1:
+                raise ValueError(
+                    "kagune_type must be given explicitly when a ghoul owns "
+                    "more than one kagune type"
+                )
+            kagune_type = owned[0]
 
-        return ghoul
+        column = kagune_type.value["strength_column"]
+        if getattr(ghoul, column) is None:
+            raise ValueError(f"Ghoul does not own kagune type {kagune_type.value['name']}")
+
+        updated = await self.ghoul_repository.increment_fields(
+            telegram_id, **{column: change}
+        )
+        if not updated:
+            raise ValueError("Ghoul not found during upgrade_kagune")
+
+        return updated
+
+    def owned_kagune_types(self, ghoul: Ghoul) -> List[KaguneType]:
+        return [
+            kagune_type
+            for kagune_type in KaguneType
+            if getattr(ghoul, kagune_type.value["strength_column"]) is not None
+        ]
+
+    def get_kagune_strength(self, ghoul: Ghoul, kagune_type: KaguneType) -> Optional[int]:
+        """None значит этот тип кагуне не открыт у гуля."""
+        return getattr(ghoul, kagune_type.value["strength_column"])
+
+    def total_kagune_strength(self, ghoul: Ghoul) -> int:
+        return sum(
+            getattr(ghoul, kagune_type.value["strength_column"]) or 0
+            for kagune_type in KaguneType
+        )
 
     async def get_top_kagune(self, count=20) -> List[Ghoul]:
         logger.debug(f"Called method get_top_kagune. Params: count={count}")
@@ -302,7 +340,11 @@ class GhoulService(Base):
         logger.debug("Generating initial kagune type for new ghoul")
         first_kagune = self._first_kagune()
 
-        ghoul = await self.upsert(telegram_id=telegram_id, kagune_type_bit=first_kagune)
+        ghoul = await self.upsert(
+            telegram_id=telegram_id,
+            kagune_type_bit=first_kagune.value["bit"],
+            **{first_kagune.value["strength_column"]: 1},
+        )
 
         await self.user_repository.change_data(
             telegram_id=telegram_id, race_bit=Race.GHOUL.value["bit"]
@@ -314,14 +356,11 @@ class GhoulService(Base):
     async def get_top_snap(self, count=20) -> List[Ghoul]:
         return await self.ghoul_repository.get_top_snap(count)
 
-    def _first_kagune(self) -> int:
+    def _first_kagune(self) -> KaguneType:
         logger.debug("Called method _first_kagune")
 
-        bits = [kagune.value["bit"] for kagune in KaguneType]
-        logger.debug(f"Available kagune bits: {bits}")
-
-        selected = random.choice(bits)
-        logger.debug(f"Selected kagune bit: {selected}")
+        selected = random.choice(list(KaguneType))
+        logger.debug(f"Selected kagune: {selected}")
         return selected
 
     def calculate_price_upgrade_kagune(self, kagune_strength: int) -> int:
@@ -338,7 +377,7 @@ class GhoulService(Base):
             + ghoul.speed
             + ghoul.max_health
             + ghoul.regeneration
-            + ghoul.kagune_strength
+            + self.total_kagune_strength(ghoul)
         )
         logger.debug(f"Calculated power: {power}")
         return power

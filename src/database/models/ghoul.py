@@ -1,4 +1,5 @@
 from datetime import datetime
+from typing import Optional
 
 from sqlalchemy import func
 from sqlalchemy.orm import Mapped, mapped_column
@@ -45,9 +46,23 @@ class Ghoul(Base):
         nullable=True
     )
 
-    kagune_strength: Mapped[int] = mapped_column(
-        default=1,
-        nullable=False     
+    # Сила по каждому типу кагуне отдельно - NULL значит тип не открыт.
+    # Типов ровно 4 (лор-константа), отдельная таблица не нужна - см.
+    # BATTLE_DESIGN.md ("Хранение силы по типам кагуне").
+    kagune_strength_ukaku: Mapped[Optional[int]] = mapped_column(
+        nullable=True
+    )
+
+    kagune_strength_koukaku: Mapped[Optional[int]] = mapped_column(
+        nullable=True
+    )
+
+    kagune_strength_rinkaku: Mapped[Optional[int]] = mapped_column(
+        nullable=True
+    )
+
+    kagune_strength_bikaku: Mapped[Optional[int]] = mapped_column(
+        nullable=True
     )
 
     strength: Mapped[int] = mapped_column(
@@ -97,7 +112,15 @@ class Ghoul(Base):
 
     is_kakuja: Mapped[bool] = mapped_column(
         default=False,
-        nullable=False     
+        nullable=False
+    )
+
+    # Единственное (вместе с id/created_at), что переживает сброс при
+    # смерти - см. BATTLE_DESIGN.md ("Смерть и сброс"). Сама логика сброса
+    # ещё не реализована, колонка заводится заранее.
+    deaths: Mapped[int] = mapped_column(
+        default=0,
+        nullable=False
     )
 
     coffee_count: Mapped[int] = mapped_column(

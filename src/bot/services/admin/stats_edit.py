@@ -21,11 +21,16 @@ ALLOWED_GHOUL_FIELDS = {
     "max_health",
     "regeneration",
     "hunger",
-    "kagune_strength",
+    "kagune_strength_ukaku",
+    "kagune_strength_koukaku",
+    "kagune_strength_rinkaku",
+    "kagune_strength_bikaku",
     "snap_count",
     "eat_humans",
     "eat_ghouls",
     "coffee_count",
+    "deaths",
+    "level_progress",
 }
 
 # Служебные поля - не настоящие колонки, а сдвиг снапшота голода/регена
