@@ -192,6 +192,7 @@ class NotificationTicker:
     _DEATH_CAUSE_TEXT = {
         "starvation": "умер от голода",
         "eaten": "был съеден другим гулем",
+        "admin": "был убит рукой создателя (/kill_ghoul)",
     }
 
     async def _send_death(self, telegram_id: int, death, media_service: MediaService) -> None:
