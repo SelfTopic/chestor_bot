@@ -176,6 +176,14 @@ class GhoulService(Base):
         без промежуточного чтения. Используется, например, LevelUpService."""
         return await self.ghoul_repository.increment_fields(telegram_id, **deltas)
 
+    async def set_fields(self, telegram_id: int, **values: Any) -> Ghoul:
+        """Тонкая обёртка над GhoulRepository.upsert - записывает уже
+        посчитанное абсолютное значение (в отличие от increment_fields).
+        Используется, например, LevelUpService.add_progress для
+        level_progress, когда новое значение уже вычислено вызывающим
+        кодом (заворот через 100% и т.п.)."""
+        return await self.ghoul_repository.upsert(telegram_id, **values)
+
     async def eat_human(self, telegram_id: int) -> Tuple[Ghoul, int]:
         """Фаза 3a ("Поесть человека" в BATTLE_DESIGN.md) - без риска
         нападения моба, это 3b, требует боевого движка. Кулдаун (1 сутки)

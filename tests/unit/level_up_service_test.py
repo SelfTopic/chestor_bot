@@ -173,3 +173,86 @@ async def test_ghoul_repository_increment_fields_requires_at_least_one_field(ses
     repo = GhoulRepository(session)
     with pytest.raises(ValueError):
         await repo.increment_fields(700_000_009)
+
+
+async def test_add_progress_accumulates_without_levelup(make_user, make_ghoul, session):
+    await make_user(telegram_id=700_000_010)
+    await make_ghoul(telegram_id=700_000_010, level=1, level_progress=10.0)
+
+    service = _make_level_up_service(session, FakeBot())
+    result = await service.add_progress(700_000_010, 20.0)
+
+    assert result.progress == 30.0
+    assert result.levels_gained == 0
+    assert result.level_up_results == []
+    assert result.ghoul.level == 1
+
+
+async def test_add_progress_triggers_levelup_on_overflow(make_user, make_ghoul, session):
+    await make_user(telegram_id=700_000_011)
+    await make_ghoul(telegram_id=700_000_011, level=1, level_progress=90.0)
+
+    service = _make_level_up_service(session, FakeBot())
+    result = await service.add_progress(700_000_011, 25.0)  # 90+25=115 -> +1 уровень, 15%
+
+    assert result.levels_gained == 1
+    assert result.progress == 15.0
+    assert result.ghoul.level == 2
+    assert len(result.level_up_results) == 1
+    assert result.level_up_results[0].ghoul.level == 2
+
+
+async def test_add_progress_triggers_multiple_levelups_in_one_call(
+    make_user, make_ghoul, session
+):
+    await make_user(telegram_id=700_000_012)
+    await make_ghoul(telegram_id=700_000_012, level=1, level_progress=0.0)
+
+    service = _make_level_up_service(session, FakeBot())
+    result = await service.add_progress(700_000_012, 100.0)  # ровно 100 -> +1 уровень
+
+    assert result.levels_gained == 1
+    assert result.ghoul.level == 2
+
+    # ещё раз, уже с уровня 2 - подряд два уровня за один вызов
+    result2 = await service.add_progress(700_000_012, 100.0)
+    assert result2.levels_gained == 1
+    assert result2.ghoul.level == 3
+
+
+async def test_add_progress_negative_delta_reduces_progress_without_levelup(
+    make_user, make_ghoul, session
+):
+    await make_user(telegram_id=700_000_013)
+    await make_ghoul(telegram_id=700_000_013, level=3, level_progress=50.0)
+
+    service = _make_level_up_service(session, FakeBot())
+    result = await service.add_progress(700_000_013, -30.0)
+
+    assert result.progress == 20.0
+    assert result.levels_gained == 0
+    assert result.ghoul.level == 3
+
+
+async def test_add_progress_grants_reward_for_each_levelup_even_if_dm_fails(
+    make_user, make_ghoul, session
+):
+    await make_user(telegram_id=700_000_014)
+    await make_ghoul(telegram_id=700_000_014, level=1, level_progress=90.0)
+
+    bot = FakeBot(can_send=False)
+    service = _make_level_up_service(session, bot)
+    result = await service.add_progress(700_000_014, 10.0)  # ровно 100 -> левел-ап
+
+    assert result.levels_gained == 1
+    assert result.ghoul.level == 2
+    assert result.level_up_results[0].notified is False
+
+    user = await session.scalar(select(User).where(User.telegram_id == 700_000_014))
+    assert user.balance == result.level_up_results[0].cheston_reward
+
+
+async def test_add_progress_raises_for_unknown_ghoul(session):
+    service = _make_level_up_service(session, FakeBot())
+    with pytest.raises(ValueError, match="Ghoul not found"):
+        await service.add_progress(999_999_998, 10.0)

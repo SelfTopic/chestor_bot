@@ -1,5 +1,6 @@
 import logging
-from dataclasses import dataclass
+from dataclasses import dataclass, field
+from typing import List
 
 from aiogram import Bot
 from aiogram.exceptions import TelegramAPIError
@@ -7,6 +8,7 @@ from aiogram.exceptions import TelegramAPIError
 from src.database.models import Ghoul
 
 from ..game_configs import LEVEL_UP_CONFIG, STATS, stat_cap_for_level
+from ..utils import apply_level_progress
 from .dialog import DialogService
 from .ghoul import GhoulService
 from .user import UserService
@@ -20,6 +22,14 @@ class LevelUpResult:
     cheston_reward: int
     rc_reward: int
     notified: bool  # удалось ли отправить ЛС - награда выдаётся в любом случае
+
+
+@dataclass
+class ProgressResult:
+    ghoul: Ghoul
+    progress: float
+    levels_gained: int
+    level_up_results: List[LevelUpResult] = field(default_factory=list)
 
 
 class LevelUpService:
@@ -84,6 +94,38 @@ class LevelUpService:
             notified=notified,
         )
 
+    async def add_progress(self, telegram_id: int, delta: float) -> ProgressResult:
+        """Начисляет (или снимает - delta может быть отрицательной)
+        level_progress и, если пройден 100% порог, вызывает level_up() -
+        возможно несколько раз подряд за один большой прирост, см.
+        apply_level_progress. Это единственный (пока не введён реальный
+        источник - бой/поедание гулей) способ реально ПРОДВИНУТЬ прогресс,
+        в отличие от /force_levelup, который левелапит напрямую в обход
+        прогресса."""
+
+        ghoul = await self.ghoul_service.get(telegram_id)
+        if not ghoul:
+            raise ValueError("Ghoul not found")
+
+        new_progress, levels_gained = apply_level_progress(
+            ghoul.level_progress, delta
+        )
+
+        updated_ghoul = await self.ghoul_service.set_fields(
+            telegram_id, level_progress=new_progress
+        )
+
+        level_up_results = [
+            await self.level_up(telegram_id) for _ in range(levels_gained)
+        ]
+
+        return ProgressResult(
+            ghoul=level_up_results[-1].ghoul if level_up_results else updated_ghoul,
+            progress=new_progress,
+            levels_gained=levels_gained,
+            level_up_results=level_up_results,
+        )
+
     async def _notify(
         self,
         telegram_id: int,
@@ -128,4 +170,4 @@ class LevelUpService:
             return False
 
 
-__all__ = ["LevelUpService", "LevelUpResult"]
+__all__ = ["LevelUpService", "LevelUpResult", "ProgressResult"]

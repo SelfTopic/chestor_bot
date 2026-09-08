@@ -28,7 +28,12 @@ class Ghoul(Base):
 
     level: Mapped[int] = mapped_column(
         default=1,
-        nullable=False     
+        nullable=False
+    )
+
+    level_progress: Mapped[float] = mapped_column(
+        default=0.0,
+        nullable=False
     )
 
     snap_count: Mapped[int] = mapped_column(

@@ -1,4 +1,5 @@
 from .kagune_calculate import calculate_kagune
+from .level_progress_calculate import apply_level_progress
 from .parse_time import format_duration, parse_seconds
 from .regen_calculate import (
     apply_hunger_restore,
@@ -16,6 +17,7 @@ from .time_now import utcnow_naive
 
 __all__ = [
     "calculate_kagune",
+    "apply_level_progress",
     "parse_seconds",
     "format_duration",
     "apply_hunger_restore",
