@@ -1,5 +1,7 @@
 from datetime import timedelta
 
+import pytest
+
 from src.bot.types import KaguneType
 from src.bot.utils import (
     apply_hunger_restore,
@@ -7,7 +9,9 @@ from src.bot.utils import (
     compute_hunger,
     get_hunger_tier,
     hours_until_full_health,
+    hours_until_hunger_threshold,
     hours_until_starved,
+    next_hunger_threshold,
 )
 from src.bot.utils.regen_calculate import health_regen_per_hour
 from src.bot.utils.time_now import utcnow_naive
@@ -160,3 +164,23 @@ def test_hours_until_full_health():
 def test_apply_hunger_restore_clamps_at_100():
     assert apply_hunger_restore(hunger=50, restore_percent=25) == 75
     assert apply_hunger_restore(hunger=90, restore_percent=25) == 100
+
+
+def test_next_hunger_threshold():
+    assert next_hunger_threshold(100) == 75
+    assert next_hunger_threshold(76) == 75
+    assert next_hunger_threshold(75) == 50  # уже на границе - следующий порог ниже
+    assert next_hunger_threshold(50) == 25
+    assert next_hunger_threshold(25) == 0
+    assert next_hunger_threshold(1) == 0
+    assert next_hunger_threshold(0) is None
+    assert next_hunger_threshold(-5) is None
+
+
+def test_hours_until_hunger_threshold():
+    assert hours_until_hunger_threshold(100, is_kakuja=False, threshold=75) == pytest.approx(
+        25 * 168 / 100
+    )
+    assert hours_until_hunger_threshold(50, is_kakuja=False, threshold=50) == 0.0
+    # не может быть отрицательным, даже если голод уже ниже порога
+    assert hours_until_hunger_threshold(10, is_kakuja=False, threshold=50) == 0.0

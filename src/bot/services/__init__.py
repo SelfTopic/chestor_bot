@@ -14,6 +14,7 @@ from .ghoul import GhoulService
 from .ghoul_game import CoffeeService, LotteryService
 from .ghoul_quiz import GhoulQuizService
 from .media import MediaDownloader, MediaService
+from .notification_ticker import NotificationTicker
 from .rp_commands import RpCommandsService
 from .sync_entity import SyncEntitiesService
 from .transfer import TransferService
@@ -47,4 +48,5 @@ __all__ = [
     "VideoWorker",
     "WikipediaService",
     "TransferService",
+    "NotificationTicker",
 ]

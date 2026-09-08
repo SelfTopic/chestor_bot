@@ -8,7 +8,9 @@ from .regen_calculate import (
     get_hunger_tier,
     health_regen_per_hour,
     hours_until_full_health,
+    hours_until_hunger_threshold,
     hours_until_starved,
+    next_hunger_threshold,
 )
 from .time_now import utcnow_naive
 
@@ -23,6 +25,8 @@ __all__ = [
     "get_hunger_tier",
     "health_regen_per_hour",
     "hours_until_full_health",
+    "hours_until_hunger_threshold",
     "hours_until_starved",
+    "next_hunger_threshold",
     "utcnow_naive",
 ]

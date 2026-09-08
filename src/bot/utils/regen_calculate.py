@@ -80,11 +80,33 @@ def hunger_decay_per_hour(is_kakuja: bool) -> float:
     return rate
 
 
+def hours_until_hunger_threshold(hunger: int, is_kakuja: bool, threshold: int) -> float:
+    """Часов до того, как голод дойдёт (сверху вниз) до threshold."""
+    return max(0.0, (hunger - threshold) / hunger_decay_per_hour(is_kakuja))
+
+
 def hours_until_starved(hunger: int, is_kakuja: bool) -> float:
     """Прогноз "через сколько часов голод дойдёт до 0", если ничего не есть.
     Само по себе смерть не вызывает (см. "Смерть и сброс" в BATTLE_DESIGN.md) -
     только оценка для отображения игроку."""
-    return hunger / hunger_decay_per_hour(is_kakuja)
+    return hours_until_hunger_threshold(hunger, is_kakuja, threshold=0)
+
+
+# Тиры голода дают ровно нужные пороги пуш-уведомлений (75/50/25/0) - те же
+# min_hunger значения, что и в HUNGER_TIERS, порядок убывания важен.
+HUNGER_NOTIFICATION_THRESHOLDS: tuple[int, ...] = tuple(
+    tier.min_hunger for tier in HUNGER_TIERS
+)
+
+
+def next_hunger_threshold(hunger: int) -> Optional[int]:
+    """Следующий порог (75/50/25/0), который голод пересечёт сверху вниз, или
+    None, если голод уже <= 0 (дальше в этой версии падать некуда - смерть от
+    голода ещё не реализована, см. BATTLE_DESIGN.md)."""
+    for threshold in HUNGER_NOTIFICATION_THRESHOLDS:
+        if hunger > threshold:
+            return threshold
+    return None
 
 
 def hours_until_full_health(

@@ -110,9 +110,11 @@ async def main(bot_token: str, env: str) -> None:
     )
 
     video_worker = container.video_worker()
+    notification_ticker = container.notification_ticker()
 
     try:
         await video_worker.start()
+        await notification_ticker.start()
 
         dp = Dispatcher()
         logger.info("Object of dispatcher is initialize")
@@ -168,6 +170,7 @@ async def main(bot_token: str, env: str) -> None:
                 logger.error(f"Error start bot: {e}")
     finally:
         await video_worker.stop()
+        await notification_ticker.stop()
 
         await bot.session.close()
 

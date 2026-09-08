@@ -2,6 +2,7 @@ from .coffee import CoffeeResult
 from .dep import DepColor, DepResult
 from .kagune import KaguneType
 from .media import MediaCollection, MediaDownloadType, MediaSaveRequest, VideoCutJob
+from .notification import NotificationType
 from .race import Race
 from .register_ghoul import RegisterGhoulType
 from .time_components import Duration, TimeComponents
@@ -19,4 +20,5 @@ __all__ = [
     "DepResult",
     "Duration",
     "VideoCutJob",
+    "NotificationType",
 ]

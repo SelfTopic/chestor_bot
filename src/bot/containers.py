@@ -11,6 +11,7 @@ from .repositories import (
     LotteryRepository,
     MediaRepository,
     RpCommandsRepository,
+    ScheduledNotificationRepository,
     TransferRepository,
     UserCooldownRepository,
     UserRepository,
@@ -25,6 +26,7 @@ from .services import (
     GhoulService,
     MediaDownloader,
     MediaService,
+    NotificationTicker,
     PlayerLookupService,
     ResetService,
     RpCommandsService,
@@ -66,6 +68,10 @@ class Container(containers.DeclarativeContainer):
 
     transfer_repository = providers.Factory(TransferRepository, session=db_session)
 
+    scheduled_notification_repository = providers.Factory(
+        ScheduledNotificationRepository, session=db_session
+    )
+
     dialog_service = providers.Factory(DialogService)
 
     media_downloader = providers.Factory(MediaDownloader, bot=bot)
@@ -97,6 +103,7 @@ class Container(containers.DeclarativeContainer):
         ghoul_repository,
         user_cooldown_repository,
         chat_repository,
+        notification_repository=scheduled_notification_repository,
     )
 
     cooldown_service = providers.Factory(
@@ -191,3 +198,7 @@ class Container(containers.DeclarativeContainer):
 
     video_cutter_service = providers.Singleton(VideoCutterService)
     video_worker = providers.Singleton(VideoWorker, video_cutter_service)
+
+    notification_ticker = providers.Singleton(
+        NotificationTicker, bot=bot, dialog_service=dialog_service
+    )

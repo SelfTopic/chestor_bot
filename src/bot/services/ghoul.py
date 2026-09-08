@@ -1,5 +1,6 @@
 import logging
 import random
+from datetime import datetime, timedelta
 from typing import Any, List, Optional, Tuple, Union
 
 from aiogram.types import Message
@@ -7,12 +8,16 @@ from aiogram.types import Message
 from src.database.models import Ghoul
 
 from ..game_configs import EAT_HUMAN_CONFIG, KAGUNE_CONFIG
-from ..types import KaguneType, Race, RegisterGhoulType
+from ..repositories import ScheduledNotificationRepository
+from ..types import KaguneType, NotificationType, Race, RegisterGhoulType
 from ..utils import (
     apply_hunger_restore,
     compute_health,
     compute_hunger,
     health_regen_per_hour,
+    hours_until_full_health,
+    hours_until_hunger_threshold,
+    next_hunger_threshold,
     utcnow_naive,
 )
 from .base import Base
@@ -21,6 +26,21 @@ logger = logging.getLogger(__name__)
 
 
 class GhoulService(Base):
+    def __init__(
+        self,
+        user_repository,
+        ghoul_repository,
+        user_cooldown_repository,
+        chat_repository,
+        notification_repository: Optional[ScheduledNotificationRepository] = None,
+    ) -> None:
+        super().__init__(
+            user_repository, ghoul_repository, user_cooldown_repository, chat_repository
+        )
+        # Опционально - без него materialize_passive_stats просто не
+        # планирует пуши (тише для тестов/прочих мест, где это не нужно).
+        self.notification_repository = notification_repository
+
     async def get(self, find_by: Union[Message, int]) -> Optional[Ghoul]:
         logger.debug(
             f"Called method get. Params: find_by={find_by if not isinstance(find_by, Message) else 'Message'}"
@@ -82,20 +102,73 @@ class GhoulService(Base):
         )
 
         if new_hunger == ghoul.hunger and new_health == ghoul.health:
-            return ghoul
+            result = ghoul
+        else:
+            logger.debug(
+                f"Materializing passive stats for ghoul {ghoul.telegram_id}: "
+                f"hunger {ghoul.hunger}->{new_hunger}, health {ghoul.health}->{new_health}"
+            )
+            result = await self.ghoul_repository.upsert(
+                telegram_id=ghoul.telegram_id,
+                hunger=new_hunger,
+                hunger_updated_at=new_hunger_at,
+                health=new_health,
+                health_updated_at=new_health_at,
+            )
 
-        logger.debug(
-            f"Materializing passive stats for ghoul {ghoul.telegram_id}: "
-            f"hunger {ghoul.hunger}->{new_hunger}, health {ghoul.health}->{new_health}"
-        )
+        # Расписание пересчитывается всегда, а не только когда голод/хп
+        # реально сдвинулись этим вызовом - иначе правка админом через
+        # /set_stat не переставит уже стоящий пуш (см. коммент к
+        # sync_notification_schedule).
+        if self.notification_repository is not None:
+            await self.sync_notification_schedule(result, now=now)
 
-        return await self.ghoul_repository.upsert(
-            telegram_id=ghoul.telegram_id,
-            hunger=new_hunger,
-            hunger_updated_at=new_hunger_at,
-            health=new_health,
-            health_updated_at=new_health_at,
+        return result
+
+    async def sync_notification_schedule(self, ghoul: Ghoul, now: datetime) -> None:
+        """Пере-планирует пуши "здоровье полное"/"голод дошёл до порога" по
+        ТЕКУЩЕМУ состоянию гуля. Вызывается при каждом чтении гуля и при
+        каждом осознанном изменении голода/хп - см. BATTLE_DESIGN.md,
+        "Механизм regen/hunger" (дисциплину легко забыть в будущей фиче)."""
+
+        if self.notification_repository is None:
+            return
+
+        hp_per_hour = health_regen_per_hour(
+            regeneration=ghoul.regeneration,
+            hunger=ghoul.hunger,
+            kagune_type_bit=ghoul.kagune_type_bit or 0,
+            is_kakuja=ghoul.is_kakuja,
         )
+        hours_to_full = hours_until_full_health(ghoul.health, ghoul.max_health, hp_per_hour)
+
+        if not hours_to_full:  # None (никогда) или 0.0 (уже полное) - не планируем
+            await self.notification_repository.delete(
+                ghoul.telegram_id, NotificationType.HEALTH_FULL
+            )
+        else:
+            await self.notification_repository.schedule(
+                telegram_id=ghoul.telegram_id,
+                notification_type=NotificationType.HEALTH_FULL,
+                fire_at=now + timedelta(hours=hours_to_full),
+            )
+
+        threshold = next_hunger_threshold(ghoul.hunger)
+
+        if threshold is None:
+            await self.notification_repository.delete(
+                ghoul.telegram_id, NotificationType.HUNGER_THRESHOLD
+            )
+        else:
+            hours_to_threshold = hours_until_hunger_threshold(
+                ghoul.hunger, ghoul.is_kakuja, threshold
+            )
+            await self.notification_repository.schedule(
+                telegram_id=ghoul.telegram_id,
+                notification_type=NotificationType.HUNGER_THRESHOLD,
+                fire_at=now + timedelta(hours=hours_to_threshold),
+                threshold=threshold,
+            )
 
     async def eat_human(self, telegram_id: int) -> Tuple[Ghoul, int]:
         """Фаза 3a ("Поесть человека" в BATTLE_DESIGN.md) - без риска
@@ -121,6 +194,10 @@ class GhoulService(Base):
             hunger_updated_at=utcnow_naive(),
             eat_humans=ghoul.eat_humans + 1,
         )
+
+        # Голод только что осознанно изменился - расписание пуша по голоду
+        # обязано пересчитаться сейчас же, а не ждать следующего чтения.
+        await self.sync_notification_schedule(updated_ghoul, now=utcnow_naive())
 
         logger.debug(
             f"eat_human: hunger {ghoul.hunger}->{new_hunger} (+{restore}), "

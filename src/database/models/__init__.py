@@ -5,6 +5,7 @@ from .cooldown import Cooldown
 from .ghoul import Ghoul
 from .lottery import Lottery
 from .media import Media
+from .scheduled_notification import ScheduledNotification
 from .transfer import Transfer
 from .user import User
 from .user_cooldowns import UserCooldown
@@ -22,4 +23,5 @@ __all__ = [
     "Rp",
     "BalancesLog",
     "Transfer",
+    "ScheduledNotification",
 ]
