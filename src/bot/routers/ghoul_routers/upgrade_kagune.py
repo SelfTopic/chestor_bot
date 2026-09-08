@@ -310,8 +310,10 @@ async def upgrade_kagune_callback(
         return
 
     await callback_query.answer()
-    await callback_query.message.edit_reply_markup(reply_markup=None)
-    await _send_result(callback_query.message, media_service, telegram_id, kagune_type, text)
+    await callback_query.message.delete()
+    await _send_result(
+        callback_query.message, media_service, telegram_id, kagune_type, text
+    )
 
 
 __all__ = ["router"]
