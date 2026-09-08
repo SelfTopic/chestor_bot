@@ -1,5 +1,6 @@
 import logging
 import time
+from typing import Optional
 
 from aiogram import F, Router
 from aiogram.exceptions import TelegramBadRequest
@@ -27,6 +28,23 @@ router = Router(name=__name__)
 logger = logging.getLogger(__name__)
 
 _CALLBACK_PREFIX = "kagune_upgrade_"
+
+
+def parse_kagune_callback_payload(payload: str) -> Optional[tuple[int, str]]:
+    """Разбирает "<invoker_id>_<name_english>" -> (invoker_id, name_english),
+    или None, если формат не тот. Вынесено в чистую функцию специально ради
+    юнит-теста - это единственное, что защищает клавиатуру от нажатия чужим
+    человеком в группе (см. авторизацию в upgrade_kagune_callback)."""
+
+    try:
+        invoker_id_str, name_english = payload.rsplit("_", 1)
+    except ValueError:
+        return None
+
+    if not invoker_id_str.isdigit():
+        return None
+
+    return int(invoker_id_str), name_english
 
 
 async def _do_upgrade(
@@ -129,8 +147,12 @@ async def _send_result(
 
 
 def _build_choice_keyboard(
-    ghoul_service: GhoulService, ghoul, owned: list[KaguneType]
+    ghoul_service: GhoulService, ghoul, owned: list[KaguneType], invoker_id: int
 ) -> tuple[str, InlineKeyboardMarkup]:
+    """invoker_id зашивается прямо в callback_data - в группе клавиатуру
+    видят все, а нажать имеет право только тот, кто вызвал команду (иначе
+    любой тролль перехватывает чужой выбор себе, см. обработчик колбэка)."""
+
     lines = ["Какое кагуне усилить?"]
     rows = []
 
@@ -142,7 +164,9 @@ def _build_choice_keyboard(
             [
                 InlineKeyboardButton(
                     text=f"{kagune_type.value['name']} - {price} CheSton",
-                    callback_data=f"{_CALLBACK_PREFIX}{kagune_type.value['name_english']}",
+                    callback_data=(
+                        f"{_CALLBACK_PREFIX}{invoker_id}_{kagune_type.value['name_english']}"
+                    ),
                 )
             ]
         )
@@ -204,7 +228,9 @@ async def upgrade_kagune(
         raise ValueError("Ghoul has no kagune type")
 
     if len(owned) > 1:
-        text, keyboard = _build_choice_keyboard(ghoul_service, ghoul, owned)
+        text, keyboard = _build_choice_keyboard(
+            ghoul_service, ghoul, owned, invoker_id=message.from_user.id
+        )
         await message.reply(text=text, reply_markup=keyboard)
         return
 
@@ -243,7 +269,22 @@ async def upgrade_kagune_callback(
         await callback_query.answer("Невозможно обработать запрос")
         return
 
-    name_english = callback_query.data[len(_CALLBACK_PREFIX) :]
+    payload = callback_query.data[len(_CALLBACK_PREFIX) :]
+    parsed = parse_kagune_callback_payload(payload)
+
+    if parsed is None:
+        await callback_query.answer("Неверные данные кнопки")
+        return
+
+    invoker_id, name_english = parsed
+
+    if invoker_id != callback_query.from_user.id:
+        # Клавиатуру видят все в чате, но нажать имеет право только тот, кто
+        # вызвал "растить кагуне" - без edit_reply_markup, чтобы настоящий
+        # вызывающий мог нажать позже как ни в чём не бывало.
+        await callback_query.answer("Это не твоя кнопка", show_alert=True)
+        return
+
     kagune_type = next(
         (kt for kt in KaguneType if kt.value["name_english"] == name_english), None
     )
