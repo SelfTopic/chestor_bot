@@ -80,6 +80,7 @@ class CollectionParser:
         "kagune bikaku": MediaCollection.UPGRADE_KAGUNE_BIKAKU,
         "coffee": MediaCollection.COFFEE,
         "eat human": MediaCollection.EAT_HUMAN,
+        "death": MediaCollection.DEATH,
         "welcome gif": MediaCollection.WELCOME_GIF,
         "welcome photo": MediaCollection.WELCOME_PHOTO,
         "welcome video": MediaCollection.WELCOME_VIDEO,
@@ -110,8 +111,19 @@ class MediaService:
         self.media_repository = media_repository
 
     async def get_random_gif(self, collection_string: str, user_id: int):
+        return await self._get_random_media(
+            collection_string, user_id, MediaDownloadType.ANIMATION
+        )
+
+    async def get_random_video(self, collection_string: str, user_id: int):
+        return await self._get_random_media(
+            collection_string, user_id, MediaDownloadType.VIDEO
+        )
+
+    async def _get_random_media(
+        self, collection_string: str, user_id: int, type_media: MediaDownloadType
+    ):
         collection = self._parser.parse(collection_string)
-        type_media = MediaDownloadType.ANIMATION
 
         media_request = MediaSaveRequest(type_media=type_media, collection=collection)
 

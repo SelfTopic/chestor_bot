@@ -8,7 +8,7 @@ from aiogram.types import Message
 from src.database.models import Ghoul
 
 from ..game_configs import EAT_HUMAN_CONFIG, KAGUNE_CONFIG
-from ..repositories import ScheduledNotificationRepository
+from ..repositories import DeathLogRepository, ScheduledNotificationRepository
 from ..types import KaguneType, NotificationType, Race, RegisterGhoulType
 from ..utils import (
     apply_hunger_restore,
@@ -33,6 +33,7 @@ class GhoulService(Base):
         user_cooldown_repository,
         chat_repository,
         notification_repository: Optional[ScheduledNotificationRepository] = None,
+        death_log_repository: Optional[DeathLogRepository] = None,
     ) -> None:
         super().__init__(
             user_repository, ghoul_repository, user_cooldown_repository, chat_repository
@@ -40,6 +41,9 @@ class GhoulService(Base):
         # Опционально - без него materialize_passive_stats просто не
         # планирует пуши (тише для тестов/прочих мест, где это не нужно).
         self.notification_repository = notification_repository
+        # Тоже опционально - без него apply_death отработает (is_dead
+        # выставится), просто без записи в историю смертей.
+        self.death_log_repository = death_log_repository
 
     async def get(self, find_by: Union[Message, int]) -> Optional[Ghoul]:
         logger.debug(
@@ -75,17 +79,23 @@ class GhoulService(Base):
         """Досчитывает голод/здоровье на текущий момент (ленивый расчёт,
         см. BATTLE_DESIGN.md) и, если что-то изменилось, сохраняет.
 
-        Смерть от голода (would_starve) сюда пока не подключена - это
-        отдельный шаг, требующий готовой логики сброса гуля."""
+        Мёртвому гулю (is_dead) голод/хп больше не считаются вообще - до
+        возрождения через "растить кагуне" (reset_for_rebirth)."""
+
+        if ghoul.is_dead:
+            return ghoul
 
         now = utcnow_naive()
 
-        new_hunger, new_hunger_at, _would_starve = compute_hunger(
+        new_hunger, new_hunger_at, would_starve = compute_hunger(
             hunger=ghoul.hunger,
             hunger_updated_at=ghoul.hunger_updated_at,
             is_kakuja=ghoul.is_kakuja,
             now=now,
         )
+
+        if would_starve:
+            return await self.apply_death(ghoul.telegram_id, cause="starvation")
 
         hp_per_hour = health_regen_per_hour(
             regeneration=ghoul.regeneration,
@@ -125,6 +135,99 @@ class GhoulService(Base):
 
         return result
 
+    _REBIRTH_SURVIVORS = {"id", "telegram_id", "created_at", "deaths", "updated_at"}
+    _REBIRTH_TIMESTAMP_COLUMNS = {"health_updated_at", "hunger_updated_at"}
+
+    def _rebirth_reset_values(self) -> dict:
+        """Собирает "сброс к дефолту" прямо из определения колонок Ghoul -
+        не дублирует значения по умолчанию руками, чтобы не разъехаться,
+        если кто-то поменяет default в модели и забудет поправить здесь."""
+
+        values: dict = {}
+        for column in Ghoul.__table__.columns:
+            name = column.name
+            if name in self._REBIRTH_SURVIVORS or name in self._REBIRTH_TIMESTAMP_COLUMNS:
+                continue
+            if column.default is not None and column.default.is_scalar:
+                values[name] = column.default.arg
+            elif column.nullable:
+                values[name] = None
+        return values
+
+    async def apply_death(
+        self,
+        telegram_id: int,
+        cause: str,
+        killer_telegram_id: Optional[int] = None,
+    ) -> Ghoul:
+        """Смерть НЕ сбрасывает статы сразу - только выставляет is_dead и
+        пишет DeathLog (переживает всё, в отличие от самого гуля). Сброс +
+        новый случайный тип кагуне происходят только при возрождении, см.
+        reset_for_rebirth - вызывается из "растить кагуне" мёртвым гулем.
+
+        См. BATTLE_DESIGN.md ("Смерть и сброс")."""
+
+        # ВАЖНО: self.get() здесь нельзя - это снова прогонит
+        # materialize_passive_stats, которая (пока is_dead ещё не выставлен)
+        # опять увидит would_starve и вызовет apply_death же - бесконечная
+        # рекурсия. Нужен просто текущий сырой снимок строки.
+        ghoul = await self.ghoul_repository.get(telegram_id)
+        if not ghoul:
+            raise ValueError("Ghoul not found")
+
+        if self.death_log_repository is not None:
+            await self.death_log_repository.insert(
+                telegram_id=telegram_id,
+                cause=cause,
+                level=ghoul.level,
+                lifetime_rc_earned=ghoul.lifetime_rc_earned,
+                killer_telegram_id=killer_telegram_id,
+            )
+
+        await self.increment_fields(telegram_id, deaths=1)
+        updated = await self.set_fields(telegram_id, is_dead=True)
+
+        if self.notification_repository is not None:
+            # Мёртвому больше не нужны пуши про голод/реген - живого
+            # смысла в них нет до возрождения.
+            await self.notification_repository.delete(
+                telegram_id, NotificationType.HEALTH_FULL
+            )
+            await self.notification_repository.delete(
+                telegram_id, NotificationType.HUNGER_THRESHOLD
+            )
+            # А вот некролог - да, планируем через ту же инфраструктуру:
+            # у GhoulService нет Bot/DialogService, чтобы отправить ЛС
+            # самому - тикер уже умеет это делать (см. NotificationTicker).
+            await self.notification_repository.schedule(
+                telegram_id=telegram_id,
+                notification_type=NotificationType.DEATH,
+                fire_at=utcnow_naive(),
+            )
+
+        return updated
+
+    async def reset_for_rebirth(self, telegram_id: int) -> Ghoul:
+        """Возрождение: полный сброс (id/created_at/deaths переживают) +
+        новый случайный тип кагуне сразу же - тот самый "бесплатный побочный
+        эффект", о котором договорились в BATTLE_DESIGN.md. Вызывается из
+        "растить кагуне", когда гуль is_dead."""
+
+        ghoul = await self.get(telegram_id)
+        if not ghoul:
+            raise ValueError("Ghoul not found")
+
+        values = self._rebirth_reset_values()
+        now = utcnow_naive()
+        values["health_updated_at"] = now
+        values["hunger_updated_at"] = now
+
+        new_kagune = self._first_kagune()
+        values["kagune_type_bit"] = new_kagune.value["bit"]
+        values[new_kagune.value["strength_column"]] = 1
+
+        return await self.set_fields(telegram_id, **values)
+
     async def sync_notification_schedule(self, ghoul: Ghoul, now: datetime) -> None:
         """Пере-планирует пуши "здоровье полное"/"голод дошёл до порога" по
         ТЕКУЩЕМУ состоянию гуля. Вызывается при каждом чтении гуля и при
@@ -153,22 +256,19 @@ class GhoulService(Base):
                 fire_at=now + timedelta(hours=hours_to_full),
             )
 
+        # next_hunger_threshold больше никогда не возвращает None - при
+        # hunger<=0 это -1, "будильник" на момент потенциальной смерти (см.
+        # docstring next_hunger_threshold). Планируем всегда.
         threshold = next_hunger_threshold(ghoul.hunger)
-
-        if threshold is None:
-            await self.notification_repository.delete(
-                ghoul.telegram_id, NotificationType.HUNGER_THRESHOLD
-            )
-        else:
-            hours_to_threshold = hours_until_hunger_threshold(
-                ghoul.hunger, ghoul.is_kakuja, threshold
-            )
-            await self.notification_repository.schedule(
-                telegram_id=ghoul.telegram_id,
-                notification_type=NotificationType.HUNGER_THRESHOLD,
-                fire_at=now + timedelta(hours=hours_to_threshold),
-                threshold=threshold,
-            )
+        hours_to_threshold = hours_until_hunger_threshold(
+            ghoul.hunger, ghoul.is_kakuja, threshold
+        )
+        await self.notification_repository.schedule(
+            telegram_id=ghoul.telegram_id,
+            notification_type=NotificationType.HUNGER_THRESHOLD,
+            fire_at=now + timedelta(hours=hours_to_threshold),
+            threshold=threshold,
+        )
 
     async def increment_fields(self, telegram_id: int, **deltas: int) -> Optional[Ghoul]:
         """Тонкая обёртка над GhoulRepository.increment_fields - атомарный

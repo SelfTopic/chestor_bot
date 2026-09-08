@@ -130,7 +130,12 @@ class GhoulRepository(Base):
         return cleaned_bit
 
     async def get_top_snap(self, count: int) -> List[Ghoul]:
-        stmt = select(Ghoul).order_by(desc(Ghoul.snap_count)).limit(count)
+        stmt = (
+            select(Ghoul)
+            .where(Ghoul.is_dead.is_(False))
+            .order_by(desc(Ghoul.snap_count))
+            .limit(count)
+        )
 
         execute = await self.session.scalars(stmt)
 
@@ -148,15 +153,21 @@ class GhoulRepository(Base):
                 + func.coalesce(Ghoul.kagune_strength_rinkaku, 0)
                 + func.coalesce(Ghoul.kagune_strength_bikaku, 0)
             )
-            stmt = select(Ghoul).order_by(desc(total_strength)).limit(count)
+            stmt = (
+                select(Ghoul)
+                .where(Ghoul.is_dead.is_(False))
+                .order_by(desc(total_strength))
+                .limit(count)
+            )
         else:
             # Топ по конкретному типу - только те, у кого он реально открыт
             # (NULL исключаем, а не считаем нулём - иначе топ по типу
-            # заполнился бы теми, у кого его вообще нет).
+            # заполнился бы теми, у кого его вообще нет). Мёртвые - тоже мимо
+            # топов, см. BATTLE_DESIGN.md ("Смерть и сброс").
             column = getattr(Ghoul, kagune_type.value["strength_column"])
             stmt = (
                 select(Ghoul)
-                .where(column.isnot(None))
+                .where(column.isnot(None), Ghoul.is_dead.is_(False))
                 .order_by(desc(column))
                 .limit(count)
             )

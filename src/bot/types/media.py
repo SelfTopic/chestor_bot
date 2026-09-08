@@ -13,6 +13,7 @@ class MediaCollection(str, Enum):
     SNAP_FINGER = "snap_finger:animation"
     COFFEE = "coffee:animation"
     EAT_HUMAN = "eat:humans"
+    DEATH = "death:video"
     FIGHT = "fight:animation"
     WELCOME_GIF = "welcome:animation"
     WELCOME_PHOTO = "welcome:photo"

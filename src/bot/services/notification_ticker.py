@@ -3,13 +3,17 @@ import logging
 from typing import Optional
 
 from aiogram import Bot
+from aiogram.exceptions import TelegramBadRequest
+from aiogram.types import FSInputFile
 
 from src.database import session_factory
 from src.database.models import ScheduledNotification
 
 from ..repositories import (
     ChatRepository,
+    DeathLogRepository,
     GhoulRepository,
+    MediaRepository,
     ScheduledNotificationRepository,
     UserCooldownRepository,
     UserRepository,
@@ -18,6 +22,7 @@ from ..types import NotificationType
 from ..utils import utcnow_naive
 from .dialog import DialogService
 from .ghoul import GhoulService
+from .media import MediaDownloader, MediaService
 
 logger = logging.getLogger(__name__)
 
@@ -42,6 +47,10 @@ class NotificationTicker:
         self._interval = interval_seconds
         self._task: Optional[asyncio.Task] = None
         self._running = False
+        # MediaDownloader сам по себе не завязан на сессию БД (в отличие от
+        # MediaRepository) - можно построить один раз, не пересоздавать
+        # каждый тик.
+        self._media_downloader = MediaDownloader(bot=bot)
 
     async def start(self) -> None:
         if self._running:
@@ -93,16 +102,26 @@ class NotificationTicker:
 
             logger.debug(f"NotificationTicker: {len(due)} due notification(s)")
 
+            death_log_repository = DeathLogRepository(session)
+
             ghoul_service = GhoulService(
                 UserRepository(session),
                 GhoulRepository(session),
                 UserCooldownRepository(session),
                 ChatRepository(session),
                 notification_repository,
+                death_log_repository,
+            )
+            media_service = MediaService(
+                downloader=self._media_downloader,
+                media_repository=MediaRepository(session),
             )
 
             for row in due:
-                await self._handle_due(row, ghoul_service, notification_repository)
+                await self._handle_due(
+                    row, ghoul_service, notification_repository, death_log_repository,
+                    media_service,
+                )
 
             await session.commit()
 
@@ -111,6 +130,8 @@ class NotificationTicker:
         row: ScheduledNotification,
         ghoul_service: GhoulService,
         notification_repository: ScheduledNotificationRepository,
+        death_log_repository: DeathLogRepository,
+        media_service: MediaService,
     ) -> None:
         # Запоминаем, о чём была эта конкретная запись, ДО того как
         # ghoul_service.get() пересчитает и переставит расписание дальше.
@@ -133,15 +154,27 @@ class NotificationTicker:
             return
 
         if notification_type == NotificationType.HUNGER_THRESHOLD:
-            if threshold is None or ghoul.hunger > threshold:
-                return  # состояние уже успело измениться - расписание само поправлено
+            if threshold is None or threshold == -1:
+                return  # "будильник" смерти - не текстовое уведомление, см. ниже
+            if ghoul.hunger > threshold:
+                return  # состояние уже успело измениться - расписание само поправилось
+            await self._send(
+                telegram_id, key="notify_hunger_threshold", threshold=threshold
+            )
+            return
 
-            if threshold == 0:
-                await self._send(telegram_id, key="notify_hunger_zero")
-            else:
-                await self._send(
-                    telegram_id, key="notify_hunger_threshold", threshold=threshold
-                )
+        if notification_type == NotificationType.DEATH:
+            await notification_repository.delete(telegram_id, NotificationType.DEATH)
+
+            if not ghoul.is_dead:
+                return  # успел возродиться раньше, чем дошла очередь - некролог не нужен
+
+            death = await death_log_repository.get_latest(telegram_id)
+            if not death:
+                logger.warning(f"Death notification for {telegram_id} with no DeathLog row")
+                return
+
+            await self._send_death(telegram_id, death, media_service)
             return
 
         logger.warning(f"Unknown notification_type: {notification_type}")
@@ -154,6 +187,53 @@ class NotificationTicker:
         except Exception:
             logger.warning(
                 f"Failed to send notification '{key}' to {telegram_id}", exc_info=True
+            )
+
+    _DEATH_CAUSE_TEXT = {
+        "starvation": "умер от голода",
+        "eaten": "был съеден другим гулем",
+    }
+
+    async def _send_death(self, telegram_id: int, death, media_service: MediaService) -> None:
+        """Некролог - опенинг (если уже загружен через /add_gif death) +
+        сводка по снапшоту DeathLog, не по живому (уже мёртвому/возможно
+        сброшенному) гулю."""
+
+        text = self._dialog_service.text(
+            key="notify_death",
+            cause=self._DEATH_CAUSE_TEXT.get(death.cause, death.cause),
+            level=death.level,
+            lifetime_rc_earned=death.lifetime_rc_earned,
+        )
+
+        media = None
+        try:
+            media = await media_service.get_random_video("death", user_id=telegram_id)
+        except Exception:
+            logger.warning("Failed to look up death video", exc_info=True)
+
+        try:
+            if not media:
+                await self._bot.send_message(chat_id=telegram_id, text=text)
+                return
+
+            try:
+                await self._bot.send_video(
+                    chat_id=telegram_id,
+                    video=media.telegram_file_id or FSInputFile(media.path),
+                    caption=text,
+                )
+            except TelegramBadRequest:
+                sent = await self._bot.send_video(
+                    chat_id=telegram_id, video=FSInputFile(media.path), caption=text
+                )
+                if sent.video:
+                    await media_service.update_telegram_file_id(
+                        path=media.path, new_file_id=sent.video.file_id
+                    )
+        except Exception:
+            logger.warning(
+                f"Failed to send death notification to {telegram_id}", exc_info=True
             )
 
 

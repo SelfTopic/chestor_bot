@@ -134,6 +134,11 @@ async def profile_handler(
         raise ValueError("Ghoul not found in database")
 
     if isinstance(profile, Ghoul):
+        if profile.is_dead:
+            return await message.answer(
+                text=dialog_service.text(key="dead_ghoul_profile", name=user.full_name)
+            )
+
         power = ghoul_service.calculate_power(profile)
         danger_rank = ghoul_service.get_danger_rank(power)
 

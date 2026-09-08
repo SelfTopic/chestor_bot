@@ -1,6 +1,7 @@
 from .balances_log import BalancesLogRepository
 from .base import Base
 from .chat import ChatRepository
+from .death_log import DeathLogRepository
 from .ghoul import GhoulRepository
 from .lottery import LotteryRepository
 from .media import MediaRepository
@@ -22,4 +23,5 @@ __all__ = [
     "BalancesLogRepository",
     "TransferRepository",
     "ScheduledNotificationRepository",
+    "DeathLogRepository",
 ]

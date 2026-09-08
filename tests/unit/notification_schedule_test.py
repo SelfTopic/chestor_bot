@@ -83,9 +83,12 @@ async def test_get_schedules_next_hunger_threshold(
     assert row.threshold == 75
 
 
-async def test_get_deletes_hunger_threshold_when_hunger_is_zero(
+async def test_get_schedules_death_alarm_when_hunger_is_zero(
     ghoul_service, make_user, make_ghoul, session
 ):
+    """При hunger=0 больше нет "порогов ниже" в обычном смысле, но строка не
+    удаляется - планируется с threshold=-1 (будильник на момент потенциальной
+    смерти). Без этого неактивный игрок, застрявший на 0%, был бы бессмертен."""
     await make_user(telegram_id=500_000_004)
     await make_ghoul(telegram_id=500_000_004, hunger=0)
 
@@ -94,7 +97,8 @@ async def test_get_deletes_hunger_threshold_when_hunger_is_zero(
     row = await _get_notification(
         session, 500_000_004, NotificationType.HUNGER_THRESHOLD
     )
-    assert row is None
+    assert row is not None
+    assert row.threshold == -1
 
 
 async def test_eat_human_reschedules_hunger_threshold(

@@ -7,6 +7,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from .repositories import (
     BalancesLogRepository,
     ChatRepository,
+    DeathLogRepository,
     GhoulRepository,
     LotteryRepository,
     MediaRepository,
@@ -73,6 +74,8 @@ class Container(containers.DeclarativeContainer):
         ScheduledNotificationRepository, session=db_session
     )
 
+    death_log_repository = providers.Factory(DeathLogRepository, session=db_session)
+
     dialog_service = providers.Factory(DialogService)
 
     media_downloader = providers.Factory(MediaDownloader, bot=bot)
@@ -105,6 +108,7 @@ class Container(containers.DeclarativeContainer):
         user_cooldown_repository,
         chat_repository,
         notification_repository=scheduled_notification_repository,
+        death_log_repository=death_log_repository,
     )
 
     cooldown_service = providers.Factory(

@@ -6,7 +6,7 @@ from aiogram.types import CallbackQuery, Message, TelegramObject
 from dependency_injector.wiring import Provide
 
 from ..containers import Container
-from ..services import GhoulService
+from ..services import DialogService, GhoulService
 
 logger = logging.getLogger(__name__)
 
@@ -32,6 +32,7 @@ class GhoulMiddleware(BaseMiddleware):
         event: TelegramObject,
         data: Dict[str, Any],
         ghoul_service: GhoulService = Provide[Container.ghoul_service],
+        dialog_service: DialogService = Provide[Container.dialog_service],
     ) -> Any:
         """
         Middleware execution pipeline.
@@ -67,6 +68,14 @@ class GhoulMiddleware(BaseMiddleware):
             ghoul = await ghoul_service.get(find_by=user_id)
 
             if ghoul:
+                if ghoul.is_dead:
+                    # Единственный выход мёртвому - "растить кагуне", уже
+                    # отработавшая как bypass выше. Всё остальное блокируем.
+                    # См. BATTLE_DESIGN.md ("Смерть и сброс").
+                    logger.info(f"Access denied: dead ghoul ({ghoul.id})")
+                    await event.answer(dialog_service.text(key="dead_ghoul_reply"))
+                    return None
+
                 logger.info(f"Access granted: Registered ghoul ({ghoul.id})")
                 return await handler(event, data)
             else:

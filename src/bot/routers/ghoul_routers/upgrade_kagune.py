@@ -205,6 +205,19 @@ async def upgrade_kagune(
             )
         )
 
+    if ghoul.is_dead:
+        # Возрождение - единственное действие, доступное мёртвому гулю (см.
+        # GhoulMiddleware). Полный сброс + новый случайный тип кагуне разом,
+        # как и было задумано в "Смерть и сброс".
+        reborn = await ghoul_service.reset_for_rebirth(message.from_user.id)
+        new_type = calculate_kagune(reborn.kagune_type_bit)[0]
+
+        return await message.reply(
+            text=dialog_service.text(
+                key="rebirth_accept", kagune_type=new_type.value["name"]
+            )
+        )
+
     user_cooldown = await cooldown_service.get_active_cooldown(
         telegram_id=message.from_user.id, cooldown_name="KAGUNE_UPGRADE"
     )

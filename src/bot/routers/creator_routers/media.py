@@ -25,8 +25,12 @@ async def add_gif(
     if not message.from_user:
         raise UserNotFound()
 
-    if not message.reply_to_message.animation:
-        raise MediaNotFoundError("В выбранном вами сообщении отсутствует гиф")
+    is_video = bool(message.reply_to_message.video)
+
+    if not message.reply_to_message.animation and not is_video:
+        raise MediaNotFoundError(
+            "В выбранном вами сообщении отсутствует гиф или видео"
+        )
 
     args = command.args
 
@@ -49,7 +53,8 @@ async def add_gif(
         await message.reply("Ошибка: Скачанный файл пуст.")
         return
 
-    await message.answer_animation(
-        animation=FSInputFile(path),
-        caption=f"Эта гиф успешено скачана в путь {path}",
-    )
+    caption = f"Это медиа успешно скачано в путь {path}"
+    if is_video:
+        await message.answer_video(video=FSInputFile(path), caption=caption)
+    else:
+        await message.answer_animation(animation=FSInputFile(path), caption=caption)

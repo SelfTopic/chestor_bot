@@ -173,8 +173,10 @@ def test_next_hunger_threshold():
     assert next_hunger_threshold(50) == 25
     assert next_hunger_threshold(25) == 0
     assert next_hunger_threshold(1) == 0
-    assert next_hunger_threshold(0) is None
-    assert next_hunger_threshold(-5) is None
+    # -1 = не процент, а "будильник" на момент потенциальной смерти -
+    # без него неактивный игрок, застрявший на 0% голода, был бы бессмертен
+    assert next_hunger_threshold(0) == -1
+    assert next_hunger_threshold(-5) == -1
 
 
 def test_hours_until_hunger_threshold():
@@ -184,3 +186,7 @@ def test_hours_until_hunger_threshold():
     assert hours_until_hunger_threshold(50, is_kakuja=False, threshold=50) == 0.0
     # не может быть отрицательным, даже если голод уже ниже порога
     assert hours_until_hunger_threshold(10, is_kakuja=False, threshold=50) == 0.0
+    # threshold=-1 ("будильник" смерти от 0%) - та же формула, без особого случая
+    assert hours_until_hunger_threshold(0, is_kakuja=False, threshold=-1) == pytest.approx(
+        168 / 100
+    )
