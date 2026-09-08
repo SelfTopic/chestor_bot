@@ -2,6 +2,7 @@ from .balances_log import BalancesLog
 from .base import Base
 from .chat import Chat
 from .cooldown import Cooldown
+from .death_log import DeathLog
 from .ghoul import Ghoul
 from .lottery import Lottery
 from .media import Media
@@ -24,4 +25,5 @@ __all__ = [
     "BalancesLog",
     "Transfer",
     "ScheduledNotification",
+    "DeathLog",
 ]

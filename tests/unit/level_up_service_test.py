@@ -88,6 +88,7 @@ async def test_level_up_grants_rc_reward_in_range(make_user, make_ghoul, session
 
     assert 10 <= result.rc_reward <= 40
     assert result.ghoul.rc_money == rc_before + result.rc_reward
+    assert result.ghoul.lifetime_rc_earned == result.rc_reward
 
 
 async def test_level_up_reward_ranges_scale_with_new_level(

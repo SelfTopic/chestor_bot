@@ -78,7 +78,7 @@ class LevelUpService:
             log=f"level up reward (level {new_level})",
         )
         final_ghoul = await self.ghoul_service.increment_fields(
-            telegram_id, rc_money=rc_reward
+            telegram_id, rc_money=rc_reward, lifetime_rc_earned=rc_reward
         )
         if not final_ghoul:
             raise ValueError("Ghoul not found while granting RC reward")

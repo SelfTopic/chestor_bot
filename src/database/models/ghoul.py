@@ -123,6 +123,23 @@ class Ghoul(Base):
         nullable=False
     )
 
+    # Флаг "официально мёртв" - см. BATTLE_DESIGN.md ("Смерть и сброс").
+    # Точная семантика (постоянная смерть или временная до возрождения через
+    # "растить кагуне") ещё обсуждается - колонка заводится заранее,
+    # поведение подключим отдельно.
+    is_dead: Mapped[bool] = mapped_column(
+        default=False,
+        nullable=False
+    )
+
+    # Накопительный счётчик RC за всю жизнь текущего перерождения - в
+    # отличие от rc_money (текущий баланс, тратится), нужен для итоговой
+    # сводки при смерти ("сколько заработал за жизнь").
+    lifetime_rc_earned: Mapped[int] = mapped_column(
+        default=0,
+        nullable=False
+    )
+
     coffee_count: Mapped[int] = mapped_column(
         default=0,
         nullable=False     
