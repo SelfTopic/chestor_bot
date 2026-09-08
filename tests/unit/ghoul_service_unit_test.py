@@ -130,6 +130,74 @@ async def test_total_kagune_strength_sums_all_owned_types(
     assert ghoul_service.total_kagune_strength(ghoul) == 10
 
 
+async def test_get_top_kagune_by_specific_type_excludes_unowned(
+    ghoul_service, make_user, make_ghoul
+):
+    """Топ по конкретному типу не должен включать тех, у кого этот тип
+    вообще не открыт (NULL) - иначе они бы ложно попали в топ с нулём."""
+    await make_user(telegram_id=200_000_320, username="topkagune_320")
+    await make_ghoul(
+        telegram_id=200_000_320,
+        kagune_type_bit=KaguneType.UKAKU.value["bit"],
+        kagune_strength_ukaku=50,
+    )
+    await make_user(telegram_id=200_000_321, username="topkagune_321")
+    await make_ghoul(
+        telegram_id=200_000_321,
+        kagune_type_bit=KaguneType.BIKAKU.value["bit"],
+        kagune_strength_bikaku=999,
+    )
+
+    top = await ghoul_service.get_top_kagune(20, kagune_type=KaguneType.UKAKU)
+
+    assert [g.telegram_id for g in top] == [200_000_320]
+
+
+async def test_get_top_kagune_by_specific_type_orders_descending(
+    ghoul_service, make_user, make_ghoul
+):
+    await make_user(telegram_id=200_000_322, username="topkagune_322")
+    await make_ghoul(
+        telegram_id=200_000_322,
+        kagune_type_bit=KaguneType.UKAKU.value["bit"],
+        kagune_strength_ukaku=5,
+    )
+    await make_user(telegram_id=200_000_323, username="topkagune_323")
+    await make_ghoul(
+        telegram_id=200_000_323,
+        kagune_type_bit=KaguneType.UKAKU.value["bit"],
+        kagune_strength_ukaku=25,
+    )
+
+    top = await ghoul_service.get_top_kagune(20, kagune_type=KaguneType.UKAKU)
+
+    assert [g.telegram_id for g in top] == [200_000_323, 200_000_322]
+
+
+async def test_get_top_kagune_without_type_still_sorts_by_sum(
+    ghoul_service, make_user, make_ghoul
+):
+    """Регрессия: старое поведение (без указания типа) не должно было
+    сломаться после добавления параметра kagune_type."""
+    await make_user(telegram_id=200_000_324, username="topkagune_324")
+    await make_ghoul(
+        telegram_id=200_000_324,
+        kagune_type_bit=KaguneType.UKAKU.value["bit"] | KaguneType.BIKAKU.value["bit"],
+        kagune_strength_ukaku=3,
+        kagune_strength_bikaku=3,
+    )
+    await make_user(telegram_id=200_000_325, username="topkagune_325")
+    await make_ghoul(
+        telegram_id=200_000_325,
+        kagune_type_bit=KaguneType.UKAKU.value["bit"],
+        kagune_strength_ukaku=100,
+    )
+
+    top = await ghoul_service.get_top_kagune(20)
+
+    assert [g.telegram_id for g in top][:2] == [200_000_325, 200_000_324]
+
+
 async def test_register_assigns_initial_strength_to_chosen_type(
     ghoul_service, make_user
 ):

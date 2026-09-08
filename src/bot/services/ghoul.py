@@ -374,9 +374,14 @@ class GhoulService(Base):
         new_bit = (ghoul.kagune_type_bit or 0) & ~kagune_type.value["bit"]
         return await self.set_fields(telegram_id, kagune_type_bit=new_bit, **{column: None})
 
-    async def get_top_kagune(self, count=20) -> List[Ghoul]:
-        logger.debug(f"Called method get_top_kagune. Params: count={count}")
-        top_kagune = await self.ghoul_repository.get_top_kagune(count)
+    async def get_top_kagune(
+        self, count=20, kagune_type: Optional[KaguneType] = None
+    ) -> List[Ghoul]:
+        logger.debug(
+            f"Called method get_top_kagune. Params: count={count}, "
+            f"kagune_type={kagune_type}"
+        )
+        top_kagune = await self.ghoul_repository.get_top_kagune(count, kagune_type)
         logger.debug(f"Retrieved top kagune list with {len(top_kagune)} entries")
         return top_kagune
 

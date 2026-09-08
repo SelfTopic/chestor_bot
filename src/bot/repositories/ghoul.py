@@ -136,17 +136,30 @@ class GhoulRepository(Base):
 
         return list(execute)
 
-    async def get_top_kagune(self, count: int) -> List[Ghoul]:
-        # Сила кагуне теперь по 4 отдельным (nullable) колонкам - сортируем
-        # по сумме (NULL = тип не открыт = 0), см. BATTLE_DESIGN.md.
-        total_strength = (
-            func.coalesce(Ghoul.kagune_strength_ukaku, 0)
-            + func.coalesce(Ghoul.kagune_strength_koukaku, 0)
-            + func.coalesce(Ghoul.kagune_strength_rinkaku, 0)
-            + func.coalesce(Ghoul.kagune_strength_bikaku, 0)
-        )
-
-        stmt = select(Ghoul).order_by(desc(total_strength)).limit(count)
+    async def get_top_kagune(
+        self, count: int, kagune_type: Optional[KaguneType] = None
+    ) -> List[Ghoul]:
+        if kagune_type is None:
+            # Сила кагуне теперь по 4 отдельным (nullable) колонкам -
+            # сортируем по сумме (NULL = тип не открыт = 0), см. BATTLE_DESIGN.md.
+            total_strength = (
+                func.coalesce(Ghoul.kagune_strength_ukaku, 0)
+                + func.coalesce(Ghoul.kagune_strength_koukaku, 0)
+                + func.coalesce(Ghoul.kagune_strength_rinkaku, 0)
+                + func.coalesce(Ghoul.kagune_strength_bikaku, 0)
+            )
+            stmt = select(Ghoul).order_by(desc(total_strength)).limit(count)
+        else:
+            # Топ по конкретному типу - только те, у кого он реально открыт
+            # (NULL исключаем, а не считаем нулём - иначе топ по типу
+            # заполнился бы теми, у кого его вообще нет).
+            column = getattr(Ghoul, kagune_type.value["strength_column"])
+            stmt = (
+                select(Ghoul)
+                .where(column.isnot(None))
+                .order_by(desc(column))
+                .limit(count)
+            )
 
         execute = await self.session.scalars(stmt)
 
