@@ -142,6 +142,109 @@ async def test_register_assigns_initial_strength_to_chosen_type(
     assert ghoul_service.get_kagune_strength(ghoul, owned[0]) == 1
 
 
+# --- Управление типами кагуне через creator-команды ---
+
+
+async def test_grant_kagune_type_sets_bit_and_strength(
+    ghoul_service, make_user, make_ghoul
+):
+    await make_user(telegram_id=200_000_310)
+    await make_ghoul(
+        telegram_id=200_000_310,
+        kagune_type_bit=KaguneType.UKAKU.value["bit"],
+        kagune_strength_ukaku=5,
+    )
+
+    ghoul = await ghoul_service.grant_kagune_type(200_000_310, KaguneType.BIKAKU)
+
+    assert ghoul.kagune_strength_bikaku == 1
+    assert ghoul.kagune_type_bit == (
+        KaguneType.UKAKU.value["bit"] | KaguneType.BIKAKU.value["bit"]
+    )
+    assert set(ghoul_service.owned_kagune_types(ghoul)) == {
+        KaguneType.UKAKU,
+        KaguneType.BIKAKU,
+    }
+
+
+async def test_grant_kagune_type_rejects_already_owned(
+    ghoul_service, make_user, make_ghoul
+):
+    await make_user(telegram_id=200_000_311)
+    await make_ghoul(
+        telegram_id=200_000_311,
+        kagune_type_bit=KaguneType.UKAKU.value["bit"],
+        kagune_strength_ukaku=1,
+    )
+
+    with pytest.raises(ValueError, match="already owns"):
+        await ghoul_service.grant_kagune_type(200_000_311, KaguneType.UKAKU)
+
+
+async def test_grant_all_kagune_types_fills_only_missing(
+    ghoul_service, make_user, make_ghoul
+):
+    """Уже открытый тип не должен сбрасываться обратно к initial_strength."""
+    await make_user(telegram_id=200_000_312)
+    await make_ghoul(
+        telegram_id=200_000_312,
+        kagune_type_bit=KaguneType.UKAKU.value["bit"],
+        kagune_strength_ukaku=50,
+    )
+
+    ghoul = await ghoul_service.grant_all_kagune_types(200_000_312)
+
+    assert ghoul.kagune_strength_ukaku == 50  # не тронут
+    assert ghoul.kagune_strength_koukaku == 1
+    assert ghoul.kagune_strength_rinkaku == 1
+    assert ghoul.kagune_strength_bikaku == 1
+    assert len(ghoul_service.owned_kagune_types(ghoul)) == 4
+
+
+async def test_revoke_kagune_type_clears_bit_and_strength(
+    ghoul_service, make_user, make_ghoul
+):
+    await make_user(telegram_id=200_000_313)
+    await make_ghoul(
+        telegram_id=200_000_313,
+        kagune_type_bit=KaguneType.UKAKU.value["bit"] | KaguneType.BIKAKU.value["bit"],
+        kagune_strength_ukaku=1,
+        kagune_strength_bikaku=10,
+    )
+
+    ghoul = await ghoul_service.revoke_kagune_type(200_000_313, KaguneType.BIKAKU)
+
+    assert ghoul.kagune_strength_bikaku is None
+    assert ghoul.kagune_type_bit == KaguneType.UKAKU.value["bit"]
+    assert ghoul_service.owned_kagune_types(ghoul) == [KaguneType.UKAKU]
+
+
+async def test_revoke_kagune_type_rejects_unowned(ghoul_service, make_user, make_ghoul):
+    await make_user(telegram_id=200_000_314)
+    await make_ghoul(
+        telegram_id=200_000_314,
+        kagune_type_bit=KaguneType.UKAKU.value["bit"],
+        kagune_strength_ukaku=1,
+    )
+
+    with pytest.raises(ValueError, match="does not own"):
+        await ghoul_service.revoke_kagune_type(200_000_314, KaguneType.BIKAKU)
+
+
+async def test_revoke_kagune_type_rejects_removing_the_last_one(
+    ghoul_service, make_user, make_ghoul
+):
+    await make_user(telegram_id=200_000_315)
+    await make_ghoul(
+        telegram_id=200_000_315,
+        kagune_type_bit=KaguneType.UKAKU.value["bit"],
+        kagune_strength_ukaku=1,
+    )
+
+    with pytest.raises(ValueError, match="last remaining"):
+        await ghoul_service.revoke_kagune_type(200_000_315, KaguneType.UKAKU)
+
+
 async def test_register_creates_ghoul(ghoul_service, make_user):
     await make_user(telegram_id=200_000_400)
     result = await ghoul_service.register(telegram_id=200_000_400)

@@ -2,6 +2,7 @@ from aiogram import Router
 
 from .ban import router as BanRouter
 from .broadcast import router as BroadcastRouter
+from .kagune_admin import router as KaguneAdminRouter
 from .level_up import router as LevelUpRouter
 from .media import router as MediaRouter
 from .players_lookup import router as PlayersLookupRouter
@@ -17,6 +18,7 @@ CreatorRouter.include_routers(
     ResetRouter,
     BroadcastRouter,
     LevelUpRouter,
+    KaguneAdminRouter,
 )
 
 __all__ = ["CreatorRouter"]

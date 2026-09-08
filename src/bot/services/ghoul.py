@@ -312,6 +312,68 @@ class GhoulService(Base):
             for kagune_type in KaguneType
         )
 
+    async def grant_kagune_type(
+        self, telegram_id: int, kagune_type: KaguneType, initial_strength: int = 1
+    ) -> Ghoul:
+        """Админская выдача нового типа кагуне (creator-команда). Держит
+        kagune_type_bit и kagune_strength_<тип> в согласии - это две
+        стороны одного факта "тип открыт", и расхождение между ними было бы
+        реальным источником багов (calculate_kagune по биту используется
+        для отображения в нескольких роутерах)."""
+
+        ghoul = await self.get(telegram_id)
+        if not ghoul:
+            raise ValueError("Ghoul not found")
+
+        column = kagune_type.value["strength_column"]
+        if getattr(ghoul, column) is not None:
+            raise ValueError(
+                f"Ghoul already owns kagune type {kagune_type.value['name']}"
+            )
+
+        new_bit = (ghoul.kagune_type_bit or 0) | kagune_type.value["bit"]
+        return await self.set_fields(
+            telegram_id, kagune_type_bit=new_bit, **{column: initial_strength}
+        )
+
+    async def grant_all_kagune_types(
+        self, telegram_id: int, initial_strength: int = 1
+    ) -> Ghoul:
+        """Выдаёт все ещё не открытые типы разом. Уже открытые типы не
+        трогает (не сбрасывает их силу обратно к initial_strength)."""
+
+        ghoul = await self.get(telegram_id)
+        if not ghoul:
+            raise ValueError("Ghoul not found")
+
+        updates: dict = {
+            kagune_type.value["strength_column"]: initial_strength
+            for kagune_type in KaguneType
+            if getattr(ghoul, kagune_type.value["strength_column"]) is None
+        }
+
+        all_bits = sum(kagune_type.value["bit"] for kagune_type in KaguneType)
+        return await self.set_fields(telegram_id, kagune_type_bit=all_bits, **updates)
+
+    async def revoke_kagune_type(self, telegram_id: int, kagune_type: KaguneType) -> Ghoul:
+        """Убирает тип кагуне у гуля. Нельзя убрать последний оставшийся -
+        весь проект (профиль, приветствие при регистрации, сам upgrade_kagune)
+        предполагает, что у гуля всегда есть хотя бы один тип."""
+
+        ghoul = await self.get(telegram_id)
+        if not ghoul:
+            raise ValueError("Ghoul not found")
+
+        column = kagune_type.value["strength_column"]
+        if getattr(ghoul, column) is None:
+            raise ValueError(f"Ghoul does not own kagune type {kagune_type.value['name']}")
+
+        if len(self.owned_kagune_types(ghoul)) <= 1:
+            raise ValueError("Cannot remove the last remaining kagune type")
+
+        new_bit = (ghoul.kagune_type_bit or 0) & ~kagune_type.value["bit"]
+        return await self.set_fields(telegram_id, kagune_type_bit=new_bit, **{column: None})
+
     async def get_top_kagune(self, count=20) -> List[Ghoul]:
         logger.debug(f"Called method get_top_kagune. Params: count={count}")
         top_kagune = await self.ghoul_repository.get_top_kagune(count)
