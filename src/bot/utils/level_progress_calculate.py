@@ -25,3 +25,13 @@ def apply_level_progress(current_progress: float, delta: float) -> tuple[float, 
         return 0.0, 0
 
     return progress, 0
+
+
+def level_progress_bar(progress: float, segments: int = 10) -> str:
+    """Строка вида "⬆️◾️◾️◾️◾️◾️▫️▫️▫️▫️▫️" - заполненные (◾️) сегменты идут
+    первыми, слева направо, как в обычном progress-баре. Округление -
+    ближайший сегмент (50.0% на 10 сегментах = ровно 5 закрашенных)."""
+
+    clamped = max(0.0, min(100.0, progress))
+    filled = min(segments, int(round(clamped / 100 * segments)))
+    return "⬆️" + "◾️" * filled + "▫️" * (segments - filled)

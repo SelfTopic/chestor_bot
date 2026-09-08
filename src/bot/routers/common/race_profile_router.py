@@ -1,20 +1,100 @@
 import logging
 
 from aiogram import F, Router
+from aiogram.exceptions import TelegramAPIError
 from aiogram.filters import Command
-from aiogram.types import Message
+from aiogram.types import (
+    InputRichBlockDetails,
+    InputRichBlockDivider,
+    InputRichBlockList,
+    InputRichBlockListItem,
+    InputRichBlockParagraph,
+    InputRichBlockSectionHeading,
+    InputRichBlockUnion,
+    InputRichMessage,
+    Message,
+)
 from dependency_injector.wiring import Provide, inject
 
 from src.database.models import Ghoul
 
 from ...containers import Container
+from ...game_configs import STATS
 from ...services import DialogService, GhoulService, UserService
 from ...types import Race
-from ...utils import calculate_kagune
+from ...utils import calculate_kagune, get_hunger_tier, level_progress_bar
 
 logger = logging.getLogger(__name__)
 
 router = Router(name=__name__)
+
+
+def _paragraph(text: str) -> InputRichBlockParagraph:
+    return InputRichBlockParagraph(text=text)
+
+
+def build_ghoul_profile_rich_message(
+    user, ghoul: Ghoul, ghoul_service: GhoulService, danger_rank: str, power: int
+) -> InputRichMessage:
+    """Собирает профиль гуля как rich-сообщение (Bot API 10.1+, aiogram
+    3.29+), см. BATTLE_DESIGN.md ("UX профиля"). Блоки собираются из
+    типизированных InputRichBlock*, а не из markdown-строки - синтаксис
+    markdown-диалекта для sendRichMessage нигде в исходниках aiogram не
+    задокументирован (только сами типы), рисковать его угадать не стали.
+
+    "Всего боёв" из мокапа сознательно не показан - счётчиков побед/поражений
+    ещё не существует, боевого движка нет (фаза 4)."""
+
+    tier = get_hunger_tier(ghoul.hunger)
+
+    kagune_items = [
+        InputRichBlockListItem(
+            blocks=[
+                _paragraph(
+                    f"{kagune_type.value['name']} - "
+                    f"{ghoul_service.get_kagune_strength(ghoul, kagune_type)}"
+                )
+            ]
+        )
+        for kagune_type in ghoul_service.owned_kagune_types(ghoul)
+    ]
+
+    stat_items = [
+        InputRichBlockListItem(blocks=[_paragraph(f"{label}: {getattr(ghoul, key)}")])
+        for label, key, _emoji in STATS
+        if key != "max_health"  # здоровье показываем отдельной строкой ниже
+    ]
+
+    blocks: list[InputRichBlockUnion] = [
+        InputRichBlockSectionHeading(
+            text=f"👤 Профиль гуля {danger_rank} ранга {user.full_name}", size=3
+        ),
+        _paragraph(f"📈 Уровень: {ghoul.level}"),
+        _paragraph(f"{level_progress_bar(ghoul.level_progress)} {round(ghoul.level_progress)}%"),
+        _paragraph(f"🍖 Голод: {ghoul.hunger}% ({tier.name})"),
+        _paragraph(f"♦️ RC-клеток: {ghoul.rc_money}"),
+        InputRichBlockDetails(
+            summary="👁‍🗨 Типы кагуне - сила",
+            blocks=[InputRichBlockList(items=kagune_items)],
+        ),
+        _paragraph(f"👌 Сломано пальцев: {ghoul.snap_count}"),
+        _paragraph(f"☕️ Выпито кофе: {ghoul.coffee_count}"),
+        _paragraph(f"🥩 Съедено людей: {ghoul.eat_humans}"),
+        InputRichBlockDetails(
+            summary="Статы",
+            blocks=[
+                InputRichBlockList(items=stat_items),
+                _paragraph(f"❤️ Здоровье: {ghoul.health}/{ghoul.max_health}"),
+                _paragraph(f"⚡ Боевая мощь: {power}"),
+            ],
+        ),
+        _paragraph(f"🥩 Съедено гулей: {ghoul.eat_ghouls}"),
+        InputRichBlockDivider(),
+        _paragraph(f"🧬 Какуджа: {'Есть' if ghoul.is_kakuja else 'Нет'}"),
+        _paragraph(f"☠️ Смертей: {ghoul.deaths}"),
+    ]
+
+    return InputRichMessage(blocks=blocks)
 
 
 @router.message(F.text.lower() == "распрофиль")
@@ -53,38 +133,52 @@ async def profile_handler(
         logger.error("Ghoul not found in database")
         raise ValueError("Ghoul not found in database")
 
+    if isinstance(profile, Ghoul):
+        power = ghoul_service.calculate_power(profile)
+        danger_rank = ghoul_service.get_danger_rank(power)
+
+        rich_message = build_ghoul_profile_rich_message(
+            user, profile, ghoul_service, danger_rank, power
+        )
+
+        try:
+            return await message.answer_rich(rich_message=rich_message)
+        except TelegramAPIError:
+            # Свежая фича (Bot API 10.1+) - подстрахуемся старым plain-text
+            # профилем на случай клиента/чата, который её не поддерживает.
+            logger.warning(
+                "send_rich_message failed for ghoul profile, falling back to plain text",
+                exc_info=True,
+            )
+            fallback_text = dialog_service.text(
+                key="ghoul_profile",
+                name=user.full_name,
+                strength=profile.strength,
+                snap_count=profile.snap_count,
+                kagune_type=calculate_kagune(profile.kagune_type_bit)[0].value["name"],
+                health=profile.health,
+                max_health=profile.max_health,
+                coffee_count=profile.coffee_count,
+                strength_kagune=ghoul_service.total_kagune_strength(profile),
+                rc_count=profile.rc_money,
+                regeneration=profile.regeneration,
+                eat_ghouls=profile.eat_ghouls,
+                eat_humans=profile.eat_humans,
+                dexterity=profile.dexterity,
+                speed=profile.speed,
+                is_kakuja="Есть" if profile.is_kakuja else "Нет",
+                level=profile.level,
+                power=power,
+                danger_rank=danger_rank,
+            )
+            return await message.answer(text=fallback_text)
+
     return_text = dialog_service.text(
         key="profile",
         name=user.full_name,
         race=race.value["name"],
         balance=user.balance,
     )
-
-    if isinstance(profile, Ghoul):
-        power = ghoul_service.calculate_power(profile)
-        danger_rank = ghoul_service.get_danger_rank(power)
-        return_text = dialog_service.text(
-            key="ghoul_profile",
-            name=user.full_name,
-            strength=profile.strength,
-            snap_count=profile.snap_count,
-            kagune_type=calculate_kagune(profile.kagune_type_bit)[0].value["name"],
-            health=profile.health,
-            max_health=profile.max_health,
-            coffee_count=profile.coffee_count,
-            strength_kagune=ghoul_service.total_kagune_strength(profile),
-            rc_count=profile.rc_money,
-            regeneration=profile.regeneration,
-            eat_ghouls=profile.eat_ghouls,
-            eat_humans=profile.eat_humans,
-            dexterity=profile.dexterity,
-            speed=profile.speed,
-            is_kakuja="Есть" if profile.is_kakuja else "Нет",
-            level=profile.level,
-            power=power,
-            danger_rank=danger_rank,
-        )
-
     return await message.answer(text=return_text)
 
 

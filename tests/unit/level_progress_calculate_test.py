@@ -1,6 +1,6 @@
 import pytest
 
-from src.bot.utils import apply_level_progress
+from src.bot.utils import apply_level_progress, level_progress_bar
 
 
 def test_apply_level_progress_simple_gain_no_levelup():
@@ -54,3 +54,24 @@ def test_apply_level_progress_fractional_values_without_levelup():
     progress, levels = apply_level_progress(current_progress=99.5, delta=0.4)
     assert progress == pytest.approx(99.9)
     assert levels == 0
+
+
+def test_level_progress_bar_zero():
+    assert level_progress_bar(0.0) == "⬆️" + "▫️" * 10
+
+
+def test_level_progress_bar_full():
+    assert level_progress_bar(100.0) == "⬆️" + "◾️" * 10
+
+
+def test_level_progress_bar_half():
+    assert level_progress_bar(50.0) == "⬆️" + "◾️" * 5 + "▫️" * 5
+
+
+def test_level_progress_bar_clamps_out_of_range():
+    assert level_progress_bar(-10.0) == "⬆️" + "▫️" * 10
+    assert level_progress_bar(150.0) == "⬆️" + "◾️" * 10
+
+
+def test_level_progress_bar_custom_segment_count():
+    assert level_progress_bar(50.0, segments=4) == "⬆️" + "◾️" * 2 + "▫️" * 2
