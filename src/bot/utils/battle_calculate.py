@@ -284,6 +284,19 @@ def resolve_hit_count(
 # --- Один удар: гейт кагуне-защиты, тип атаки, блок, урон (2.4c) ----------
 
 
+def attack_type_chance(physical_hits_landed: int) -> float:
+    """Шанс, что СЛЕДУЮЩИЙ удар этого бойца будет физическим, а не кагуне -
+    не честная монетка. Первый удар за весь бой гарантированно физический
+    (physical_hits_landed=0 -> 100%), дальше -10 п.п. за КАЖДЫЙ реально
+    нанесённый физический удар - удар кагуне счётчик не двигает вообще.
+    См. BATTLE_ENGINE.md ("Тип атаки")."""
+
+    return max(
+        0.0,
+        100.0 - BATTLE_CONFIG.physical_attack_decay_percent * physical_hits_landed,
+    )
+
+
 def kagune_gate_chance(
     defender_dex_speed: float, attacker_dex_speed: float
 ) -> float:
@@ -353,38 +366,61 @@ class HitResult:
     kagune_up: Optional[bool] = None
     block_percent: float = 0.0
     damage: float = 0.0
+    # Сами использованные шансы (не только исход броска) - production-код их
+    # не читает, нужны только для трассировки/отладочных логов (см.
+    # scripts/battle_log_demo.py), поэтому храним, а не пересчитываем заново.
+    dodge_chance_used: float = 0.0
+    gate_chance_used: float = 0.0
+    physical_chance_used: float = 0.0
 
 
 def resolve_hit(
     attacker: EffectiveStats,
     defender: EffectiveStats,
+    attacker_physical_streak: int,
     rng: random.Random = _default_rng,
-) -> HitResult:
+) -> "tuple[HitResult, int]":
     """Один честный удар атакующего по защищающемуся - полная цепочка из
     BATTLE_ENGINE.md 2.4c: уклонение -> гейт кагуне-защиты -> тип атаки ->
-    блок -> урон."""
+    блок -> урон.
 
-    if rng.random() * 100.0 < dodge_chance(defender.dexterity, attacker.dexterity):
-        return HitResult(landed=False)
+    `attacker_physical_streak` - сколько физических ударов подряд (за весь
+    бой, не за раунд) этот боец уже нанёс, см. attack_type_chance. Функция
+    возвращает (результат_удара, ОБНОВЛЁННЫЙ streak) - вызывающий код
+    обязан передать это значение в следующий вызов resolve_hit для этого
+    же бойца, иначе счётчик не будет работать между ударами/раундами."""
 
-    kagune_up = (
-        rng.random() * 100.0
-        < kagune_gate_chance(
-            defender.dexterity + defender.speed, attacker.dexterity + attacker.speed
-        )
+    dodge = dodge_chance(defender.dexterity, attacker.dexterity)
+    if rng.random() * 100.0 < dodge:
+        return HitResult(landed=False, dodge_chance_used=dodge), attacker_physical_streak
+
+    gate = kagune_gate_chance(
+        defender.dexterity + defender.speed, attacker.dexterity + attacker.speed
     )
-    attack_type = rng.choice((AttackType.PHYSICAL, AttackType.KAGUNE))
+    kagune_up = rng.random() * 100.0 < gate
+
+    physical_chance = attack_type_chance(attacker_physical_streak)
+    if rng.random() * 100.0 < physical_chance:
+        attack_type = AttackType.PHYSICAL
+        new_streak = attacker_physical_streak + 1
+    else:
+        attack_type = AttackType.KAGUNE
+        new_streak = attacker_physical_streak  # кагуне-удар счётчик не двигает
 
     block_percent = resolve_block_percent(kagune_up, attack_type, attacker, defender, rng)
     damage = raw_damage(attack_type, attacker, rng) * (1 - block_percent / 100.0)
 
-    return HitResult(
+    hit = HitResult(
         landed=True,
         attack_type=attack_type,
         kagune_up=kagune_up,
         block_percent=block_percent,
         damage=damage,
+        dodge_chance_used=dodge,
+        gate_chance_used=gate,
+        physical_chance_used=physical_chance,
     )
+    return hit, new_streak
 
 
 # --- Раунд и весь бой (часть 0, 2.1, 2.6) ----------------------------------
@@ -403,23 +439,38 @@ def simulate_round(
     round_number: int,
     stats_a: EffectiveStats,
     stats_b: EffectiveStats,
+    streak_a: int = 0,
+    streak_b: int = 0,
     rng: random.Random = _default_rng,
-) -> RoundResult:
+) -> "tuple[RoundResult, int, int]":
     """Оба бойца действуют одновременно (2.1) - порядок вычисления здесь
-    чисто технический, на исход не влияет."""
+    чисто технический, на исход не влияет.
+
+    `streak_a`/`streak_b` - счётчик физических ударов подряд для КАЖДОГО
+    бойца (см. attack_type_chance) - переживает раунд, поэтому функция
+    возвращает их обновлённые значения вместе с самим RoundResult; вызывающий
+    код (simulate_battle) обязан передать их в следующий вызов."""
 
     hit_count_a, hit_count_b = resolve_hit_count(stats_a.speed, stats_b.speed, rng)
 
-    hits_by_a = [resolve_hit(stats_a, stats_b, rng) for _ in range(hit_count_a)]
-    hits_by_b = [resolve_hit(stats_b, stats_a, rng) for _ in range(hit_count_b)]
+    hits_by_a: List[HitResult] = []
+    for _ in range(hit_count_a):
+        hit, streak_a = resolve_hit(stats_a, stats_b, streak_a, rng)
+        hits_by_a.append(hit)
 
-    return RoundResult(
+    hits_by_b: List[HitResult] = []
+    for _ in range(hit_count_b):
+        hit, streak_b = resolve_hit(stats_b, stats_a, streak_b, rng)
+        hits_by_b.append(hit)
+
+    result = RoundResult(
         round_number=round_number,
         hits_by_a=hits_by_a,
         hits_by_b=hits_by_b,
         damage_to_a=sum(hit.damage for hit in hits_by_b),
         damage_to_b=sum(hit.damage for hit in hits_by_a),
     )
+    return result, streak_a, streak_b
 
 
 @dataclass(frozen=True)
@@ -455,11 +506,16 @@ def simulate_battle(
     hp_a, hp_b = stats_a.health, stats_b.health
     rounds: List[RoundResult] = []
     hp_a_before_last, hp_b_before_last = hp_a, hp_b
+    # Счётчик "физических ударов подряд" на бойца (см. attack_type_chance) -
+    # переживает раунды, обнуляется только один раз в начале боя.
+    streak_a, streak_b = 0, 0
 
     for round_number in range(1, rounds_cap + 1):
         hp_a_before_last, hp_b_before_last = hp_a, hp_b
 
-        result = simulate_round(round_number, stats_a, stats_b, rng)
+        result, streak_a, streak_b = simulate_round(
+            round_number, stats_a, stats_b, streak_a, streak_b, rng
+        )
         hp_a = max(0.0, hp_a - result.damage_to_a)
         hp_b = max(0.0, hp_b - result.damage_to_b)
         rounds.append(result)
@@ -517,6 +573,7 @@ __all__ = [
     "extra_hit_percent",
     "resolve_hit_chain",
     "resolve_hit_count",
+    "attack_type_chance",
     "kagune_gate_chance",
     "resolve_block_percent",
     "raw_damage",

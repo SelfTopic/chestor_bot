@@ -135,11 +135,10 @@ class LevelUpService:
         cheston_reward: int,
         rc_reward: int,
     ) -> bool:
-        old_cap = stat_cap_for_level(old_level)
-        new_cap = stat_cap_for_level(new_level)
-
         stat_lines = "\n".join(
-            f"{emoji} {label}: {old_cap} -> {new_cap}" for label, _key, emoji in STATS
+            f"{emoji} {label}: {stat_cap_for_level(old_level, key)} -> "
+            f"{stat_cap_for_level(new_level, key)}"
+            for label, key, emoji in STATS
         )
 
         text = self.dialog_service.text(

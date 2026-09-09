@@ -1,4 +1,4 @@
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from random import randint
 from typing import Optional
 
@@ -94,22 +94,34 @@ class LotteryConfig:
 LOTTERY_CONFIG = LotteryConfig()
 
 
-def stat_cap_for_level(level: int) -> int:
-    """Потолок upgrade_stat для данного уровня. Вынесено из
+# Health/max_health намеренно дороже прокачивается ДО потолка, чем остальные
+# 4 стата, зато и потолок выше - см. живую симуляцию боевого движка
+# (scripts/battle_log_all_kagune.py): честный многораундовый бой получается,
+# только когда health в ~2.5x больше боевых статов, а не 1:1. Цена за очко
+# снижена в те же 2.5 раза - суммарный CheSton до потолка держится наравне с
+# остальными статами (никто не платит за health непропорционально больше).
+STAT_CAP_MULTIPLIER = {"max_health": 2.5}
+
+
+def stat_cap_for_level(level: int, stat_key: str = "") -> int:
+    """Потолок upgrade_stat для данного уровня и стата. Вынесено из
     StatUpgradeService, чтобы не дублировать формулу там же, где нужно
     посчитать сдвиг пределов при левел-апе (LevelUpService)."""
-    return level * 100
+    return int(level * 100 * STAT_CAP_MULTIPLIER.get(stat_key, 1.0))
 
 
 @dataclass
 class StatUpgradeConfig:
     price_multiplier: int = 2
     multipliers: tuple = (1, 5, 10)
+    # Обратная сторона STAT_CAP_MULTIPLIER - см. комментарий выше.
+    stat_price_multiplier: dict = field(default_factory=lambda: {"max_health": 0.4})
 
-    def price(self, cur_stat: int, count: int = 1) -> int:
+    def price(self, cur_stat: int, count: int = 1, stat_key: str = "") -> int:
         base_total = count * 1500
         scaling_total = int(sum((cur_stat + i) ** 1.35 for i in range(count)))
-        return base_total + scaling_total
+        raw = base_total + scaling_total
+        return int(raw * self.stat_price_multiplier.get(stat_key, 1.0))
 
 
 STAT_UPGRADE_CONFIG = StatUpgradeConfig()
@@ -229,6 +241,15 @@ class BattleConfig:
     # 2.4c шаг 2 - гейт "успел ли защищающийся поднять кагуне": при равных
     # dexterity+speed шанс ровно половина.
     kagune_gate_base_percent: float = 50.0
+
+    # Тип атаки (физика/кагуне) - НЕ честная монетка 50/50 (см. историю в
+    # чате): первый удар бойца за весь бой гарантированно физический,
+    # дальше шанс физической атаки падает на этот процент за КАЖДЫЙ
+    # реально нанесённый физический удар (кагуне-удар счётчик не двигает).
+    # При decay=10 после 10 физических ударов боец бьёт только кагуне.
+    # Будущий навык "мастерство использования кагуне" будет увеличивать
+    # именно это значение (не решено, не реализовано).
+    physical_attack_decay_percent: float = 10.0
 
     # 2.4c - неизвестна точность одного удара, берём случайность.
     damage_variance_min: float = 0.9

@@ -7,11 +7,13 @@ from src.bot.utils.battle_calculate import (
     AttackType,
     FighterSnapshot,
     InvalidBattleStatsError,
+    attack_type_chance,
     compute_effective_stats,
     dodge_chance,
     extra_hit_percent,
     kagune_gate_chance,
     resolve_block_percent,
+    resolve_hit,
     resolve_hit_chain,
     resolve_hit_count,
     resolve_kagune_multiplier,
@@ -107,6 +109,54 @@ def test_resolve_hit_count_faster_fighter_gets_more_hits_on_average():
         totals_fast += hits_fast
         totals_slow += hits_slow
     assert totals_fast > totals_slow
+
+
+# --- Тип атаки: первый удар физический, дальше -10% за физический удар -----
+
+
+def test_attack_type_chance_first_hit_is_guaranteed_physical():
+    assert attack_type_chance(0) == 100.0
+
+
+def test_attack_type_chance_decays_only_by_configured_step():
+    assert attack_type_chance(1) == pytest.approx(90.0)
+    assert attack_type_chance(3) == pytest.approx(70.0)
+
+
+def test_attack_type_chance_floors_at_zero_not_negative():
+    assert attack_type_chance(15) == 0.0
+
+
+def test_resolve_hit_first_hit_is_always_physical_and_advances_streak():
+    # Ловкость защищающегося намного ниже - уклонение у пола (~5%), почти
+    # все прогоны landed=True, удобно набрать много попаданий на тест.
+    attacker = compute_effective_stats(make_fighter(dexterity=1000))
+    defender = compute_effective_stats(make_fighter(dexterity=1))
+
+    landed_count = 0
+    for seed in range(100):
+        hit, new_streak = resolve_hit(attacker, defender, 0, rng=random.Random(seed))
+        if hit.landed:
+            landed_count += 1
+            assert hit.attack_type is AttackType.PHYSICAL
+            assert hit.physical_chance_used == 100.0
+            assert new_streak == 1
+    assert landed_count > 0
+
+
+def test_resolve_hit_kagune_landing_does_not_advance_streak():
+    attacker = compute_effective_stats(make_fighter(dexterity=1000))
+    defender = compute_effective_stats(make_fighter(dexterity=1))
+
+    found_kagune_hit = False
+    for seed in range(200):
+        hit, new_streak = resolve_hit(attacker, defender, 5, rng=random.Random(seed))
+        if hit.landed and hit.attack_type is AttackType.KAGUNE:
+            found_kagune_hit = True
+            assert new_streak == 5  # не сдвинулся
+        elif hit.landed:
+            assert new_streak == 6  # физический удар - сдвинулся на 1
+    assert found_kagune_hit  # при streak=5 (50% физика/50% кагуне) должен найтись хоть один
 
 
 # --- Гейт кагуне-защиты (2.4c шаг 2) ----------------------------------------
