@@ -75,7 +75,11 @@ def resolve_hit(
         attack_type = AttackType.KAGUNE  # кагуне-удар счётчик не двигает
 
     block_percent = resolve_block_percent(kagune_up, attack_type, a, d, rng)
-    raw = raw_fast_attack_damage(attack_type, a, rng) if is_fast_attack else raw_damage(attack_type, a, rng)
+    raw = (
+        raw_fast_attack_damage(attack_type, a, d, rng)
+        if is_fast_attack
+        else raw_damage(attack_type, a, d, rng)
+    )
     damage = raw * (1 - block_percent / 100.0)
 
     return HitResult(

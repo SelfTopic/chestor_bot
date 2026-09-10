@@ -47,6 +47,44 @@ def _clamp(value: float, lo: float, hi: float) -> float:
     return max(lo, min(hi, value))
 
 
+def _compress_ratio(numerator: float, denominator: float) -> float:
+    """(numerator/denominator) ** stat_sensitivity_exponent - сжимает
+    отношение статов ДВУХ КОНКРЕТНЫХ бойцов в этом бою друг к другу (см.
+    BATTLE_CONFIG.stat_sensitivity_exponent - откалибровано под целевую
+    кривую перевеса силы). Масштабно-инвариантно: одинаковый ratio даёт
+    одинаковое сжатие независимо от абсолютных величин (60 против 90 и
+    6000 против 9000 сжимаются одинаково). При numerator==denominator
+    результат всегда 1.0 - зеркальные бои не трогает вообще."""
+
+    if denominator <= 0:
+        return 1.0 if numerator <= 0 else float("inf")
+    if numerator <= 0:
+        return 0.0
+    return (numerator / denominator) ** BATTLE_CONFIG.stat_sensitivity_exponent
+
+
+def compress_stat_advantage(own: float, other: float) -> float:
+    """Сжимает СВОЁ значение относительно ЧУЖОГО, только когда own>other -
+    если own<=other, отдаёт own как есть (слабая сторона не сжимается
+    вообще, гасить нечего). НЕ то же самое, что "other * _compress_ratio(own,
+    other)" без условия - это давало инверсию (см. историю бага в чате):
+    при own<other значение (own/other)**exponent остаётся близко к 1 при
+    маленьком exponent, и "other * (что-то около 1)" оказывается БОЛЬШЕ
+    own - более слабая сторона как атакующий/лекарь получала эффект СИЛЬНЕЕ
+    своего же реального стата.
+
+    Общий паттерн для любого "своё преимущество над конкретным соперником
+    надо ослабить" - raw_damage/raw_fast_attack_damage (сила удара против
+    защищающегося), Battle._compress_hp_pools (HP-пул против соперника),
+    Fighter.apply_heal (сила хила против чужой регенерации - иначе высокая
+    ABSOLUTE регенерация лечила пропорционально своему сырому стату без
+    оглядки на оппонента, оставаясь единственным несжатым каналом)."""
+
+    if own <= other or other <= 0:
+        return own
+    return other * _compress_ratio(own, other)
+
+
 def _dodge_base(dexterity: float) -> float:
     return _clamp(
         _DODGE_FLOOR + (dexterity / _DODGE_BASE_DIVISOR) * _DODGE_BASE_SCALE,
@@ -65,7 +103,7 @@ def dodge_chance(defender_dexterity: float, attacker_dexterity: float) -> float:
 
     if defender_dexterity <= attacker_dexterity:
         return base
-    return _clamp(base * (stronger / weaker), _DODGE_FLOOR, _DODGE_CEILING)
+    return _clamp(base * _compress_ratio(stronger, weaker), _DODGE_FLOOR, _DODGE_CEILING)
 
 
 # --- Лишний удар от speed (1.4 / 2.4a) --------------------------------------
@@ -75,14 +113,19 @@ def extra_hit_percent(speed_defender: float, speed_attacker: float) -> float:
     """Шанс (в процентах, может быть > 100) для АТАКУЮЩЕГО нанести лишний
     удар в этом раунде - чисто из отношения скоростей, без базового пола,
     см. BATTLE_ENGINE.md 1.4. Аргумент "speed_defender" - скорость ВТОРОГО
-    бойца (не защита в смысле 2.4c, а просто "тот, с кем сравниваем")."""
+    бойца (не защита в смысле 2.4c, а просто "тот, с кем сравниваем").
+
+    hi сжимается относительно lo (см. _compress_ratio) ПЕРЕД тем, как
+    считать diff_ratio - иначе даже небольшой перевес в speed при
+    накоплении за много раундов почти гарантированно решал бой."""
 
     hi = max(speed_attacker, speed_defender)
     lo = min(speed_attacker, speed_defender)
     if hi <= 0:
         return 0.0
 
-    diff_ratio = (hi - lo) / hi
+    compressed_hi = lo * _compress_ratio(hi, lo) if lo > 0 else hi
+    diff_ratio = (compressed_hi - lo) / compressed_hi
     if speed_attacker >= speed_defender:
         return diff_ratio * 200.0
     return diff_ratio * 100.0
@@ -144,13 +187,16 @@ def attack_type_chance(physical_hits_landed: int) -> float:
 
 def kagune_gate_chance(defender_dex_speed: float, attacker_dex_speed: float) -> float:
     """Шанс защищающегося успеть поднять кагуне для защиты этого удара -
-    см. BATTLE_ENGINE.md 2.4c шаг 2. При равных статах - ровно половина."""
+    см. BATTLE_ENGINE.md 2.4c шаг 2. При равных статах - ровно половина.
+    Соотношение сжимается (_compress_ratio) - без этого 2x перевес в
+    dex+speed уже давал гарантированные 100%/0% на два конца."""
 
     if attacker_dex_speed <= 0:
         return 100.0
     return min(
         100.0,
-        BATTLE_CONFIG.kagune_gate_base_percent * defender_dex_speed / attacker_dex_speed,
+        BATTLE_CONFIG.kagune_gate_base_percent
+        * _compress_ratio(defender_dex_speed, attacker_dex_speed),
     )
 
 
@@ -189,19 +235,41 @@ def resolve_block_percent(
     return 0.0
 
 
+def _compressed_damage_stat(
+    attack_type: AttackType, attacker: "EffectiveStats", defender: "EffectiveStats"
+) -> float:
+    """Сила удара сжимается относительно СИЛЫ ЭТОГО КОНКРЕТНОГО защищающегося
+    (compress_stat_advantage) - раньше урон считался ТОЛЬКО из своих статов,
+    без оглядки на защищающегося, и это был один из главных виновников
+    "кривой перевеса силы" (strength/health - самые крутые каналы по
+    симуляции, см. чат)."""
+
+    if attack_type is AttackType.PHYSICAL:
+        own, other = attacker.strength, defender.strength
+    else:
+        own = attacker.strength + attacker.kagune_strength
+        other = defender.strength + defender.kagune_strength
+
+    return compress_stat_advantage(own, other)
+
+
 def raw_damage(
-    attack_type: AttackType, attacker: "EffectiveStats", rng: random.Random
+    attack_type: AttackType,
+    attacker: "EffectiveStats",
+    defender: "EffectiveStats",
+    rng: random.Random,
 ) -> float:
     variance = rng.uniform(
         BATTLE_CONFIG.damage_variance_min, BATTLE_CONFIG.damage_variance_max
     )
-    if attack_type is AttackType.PHYSICAL:
-        return variance * attacker.strength
-    return variance * (attacker.strength + attacker.kagune_strength)
+    return variance * _compressed_damage_stat(attack_type, attacker, defender)
 
 
 def raw_fast_attack_damage(
-    attack_type: AttackType, attacker: "EffectiveStats", rng: random.Random
+    attack_type: AttackType,
+    attacker: "EffectiveStats",
+    defender: "EffectiveStats",
+    rng: random.Random,
 ) -> float:
     """То же самое, что raw_damage, но для БОНУСНОГО удара от speed
     (FastAttack) - см. BATTLE_CONFIG.fast_attack_damage_variance_min/max:
@@ -212,9 +280,7 @@ def raw_fast_attack_damage(
         BATTLE_CONFIG.fast_attack_damage_variance_min,
         BATTLE_CONFIG.fast_attack_damage_variance_max,
     )
-    if attack_type is AttackType.PHYSICAL:
-        return variance * attacker.strength
-    return variance * (attacker.strength + attacker.kagune_strength)
+    return variance * _compressed_damage_stat(attack_type, attacker, defender)
 
 
 # --- Регенерация в бою (REGENERATION.md) ------------------------------------
@@ -222,15 +288,17 @@ def raw_fast_attack_damage(
 
 def regen_proc_chance(own_regeneration: float, opponent_regeneration: float) -> float:
     """Шанс ВТОРОГО (после гарантированного) прока регенерации - та же
-    форма, что у extra_hit_percent (сравнение своей регенерации с чужой),
-    но клэмп на 100% - здесь не строится цепочка, всего один бросок."""
+    форма, что у extra_hit_percent (сравнение своей регенерации с чужой,
+    включая то же сжатие _compress_ratio), но клэмп на 100% - здесь не
+    строится цепочка, всего один бросок."""
 
     hi = max(own_regeneration, opponent_regeneration)
     lo = min(own_regeneration, opponent_regeneration)
     if hi <= 0:
         return 0.0
 
-    diff_ratio = (hi - lo) / hi
+    compressed_hi = lo * _compress_ratio(hi, lo) if lo > 0 else hi
+    diff_ratio = (compressed_hi - lo) / compressed_hi
     if own_regeneration >= opponent_regeneration:
         return min(100.0, diff_ratio * 200.0)
     return diff_ratio * 100.0
@@ -238,6 +306,7 @@ def regen_proc_chance(own_regeneration: float, opponent_regeneration: float) -> 
 
 __all__ = [
     "AttackType",
+    "compress_stat_advantage",
     "dodge_chance",
     "extra_hit_percent",
     "resolve_hit_chain",

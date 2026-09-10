@@ -22,6 +22,7 @@ from .fighter import (
 from .formulas import (
     AttackType,
     attack_type_chance,
+    compress_stat_advantage,
     dodge_chance,
     extra_hit_percent,
     kagune_gate_chance,
@@ -56,6 +57,7 @@ __all__ = [
     "validate_snapshot",
     "AttackType",
     "attack_type_chance",
+    "compress_stat_advantage",
     "dodge_chance",
     "extra_hit_percent",
     "kagune_gate_chance",

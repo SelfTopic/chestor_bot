@@ -134,7 +134,7 @@ def test_decide_action_not_critical_after_healing_back_above_threshold():
     fighter = make_fighter(health=100)
     opponent = make_fighter()
     fighter.take_damage(95)
-    fighter.apply_heal(random.Random(0))  # первый прок восстанавливает HP
+    fighter.apply_heal(opponent, random.Random(0))  # первый прок восстанавливает HP
     assert not fighter.is_critical()
     assert fighter.decide_action(opponent, random.Random(0)) is RoundActionType.ATTACK
 

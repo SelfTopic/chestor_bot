@@ -19,7 +19,7 @@ from ....types import KaguneType
 from ....utils.regen_calculate import get_hunger_tier
 from .actions import RoundActionType
 from .errors import InvalidBattleStatsError
-from .formulas import regen_proc_chance
+from .formulas import compress_stat_advantage, regen_proc_chance
 
 # --- Таблица типов кагуне (BATTLE_DESIGN.md "Множители типов кагуне") -----
 
@@ -245,16 +245,27 @@ class Fighter:
 
         return RoundActionType.ATTACK
 
-    def apply_heal(self, rng: random.Random) -> float:
+    def apply_heal(self, opponent: "Fighter", rng: random.Random) -> float:
         """Вызывается ТОЛЬКО когда decide_action уже вернул REGEN в этом
         же раунде. Лечит на regen_heal_variance от эффективной
         регенерации, клэмп по стартовому HP боя. Возвращает сколько
-        реально вылечено (может быть меньше "сырого" heal из-за клэмпа)."""
+        реально вылечено (может быть меньше "сырого" heal из-за клэмпа).
+
+        Сила хила сжимается против чужой регенерации (compress_stat_
+        advantage) - без этого абсолютная величина хила оставалась
+        ЕДИНСТВЕННЫМ полностью несжатым каналом "кривой перевеса силы"
+        (regen_proc_chance сжимал только ВЕРОЯТНОСТЬ второго прока, а не
+        то, сколько реально лечится за один прок) - см. чат, симуляция
+        подтвердила: при зафиксированной равной регенерации кривая ложится
+        на цель, при масштабируемой вместе с остальными статами - нет."""
 
         variance = rng.uniform(
             BATTLE_CONFIG.regen_heal_variance_min, BATTLE_CONFIG.regen_heal_variance_max
         )
-        heal = variance * self.stats.regeneration
+        effective_regeneration = compress_stat_advantage(
+            self.stats.regeneration, opponent.stats.regeneration
+        )
+        heal = variance * effective_regeneration
         new_hp = min(self.stats.health, self.current_hp + heal)
         healed = new_hp - self.current_hp
         self.current_hp = new_hp

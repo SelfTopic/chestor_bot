@@ -4,13 +4,13 @@
 from __future__ import annotations
 
 import random
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from typing import List, Optional
 
 from ....game_configs import BATTLE_CONFIG
 from .actions import AttackAction, FastAttackAction, RegenAction, RoundAction, RoundActionType
 from .fighter import EffectiveStats, Fighter
-from .formulas import resolve_extra_hit_counts
+from .formulas import compress_stat_advantage, resolve_extra_hit_counts
 from .hit import resolve_hit
 from .round import RoundResult
 
@@ -43,14 +43,52 @@ class Battle:
     ) -> None:
         self.fighter_a = fighter_a
         self.fighter_b = fighter_b
+        self._compress_hp_pools()
         self.max_rounds = max_rounds if max_rounds is not None else BATTLE_CONFIG.max_rounds
         self.rounds: List[RoundResult] = []
         self._round_number = 0
         self._finished = False
         # HP ДО последнего сыгранного раунда - нужно для тай-брейка при
-        # одновременном обоюдном нокауте (2.6).
+        # одновременном обоюдном нокауте (2.6). ПОСЛЕ _compress_hp_pools -
+        # тай-брейк должен работать со сжатым HP, как и весь остальной бой.
         self._hp_a_before_last = fighter_a.current_hp
         self._hp_b_before_last = fighter_b.current_hp
+
+    def _compress_hp_pools(self) -> None:
+        """"Кривая перевеса силы" (см. чат) - health оказался единственным
+        боевым статом, который не проходит ни через одну формулу с
+        _compress_ratio (dodge/gate/extra_hit/raw_damage сравнивают статы
+        атакующего и защищающегося прямо в момент удара) - он просто задаёт
+        размер HP-пула напрямую. По симуляции это САМЫЙ крутой канал в
+        одиночку (health x1.5 при равенстве всех остальных статов уже давал
+        ~97% побед) - без сжатия здесь весь остальной рефакторинг формул не
+        достаточен, чтобы кривая легла на целевые точки (2x -> 75%).
+
+        Применяется здесь, а не в compute_effective_stats - только Battle
+        знает ОБОИХ бойцов сразу, а сжатие по дизайну "относительно
+        конкретного соперника В ЭТОМ бою" (не от абстрактной константы).
+
+        Слабый остаётся якорем БЕЗ ИЗМЕНЕНИЙ, сильный подтягивается к нему
+        (compress_stat_advantage) - та же схема, что и у raw_damage/
+        apply_heal. Сохраняет ДОЛЮ уже нанесённого урона (current_hp/
+        old_health), а не просто перезаписывает current_hp - иначе Battle,
+        обёрнутый вокруг уже повреждённого Fighter (см.
+        battle_engine_round_test.py, где тесты бьют fighter.take_damage()
+        ДО создания Battle, чтобы подготовить конкретный HP для одного
+        раунда), стирал бы этот урон."""
+
+        health_a = self.fighter_a.stats.health
+        health_b = self.fighter_b.stats.health
+        compressed_a = compress_stat_advantage(health_a, health_b)
+        compressed_b = compress_stat_advantage(health_b, health_a)
+
+        for fighter, old_health, new_health in (
+            (self.fighter_a, health_a, compressed_a),
+            (self.fighter_b, health_b, compressed_b),
+        ):
+            fraction_remaining = fighter.current_hp / old_health if old_health > 0 else 0.0
+            fighter.stats = replace(fighter.stats, health=new_health)
+            fighter.current_hp = new_health * fraction_remaining
 
     @property
     def is_finished(self) -> bool:
@@ -127,7 +165,7 @@ class Battle:
         damage_dealt = 0.0
 
         if action_type is RoundActionType.REGEN:
-            healed = fighter.apply_heal(rng)
+            healed = fighter.apply_heal(opponent, rng)
             actions.append(RegenAction(healed=healed, was_guaranteed=guaranteed_was_available))
         elif action_type is RoundActionType.ATTACK:
             hit = resolve_hit(fighter, opponent, rng)
