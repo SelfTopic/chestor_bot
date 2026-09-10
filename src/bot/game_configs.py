@@ -271,7 +271,9 @@ class BattleConfig:
     # прок, второе - вероятностный (та же формула, что у лишнего удара от
     # speed, см. extra_hit_percent), и ТОЛЬКО ОДИН РАЗ за весь бой -
     # иначе гуль с хорошей регенерацией застревал бы в бою бесконечно.
-    critical_health_percent: float = 10.0
+    # Было 10.0 - в логах регенерация срабатывала слишком редко (см. чат),
+    # подняли до 20.0, чтобы критическая зона наступала раньше.
+    critical_health_percent: float = 20.0
     regen_heal_variance_min: float = 0.9
     regen_heal_variance_max: float = 1.1
 
