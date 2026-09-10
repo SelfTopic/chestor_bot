@@ -3,6 +3,7 @@ from typing import Dict, Optional
 
 import pytest
 
+from src.bot.game_configs import BATTLE_CONFIG
 from src.bot.services.battle_engine.core.battle import Battle
 from src.bot.services.battle_engine.core.errors import InvalidBattleStatsError
 from src.bot.services.battle_engine.core.fighter import Fighter, FighterSnapshot
@@ -59,6 +60,45 @@ def test_invalid_fighter_stats_raise_before_battle_is_even_created():
         make_fighter(dexterity=0)
 
 
+# --- Обоюдный нокаут (2.6) - UX-подмена HP победителя ----------------------
+
+
+def test_mutual_ko_winner_shown_with_symbolic_hp_not_zero():
+    # Белый ящик - честно словить обоюдный нокаут сидом дорого, проще
+    # смоделировать состояние прямо перед сборкой результата.
+    a = make_fighter(id=1, name="A", health=100)
+    b = make_fighter(id=2, name="B", health=100)
+    battle = Battle(a, b, max_rounds=1)
+    battle._hp_a_before_last = 80.0  # A имел больше HP до последнего обмена
+    battle._hp_b_before_last = 60.0
+    a.take_damage(1000)
+    b.take_damage(1000)
+
+    result = battle._build_result()
+
+    assert a.is_defeated and b.is_defeated
+    assert result.winner == "a"
+    assert result.final_hp_a == BATTLE_CONFIG.mutual_ko_winner_hp
+    assert result.final_hp_a != 0.0
+    assert result.final_hp_b == 0.0
+
+
+def test_mutual_ko_true_draw_does_not_bump_either_side():
+    a = make_fighter(id=1, name="A", health=100)
+    b = make_fighter(id=2, name="B", health=100)
+    battle = Battle(a, b, max_rounds=1)
+    battle._hp_a_before_last = 50.0
+    battle._hp_b_before_last = 50.0
+    a.take_damage(1000)
+    b.take_damage(1000)
+
+    result = battle._build_result()
+
+    assert result.winner is None
+    assert result.final_hp_a == 0.0
+    assert result.final_hp_b == 0.0
+
+
 def test_battle_is_deterministic_with_same_seed():
     a1, b1 = make_fighter(id=1, name="A"), make_fighter(id=2, name="B")
     a2, b2 = make_fighter(id=1, name="A"), make_fighter(id=2, name="B")
@@ -83,10 +123,18 @@ def test_play_round_step_by_step_matches_run_to_completion():
     rng = random.Random(5)
     while not battle.is_finished:
         battle.play_round(rng)
+    step_result = battle.run(rng)  # уже закончен - просто соберёт BattleResult
 
     assert len(battle.rounds) == len(run_result.rounds)
-    assert a_step.current_hp == pytest.approx(run_result.final_hp_a)
-    assert b_step.current_hp == pytest.approx(run_result.final_hp_b)
+    # Сырое состояние Fighter должно совпадать точь-в-точь между двумя
+    # способами - это то, что реально просимулировано. BattleResult.final_hp
+    # сверяем отдельно (ниже) - при обоюдном нокауте он может отличаться от
+    # current_hp самого Fighter (см. mutual_ko_winner_hp, UX-подмена).
+    assert a_step.current_hp == pytest.approx(a_run.current_hp)
+    assert b_step.current_hp == pytest.approx(b_run.current_hp)
+    assert step_result.winner == run_result.winner
+    assert step_result.final_hp_a == pytest.approx(run_result.final_hp_a)
+    assert step_result.final_hp_b == pytest.approx(run_result.final_hp_b)
 
 
 def test_play_round_raises_after_battle_already_finished():

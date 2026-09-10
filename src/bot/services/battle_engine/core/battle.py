@@ -162,6 +162,19 @@ class Battle:
                 winner = "b"
             else:
                 winner = None
+
+            # UX-находка (см. чат): показывать "0 против 0" при обоюдном
+            # нокауте нечестно выглядит для игрока - реальное правило
+            # тай-брейка (см. выше) невидимо, а голые нули читаются как
+            # необъяснённая монетка. Победитель показывается с 1 HP вместо
+            # 0 - тот же принцип, что и у проигравшего после ВСЕГО боя
+            # (3.1, "не 0, а 1 HP"), просто здесь применяется прямо в
+            # движке для этого конкретного случая. Настоящая ничья (winner
+            # is None) не трогается - бумпить нечего.
+            if winner == "a":
+                hp_a = BATTLE_CONFIG.mutual_ko_winner_hp
+            elif winner == "b":
+                hp_b = BATTLE_CONFIG.mutual_ko_winner_hp
         elif self.fighter_a.is_defeated:
             winner = "b"
         elif self.fighter_b.is_defeated:
