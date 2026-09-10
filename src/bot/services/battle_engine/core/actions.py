@@ -37,8 +37,8 @@ class RoundActionType(Enum):
 @dataclass(frozen=True)
 class AttackAction:
     """Гарантированный "базовый" удар - результат ОСНОВНОГО действия
-    ATTACK. Резолвится через resolve_hit, как и FastAttackAction ниже -
-    разница чисто в классификации для рендера, не в механике удара."""
+    ATTACK. Резолвится через resolve_hit полной мощности (обычный
+    damage_variance)."""
 
     hit: "HitResult"
 
@@ -48,7 +48,11 @@ class FastAttackAction:
     """Бонусный удар от speed (formulas.resolve_extra_hit_counts) -
     случается НЕЗАВИСИМО от основного действия, в том числе если основное
     действие в этом раунде - RegenAction (см. REGENERATION.md: "быстрый
-    гуль после регенерации ещё и может успеть ударить")."""
+    гуль после регенерации ещё и может успеть ударить"). Резолвится через
+    тот же resolve_hit, но с is_fast_attack=True - уклонение/гейт/тип
+    атаки/блок не меняются, а вот урон честно НИЖЕ обычной атаки
+    (fast_attack_damage_variance, не damage_variance) - лор про "мелкие
+    однообразные атаки" Укаку, см. scripts/damage_calculate.py."""
 
     hit: "HitResult"
 
