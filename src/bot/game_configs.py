@@ -255,6 +255,15 @@ class BattleConfig:
     damage_variance_min: float = 0.9
     damage_variance_max: float = 1.1
 
+    # Бонусный удар от speed (FastAttack) - НЕ полной силы, см. лор в
+    # scripts/damage_calculate.py ("атакует чаще МЕЛКИМИ однообразными
+    # атаками"). Раньше FastAttack наносил столько же, сколько обычная
+    # атака - чистый вклад в speed позволял сносить 3-4 полных удара за
+    # раунд 1, что и не соответствовало лору, и было слишком сильно.
+    # Диапазон ниже И не центрирован на 1.0, специально смещён вниз.
+    fast_attack_damage_variance_min: float = 0.5
+    fast_attack_damage_variance_max: float = 0.8
+
     # Регенерация В БОЮ (обнаружено задним числом - regeneration шёл через
     # полную цепочку модификаторов, но нигде не использовался). Критический
     # порог - % от стартового HP этого боя (см. EffectiveStats.health, не

@@ -141,7 +141,7 @@ class Battle:
             raise NotImplementedError(f"RoundActionType {action_type} ещё не реализован")
 
         for _ in range(extra_hits):
-            hit = resolve_hit(fighter, opponent, rng)
+            hit = resolve_hit(fighter, opponent, rng, is_fast_attack=True)
             actions.append(FastAttackAction(hit=hit))
             damage_dealt += hit.damage
 

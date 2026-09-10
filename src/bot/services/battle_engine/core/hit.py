@@ -17,6 +17,7 @@ from .formulas import (
     dodge_chance,
     kagune_gate_chance,
     raw_damage,
+    raw_fast_attack_damage,
     resolve_block_percent,
 )
 
@@ -45,9 +46,17 @@ def resolve_hit(
     attacker: "Fighter",
     defender: "Fighter",
     rng: random.Random = _default_rng,
+    is_fast_attack: bool = False,
 ) -> HitResult:
     """Мутирует attacker.physical_streak (только если удар оказался
-    физическим и долетел) - см. formulas.attack_type_chance."""
+    физическим и долетел) - см. formulas.attack_type_chance.
+
+    `is_fast_attack=True` - это бонусный удар от speed (FastAttackAction,
+    см. actions.py), а не основное действие ATTACK - урон считается по
+    заниженной (и смещённой вниз, не просто у'же) формуле
+    raw_fast_attack_damage вместо raw_damage, см. лор в
+    scripts/damage_calculate.py ("мелкие однообразные атаки"). Уклонение/
+    гейт/тип атаки/блок не меняются - разница только в самом уроне."""
 
     a, d = attacker.stats, defender.stats
 
@@ -66,7 +75,8 @@ def resolve_hit(
         attack_type = AttackType.KAGUNE  # кагуне-удар счётчик не двигает
 
     block_percent = resolve_block_percent(kagune_up, attack_type, a, d, rng)
-    damage = raw_damage(attack_type, a, rng) * (1 - block_percent / 100.0)
+    raw = raw_fast_attack_damage(attack_type, a, rng) if is_fast_attack else raw_damage(attack_type, a, rng)
+    damage = raw * (1 - block_percent / 100.0)
 
     return HitResult(
         landed=True,

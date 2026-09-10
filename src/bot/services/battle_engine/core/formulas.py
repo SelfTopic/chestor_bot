@@ -200,6 +200,23 @@ def raw_damage(
     return variance * (attacker.strength + attacker.kagune_strength)
 
 
+def raw_fast_attack_damage(
+    attack_type: AttackType, attacker: "EffectiveStats", rng: random.Random
+) -> float:
+    """То же самое, что raw_damage, но для БОНУСНОГО удара от speed
+    (FastAttack) - см. BATTLE_CONFIG.fast_attack_damage_variance_min/max:
+    некогда вкладываться в силу удара, если бьёшь походя за счёт скорости,
+    поэтому диапазон ниже и смещён вниз, а не просто у'же вокруг 1.0."""
+
+    variance = rng.uniform(
+        BATTLE_CONFIG.fast_attack_damage_variance_min,
+        BATTLE_CONFIG.fast_attack_damage_variance_max,
+    )
+    if attack_type is AttackType.PHYSICAL:
+        return variance * attacker.strength
+    return variance * (attacker.strength + attacker.kagune_strength)
+
+
 # --- Регенерация в бою (REGENERATION.md) ------------------------------------
 
 
@@ -229,5 +246,6 @@ __all__ = [
     "kagune_gate_chance",
     "resolve_block_percent",
     "raw_damage",
+    "raw_fast_attack_damage",
     "regen_proc_chance",
 ]

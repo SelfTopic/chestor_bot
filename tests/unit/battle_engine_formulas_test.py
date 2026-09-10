@@ -10,6 +10,7 @@ from src.bot.services.battle_engine.core.formulas import (
     extra_hit_percent,
     kagune_gate_chance,
     raw_damage,
+    raw_fast_attack_damage,
     regen_proc_chance,
     resolve_block_percent,
     resolve_extra_hit_counts,
@@ -180,3 +181,26 @@ def test_raw_damage_kagune_attack_includes_kagune_strength():
     physical = raw_damage(AttackType.PHYSICAL, attacker, random.Random(0))
     kagune = raw_damage(AttackType.KAGUNE, attacker, random.Random(0))
     assert kagune > physical
+
+
+def test_fast_attack_damage_is_weaker_than_a_full_attack_on_average():
+    # "Мелкие однообразные атаки" (лор Укаку) - FastAttack не может быть
+    # такой же силы, как обычная атака, иначе чистый вклад в speed сносил
+    # бы 3-4 полных удара за раунд.
+    attacker = make_stats(strength=100)
+    trials = 2000
+    full_total = sum(
+        raw_damage(AttackType.PHYSICAL, attacker, random.Random(seed)) for seed in range(trials)
+    )
+    fast_total = sum(
+        raw_fast_attack_damage(AttackType.PHYSICAL, attacker, random.Random(seed))
+        for seed in range(trials)
+    )
+    assert fast_total < full_total
+
+
+def test_fast_attack_damage_range_matches_config():
+    attacker = make_stats(strength=100)
+    for seed in range(200):
+        damage = raw_fast_attack_damage(AttackType.PHYSICAL, attacker, random.Random(seed))
+        assert 50.0 <= damage <= 80.0

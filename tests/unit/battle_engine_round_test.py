@@ -37,6 +37,24 @@ def make_fighter(
     )
 
 
+# --- resolve_hit - FastAttack наносит меньше, чем обычная атака -----------
+
+
+def test_resolve_hit_fast_attack_deals_less_damage_on_average_than_normal():
+    attacker = make_fighter(dexterity=1000)  # почти всегда попадает
+    defender = make_fighter(dexterity=1)
+
+    normal_total = 0.0
+    fast_total = 0.0
+    for seed in range(500):
+        normal_total += resolve_hit(attacker, defender, random.Random(seed)).damage
+    for seed in range(500):
+        fast_total += resolve_hit(
+            attacker, defender, random.Random(seed), is_fast_attack=True
+        ).damage
+    assert fast_total < normal_total
+
+
 # --- resolve_hit - streak физических ударов --------------------------------
 
 
