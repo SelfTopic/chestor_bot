@@ -12,7 +12,7 @@ BATTLE_ENGINE.md (части 0-2) и BATTLE_DESIGN.md ("Множители ти�
 """
 
 import random
-from dataclasses import dataclass, field
+from dataclasses import dataclass, field, replace
 from enum import Enum
 from typing import Dict, List, Optional
 
@@ -423,6 +423,88 @@ def resolve_hit(
     return hit, new_streak
 
 
+# --- Регенерация в бою ------------------------------------------------------
+#
+# Обнаружено задним числом (см. чат) - regeneration шёл через полную
+# цепочку модификаторов (compute_effective_stats), но нигде дальше не
+# читался. Гули с кагуне, усиляющими регенерацию, должны реально
+# регенерировать ПРЯМО В БОЮ, а не только между боями.
+
+
+def regen_proc_chance(own_regeneration: float, opponent_regeneration: float) -> float:
+    """Шанс ВТОРОГО (после гарантированного) прока регенерации - та же
+    форма, что у extra_hit_percent (сравнение своей регенерации с чужой),
+    но клэмп на 100% - здесь не строится цепочка, всего один бросок."""
+
+    hi = max(own_regeneration, opponent_regeneration)
+    lo = min(own_regeneration, opponent_regeneration)
+    if hi <= 0:
+        return 0.0
+
+    diff_ratio = (hi - lo) / hi
+    if own_regeneration >= opponent_regeneration:
+        return min(100.0, diff_ratio * 200.0)
+    return diff_ratio * 100.0
+
+
+@dataclass(frozen=True)
+class RegenState:
+    """Сколько раз этому бойцу уже включалась регенерация в бою.
+    Гарантированный прок (первое пересечение критического порога) и
+    вероятностный бросок (при повторном пересечении) случаются РОВНО по
+    разу за весь бой - иначе боец с хорошей регенерацией застревал бы в
+    критической зоне бесконечно, не проигрывая никогда."""
+
+    guaranteed_used: bool = False
+    roll_used: bool = False
+
+
+def apply_regeneration(
+    hp: float,
+    starting_hp: float,
+    own_regeneration: float,
+    opponent_regeneration: float,
+    state: RegenState,
+    rng: random.Random = _default_rng,
+) -> "tuple[float, RegenState, float]":
+    """Проверяет критический порог здоровья (`BATTLE_CONFIG.
+    critical_health_percent` от стартового HP ЭТОГО боя, не от вакуумного
+    max_health) и, если применимо, лечит на `regen_heal_variance` от
+    эффективной регенерации. hp<=0 не лечится - уже проигравший боец не
+    спасается регенерацией (см. 2.6, естественный конец боя раньше этой
+    проверки). Возвращает (новое_hp, обновлённое_состояние,
+    сколько_вылечено)."""
+
+    if hp <= 0:
+        return hp, state, 0.0
+
+    critical_threshold = starting_hp * (BATTLE_CONFIG.critical_health_percent / 100.0)
+    if hp >= critical_threshold:
+        return hp, state, 0.0
+
+    def _heal_amount() -> float:
+        variance = rng.uniform(
+            BATTLE_CONFIG.regen_heal_variance_min, BATTLE_CONFIG.regen_heal_variance_max
+        )
+        return variance * own_regeneration
+
+    if not state.guaranteed_used:
+        heal = _heal_amount()
+        new_hp = min(starting_hp, hp + heal)
+        return new_hp, replace(state, guaranteed_used=True), new_hp - hp
+
+    if not state.roll_used:
+        chance = regen_proc_chance(own_regeneration, opponent_regeneration)
+        new_state = replace(state, roll_used=True)
+        if rng.random() * 100.0 < chance:
+            heal = _heal_amount()
+            new_hp = min(starting_hp, hp + heal)
+            return new_hp, new_state, new_hp - hp
+        return hp, new_state, 0.0
+
+    return hp, state, 0.0
+
+
 # --- Раунд и весь бой (часть 0, 2.1, 2.6) ----------------------------------
 
 
@@ -433,6 +515,10 @@ class RoundResult:
     hits_by_b: List[HitResult]
     damage_to_a: float
     damage_to_b: float
+    # Заполняются в simulate_battle (не в simulate_round) - регенерация
+    # проверяется один раз в конце раунда на итоговый HP, не на удар.
+    regen_to_a: float = 0.0
+    regen_to_b: float = 0.0
 
 
 def simulate_round(
@@ -509,6 +595,9 @@ def simulate_battle(
     # Счётчик "физических ударов подряд" на бойца (см. attack_type_chance) -
     # переживает раунды, обнуляется только один раз в начале боя.
     streak_a, streak_b = 0, 0
+    # Состояние регенерации - тоже переживает раунды, максимум по 2 прока
+    # на бойца за весь бой (см. apply_regeneration).
+    regen_state_a, regen_state_b = RegenState(), RegenState()
 
     for round_number in range(1, rounds_cap + 1):
         hp_a_before_last, hp_b_before_last = hp_a, hp_b
@@ -518,6 +607,17 @@ def simulate_battle(
         )
         hp_a = max(0.0, hp_a - result.damage_to_a)
         hp_b = max(0.0, hp_b - result.damage_to_b)
+
+        hp_a, regen_state_a, regen_a = apply_regeneration(
+            hp_a, stats_a.health, stats_a.regeneration, stats_b.regeneration,
+            regen_state_a, rng,
+        )
+        hp_b, regen_state_b, regen_b = apply_regeneration(
+            hp_b, stats_b.health, stats_b.regeneration, stats_a.regeneration,
+            regen_state_b, rng,
+        )
+        if regen_a or regen_b:
+            result = replace(result, regen_to_a=regen_a, regen_to_b=regen_b)
         rounds.append(result)
 
         if hp_a <= 0 or hp_b <= 0:
@@ -577,6 +677,9 @@ __all__ = [
     "kagune_gate_chance",
     "resolve_block_percent",
     "raw_damage",
+    "regen_proc_chance",
+    "RegenState",
+    "apply_regeneration",
     "HitResult",
     "resolve_hit",
     "RoundResult",

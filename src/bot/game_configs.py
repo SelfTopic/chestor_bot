@@ -255,5 +255,16 @@ class BattleConfig:
     damage_variance_min: float = 0.9
     damage_variance_max: float = 1.1
 
+    # Регенерация В БОЮ (обнаружено задним числом - regeneration шёл через
+    # полную цепочку модификаторов, но нигде не использовался). Критический
+    # порог - % от стартового HP этого боя (см. EffectiveStats.health, не
+    # вакуумный max_health). Первое пересечение порога - гарантированный
+    # прок, второе - вероятностный (та же формула, что у лишнего удара от
+    # speed, см. extra_hit_percent), и ТОЛЬКО ОДИН РАЗ за весь бой -
+    # иначе гуль с хорошей регенерацией застревал бы в бою бесконечно.
+    critical_health_percent: float = 10.0
+    regen_heal_variance_min: float = 0.9
+    regen_heal_variance_max: float = 1.1
+
 
 BATTLE_CONFIG = BattleConfig()

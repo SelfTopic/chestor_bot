@@ -7,11 +7,14 @@ from src.bot.utils.battle_calculate import (
     AttackType,
     FighterSnapshot,
     InvalidBattleStatsError,
+    RegenState,
+    apply_regeneration,
     attack_type_chance,
     compute_effective_stats,
     dodge_chance,
     extra_hit_percent,
     kagune_gate_chance,
+    regen_proc_chance,
     resolve_block_percent,
     resolve_hit,
     resolve_hit_chain,
@@ -291,6 +294,84 @@ def test_block_no_kagune_defense_against_kagune_attack_is_always_zero():
     defender = compute_effective_stats(make_fighter())
     block = resolve_block_percent(False, AttackType.KAGUNE, attacker, defender, rng)
     assert block == 0.0
+
+
+# --- Регенерация в бою -------------------------------------------------------
+
+
+def test_regen_proc_chance_equal_regeneration_is_zero():
+    assert regen_proc_chance(100, 100) == 0.0
+
+
+def test_regen_proc_chance_higher_regen_gets_double_the_lower_side():
+    weaker = regen_proc_chance(50, 100)
+    stronger = regen_proc_chance(100, 50)
+    assert stronger == pytest.approx(weaker * 2)
+
+
+def test_apply_regeneration_no_heal_above_critical_threshold():
+    rng = random.Random(0)
+    hp, state, healed = apply_regeneration(50, 100, 100, 100, RegenState(), rng)
+    assert hp == 50
+    assert healed == 0.0
+    assert state == RegenState()
+
+
+def test_apply_regeneration_dead_fighter_is_never_healed():
+    rng = random.Random(0)
+    hp, state, healed = apply_regeneration(0, 100, 100, 100, RegenState(), rng)
+    assert hp == 0
+    assert healed == 0.0
+
+
+def test_apply_regeneration_first_dip_below_threshold_always_heals():
+    rng = random.Random(0)
+    hp, state, healed = apply_regeneration(5, 100, 100, 100, RegenState(), rng)
+    assert healed > 0
+    assert hp == 5 + healed
+    assert 90 <= healed <= 110  # 0.9-1.1 x regeneration=100
+    assert state.guaranteed_used is True
+    assert state.roll_used is False
+
+
+def test_apply_regeneration_heals_capped_at_starting_hp():
+    rng = random.Random(0)
+    # regeneration огромная относительно starting_hp - лечение не должно
+    # унести HP выше стартового пула.
+    hp, state, healed = apply_regeneration(5, 100, 10_000, 100, RegenState(), rng)
+    assert hp == 100
+    assert healed == 95
+
+
+def test_apply_regeneration_second_proc_is_attempted_only_once():
+    rng = random.Random(0)
+    state = RegenState(guaranteed_used=True)  # первый прок уже использован
+
+    # Равная регенерация -> regen_proc_chance = 0%, второй прок никогда не
+    # сработает, но попытка ("roll_used") должна быть отмечена сразу же.
+    hp, state, healed = apply_regeneration(5, 100, 100, 100, state, rng)
+    assert healed == 0.0
+    assert state.roll_used is True
+
+    # Третье пересечение порога - оба флага уже True, лечения больше нет.
+    hp2, state2, healed2 = apply_regeneration(5, 100, 100, 100, state, rng)
+    assert healed2 == 0.0
+    assert state2 == state
+
+
+def test_simulate_battle_high_regeneration_fighter_shows_regen_in_round_log():
+    # Огромная регенерация у одного бойца, статы в остальном идентичны -
+    # хотя бы раз должна сработать регенерация где-то за много прогонов.
+    strong_regen = make_fighter(id=1, name="A", regeneration=100_000, health=50)
+    normal = make_fighter(id=2, name="B", health=50)
+
+    saw_regen = False
+    for seed in range(50):
+        result = simulate_battle(strong_regen, normal, rng=random.Random(seed))
+        if any(r.regen_to_a > 0 for r in result.rounds):
+            saw_regen = True
+            break
+    assert saw_regen
 
 
 # --- Весь бой (часть 0, 2.6) -------------------------------------------------
