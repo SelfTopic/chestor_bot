@@ -40,10 +40,20 @@ class Battle:
         fighter_a: Fighter,
         fighter_b: Fighter,
         max_rounds: Optional[int] = None,
+        compress_hp: bool = True,
     ) -> None:
+        """`compress_hp=False` - сильная сторона дерётся ВСЕРЬЁЗ: HP-пул не
+        сжимается относительно соперника (сжатие остальных статов в
+        формулах - урон/хил/уклонение/гейт/лишний удар - остаётся всегда,
+        оно невидимо игроку). Это осознанный выбор игрока при перевесе 2x+
+        (см. BATTLE_ENGINE.md 1.5) - "драться не в полную силу без согласия
+        игрока нельзя". Безопасный дефолт True: бои с мобами, дуэли при
+        перевесе <2x и таймаут ответа - всегда с форой (сжатым HP)."""
+
         self.fighter_a = fighter_a
         self.fighter_b = fighter_b
-        self._compress_hp_pools()
+        if compress_hp:
+            self._compress_hp_pools()
         self.max_rounds = max_rounds if max_rounds is not None else BATTLE_CONFIG.max_rounds
         self.rounds: List[RoundResult] = []
         self._round_number = 0

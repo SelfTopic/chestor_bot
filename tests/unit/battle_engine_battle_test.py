@@ -145,3 +145,53 @@ def test_play_round_raises_after_battle_already_finished():
     assert battle.is_finished
     with pytest.raises(RuntimeError):
         battle.play_round(rng=random.Random(1))
+
+
+# --- compress_hp: "фора" vs "всерьёз" при большом перевесе (1.5) -----------
+
+
+def test_compress_hp_true_shrinks_the_stronger_side_pool():
+    # Дефолт (фора): HP-пул более здорового бойца поджимается к пулу
+    # соперника - он стартует бой с гораздо меньшим числом, чем его
+    # эффективный health.
+    strong = make_fighter(id=1, name="Силач", health=5000)
+    weak = make_fighter(id=2, name="Слабый", health=1000)
+    Battle(strong, weak)  # компрессия происходит прямо в конструкторе
+    assert strong.current_hp < 5000
+    assert strong.current_hp == pytest.approx(strong.stats.health)
+    # Слабый (якорь) не трогается вообще.
+    assert weak.current_hp == pytest.approx(1000)
+
+
+def test_compress_hp_false_leaves_both_pools_untouched():
+    # "Всерьёз": HP не сжимается ни у кого, эффективный health = стартовый HP.
+    strong = make_fighter(id=1, name="Силач", health=5000)
+    weak = make_fighter(id=2, name="Слабый", health=1000)
+    Battle(strong, weak, compress_hp=False)
+    assert strong.current_hp == pytest.approx(5000)
+    assert weak.current_hp == pytest.approx(1000)
+
+
+def test_compress_hp_false_only_affects_hp_not_other_stat_compression():
+    # Сжатие остальных статов (урон) в формулах работает всегда, независимо
+    # от compress_hp - "всерьёз" отключает ТОЛЬКО HP-пул.
+    strong = make_fighter(id=1, name="Силач", strength=5000, health=1000)
+    weak = make_fighter(id=2, name="Слабый", strength=1000, health=1000)
+    Battle(strong, weak, compress_hp=False)
+    # strength как эффективный стат не переписывается в любом случае (сжатие
+    # урона живёт внутри raw_damage, не в EffectiveStats).
+    assert strong.stats.strength == pytest.approx(5000)
+
+
+def test_serious_mode_stronger_side_wins_far_more_often_than_with_handicap():
+    def rate(compress_hp: bool) -> float:
+        wins = 0
+        rng = random.Random(2024)
+        for _ in range(300):
+            a = make_fighter(id=1, strength=100, dexterity=100, speed=100, regeneration=100, health=500)
+            b = make_fighter(id=2, strength=300, dexterity=300, speed=300, regeneration=300, health=1500)
+            if Battle(a, b, compress_hp=compress_hp).run(rng).winner == "b":
+                wins += 1
+        return wins / 300
+
+    assert rate(compress_hp=False) > rate(compress_hp=True)
