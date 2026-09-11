@@ -1,6 +1,6 @@
 from dataclasses import dataclass, field
 from random import randint
-from typing import Optional
+from typing import List, Optional
 
 
 @dataclass
@@ -314,3 +314,31 @@ class BattleConfig:
 
 
 BATTLE_CONFIG = BattleConfig()
+
+
+@dataclass
+class MobConfig:
+    """Параметры генерации моба для "боя с мобом" (BATTLE_DESIGN.md,
+    BATTLE_ENGINE.md 1.1) - см. MobService. Статы моба - случайный общий
+    множитель от ВАКУУМНЫХ (профильных) статов игрока, а не эффективных
+    (боевых прямо сейчас) - решено автором явно: голодный/не в кагуне
+    игрок реально встречает моба относительно опаснее, чем по профилю -
+    стимул не запускать голод, не баг."""
+
+    stat_multiplier_min: float = 0.5
+    stat_multiplier_max: float = 2.0
+
+    # Чисто флейвор - имя моба в логе боя, ни на что не влияет.
+    names: List[str] = field(
+        default_factory=lambda: [
+            "Одичавший гуль",
+            "Голодный гуль-бродяга",
+            "Безумный гуль",
+            "Гуль-падальщик",
+            "Раненый гуль-изгой",
+            "Гуль без имени",
+        ]
+    )
+
+
+MOB_CONFIG = MobConfig()

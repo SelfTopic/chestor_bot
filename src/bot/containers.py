@@ -29,6 +29,7 @@ from .services import (
     LevelUpService,
     MediaDownloader,
     MediaService,
+    MobService,
     NotificationTicker,
     PlayerLookupService,
     ResetService,
@@ -82,6 +83,8 @@ class Container(containers.DeclarativeContainer):
     battle_text_generator = providers.Factory(
         BattleTextGenerator, dialog_service=dialog_service
     )
+
+    mob_service = providers.Factory(MobService)
 
     media_downloader = providers.Factory(MediaDownloader, bot=bot)
 

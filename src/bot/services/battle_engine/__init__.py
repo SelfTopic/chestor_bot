@@ -20,11 +20,13 @@ from .core import (
     RoundActionType,
     RoundResult,
 )
+from .mob import MobService
 from .text_generator import MAX_WIDTH_TEXT_RICH_MESSAGE, BattleTextGenerator
 
 __all__ = [
     "BattleTextGenerator",
     "MAX_WIDTH_TEXT_RICH_MESSAGE",
+    "MobService",
     "AttackAction",
     "AttackType",
     "Battle",
