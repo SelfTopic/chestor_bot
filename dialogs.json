@@ -113,5 +113,5 @@
 
     "rebirth_accept": "🐣 Вау, отныне ты гуль... Снова. Новый тип кагуне: {kagune_type}.\n\nВсё остальное - с чистого листа.",
 
-    "battle_result_summary": "⚔️ {name_a} vs {name_b}\n\n{winner_line}\n❤️ Финальное HP: {name_a} — {final_hp_a}, {name_b} — {final_hp_b}\n📜 Раундов: {rounds}"
+    "battle_result_summary": "⚔️ Итоги боя\n\n{winner_line}\n{loser_line}\n{hp_line_a}\n{hp_line_b}\n📜 Раундов: {rounds}"
 }
