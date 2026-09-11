@@ -37,7 +37,16 @@ rate-limit Telegram на редактирование сообщений, обр
 полностью разрешён, и показывает ПОЛНУЮ цепочку "было -> стало (причина)"
 для каждого бойца отдельно - "7 -> 19 (+12 регенерация) -> 0 (-24 урон)"
 отвечает на "лечится или умирает" одним взглядом, без потребности знать
-про одновременность действий в раунде."""
+про одновременность действий в раунде.
+
+Порядок блоков сообщения (см. чат, по мотивам мокапа автора): имена+ранги
+-> сворачиваемый ход боя -> итоги. Раньше итоги были ПЕРВЫМИ - но тогда
+игрок видит "кто выиграл" раньше, чем сам процесс, а по мокапу автора
+итоги - это развязка, идущая ПОСЛЕ хода поединка. Имя бойца - жирным
+(`RichTextBold`) везде, где оно встречается - и в "Гуль X ранга **имя**",
+и в "что произошло", и в "итоге раунда", и в финальных строках победителя/
+HP. Кагуне-удар - нейтральный ♦️ вместо 🦑 (см. чат: автору не хочется
+объяснять игроку, почему кальмар)."""
 
 from __future__ import annotations
 
@@ -46,12 +55,15 @@ from typing import List, Optional, Tuple
 
 from aiogram.types import (
     InputRichBlockDetails,
+    InputRichBlockDivider,
     InputRichBlockList,
     InputRichBlockListItem,
     InputRichBlockParagraph,
     InputRichBlockSectionHeading,
     InputRichBlockUnion,
     InputRichMessage,
+    RichTextBold,
+    RichTextUnion,
 )
 
 from ..dialog import DialogService
@@ -68,7 +80,7 @@ from .core import (
     RoundAction,
 )
 
-_HIT_ICON = {AttackType.PHYSICAL: "👊", AttackType.KAGUNE: "🦑"}
+_HIT_ICON = {AttackType.PHYSICAL: "👊", AttackType.KAGUNE: "♦️"}
 
 # Имя бойца - переменной длины (полное имя из Telegram), и раньше клеилось
 # в одну строку вместе с именем ВТОРОГО бойца ("Раунд N: A ... — B ...") -
@@ -80,6 +92,16 @@ _HIT_ICON = {AttackType.PHYSICAL: "👊", AttackType.KAGUNE: "🦑"}
 # содержит РОВНО ОДНО имя и обрезается под этот бюджет (с "…"), а не два
 # имени сразу - главная защита от переноса.
 MAX_WIDTH_TEXT_RICH_MESSAGE = 54
+
+# Строка с именем - список сегментов (не голая str), потому что имя внутри
+# всегда обёрнуто в RichTextBold (см. чат: "все имена бойцов должны быть
+# жирно выделенные") - `InputRichBlockParagraph.text` принимает именно
+# такой список (`RichTextUnion` включает `list[RichTextUnion]`), смешивая
+# обычные строки и форматированные куски в одном поле. Тип - алиас на сам
+# `RichTextUnion` (не `List[Union[str, RichTextBold]]`) - `list` в pyright
+# инвариантен, и более узкий список не проходит структурную проверку под
+# рекурсивный `RichTextUnion`, даже когда реально в него укладывается.
+RichLine = RichTextUnion
 
 
 def _truncate_to_width(text: str, max_width: int) -> str:
@@ -106,16 +128,34 @@ def _truncate_to_width(text: str, max_width: int) -> str:
 
 def _fit_line(
     name: str, prefix: str = "", suffix: str = "", max_width: int = MAX_WIDTH_TEXT_RICH_MESSAGE
-) -> str:
-    """Собирает `{prefix}{name}{suffix}`, обрезая ИМЕННО name (а не конец
-    строки вслепую) так, чтобы вся строка целиком не превышала max_width -
-    prefix/suffix (иконки, HP, счётчики) всегда остаются целыми, это они
-    несут игровую информацию, обрезать есть смысл только переменную по
-    длине часть (имя)."""
+) -> RichLine:
+    """Собирает `[prefix, ЖИРНОЕ_имя, suffix]`, обрезая ИМЕННО name (а не
+    конец строки вслепую) так, чтобы вся строка целиком (без учёта того,
+    что имя ещё и жирное - жирность не меняет число символов) не превышала
+    max_width. prefix/suffix (иконки, HP, счётчики) всегда остаются
+    целыми - это они несут игровую информацию, обрезать есть смысл только
+    переменную по длине часть (имя)."""
 
     fixed_width = len((prefix + suffix).replace(" ", ""))
     name_budget = max(1, max_width - fixed_width)
-    return f"{prefix}{_truncate_to_width(name, name_budget)}{suffix}"
+    fitted_name = _truncate_to_width(name, name_budget)
+    return [prefix, RichTextBold(text=fitted_name), suffix]
+
+
+def _flatten_to_plain_text(value: object) -> str:
+    """Обратное превращение RichLine (или голой строки) в plain text - для
+    `build_plain_text`, где жирность выразить нечем (это шаблон в
+    dialogs.json, обычная строка), но обрезка имени должна остаться той же
+    самой, поэтому и rich, и plain строятся из ОДНИХ И ТЕХ ЖЕ `_fit_line`,
+    просто plain-версия дополнительно "разворачивает" результат в str."""
+
+    if isinstance(value, str):
+        return value
+    if isinstance(value, list):
+        return "".join(_flatten_to_plain_text(item) for item in value)
+    if isinstance(value, RichTextBold):
+        return _flatten_to_plain_text(value.text)
+    raise TypeError(f"Не умею превращать {type(value)!r} в plain text")
 
 
 # --- "Что произошло" - действие само по себе, БЕЗ единого числа HP ---------
@@ -150,8 +190,8 @@ def _action_icon_and_text(action: RoundAction) -> "Optional[Tuple[str, str]]":
     raise NotImplementedError(f"Неизвестный тип действия для рендера: {type(action)!r}")
 
 
-def _action_lines(fighter: Fighter, actions: List[RoundAction]) -> List[str]:
-    lines: List[str] = []
+def _action_lines(fighter: Fighter, actions: List[RoundAction]) -> List[RichLine]:
+    lines: List[RichLine] = []
     for action in actions:
         icon_and_text = _action_icon_and_text(action)
         if icon_and_text is None:
@@ -202,41 +242,59 @@ def _format_hp_chain(steps: List[_HpStep]) -> str:
     return " → ".join(parts) + " HP"
 
 
-def _fighter_outcome_line(fighter: Fighter, steps: List[_HpStep]) -> str:
+def _fighter_outcome_line(fighter: Fighter, steps: List[_HpStep]) -> RichLine:
     is_defeated = steps[-1].value <= 0
     prefix = "💀 " if is_defeated else "❤️ "
     suffix = f": {_format_hp_chain(steps)}" + (" — повержен" if is_defeated else "")
     return _fit_line(fighter.name, prefix=prefix, suffix=suffix)
 
 
+def _apply_mutual_ko_display(steps: List[_HpStep], final_hp: float) -> List[_HpStep]:
+    if not steps or steps[-1].value == final_hp:
+        return steps
+    last = steps[-1]
+    return steps[:-1] + [_HpStep(value=final_hp, delta=last.delta, cause=last.cause)]
+
+
 class BattleTextGenerator:
     """Требует `Fighter` для ОБЕИХ сторон отдельно от `BattleResult` -
     `BattleResult.stats_a/stats_b` это голые `EffectiveStats` без имени/id
-    (см. чат), имя живёт только на `Fighter.name`/`FighterSnapshot.name`."""
+    (см. чат), имя живёт только на `Fighter.name`/`FighterSnapshot.name`.
+
+    `rank_a`/`rank_b` - буква ранга опасности ("F", "D", ...), считается
+    снаружи (`GhoulService.get_danger_rank`) - `battle_engine` намеренно
+    не знает про ранги/БД, это чужая ответственность (см. модульный
+    докстринг про core/ без БД - тот же принцип и для этого слоя)."""
 
     def __init__(self, dialog_service: DialogService) -> None:
         self._dialog_service = dialog_service
 
     def build_rich_message(
-        self, result: BattleResult, fighter_a: Fighter, fighter_b: Fighter
+        self,
+        result: BattleResult,
+        fighter_a: Fighter,
+        fighter_b: Fighter,
+        rank_a: str,
+        rank_b: str,
     ) -> InputRichMessage:
+        rank_line_a = _fit_line(fighter_a.name, prefix=f"Гуль {rank_a} ранга ")
+        rank_line_b = _fit_line(fighter_b.name, prefix=f"Гуль {rank_b} ранга ")
         winner_line, loser_line = self._winner_lines(result, fighter_a, fighter_b)
         hp_line_a, hp_line_b = self._hp_lines(result, fighter_a, fighter_b)
 
+        # Порядок (см. чат): имена+ранги -> ход боя -> итоги. Итоги - это
+        # развязка, они идут ПОСЛЕ процесса, а не до него.
         blocks: List[InputRichBlockUnion] = [
-            # Без имён в заголовке - "A vs B" в одной строке имеет ту же
-            # проблему переноса, что и раунды, а заголовок обрезать некрасиво.
-            InputRichBlockSectionHeading(text="⚔️ Итоги боя", size=3),
-            InputRichBlockParagraph(text=winner_line),
-            InputRichBlockParagraph(text=loser_line),
-            InputRichBlockParagraph(text=hp_line_a),
-            InputRichBlockParagraph(text=hp_line_b),
+            InputRichBlockSectionHeading(text="⚔️ Бой", size=3),
+            InputRichBlockParagraph(text=rank_line_a),
+            InputRichBlockParagraph(text="VS"),
+            InputRichBlockParagraph(text=rank_line_b),
         ]
 
         if result.rounds:
             blocks.append(
                 InputRichBlockDetails(
-                    summary=f"📜 Ход боя ({len(result.rounds)} раунд(ов))",
+                    summary=f"📜 Ход поединка ({len(result.rounds)} раунд(ов))",
                     blocks=[
                         InputRichBlockList(
                             items=[
@@ -250,41 +308,61 @@ class BattleTextGenerator:
                 )
             )
 
+        blocks.append(InputRichBlockDivider())
+        blocks.extend(
+            [
+                InputRichBlockParagraph(text=winner_line),
+                InputRichBlockParagraph(text=loser_line),
+                InputRichBlockParagraph(text=hp_line_a),
+                InputRichBlockParagraph(text=hp_line_b),
+            ]
+        )
+
         return InputRichMessage(blocks=blocks)
 
     def build_plain_text(
-        self, result: BattleResult, fighter_a: Fighter, fighter_b: Fighter
+        self,
+        result: BattleResult,
+        fighter_a: Fighter,
+        fighter_b: Fighter,
+        rank_a: str,
+        rank_b: str,
     ) -> str:
         """Фолбэк на случай, если `answer_rich` недоступен (см.
         race_profile_router.py - тот же паттерн try/except TelegramAPIError).
         Намеренно БЕЗ раундов - в отличие от rich-версии, здесь их некуда
         свернуть, а бой может идти 20-30 раундов (и теперь каждый раунд -
         это несколько строк "что произошло" + "итог", не одна); полный лог
-        только в rich-сообщении, тут - голая сводка. Каждая строка уже
-        обрезана под MAX_WIDTH_TEXT_RICH_MESSAGE - шаблон в dialogs.json
-        просто их склеивает переносами строк, не комбинируя два имени."""
+        только в rich-сообщении, тут - голая сводка. Жирность имён негде
+        выразить в plain text - используются те же `_fit_line`, что и в
+        rich-версии (одна и та же обрезка под MAX_WIDTH_TEXT_RICH_MESSAGE),
+        просто "развёрнутые" в строку через `_flatten_to_plain_text`."""
 
+        rank_line_a = _fit_line(fighter_a.name, prefix=f"Гуль {rank_a} ранга ")
+        rank_line_b = _fit_line(fighter_b.name, prefix=f"Гуль {rank_b} ранга ")
         winner_line, loser_line = self._winner_lines(result, fighter_a, fighter_b)
         hp_line_a, hp_line_b = self._hp_lines(result, fighter_a, fighter_b)
 
         return self._dialog_service.text(
             key="battle_result_summary",
-            winner_line=winner_line,
-            loser_line=loser_line,
-            hp_line_a=hp_line_a,
-            hp_line_b=hp_line_b,
+            rank_line_a=_flatten_to_plain_text(rank_line_a),
+            rank_line_b=_flatten_to_plain_text(rank_line_b),
+            winner_line=_flatten_to_plain_text(winner_line),
+            loser_line=_flatten_to_plain_text(loser_line),
+            hp_line_a=_flatten_to_plain_text(hp_line_a),
+            hp_line_b=_flatten_to_plain_text(hp_line_b),
             rounds=len(result.rounds),
         )
 
     def _winner_lines(
         self, result: BattleResult, fighter_a: Fighter, fighter_b: Fighter
-    ) -> Tuple[str, str]:
+    ) -> Tuple[RichLine, RichLine]:
         """Одно имя на строку - раньше было "Победитель: A. B проиграл." в
         ОДНОЙ строке с двумя именами, см. MAX_WIDTH_TEXT_RICH_MESSAGE."""
 
         if result.winner is None:
-            draw = "🤝 Ничья."
-            return draw, draw
+            draw: RichLine = ["🤝 Ничья."]
+            return draw, list(draw)
 
         winner, loser = (
             (fighter_a, fighter_b) if result.winner == "a" else (fighter_b, fighter_a)
@@ -296,14 +374,14 @@ class BattleTextGenerator:
 
     def _hp_lines(
         self, result: BattleResult, fighter_a: Fighter, fighter_b: Fighter
-    ) -> Tuple[str, str]:
+    ) -> Tuple[RichLine, RichLine]:
         hp_line_a = _fit_line(fighter_a.name, prefix="❤️ ", suffix=f": {round(result.final_hp_a)} HP")
         hp_line_b = _fit_line(fighter_b.name, prefix="❤️ ", suffix=f": {round(result.final_hp_b)} HP")
         return hp_line_a, hp_line_b
 
     def _round_lines(
         self, result: BattleResult, fighter_a: Fighter, fighter_b: Fighter
-    ) -> List[str]:
+    ) -> List[RichLine]:
         """На раунд: разделитель, все строки "что произошло" (оба бойца,
         без чисел HP), затем ровно 2 строки "итог раунда" (по одному
         бойцу) - см. docstring модуля про то, почему именно так."""
@@ -311,10 +389,10 @@ class BattleTextGenerator:
         hp_a = fighter_a.stats.health
         hp_b = fighter_b.stats.health
         last_round_number = result.rounds[-1].round_number if result.rounds else None
-        lines: List[str] = []
+        lines: List[RichLine] = []
 
         for round_result in result.rounds:
-            lines.append(f"──── Раунд {round_result.round_number} ────")
+            lines.append([f"──── Раунд {round_result.round_number} ────"])
             lines.extend(_action_lines(fighter_a, round_result.actions_a))
             lines.extend(_action_lines(fighter_b, round_result.actions_b))
 
@@ -341,13 +419,6 @@ class BattleTextGenerator:
             lines.append(_fighter_outcome_line(fighter_b, steps_b))
 
         return lines
-
-
-def _apply_mutual_ko_display(steps: List[_HpStep], final_hp: float) -> List[_HpStep]:
-    if not steps or steps[-1].value == final_hp:
-        return steps
-    last = steps[-1]
-    return steps[:-1] + [_HpStep(value=final_hp, delta=last.delta, cause=last.cause)]
 
 
 __all__ = ["BattleTextGenerator", "MAX_WIDTH_TEXT_RICH_MESSAGE"]

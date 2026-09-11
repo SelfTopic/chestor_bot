@@ -1,6 +1,12 @@
-from typing import Optional
+from typing import List, Optional
 
-from aiogram.types import InputRichBlockParagraph, InputRichMessage
+from aiogram.types import (
+    InputRichBlockDetails,
+    InputRichBlockList,
+    InputRichBlockParagraph,
+    InputRichMessage,
+    RichTextBold,
+)
 
 from src.bot.services.battle_engine.core import (
     AttackAction,
@@ -17,8 +23,12 @@ from src.bot.services.battle_engine.core import (
 from src.bot.services.battle_engine.text_generator import (
     MAX_WIDTH_TEXT_RICH_MESSAGE,
     BattleTextGenerator,
+    _flatten_to_plain_text,
 )
 from src.bot.services.dialog import DialogService
+
+RANK_A = "F"
+RANK_B = "D"
 
 
 def make_fighter(id: int = 1, name: str = "Тест", health: int = 100) -> Fighter:
@@ -44,6 +54,27 @@ def _hit(landed: bool, damage: float = 0.0, attack_type: Optional[AttackType] = 
 
 def make_generator() -> BattleTextGenerator:
     return BattleTextGenerator(dialog_service=DialogService())
+
+
+def _all_paragraph_lines(message: InputRichMessage) -> List[str]:
+    """Разворачивает КАЖДЫЙ параграф сообщения (включая вложенные внутри
+    Details -> List -> ListItem раунды) в plain text - тесты ниже проверяют
+    смысл (что сказано), а не JSON-структуру rich-text (как именно жирность
+    сериализуется) - для этого есть отдельные test_*_is_bold ниже."""
+
+    assert message.blocks is not None
+    lines: List[str] = []
+    for block in message.blocks:
+        if isinstance(block, InputRichBlockParagraph):
+            lines.append(_flatten_to_plain_text(block.text))
+        elif isinstance(block, InputRichBlockDetails):
+            for inner in block.blocks or []:
+                if isinstance(inner, InputRichBlockList):
+                    for item in inner.items:
+                        for inner_block in item.blocks:
+                            if isinstance(inner_block, InputRichBlockParagraph):
+                                lines.append(_flatten_to_plain_text(inner_block.text))
+    return lines
 
 
 def make_battle_result(fighter_a: Fighter, fighter_b: Fighter) -> BattleResult:
@@ -98,13 +129,61 @@ def test_build_rich_message_returns_valid_input_rich_message():
     fighter_a, fighter_b = make_fighter(1, "Канеки"), make_fighter(2, "Крепкий боец")
     result = make_battle_result(fighter_a, fighter_b)
 
-    message = make_generator().build_rich_message(result, fighter_a, fighter_b)
+    message = make_generator().build_rich_message(result, fighter_a, fighter_b, RANK_A, RANK_B)
 
     assert isinstance(message, InputRichMessage)
     assert message.blocks
     dumped = message.model_dump_json(exclude_none=True)
     assert '"type":"heading"' in dumped
     assert '"type":"details"' in dumped
+    assert '"type":"bold"' in dumped  # имена жирные - см. чат
+
+
+def test_names_and_ranks_come_before_the_round_by_round_process():
+    # Порядок (см. чат): имена+ранги -> ход боя -> итоги, а не наоборот.
+    fighter_a, fighter_b = make_fighter(1, "Канеки"), make_fighter(2, "Крепкий боец")
+    result = make_battle_result(fighter_a, fighter_b)
+
+    lines = _all_paragraph_lines(
+        make_generator().build_rich_message(result, fighter_a, fighter_b, RANK_A, RANK_B)
+    )
+
+    assert lines[0] == "Гуль F ранга Канеки"
+    assert lines[1] == "VS"
+    assert lines[2] == "Гуль D ранга Крепкий боец"
+    # Раунды (внутри Details) идут следом, итоги ("Победитель") - только
+    # ПОСЛЕ них.
+    round_index = next(i for i, line in enumerate(lines) if line.startswith("──── Раунд"))
+    winner_index = next(i for i, line in enumerate(lines) if line.startswith("🏆 Победитель"))
+    assert round_index < winner_index
+
+
+def test_kagune_hit_uses_neutral_diamond_icon_not_squid():
+    # См. чат - 🦑 заменён на ♦️, чтобы не объяснять игроку лор.
+    fighter_a, fighter_b = make_fighter(1, "Канеки"), make_fighter(2, "Крепкий боец")
+    result = make_battle_result(fighter_a, fighter_b)
+
+    lines = _all_paragraph_lines(
+        make_generator().build_rich_message(result, fighter_a, fighter_b, RANK_A, RANK_B)
+    )
+    joined = "\n".join(lines)
+
+    assert "♦️" in joined
+    assert "🦑" not in joined
+
+
+def test_fighter_names_are_rendered_bold():
+    fighter_a, fighter_b = make_fighter(1, "Канеки"), make_fighter(2, "Крепкий боец")
+    result = make_battle_result(fighter_a, fighter_b)
+
+    message = make_generator().build_rich_message(result, fighter_a, fighter_b, RANK_A, RANK_B)
+
+    assert isinstance(message.blocks, list)
+    rank_paragraph = message.blocks[1]
+    assert isinstance(rank_paragraph, InputRichBlockParagraph)
+    assert isinstance(rank_paragraph.text, list)
+    bold_segments = [seg for seg in rank_paragraph.text if isinstance(seg, RichTextBold)]
+    assert bold_segments == [RichTextBold(text="Канеки")]
 
 
 def test_rich_message_action_section_has_no_hp_numbers():
@@ -114,15 +193,16 @@ def test_rich_message_action_section_has_no_hp_numbers():
     fighter_a, fighter_b = make_fighter(1, "Канеки"), make_fighter(2, "Крепкий боец")
     result = make_battle_result(fighter_a, fighter_b)
 
-    dumped = make_generator().build_rich_message(result, fighter_a, fighter_b).model_dump_json(
-        exclude_none=True
+    lines = _all_paragraph_lines(
+        make_generator().build_rich_message(result, fighter_a, fighter_b, RANK_A, RANK_B)
     )
+    joined = "\n".join(lines)
 
-    assert "👊 Канеки наносит удар — 30 урона" in dumped  # физическая атака A
-    assert "🦑 Крепкий боец наносит удар — 20 урона" in dumped  # атака кагуне B
-    assert "💨 Канеки промахивается" in dumped  # промах A в раунде 2
-    assert "💊 Крепкий боец регенерирует — +15 HP" in dumped  # регенерация B
-    assert "⚡👊 Крепкий боец успевает ударить ещё раз — 10 урона" in dumped  # бонус от speed
+    assert "Канеки наносит удар — 30 урона" in joined  # физическая атака A
+    assert "Крепкий боец наносит удар — 20 урона" in joined  # атака кагуне B
+    assert "Канеки промахивается" in joined  # промах A в раунде 2
+    assert "Крепкий боец регенерирует — +15 HP" in joined  # регенерация B
+    assert "Крепкий боец успевает ударить ещё раз — 10 урона" in joined  # бонус от speed
 
 
 def test_rich_message_outcome_line_shows_full_hp_chain_with_causes():
@@ -134,42 +214,43 @@ def test_rich_message_outcome_line_shows_full_hp_chain_with_causes():
     fighter_a, fighter_b = make_fighter(1, "Канеки"), make_fighter(2, "Крепкий боец")
     result = make_battle_result(fighter_a, fighter_b)
 
-    dumped = make_generator().build_rich_message(result, fighter_a, fighter_b).model_dump_json(
-        exclude_none=True
+    lines = _all_paragraph_lines(
+        make_generator().build_rich_message(result, fighter_a, fighter_b, RANK_A, RANK_B)
     )
 
     # После раунда 2: hp_b = 70 (после раунда 1) + 15 (регенерация), урона в
     # этом раунде B не получил (damage_to_b=0) - цепочка останавливается на
     # регенерации, шага "урон" в этом раунде для B нет.
-    assert "❤️ Крепкий боец: 70 → 85 (+15 регенерация) HP" in dumped
+    assert "❤️ Крепкий боец: 70 → 85 (+15 регенерация) HP" in lines
 
 
 def test_rich_message_last_round_shows_display_hp_not_raw_zero_on_mutual_ko():
     fighter_a, fighter_b = make_fighter(1, "Канеки"), make_fighter(2, "Крепкий боец")
     result = make_battle_result(fighter_a, fighter_b)
 
-    dumped = make_generator().build_rich_message(result, fighter_a, fighter_b).model_dump_json(
-        exclude_none=True
+    lines = _all_paragraph_lines(
+        make_generator().build_rich_message(result, fighter_a, fighter_b, RANK_A, RANK_B)
     )
 
     # Честный расчёт (сложение damage_to_a/b по раундам) дал бы 0 HP у ОБОИХ
     # на раунде 3 - рендерер обязан подменить последний шаг цепочки на
     # result.final_hp_a/b (та же UX-подмена 2.6), иначе в логе будет
     # "0 против 0". Победитель (A) после подмены даже не помечается 💀.
-    assert "❤️ Канеки: 70 → 1 (-70 урон) HP" in dumped
-    assert "💀 Крепкий боец: 85 → 0 (-85 урон) HP — повержен" in dumped
+    assert "❤️ Канеки: 70 → 1 (-70 урон) HP" in lines
+    assert "💀 Крепкий боец: 85 → 0 (-85 урон) HP — повержен" in lines
 
 
 def test_build_rich_message_includes_winner_line():
     fighter_a, fighter_b = make_fighter(1, "Канеки"), make_fighter(2, "Крепкий боец")
     result = make_battle_result(fighter_a, fighter_b)
 
-    dumped = make_generator().build_rich_message(result, fighter_a, fighter_b).model_dump_json(
-        exclude_none=True
+    lines = _all_paragraph_lines(
+        make_generator().build_rich_message(result, fighter_a, fighter_b, RANK_A, RANK_B)
     )
+    joined = "\n".join(lines)
 
-    assert "Победитель: Канеки" in dumped
-    assert "Крепкий боец: повержен." in dumped
+    assert "Победитель: Канеки" in joined
+    assert "Крепкий боец: повержен." in joined
 
 
 def test_build_rich_message_true_draw_says_nichya():
@@ -185,21 +266,22 @@ def test_build_rich_message_true_draw_says_nichya():
         stats_b=fighter_b.stats,
     )
 
-    dumped = make_generator().build_rich_message(result, fighter_a, fighter_b).model_dump_json(
-        exclude_none=True
+    lines = _all_paragraph_lines(
+        make_generator().build_rich_message(result, fighter_a, fighter_b, RANK_A, RANK_B)
     )
 
-    assert "Ничья" in dumped
+    assert any("Ничья" in line for line in lines)
 
 
 def test_build_plain_text_is_condensed_without_per_round_breakdown():
     fighter_a, fighter_b = make_fighter(1, "Канеки"), make_fighter(2, "Крепкий боец")
     result = make_battle_result(fighter_a, fighter_b)
 
-    text = make_generator().build_plain_text(result, fighter_a, fighter_b)
+    text = make_generator().build_plain_text(result, fighter_a, fighter_b, RANK_A, RANK_B)
 
-    assert "Канеки" in text
-    assert "Крепкий боец" in text
+    assert "Гуль F ранга Канеки" in text
+    assert "VS" in text
+    assert "Гуль D ранга Крепкий боец" in text
     assert "Победитель: Канеки" in text
     assert "Раундов: 3" in text  # только счётчик...
     assert "Раунд 1" not in text  # ...без самого списка раундов, см. docstring
@@ -223,22 +305,11 @@ def test_no_line_exceeds_max_width_even_with_a_pathologically_long_name():
     fighter_b = make_fighter(2, long_name_b)
     result = make_battle_result(fighter_a, fighter_b)
 
-    message = make_generator().build_rich_message(result, fighter_a, fighter_b)
-    assert message.blocks is not None
-    rich_lines = [
-        block.text
-        for block in message.blocks
-        if isinstance(block, InputRichBlockParagraph) and isinstance(block.text, str)
-    ]
-    for line in rich_lines:
+    message = make_generator().build_rich_message(result, fighter_a, fighter_b, RANK_A, RANK_B)
+    for line in _all_paragraph_lines(message):
         assert _line_width(line) <= MAX_WIDTH_TEXT_RICH_MESSAGE, line
 
-    generator = make_generator()
-    round_lines = generator._round_lines(result, fighter_a, fighter_b)
-    for line in round_lines:
-        assert _line_width(line) <= MAX_WIDTH_TEXT_RICH_MESSAGE, line
-
-    plain_text = make_generator().build_plain_text(result, fighter_a, fighter_b)
+    plain_text = make_generator().build_plain_text(result, fighter_a, fighter_b, RANK_A, RANK_B)
     for line in plain_text.split("\n"):
         assert _line_width(line) <= MAX_WIDTH_TEXT_RICH_MESSAGE, line
 
@@ -247,7 +318,7 @@ def test_short_names_are_not_truncated():
     fighter_a, fighter_b = make_fighter(1, "Канеки"), make_fighter(2, "Тоука")
     result = make_battle_result(fighter_a, fighter_b)
 
-    text = make_generator().build_plain_text(result, fighter_a, fighter_b)
+    text = make_generator().build_plain_text(result, fighter_a, fighter_b, RANK_A, RANK_B)
 
     assert "…" not in text
     assert "Канеки" in text
