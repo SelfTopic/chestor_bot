@@ -155,7 +155,7 @@ class BattleTextGenerator:
         lines: List[str] = []
 
         for round_result in result.rounds:
-            hp_a, hp_b = self._apply_round_damage(round_result, hp_a, hp_b)
+            hp_a, hp_b = self._apply_round_hp_change(round_result, hp_a, hp_b)
             display_hp_a, display_hp_b = hp_a, hp_b
 
             if round_result.round_number == last_round_number:
@@ -177,12 +177,21 @@ class BattleTextGenerator:
         return lines
 
     @staticmethod
-    def _apply_round_damage(
+    def _apply_round_hp_change(
         round_result: RoundResult, hp_a: float, hp_b: float
     ) -> "tuple[float, float]":
+        """Урон - НЕ единственное, что меняет HP за раунд: RegenAction
+        лечит в тот же раунд (Fighter.apply_heal уже применяется ДО того,
+        как в _play_one_round применяется очередь урона). Раньше здесь
+        учитывался только damage_to_a/b - раунд с регенерацией показывал
+        заниженный (иногда буквально "0 HP") HP, хотя боец на самом деле
+        вылечился. Found через scripts/battle_text_demo.py (см. чат)."""
+
+        healed_a = sum(a.healed for a in round_result.actions_a if isinstance(a, RegenAction))
+        healed_b = sum(a.healed for a in round_result.actions_b if isinstance(a, RegenAction))
         return (
-            max(0.0, hp_a - round_result.damage_to_a),
-            max(0.0, hp_b - round_result.damage_to_b),
+            max(0.0, hp_a + healed_a - round_result.damage_to_a),
+            max(0.0, hp_b + healed_b - round_result.damage_to_b),
         )
 
 

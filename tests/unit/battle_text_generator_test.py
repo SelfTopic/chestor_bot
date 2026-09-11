@@ -67,14 +67,16 @@ def make_battle_result(fighter_a: Fighter, fighter_b: Fighter) -> BattleResult:
         damage_to_a=10.0,
         damage_to_b=0.0,
     )
-    # После раунда 2: hp_a=70, hp_b=70
+    # После раунда 2: hp_a=70, hp_b=70+15(регенерация)=85 - именно этот "+15"
+    # раньше терялся в _apply_round_hp_change (см. scripts/battle_text_demo.py,
+    # нашли через живой прогон, регенерация не учитывалась в бегущем HP).
 
     round_3 = RoundResult(
         round_number=3,
-        actions_a=[AttackAction(hit=_hit(True, 70.0, AttackType.PHYSICAL))],
+        actions_a=[AttackAction(hit=_hit(True, 85.0, AttackType.PHYSICAL))],  # добивает hp_b=85
         actions_b=[DefenseAction()],  # зарезервированный тип - не должен падать
-        damage_to_a=70.0,
-        damage_to_b=70.0,
+        damage_to_a=70.0,  # добивает hp_a=70
+        damage_to_b=85.0,
     )
     # После раунда 3: honest hp_a=0, hp_b=0 - обоюдный нокаут, A выиграл тай-брейк
 
@@ -129,8 +131,25 @@ def test_rich_message_last_round_shows_display_hp_not_raw_zero_on_mutual_ko():
     # Честный расчёт (сложение damage_to_a/b по раундам) дал бы 0 HP у ОБОИХ
     # на раунде 3 - рендерер обязан подменить его на result.final_hp_a/b
     # (та же UX-подмена 2.6), иначе в логе будет "0 против 0".
-    assert "Канеки 👊 70 (1 HP)" in dumped
+    assert "Канеки 👊 85 (1 HP)" in dumped
     assert "Крепкий боец — (0 HP)" in dumped
+
+
+def test_rich_message_running_hp_accounts_for_regen_not_just_damage():
+    # Регрессия: раньше бегущий HP в промежуточных раундах считался только
+    # вычитанием damage_to_a/b, полностью игнорируя RegenAction.healed -
+    # раунд с регенерацией показывал заниженный (может, буквально "0 HP")
+    # HP, хотя боец на самом деле вылечился. Найдено живым прогоном
+    # scripts/battle_text_demo.py, см. чат.
+    fighter_a, fighter_b = make_fighter(1, "Канеки"), make_fighter(2, "Крепкий боец")
+    result = make_battle_result(fighter_a, fighter_b)
+
+    dumped = make_generator().build_rich_message(result, fighter_a, fighter_b).model_dump_json(
+        exclude_none=True
+    )
+
+    # После раунда 2: hp_b = 70 (после раунда 1) + 15 (регенерация) - 0 (урон) = 85.
+    assert "Крепкий боец 💊 +15 ⚡👊 10 (85 HP)" in dumped
 
 
 def test_build_rich_message_includes_winner_line():
