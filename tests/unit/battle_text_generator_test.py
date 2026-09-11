@@ -107,7 +107,10 @@ def test_build_rich_message_returns_valid_input_rich_message():
     assert '"type":"details"' in dumped
 
 
-def test_rich_message_renders_every_action_type_with_its_own_icon():
+def test_rich_message_action_section_has_no_hp_numbers():
+    # "Что произошло" (действие) и "итог раунда" (HP) - две РАЗНЫЕ секции,
+    # см. чат: смешивание их в одну строку было главным источником путаницы
+    # ("он лечится или умирает?" было неотвечаемо на глаз).
     fighter_a, fighter_b = make_fighter(1, "Канеки"), make_fighter(2, "Крепкий боец")
     result = make_battle_result(fighter_a, fighter_b)
 
@@ -115,12 +118,30 @@ def test_rich_message_renders_every_action_type_with_its_own_icon():
         exclude_none=True
     )
 
-    assert "👊 30" in dumped  # физическая атака A
-    assert "🦑 20" in dumped  # атака кагуне B
-    assert "💨 промах" in dumped  # промах A в раунде 2
-    assert "💊 +15" in dumped  # регенерация B
-    assert "⚡👊 10" in dumped  # бонусный удар от speed - B
-    assert "—" in dumped  # DefenseAction (зарезервированный тип) не падает
+    assert "👊 Канеки наносит удар — 30 урона" in dumped  # физическая атака A
+    assert "🦑 Крепкий боец наносит удар — 20 урона" in dumped  # атака кагуне B
+    assert "💨 Канеки промахивается" in dumped  # промах A в раунде 2
+    assert "💊 Крепкий боец регенерирует — +15 HP" in dumped  # регенерация B
+    assert "⚡👊 Крепкий боец успевает ударить ещё раз — 10 урона" in dumped  # бонус от speed
+
+
+def test_rich_message_outcome_line_shows_full_hp_chain_with_causes():
+    # Регрессия по мотивам чата: раньше строка вида "регенерирует (7 -> 19)"
+    # молчала о том, что этот же боец в ЭТОМ ЖЕ раунде ещё и получает урон
+    # (регенерация не защищает от урона, только замещает СВОЮ атаку) -
+    # "лечится или умирает?" было неотвечаемо на глаз. Цепочка с причиной
+    # каждого шага отвечает на это одним взглядом.
+    fighter_a, fighter_b = make_fighter(1, "Канеки"), make_fighter(2, "Крепкий боец")
+    result = make_battle_result(fighter_a, fighter_b)
+
+    dumped = make_generator().build_rich_message(result, fighter_a, fighter_b).model_dump_json(
+        exclude_none=True
+    )
+
+    # После раунда 2: hp_b = 70 (после раунда 1) + 15 (регенерация), урона в
+    # этом раунде B не получил (damage_to_b=0) - цепочка останавливается на
+    # регенерации, шага "урон" в этом раунде для B нет.
+    assert "❤️ Крепкий боец: 70 → 85 (+15 регенерация) HP" in dumped
 
 
 def test_rich_message_last_round_shows_display_hp_not_raw_zero_on_mutual_ko():
@@ -132,27 +153,11 @@ def test_rich_message_last_round_shows_display_hp_not_raw_zero_on_mutual_ko():
     )
 
     # Честный расчёт (сложение damage_to_a/b по раундам) дал бы 0 HP у ОБОИХ
-    # на раунде 3 - рендерер обязан подменить его на result.final_hp_a/b
-    # (та же UX-подмена 2.6), иначе в логе будет "0 против 0".
-    assert "Р3 · Канеки: 👊 85 (1 HP)" in dumped
-    assert "Р3 · Крепкий боец: — (0 HP)" in dumped
-
-
-def test_rich_message_running_hp_accounts_for_regen_not_just_damage():
-    # Регрессия: раньше бегущий HP в промежуточных раундах считался только
-    # вычитанием damage_to_a/b, полностью игнорируя RegenAction.healed -
-    # раунд с регенерацией показывал заниженный (может, буквально "0 HP")
-    # HP, хотя боец на самом деле вылечился. Найдено живым прогоном
-    # scripts/battle_text_demo.py, см. чат.
-    fighter_a, fighter_b = make_fighter(1, "Канеки"), make_fighter(2, "Крепкий боец")
-    result = make_battle_result(fighter_a, fighter_b)
-
-    dumped = make_generator().build_rich_message(result, fighter_a, fighter_b).model_dump_json(
-        exclude_none=True
-    )
-
-    # После раунда 2: hp_b = 70 (после раунда 1) + 15 (регенерация) - 0 (урон) = 85.
-    assert "Р2 · Крепкий боец: 💊 +15 ⚡👊 10 (85 HP)" in dumped
+    # на раунде 3 - рендерер обязан подменить последний шаг цепочки на
+    # result.final_hp_a/b (та же UX-подмена 2.6), иначе в логе будет
+    # "0 против 0". Победитель (A) после подмены даже не помечается 💀.
+    assert "❤️ Канеки: 70 → 1 (-70 урон) HP" in dumped
+    assert "💀 Крепкий боец: 85 → 0 (-85 урон) HP — повержен" in dumped
 
 
 def test_build_rich_message_includes_winner_line():
@@ -197,7 +202,7 @@ def test_build_plain_text_is_condensed_without_per_round_breakdown():
     assert "Крепкий боец" in text
     assert "Победитель: Канеки" in text
     assert "Раундов: 3" in text  # только счётчик...
-    assert "Р1 ·" not in text  # ...без самого списка раундов, см. docstring
+    assert "Раунд 1" not in text  # ...без самого списка раундов, см. docstring
 
 
 # --- MAX_WIDTH_TEXT_RICH_MESSAGE - ни одна строка не переносится ------------

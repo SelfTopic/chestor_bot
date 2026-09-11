@@ -15,11 +15,34 @@ rate-limit Telegram на редактирование сообщений, обр
 подтверждено автором (в отличие от `build_ghoul_profile_rich_message`,
 здесь два публичных метода делят приватные хелперы форматирования одного
 раунда/действия, и в будущем добавится третий - пораундовый рендер для
-анимации, - которому те же хелперы тоже понадобятся)."""
+анимации, - которому те же хелперы тоже понадобятся).
+
+Формат раунда - "что произошло" / "итог раунда" РАЗДЕЛЬНО (см. чат,
+результат нескольких итераций вручную нарисованного автором мокапа):
+- Первая версия клеила два имени и HP в одну строку ("Раунд N: A ... —
+  B ...") - переносилась на экране (см. MAX_WIDTH_TEXT_RICH_MESSAGE).
+- Вторая (по одному имени на строку) читалась только "обученным" - число
+  без подписи ("(43 HP)") не говорит, ЧЬЁ это HP и относится ли оно к
+  этому раунду целиком или к одному конкретному удару.
+- Третья проблема, вскрытая автором вручную: строка вида "gojoat666
+  регенерирует (7 -> 19)" молчит о том, что этот же боец в ЭТОМ ЖЕ раунде
+  ещё и получает урон (регенерация не защищает от урона - она замещает
+  только СОБСТВЕННУЮ атаку, см. REGENERATION.md) - "он лечится или
+  умирает?" было неотвечаемо на глаз.
+
+Решение: секция "что произошло" ВООБЩЕ не содержит чисел HP (только
+действие и его прямой эффект - урон/лечение) - там физически негде
+перепутать, чьё и какое HP. Секция "итог раунда" считается ОДИН раз,
+после того как весь раунд (оба бойца, вся регенерация, весь урон)
+полностью разрешён, и показывает ПОЛНУЮ цепочку "было -> стало (причина)"
+для каждого бойца отдельно - "7 -> 19 (+12 регенерация) -> 0 (-24 урон)"
+отвечает на "лечится или умирает" одним взглядом, без потребности знать
+про одновременность действий в раунде."""
 
 from __future__ import annotations
 
-from typing import List, Tuple
+from dataclasses import dataclass
+from typing import List, Optional, Tuple
 
 from aiogram.types import (
     InputRichBlockDetails,
@@ -43,7 +66,6 @@ from .core import (
     IdleAction,
     RegenAction,
     RoundAction,
-    RoundResult,
 )
 
 _HIT_ICON = {AttackType.PHYSICAL: "👊", AttackType.KAGUNE: "🦑"}
@@ -85,7 +107,7 @@ def _truncate_to_width(text: str, max_width: int) -> str:
 def _fit_line(
     name: str, prefix: str = "", suffix: str = "", max_width: int = MAX_WIDTH_TEXT_RICH_MESSAGE
 ) -> str:
-    """Собирает `{prefix}{name}{suffix}`, обрезая ИМЕННО name (а не konец
+    """Собирает `{prefix}{name}{suffix}`, обрезая ИМЕННО name (а не конец
     строки вслепую) так, чтобы вся строка целиком не превышала max_width -
     prefix/suffix (иконки, HP, счётчики) всегда остаются целыми, это они
     несут игровую информацию, обрезать есть смысл только переменную по
@@ -96,28 +118,95 @@ def _fit_line(
     return f"{prefix}{_truncate_to_width(name, name_budget)}{suffix}"
 
 
-def _format_hit(hit: HitResult) -> str:
-    # attack_type всегда заполнен при landed=True (см. hit.py) - вторая
-    # часть условия защищает только pyright (Optional), реального
-    # landed=True + attack_type=None не бывает.
+# --- "Что произошло" - действие само по себе, БЕЗ единого числа HP ---------
+
+
+def _hit_verb_and_icon(hit: HitResult, is_fast: bool) -> Tuple[str, str]:
     if not hit.landed or hit.attack_type is None:
-        return "💨 промах"
-    return f"{_HIT_ICON[hit.attack_type]} {round(hit.damage)}"
+        icon = "⚡💨" if is_fast else "💨"
+        verb = "не успевает ударить ещё раз" if is_fast else "промахивается"
+        return icon, verb
+
+    base_icon = _HIT_ICON[hit.attack_type]
+    icon = f"⚡{base_icon}" if is_fast else base_icon
+    verb = "успевает ударить ещё раз" if is_fast else "наносит удар"
+    return icon, f"{verb} — {round(hit.damage)} урона"
 
 
-def _format_action(action: RoundAction) -> str:
-    if isinstance(action, AttackAction):
-        return _format_hit(action.hit)
-    if isinstance(action, FastAttackAction):
-        return "⚡" + _format_hit(action.hit)
+def _action_icon_and_text(action: RoundAction) -> "Optional[Tuple[str, str]]":
+    """None - для DEFENSE/IDLE (зарезервированы в actions.py, decide_action
+    их пока никогда не возвращает, но рендерер не должен упасть, если это
+    изменится без обновления этого файла) - рассказывать о них нечего,
+    секция "что произошло" их просто пропускает."""
+
     if isinstance(action, RegenAction):
-        return f"💊 +{round(action.healed)}"
+        return "💊", f"регенерирует — +{round(action.healed)} HP"
+    if isinstance(action, AttackAction):
+        return _hit_verb_and_icon(action.hit, is_fast=False)
+    if isinstance(action, FastAttackAction):
+        return _hit_verb_and_icon(action.hit, is_fast=True)
     if isinstance(action, (DefenseAction, IdleAction)):
-        # Зарезервированы (actions.py) - decide_action их пока никогда не
-        # возвращает, но рендерер не должен упасть, если это изменится
-        # без обновления этого файла.
-        return "—"
+        return None
     raise NotImplementedError(f"Неизвестный тип действия для рендера: {type(action)!r}")
+
+
+def _action_lines(fighter: Fighter, actions: List[RoundAction]) -> List[str]:
+    lines: List[str] = []
+    for action in actions:
+        icon_and_text = _action_icon_and_text(action)
+        if icon_and_text is None:
+            continue
+        icon, text = icon_and_text
+        lines.append(_fit_line(fighter.name, prefix=f"{icon} ", suffix=f" {text}"))
+    return lines
+
+
+# --- "Итог раунда" - цепочка HP-шагов на бойца, посчитанная ОДИН раз -------
+
+
+@dataclass(frozen=True)
+class _HpStep:
+    value: float
+    delta: Optional[float] = None  # None - стартовое значение раунда
+    cause: Optional[str] = None
+
+
+def _build_hp_trajectory(hp_before: float, healed: float, damage: float) -> List[_HpStep]:
+    """Порядок шагов повторяет ПОРЯДОК движка (Battle._play_one_round):
+    сначала регенерация (Fighter.apply_heal внутри _resolve_participant),
+    потом урон (take_damage - последней строкой, уже после того как ОБА
+    бойца полностью резолвились). Регенерация НЕ защищает от урона в этом
+    же раунде - именно поэтому оба шага в одной цепочке, а не альтернативы
+    друг другу."""
+
+    steps = [_HpStep(value=hp_before)]
+    current = hp_before
+    if healed > 0:
+        current = current + healed
+        steps.append(_HpStep(value=current, delta=healed, cause="регенерация"))
+    if damage > 0:
+        current = max(0.0, current - damage)
+        steps.append(_HpStep(value=current, delta=-damage, cause="урон"))
+    return steps
+
+
+def _format_hp_chain(steps: List[_HpStep]) -> str:
+    if len(steps) == 1:
+        return f"{round(steps[0].value)} HP (без изменений)"
+
+    parts = [str(round(steps[0].value))]
+    for step in steps[1:]:
+        delta = step.delta or 0.0
+        sign = "+" if delta >= 0 else ""
+        parts.append(f"{round(step.value)} ({sign}{round(delta)} {step.cause})")
+    return " → ".join(parts) + " HP"
+
+
+def _fighter_outcome_line(fighter: Fighter, steps: List[_HpStep]) -> str:
+    is_defeated = steps[-1].value <= 0
+    prefix = "💀 " if is_defeated else "❤️ "
+    suffix = f": {_format_hp_chain(steps)}" + (" — повержен" if is_defeated else "")
+    return _fit_line(fighter.name, prefix=prefix, suffix=suffix)
 
 
 class BattleTextGenerator:
@@ -169,10 +258,11 @@ class BattleTextGenerator:
         """Фолбэк на случай, если `answer_rich` недоступен (см.
         race_profile_router.py - тот же паттерн try/except TelegramAPIError).
         Намеренно БЕЗ раундов - в отличие от rich-версии, здесь их некуда
-        свернуть, а бой может идти 20-30 раундов; полный лог только в
-        rich-сообщении, тут - голая сводка. Каждая строка уже обрезана под
-        MAX_WIDTH_TEXT_RICH_MESSAGE - шаблон в dialogs.json просто их
-        склеивает переносами строк, не комбинируя два имени в одной."""
+        свернуть, а бой может идти 20-30 раундов (и теперь каждый раунд -
+        это несколько строк "что произошло" + "итог", не одна); полный лог
+        только в rich-сообщении, тут - голая сводка. Каждая строка уже
+        обрезана под MAX_WIDTH_TEXT_RICH_MESSAGE - шаблон в dialogs.json
+        просто их склеивает переносами строк, не комбинируя два имени."""
 
         winner_line, loser_line = self._winner_lines(result, fighter_a, fighter_b)
         hp_line_a, hp_line_b = self._hp_lines(result, fighter_a, fighter_b)
@@ -214,8 +304,9 @@ class BattleTextGenerator:
     def _round_lines(
         self, result: BattleResult, fighter_a: Fighter, fighter_b: Fighter
     ) -> List[str]:
-        """Два элемента списка на раунд (по одному на бойца), не один
-        комбинированный - та же причина, что у _winner_lines/_hp_lines."""
+        """На раунд: разделитель, все строки "что произошло" (оба бойца,
+        без чисел HP), затем ровно 2 строки "итог раунда" (по одному
+        бойцу) - см. docstring модуля про то, почему именно так."""
 
         hp_a = fighter_a.stats.health
         hp_b = fighter_b.stats.health
@@ -223,52 +314,40 @@ class BattleTextGenerator:
         lines: List[str] = []
 
         for round_result in result.rounds:
-            hp_a, hp_b = self._apply_round_hp_change(round_result, hp_a, hp_b)
-            display_hp_a, display_hp_b = hp_a, hp_b
+            lines.append(f"──── Раунд {round_result.round_number} ────")
+            lines.extend(_action_lines(fighter_a, round_result.actions_a))
+            lines.extend(_action_lines(fighter_b, round_result.actions_b))
+
+            healed_a = sum(
+                a.healed for a in round_result.actions_a if isinstance(a, RegenAction)
+            )
+            healed_b = sum(
+                a.healed for a in round_result.actions_b if isinstance(a, RegenAction)
+            )
+            steps_a = _build_hp_trajectory(hp_a, healed_a, round_result.damage_to_a)
+            steps_b = _build_hp_trajectory(hp_b, healed_b, round_result.damage_to_b)
+            hp_a, hp_b = steps_a[-1].value, steps_b[-1].value
 
             if round_result.round_number == last_round_number:
-                # На последнем раунде честные hp_a/hp_b могут быть 0/0
-                # (обоюдный нокаут) - BattleResult.final_hp_* уже несёт
-                # UX-подмену победителя на mutual_ko_winner_hp (2.6),
-                # переиспользуем её тут же, иначе лог покажет "0 против 0" -
-                # ровно ту путаницу, которую 2.6 и должна была убрать.
-                display_hp_a, display_hp_b = result.final_hp_a, result.final_hp_b
+                # На последнем раунде честный последний шаг может быть 0/0
+                # у ОБОИХ (обоюдный нокаут) - BattleResult.final_hp_* уже
+                # несёт UX-подмену победителя на mutual_ko_winner_hp (2.6).
+                # Не-мутуал-КО случаи здесь ничего не меняют - final_hp_*
+                # и так совпадает с честным значением, замена молча no-op.
+                steps_a = _apply_mutual_ko_display(steps_a, result.final_hp_a)
+                steps_b = _apply_mutual_ko_display(steps_b, result.final_hp_b)
 
-            prefix = f"Р{round_result.round_number} · "
-            lines.append(
-                self._fit_action_line(prefix, fighter_a, round_result.actions_a, display_hp_a)
-            )
-            lines.append(
-                self._fit_action_line(prefix, fighter_b, round_result.actions_b, display_hp_b)
-            )
+            lines.append(_fighter_outcome_line(fighter_a, steps_a))
+            lines.append(_fighter_outcome_line(fighter_b, steps_b))
 
         return lines
 
-    @staticmethod
-    def _fit_action_line(
-        prefix: str, fighter: Fighter, actions: List[RoundAction], hp: float
-    ) -> str:
-        actions_str = " ".join(_format_action(a) for a in actions) or "—"
-        suffix = f": {actions_str} ({round(hp)} HP)"
-        return _fit_line(fighter.name, prefix=prefix, suffix=suffix)
 
-    @staticmethod
-    def _apply_round_hp_change(
-        round_result: RoundResult, hp_a: float, hp_b: float
-    ) -> "tuple[float, float]":
-        """Урон - НЕ единственное, что меняет HP за раунд: RegenAction
-        лечит в тот же раунд (Fighter.apply_heal уже применяется ДО того,
-        как в _play_one_round применяется очередь урона). Раньше здесь
-        учитывался только damage_to_a/b - раунд с регенерацией показывал
-        заниженный (иногда буквально "0 HP") HP, хотя боец на самом деле
-        вылечился. Found через scripts/battle_text_demo.py (см. чат)."""
-
-        healed_a = sum(a.healed for a in round_result.actions_a if isinstance(a, RegenAction))
-        healed_b = sum(a.healed for a in round_result.actions_b if isinstance(a, RegenAction))
-        return (
-            max(0.0, hp_a + healed_a - round_result.damage_to_a),
-            max(0.0, hp_b + healed_b - round_result.damage_to_b),
-        )
+def _apply_mutual_ko_display(steps: List[_HpStep], final_hp: float) -> List[_HpStep]:
+    if not steps or steps[-1].value == final_hp:
+        return steps
+    last = steps[-1]
+    return steps[:-1] + [_HpStep(value=final_hp, delta=last.delta, cause=last.cause)]
 
 
 __all__ = ["BattleTextGenerator", "MAX_WIDTH_TEXT_RICH_MESSAGE"]
