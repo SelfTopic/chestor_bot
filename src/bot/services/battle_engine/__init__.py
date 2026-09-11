@@ -20,8 +20,10 @@ from .core import (
     RoundActionType,
     RoundResult,
 )
+from .text_generator import BattleTextGenerator
 
 __all__ = [
+    "BattleTextGenerator",
     "AttackAction",
     "AttackType",
     "Battle",

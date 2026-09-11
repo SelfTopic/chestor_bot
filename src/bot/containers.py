@@ -19,6 +19,7 @@ from .repositories import (
 )
 from .services import (
     BanService,
+    BattleTextGenerator,
     BroadcastService,
     ChatService,
     CooldownService,
@@ -77,6 +78,10 @@ class Container(containers.DeclarativeContainer):
     death_log_repository = providers.Factory(DeathLogRepository, session=db_session)
 
     dialog_service = providers.Factory(DialogService)
+
+    battle_text_generator = providers.Factory(
+        BattleTextGenerator, dialog_service=dialog_service
+    )
 
     media_downloader = providers.Factory(MediaDownloader, bot=bot)
 
