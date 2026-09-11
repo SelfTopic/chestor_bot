@@ -167,6 +167,16 @@ def _hit_verb_and_icon(hit: HitResult, is_fast: bool) -> Tuple[str, str]:
         verb = "не успевает ударить ещё раз" if is_fast else "промахивается"
         return icon, verb
 
+    if round(hit.damage) <= 0:
+        # Удар долетел (уклонение НЕ сработало), но блок/защита погасили
+        # его почти целиком - при статах свежего гуля (strength=1) даже
+        # "скромный" блок 10-20% срезает и без того крошечный урон до
+        # значения, которое округляется в 0. "Наносит удар - 0 урона"
+        # читается как баг ("попал, но ничего не произошло?"), хотя
+        # механически честно - см. чат. Баланс НЕ меняем, только слова.
+        icon = "⚡🛡️" if is_fast else "🛡️"
+        return icon, "не пробивает защиту"
+
     base_icon = _HIT_ICON[hit.attack_type]
     icon = f"⚡{base_icon}" if is_fast else base_icon
     verb = "успевает ударить ещё раз" if is_fast else "наносит удар"
@@ -180,6 +190,11 @@ def _action_icon_and_text(action: RoundAction) -> "Optional[Tuple[str, str]]":
     секция "что произошло" их просто пропускает."""
 
     if isinstance(action, RegenAction):
+        if round(action.healed) <= 0:
+            # Та же история, что и с "не пробивает защиту" - регенерация
+            # реально сработала (это не промах), просто восстановила
+            # меньше половины HP-очка при крошечных статах.
+            return "💊", "регенерирует, но почти не восстанавливает HP"
         return "💊", f"регенерирует — +{round(action.healed)} HP"
     if isinstance(action, AttackAction):
         return _hit_verb_and_icon(action.hit, is_fast=False)
@@ -230,6 +245,14 @@ def _build_hp_trajectory(hp_before: float, healed: float, damage: float) -> List
     return steps
 
 
+# "0 урон"/"0 регенерация" в скобках при РЕАЛЬНО случившемся (не пропущенном)
+# эффекте читается как баг ("что-то случилось, но ничего не изменилось?") -
+# та же история, что и "не пробивает защиту" в _hit_verb_and_icon (см. чат,
+# статы свежего гуля настолько малы, что меньше половины HP-очка теряется
+# постоянно). Слова меняем, число - нет.
+_ZERO_DELTA_LABEL = {"урон": "не пробил", "регенерация": "почти не помогла"}
+
+
 def _format_hp_chain(steps: List[_HpStep]) -> str:
     if len(steps) == 1:
         return f"{round(steps[0].value)} HP (без изменений)"
@@ -244,7 +267,13 @@ def _format_hp_chain(steps: List[_HpStep]) -> str:
             # HP выросло, а подпись утверждает обратное.
             parts.append(str(round(step.value)))
             continue
+
         delta = step.delta or 0.0
+        if round(delta) == 0:
+            label = _ZERO_DELTA_LABEL.get(step.cause, step.cause)
+            parts.append(f"{round(step.value)} ({label})")
+            continue
+
         sign = "+" if delta >= 0 else ""
         parts.append(f"{round(step.value)} ({sign}{round(delta)} {step.cause})")
     return " → ".join(parts) + " HP"

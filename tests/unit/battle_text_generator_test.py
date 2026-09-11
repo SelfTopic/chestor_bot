@@ -205,6 +205,71 @@ def test_rich_message_action_section_has_no_hp_numbers():
     assert "Крепкий боец успевает ударить ещё раз — 10 урона" in joined  # бонус от speed
 
 
+def test_landed_hit_that_rounds_to_zero_damage_says_did_not_break_through():
+    # Регрессия (см. чат, реальный бой на статах свежего гуля - strength=1,
+    # health=5-6): удар долетел (уклонение не сработало), но блок срезал
+    # его почти целиком - "наносит удар - 0 урона" читается как баг
+    # ("попал, но ничего не произошло?"), хотя механически честно. Слова
+    # меняем, число (HP) - нет, поэтому этот тест ничего не проверяет на
+    # уровне HP-цепочки - для неё отдельный тест ниже.
+    fighter_a, fighter_b = make_fighter(1, "Канеки"), make_fighter(2, "Крепкий боец")
+    tiny_hit = RoundResult(
+        round_number=1,
+        actions_a=[AttackAction(hit=_hit(True, 0.3, AttackType.PHYSICAL))],
+        actions_b=[FastAttackAction(hit=_hit(True, 0.4, AttackType.KAGUNE))],
+        damage_to_a=0.4,
+        damage_to_b=0.3,
+    )
+    result = BattleResult(
+        rounds=[tiny_hit],
+        winner=None,
+        ended_naturally=False,
+        final_hp_a=fighter_a.stats.health - 0.4,
+        final_hp_b=fighter_b.stats.health - 0.3,
+        stats_a=fighter_a.stats,
+        stats_b=fighter_b.stats,
+    )
+
+    lines = _all_paragraph_lines(
+        make_generator().build_rich_message(result, fighter_a, fighter_b, RANK_A, RANK_B)
+    )
+    joined = "\n".join(lines)
+
+    assert "Канеки не пробивает защиту" in joined
+    assert "Крепкий боец не пробивает защиту" in joined
+    assert "0 урона" not in joined
+    assert "(не пробил)" in joined  # в итоговой HP-цепочке тоже, не только в "что произошло"
+    assert "(0 урон)" not in joined
+
+
+def test_regen_that_rounds_to_zero_heal_says_almost_no_effect():
+    fighter_a, fighter_b = make_fighter(1, "Канеки"), make_fighter(2, "Крепкий боец")
+    tiny_heal = RoundResult(
+        round_number=1,
+        actions_a=[RegenAction(healed=0.2, was_guaranteed=True)],
+        actions_b=[AttackAction(hit=_hit(False))],
+        damage_to_a=0.0,
+        damage_to_b=0.0,
+    )
+    result = BattleResult(
+        rounds=[tiny_heal],
+        winner=None,
+        ended_naturally=False,
+        final_hp_a=fighter_a.stats.health,
+        final_hp_b=fighter_b.stats.health,
+        stats_a=fighter_a.stats,
+        stats_b=fighter_b.stats,
+    )
+
+    lines = _all_paragraph_lines(
+        make_generator().build_rich_message(result, fighter_a, fighter_b, RANK_A, RANK_B)
+    )
+    joined = "\n".join(lines)
+
+    assert "Канеки регенерирует, но почти не восстанавливает HP" in joined
+    assert "+0 HP" not in joined
+
+
 def test_rich_message_outcome_line_shows_full_hp_chain_with_causes():
     # Регрессия по мотивам чата: раньше строка вида "регенерирует (7 -> 19)"
     # молчала о том, что этот же боец в ЭТОМ ЖЕ раунде ещё и получает урон
