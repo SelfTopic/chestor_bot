@@ -236,6 +236,14 @@ def _format_hp_chain(steps: List[_HpStep]) -> str:
 
     parts = [str(round(steps[0].value))]
     for step in steps[1:]:
+        if step.cause is None:
+            # UX-подмена mutual_ko_winner_hp (2.6, см. _apply_mutual_ko_display) -
+            # причина потеряла смысл (значение уже не честное), поэтому без
+            # причины/дельты вообще, а не с устаревшей меткой "урон"/
+            # "регенерация" - иначе получится "0 -> 1 (-1 урон)", то есть
+            # HP выросло, а подпись утверждает обратное.
+            parts.append(str(round(step.value)))
+            continue
         delta = step.delta or 0.0
         sign = "+" if delta >= 0 else ""
         parts.append(f"{round(step.value)} ({sign}{round(delta)} {step.cause})")
@@ -250,10 +258,16 @@ def _fighter_outcome_line(fighter: Fighter, steps: List[_HpStep]) -> RichLine:
 
 
 def _apply_mutual_ko_display(steps: List[_HpStep], final_hp: float) -> List[_HpStep]:
+    """Подменяет ЗНАЧЕНИЕ последнего шага, но НЕ его delta/cause - те
+    посчитаны для честного (непоказанного) числа и после подмены больше
+    не соответствуют действительности. Раньше подмена сохраняла старые
+    delta/cause, из-за чего строка могла выглядеть как "0 -> 1 (-1 урон)" -
+    HP выросло, а подпись утверждает обратное (см. чат, реальный бой на
+    малых статах, где это проявилось)."""
+
     if not steps or steps[-1].value == final_hp:
         return steps
-    last = steps[-1]
-    return steps[:-1] + [_HpStep(value=final_hp, delta=last.delta, cause=last.cause)]
+    return steps[:-1] + [_HpStep(value=final_hp)]
 
 
 class BattleTextGenerator:
