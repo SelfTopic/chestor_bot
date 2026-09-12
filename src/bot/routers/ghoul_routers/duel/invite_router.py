@@ -6,9 +6,19 @@
 боем (`BattleService.validate_duel`), дневные лимиты (5/пара, 20/сутки -
 см. `BATTLE_ENGINE.md` 1.2/4.4), и обе стороны должны иметь открытую ЛС с
 ботом (`User.has_private_chat`) - без этого секретный шаг "всерьёз/фора"
-(1.5) и часть остальных сообщений некуда доставить."""
+(1.5) и часть остальных сообщений некуда доставить.
+
+Отдельный случай - дуэль вызвана из ЛС инициатора с ботом (соперник
+указан через @username, без общего группового чата). Тогда `message.chat`
+- приватный чат ровно между инициатором и ботом, соперник в нём не
+состоит и никогда не увидит там приглашение (найдено как баг при ревью -
+Telegram ЛС не бывает "на троих"). В этом случае приглашение дублируется
+в ОБА личных чата - см. `is_private_origin` на `DuelSession`."""
+
+import logging
 
 from aiogram import Bot, Router
+from aiogram.exceptions import TelegramAPIError
 from aiogram.types import Message
 from dependency_injector.wiring import Provide, inject
 
@@ -25,6 +35,7 @@ from .background import expire_consent, spawn
 from .keyboards import consent_keyboard
 
 router = Router(name=__name__)
+logger = logging.getLogger(__name__)
 
 
 @router.message(Text("дуэль", startswith=True))
@@ -136,20 +147,39 @@ async def duel_invite_handler(
         await message.reply("Не удалось начать дуэль - один из участников уже занят.")
         return None
 
+    is_private_origin = message.chat.type == "private"
     duel_session = await duel_service.create(
         chat_id=message.chat.id,
         initiator_telegram_id=initiator_id,
         target_telegram_id=target_id,
+        is_private_origin=is_private_origin,
     )
 
-    sent = await message.answer(
+    invite_text = (
         f"⚔️ {initiator_user.full_name} вызывает {target_user.full_name} на дуэль!\n"
-        f"Бой начнётся только после подтверждения ОБЕИХ сторон.",
-        reply_markup=consent_keyboard(duel_session.id, initiator_id, target_id),
+        f"Бой начнётся только после подтверждения ОБЕИХ сторон."
     )
-    await duel_service.atomic_update(
-        duel_session.id, "awaiting_consent", consent_message_id=sent.message_id
-    )
+    keyboard = consent_keyboard(duel_session.id, initiator_id, target_id)
+
+    if is_private_origin:
+        # ЛС инициатора с ботом не видна сопернику - дублируем
+        # приглашение в его СОБСТВЕННЫЙ чат с ботом, иначе он никогда не
+        # увидит кнопку "принимаю бой". Message.answer() тут не годится -
+        # шлём явно в оба chat_id по отдельности, id сообщений не
+        # трекаем (see fight.py - в приватном случае не редактируем эти
+        # сообщения дальше, это чисто косметика).
+        for chat_id in (initiator_id, target_id):
+            try:
+                await bot.send_message(chat_id=chat_id, text=invite_text, reply_markup=keyboard)
+            except TelegramAPIError:
+                logger.warning(
+                    "duel %s: failed to deliver invite to %s", duel_session.id, chat_id
+                )
+    else:
+        sent = await message.answer(invite_text, reply_markup=keyboard)
+        await duel_service.atomic_update(
+            duel_session.id, "awaiting_consent", consent_message_id=sent.message_id
+        )
 
     spawn(expire_consent(bot, duel_session.id))
     return None

@@ -101,21 +101,40 @@ async def run_and_announce_fight(
     )
     keyboard = outcome_keyboard(duel_session.id, winner_telegram_id) if winner_telegram_id else None
 
-    sent = None
-    try:
-        sent = await bot.send_rich_message(
-            chat_id=duel_session.chat_id, rich_message=rich_message, reply_markup=keyboard
-        )
-    except TelegramAPIError:
-        fallback_text = services.battle_text_generator.build_plain_text(
-            result, fighter_a, fighter_b, rank_a, rank_b
-        )
+    fallback_text: Optional[str] = None
+
+    async def _announce(chat_id: int):
+        nonlocal fallback_text
         try:
-            sent = await bot.send_message(
-                chat_id=duel_session.chat_id, text=fallback_text, reply_markup=keyboard
+            return await bot.send_rich_message(
+                chat_id=chat_id, rich_message=rich_message, reply_markup=keyboard
             )
         except TelegramAPIError:
-            logger.warning("duel %s: failed to announce fight result", duel_session.id)
+            if fallback_text is None:
+                fallback_text = services.battle_text_generator.build_plain_text(
+                    result, fighter_a, fighter_b, rank_a, rank_b
+                )
+            try:
+                return await bot.send_message(
+                    chat_id=chat_id, text=fallback_text, reply_markup=keyboard
+                )
+            except TelegramAPIError:
+                logger.warning(
+                    "duel %s: failed to announce fight result to %s", duel_session.id, chat_id
+                )
+                return None
+
+    sent = None
+    if duel_session.is_private_origin:
+        # ЛС инициатора и ЛС соперника - РАЗНЫЕ, невидимые друг другу
+        # чаты (найдено как баг при ревью) - дублируем лог боя в оба.
+        # message_id не трекаем (в отличие от группового случая) - в
+        # приватном происхождении не пытаемся дальше редактировать/убирать
+        # клавиатуру исхода, это чисто косметика.
+        for chat_id in (duel_session.initiator_telegram_id, duel_session.target_telegram_id):
+            await _announce(chat_id)
+    else:
+        sent = await _announce(duel_session.chat_id)
 
     if winner_telegram_id is None or loser_telegram_id is None:
         # Настоящая ничья (тай-брейк не спас, см. BATTLE_ENGINE.md 2.6) -
@@ -220,12 +239,19 @@ async def finalize_outcome(
             )
         except TelegramAPIError:
             pass
-    try:
-        await bot.send_message(
-            chat_id=duel_session.chat_id, text=f"Победитель выбрал: {choice_label}."
-        )
-    except TelegramAPIError:
-        pass
+
+    outcome_text = f"Победитель выбрал: {choice_label}."
+    if duel_session.is_private_origin:
+        for chat_id in (duel_session.initiator_telegram_id, duel_session.target_telegram_id):
+            try:
+                await bot.send_message(chat_id=chat_id, text=outcome_text)
+            except TelegramAPIError:
+                pass
+    else:
+        try:
+            await bot.send_message(chat_id=duel_session.chat_id, text=outcome_text)
+        except TelegramAPIError:
+            pass
 
 
 __all__ = ["run_and_announce_fight", "finalize_outcome"]

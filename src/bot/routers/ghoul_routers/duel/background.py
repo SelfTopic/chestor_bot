@@ -56,12 +56,19 @@ async def expire_consent(bot: Bot, duel_id: int) -> None:
             )
             await session.commit()
 
-        if updated.consent_message_id:
+        timeout_text = "⌛ Время на согласие вышло - дуэль отменена."
+        if updated.is_private_origin:
+            for chat_id in (updated.initiator_telegram_id, updated.target_telegram_id):
+                try:
+                    await bot.send_message(chat_id=chat_id, text=timeout_text)
+                except TelegramAPIError:
+                    pass
+        elif updated.consent_message_id:
             try:
                 await bot.edit_message_text(
                     chat_id=updated.chat_id,
                     message_id=updated.consent_message_id,
-                    text="⌛ Время на согласие вышло - дуэль отменена.",
+                    text=timeout_text,
                 )
             except TelegramAPIError:
                 pass

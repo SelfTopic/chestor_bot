@@ -36,6 +36,16 @@ class DuelSession(Base):
     # происходящее"). Может быть и группой, и ЛС инициатора с ботом.
     chat_id: Mapped[int] = mapped_column(BigInteger, nullable=False)
 
+    # ВАЖНО: если дуэль вызвана из ЛС инициатора с ботом (например,
+    # соперник указан через @username без общего группового чата) -
+    # `chat_id` бесполезен для "чтобы все видели": это приватный чат
+    # ровно между инициатором и ботом, соперник в нём физически не
+    # состоит и никогда не увидит там ни кнопки, ни лог боя (найдено как
+    # баг при ревью - Telegram ЛС не бывает "на троих"). В этом случае
+    # invite_router/fight.py дублируют отправку в ОБА личных чата
+    # (initiator_telegram_id и target_telegram_id) вместо одного chat_id.
+    is_private_origin: Mapped[bool] = mapped_column(nullable=False, default=False)
+
     initiator_telegram_id: Mapped[int] = mapped_column(
         BigInteger, ForeignKey(User.telegram_id, ondelete="CASCADE"), nullable=False
     )

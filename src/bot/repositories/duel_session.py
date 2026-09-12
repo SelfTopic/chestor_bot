@@ -15,7 +15,11 @@ class DuelSessionRepository(Base):
         self.session = session
 
     async def create(
-        self, chat_id: int, initiator_telegram_id: int, target_telegram_id: int
+        self,
+        chat_id: int,
+        initiator_telegram_id: int,
+        target_telegram_id: int,
+        is_private_origin: bool = False,
     ) -> DuelSession:
         stmt = (
             insert(DuelSession)
@@ -23,6 +27,7 @@ class DuelSessionRepository(Base):
                 chat_id=chat_id,
                 initiator_telegram_id=initiator_telegram_id,
                 target_telegram_id=target_telegram_id,
+                is_private_origin=is_private_origin,
             )
             .returning(DuelSession)
         )

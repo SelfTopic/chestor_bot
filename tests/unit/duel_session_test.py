@@ -21,6 +21,27 @@ async def test_create_starts_in_awaiting_consent_stage(duel_service, make_user):
     assert duel_session.initiator_consented is False
     assert duel_session.target_consented is False
     assert duel_session.chat_id == -1001
+    assert duel_session.is_private_origin is False
+
+
+async def test_create_persists_is_private_origin(duel_service, make_user):
+    """Дуэль, вызванная из ЛС инициатора с ботом (@username без общего
+    группового чата) - соперник не состоит в этом чате и никогда не
+    увидит там ни кнопки, ни лог боя (см. чат, найдено как баг при
+    ревью) - роутер обязан знать об этом заранее, чтобы дублировать
+    отправку в оба личных чата."""
+
+    await make_user(telegram_id=600_000_015)
+    await make_user(telegram_id=600_000_016, username="tw_600016")
+
+    duel_session = await duel_service.create(
+        chat_id=600_000_015,
+        initiator_telegram_id=600_000_015,
+        target_telegram_id=600_000_016,
+        is_private_origin=True,
+    )
+
+    assert duel_session.is_private_origin is True
 
 
 async def test_get_returns_the_created_session(duel_service, make_user):

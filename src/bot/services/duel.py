@@ -14,12 +14,17 @@ class DuelService:
         self.duel_session_repository = duel_session_repository
 
     async def create(
-        self, chat_id: int, initiator_telegram_id: int, target_telegram_id: int
+        self,
+        chat_id: int,
+        initiator_telegram_id: int,
+        target_telegram_id: int,
+        is_private_origin: bool = False,
     ) -> DuelSession:
         return await self.duel_session_repository.create(
             chat_id=chat_id,
             initiator_telegram_id=initiator_telegram_id,
             target_telegram_id=target_telegram_id,
+            is_private_origin=is_private_origin,
         )
 
     async def atomic_update(
