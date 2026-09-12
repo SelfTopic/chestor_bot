@@ -172,3 +172,11 @@ def test_build_kagune_info_rich_message_is_valid_and_lists_all_types():
     # у Ринкаку это регенерация (×1.8), а не ловкость (×1.3, без звезды).
     assert "×1.8★" in dumped
     assert "×1.3" in dumped and "×1.3★" not in dumped
+    # Общая (лорная + механика урона) информация - раскрывающийся блок
+    # в самом начале сообщения (details содержит heading внутри blocks).
+    assert '"type":"details"' in dumped
+    assert '"summary"' in dumped
+    assert "Какухо" in dumped
+    details_index = dumped.index('"type":"details"')
+    heading_index = dumped.index('"type":"heading"')
+    assert details_index < heading_index
