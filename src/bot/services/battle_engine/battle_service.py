@@ -59,7 +59,15 @@ class BattleService:
             dexterity=ghoul.dexterity,
             regeneration=ghoul.regeneration,
             speed=ghoul.speed,
-            health=ghoul.max_health,  # полный боевой пул на старт боя, не текущее (возможно урезанное) HP
+            # ТЕКУЩЕЕ health, не max_health - иначе гуль с 1 HP (например,
+            # только что проигравший бой, см. 3.1 в BATTLE_ENGINE.md)
+            # начинал бы каждый следующий бой при полном пуле, полностью
+            # игнорируя пассивную регенерацию здоровья (см. чат) - весь
+            # смысл health как медленно восстанавливающегося ресурса между
+            # боями был бы потерян. materialize_passive_stats (вызывается
+            # внутри GhoulService.get) досчитывает health на текущий
+            # момент ДО того, как ghoul попадёт сюда - значение уже честное.
+            health=ghoul.health,
             hunger=ghoul.hunger,
             is_kakuja=ghoul.is_kakuja,
             kagune_strength=kagune_strength,

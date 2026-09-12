@@ -60,9 +60,11 @@ def make_service() -> BattleService:
 # --- ghoul_to_fighter --------------------------------------------------------
 
 
-def test_ghoul_to_fighter_maps_stats_and_uses_max_health_not_current():
-    # health (может быть урезано предыдущим боем) НЕ используется - в бой
-    # идёт полный пул max_health.
+def test_ghoul_to_fighter_maps_stats_and_uses_current_health_not_max():
+    # ТЕКУЩЕЕ health (пассивно регенерирует со временем), а не max_health -
+    # иначе гуль с 1 HP (например, только что проигравший бой, см. 3.1)
+    # начинал бы каждый следующий бой при полном пуле, полностью игнорируя
+    # пассивную регенерацию (см. чат).
     ghoul = make_ghoul(strength=123, dexterity=45, speed=67, regeneration=89, health=1, max_health=500)
 
     fighter = make_service().ghoul_to_fighter(ghoul, "chestor", FakeGhoulService())
@@ -73,7 +75,7 @@ def test_ghoul_to_fighter_maps_stats_and_uses_max_health_not_current():
     assert fighter.snapshot.dexterity == 45
     assert fighter.snapshot.speed == 67
     assert fighter.snapshot.regeneration == 89
-    assert fighter.snapshot.health == 500
+    assert fighter.snapshot.health == 1
 
 
 def test_ghoul_to_fighter_only_includes_owned_kagune_types():
@@ -95,7 +97,7 @@ def test_ghoul_to_fighter_with_no_kagune_gives_empty_dict():
 
 def test_power_of_sums_stats_and_kagune_strength():
     ghoul = make_ghoul(
-        strength=10, dexterity=20, speed=30, regeneration=40, max_health=50,
+        strength=10, dexterity=20, speed=30, regeneration=40, health=50, max_health=50,
         kagune_strength_ukaku=5,
     )
     fighter = make_service().ghoul_to_fighter(ghoul, "chestor", FakeGhoulService())
@@ -104,18 +106,37 @@ def test_power_of_sums_stats_and_kagune_strength():
     assert BattleService.power_of(fighter.snapshot) == 155
 
 
-def test_power_of_matches_calculate_power_shape_for_a_player_ghoul():
-    # power_of(fighter.snapshot) должен давать ТО ЖЕ число, что
-    # GhoulService.calculate_power(ghoul) - ghoul_to_fighter зеркалит поля
-    # 1:1, так что оба пути обязаны сходиться (иначе ранги игрока и моба
-    # считались бы по разным правилам).
-    ghoul = make_ghoul(strength=7, dexterity=8, speed=9, regeneration=10, max_health=11)
+def test_power_of_matches_calculate_power_at_full_health():
+    # power_of(fighter.snapshot) даёт ТО ЖЕ число, что
+    # GhoulService.calculate_power(ghoul) - НО только при health==max_health
+    # (свежий/полностью восстановленный гуль) - calculate_power (профиль,
+    # "распрофиль") всегда считает от max_health (стабильный вакуумный
+    # показатель), а power_of/ghoul_to_fighter - от ТЕКУЩЕГО health (см.
+    # чат: бой должен честно учитывать реальное состояние, а не всегда
+    # начинаться при полном пуле). Они совпадают ровно тогда, когда гуль
+    # не ранен - что и проверяет этот тест.
+    ghoul = make_ghoul(strength=7, dexterity=8, speed=9, regeneration=10, health=11, max_health=11)
     fighter = make_service().ghoul_to_fighter(ghoul, "chestor", FakeGhoulService())
 
     calculate_power_equivalent = (
         ghoul.strength + ghoul.dexterity + ghoul.speed + ghoul.max_health + ghoul.regeneration
     )
     assert BattleService.power_of(fighter.snapshot) == calculate_power_equivalent
+
+
+def test_power_of_is_lower_than_calculate_power_when_wounded():
+    # Регрессия (см. чат): ghoul_to_fighter раньше брал max_health вместо
+    # health - гуль с 1 HP из 500 (только что проигравший бой, см. 3.1)
+    # начинал бы следующий бой при полном пуле, полностью игнорируя
+    # пассивную регенерацию. Теперь раненый гуль честно слабее в бою, чем
+    # его "паспортная" (calculate_power) сила.
+    ghoul = make_ghoul(strength=7, dexterity=8, speed=9, regeneration=10, health=1, max_health=500)
+    fighter = make_service().ghoul_to_fighter(ghoul, "chestor", FakeGhoulService())
+
+    calculate_power_equivalent = (
+        ghoul.strength + ghoul.dexterity + ghoul.speed + ghoul.max_health + ghoul.regeneration
+    )
+    assert BattleService.power_of(fighter.snapshot) < calculate_power_equivalent
 
 
 # --- run_against_mob ----------------------------------------------------------
