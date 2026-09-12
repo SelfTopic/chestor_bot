@@ -31,6 +31,11 @@ class BattleRepository(Base):
         mob_name: Optional[str],
         winner: Optional[str],
         ended_naturally: bool,
+        is_forced: bool = False,
+        winner_choice: Optional[str] = None,
+        reward_level_progress: Optional[float] = None,
+        reward_rc: Optional[int] = None,
+        reward_balance: Optional[int] = None,
     ) -> Battle:
         stmt = (
             insert(Battle)
@@ -41,6 +46,11 @@ class BattleRepository(Base):
                 mob_name=mob_name,
                 winner=winner,
                 ended_naturally=ended_naturally,
+                is_forced=is_forced,
+                winner_choice=winner_choice,
+                reward_level_progress=reward_level_progress,
+                reward_rc=reward_rc,
+                reward_balance=reward_balance,
             )
             .returning(Battle)
         )

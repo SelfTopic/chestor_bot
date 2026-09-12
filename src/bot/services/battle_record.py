@@ -102,7 +102,14 @@ class BattleRecordService:
         mob_name: str,
         winner: Optional[str],
         ended_naturally: bool,
+        is_forced: bool = False,
+        reward_level_progress: Optional[float] = None,
+        reward_rc: Optional[int] = None,
     ) -> None:
+        """`winner_choice`/`reward_balance` не принимаются - "ограбить/
+        отпустить/съесть" (см. BATTLE_DESIGN.md "Исход боя") применимо
+        только к дуэли, у моба нет ни баланса, ни строки `User`."""
+
         await self.battle_repository.insert(
             battle_type="mob",
             participant_a_telegram_id=telegram_id,
@@ -110,6 +117,9 @@ class BattleRecordService:
             mob_name=mob_name,
             winner=winner,
             ended_naturally=ended_naturally,
+            is_forced=is_forced,
+            reward_level_progress=reward_level_progress,
+            reward_rc=reward_rc,
         )
 
     async def record_duel(
@@ -118,6 +128,11 @@ class BattleRecordService:
         telegram_id_b: int,
         winner: Optional[str],
         ended_naturally: bool,
+        is_forced: bool = False,
+        winner_choice: Optional[str] = None,
+        reward_level_progress: Optional[float] = None,
+        reward_rc: Optional[int] = None,
+        reward_balance: Optional[int] = None,
     ) -> None:
         await self.battle_repository.insert(
             battle_type="duel",
@@ -126,6 +141,11 @@ class BattleRecordService:
             mob_name=None,
             winner=winner,
             ended_naturally=ended_naturally,
+            is_forced=is_forced,
+            winner_choice=winner_choice,
+            reward_level_progress=reward_level_progress,
+            reward_rc=reward_rc,
+            reward_balance=reward_balance,
         )
 
     async def count_total_last_24h(self, telegram_id: int) -> int:

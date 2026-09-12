@@ -1,4 +1,5 @@
 import pytest
+from sqlalchemy import select
 
 from src.bot.exceptions import FighterHasPendingBattleError
 from src.bot.repositories.active_battle import ActiveBattleRepository
@@ -6,6 +7,7 @@ from src.bot.repositories.battle import BattleRepository
 from src.bot.services.battle_engine.battle_service import BattleService
 from src.bot.services.battle_engine.mob import MobService
 from src.bot.services.battle_record import BattleRecordService
+from src.database.models import Battle
 
 
 @pytest.fixture
@@ -124,6 +126,73 @@ async def test_record_and_count_duel_for_both_sides(battle_record_service, make_
     # Пара считается независимо от того, кто был "a", а кто "b" в записи.
     assert await battle_record_service.count_pair_last_24h(500_000_012, 500_000_013) == 1
     assert await battle_record_service.count_pair_last_24h(500_000_013, 500_000_012) == 1
+
+
+async def test_record_mob_fight_persists_forced_flag_and_rewards(
+    battle_record_service, make_user, session
+):
+    await make_user(telegram_id=500_000_017)
+
+    await battle_record_service.record_mob_fight(
+        telegram_id=500_000_017,
+        mob_name="Одичавший гуль",
+        winner="a",
+        ended_naturally=True,
+        is_forced=True,
+        reward_level_progress=0.2,
+        reward_rc=2,
+    )
+
+    battle = await session.scalar(
+        select(Battle).where(Battle.participant_a_telegram_id == 500_000_017)
+    )
+    assert battle is not None
+    assert battle.is_forced is True
+    assert battle.reward_level_progress == 0.2
+    assert battle.reward_rc == 2
+    # "ограбить/съесть" не применимо к бою с мобом.
+    assert battle.winner_choice is None
+    assert battle.reward_balance is None
+
+
+async def test_record_mob_fight_defaults_to_not_forced(battle_record_service, make_user, session):
+    await make_user(telegram_id=500_000_018)
+
+    await battle_record_service.record_mob_fight(
+        telegram_id=500_000_018, mob_name="Одичавший гуль", winner="a", ended_naturally=True
+    )
+
+    battle = await session.scalar(
+        select(Battle).where(Battle.participant_a_telegram_id == 500_000_018)
+    )
+    assert battle is not None
+    assert battle.is_forced is False
+
+
+async def test_record_duel_persists_winner_choice_and_reward_balance(
+    battle_record_service, make_user, session
+):
+    await make_user(telegram_id=500_000_019)
+    await make_user(telegram_id=500_000_020, username="tw_500020")
+
+    await battle_record_service.record_duel(
+        telegram_id_a=500_000_019,
+        telegram_id_b=500_000_020,
+        winner="a",
+        ended_naturally=True,
+        winner_choice="rob",
+        reward_level_progress=1.0,
+        reward_balance=500,
+    )
+
+    battle = await session.scalar(
+        select(Battle).where(Battle.participant_a_telegram_id == 500_000_019)
+    )
+    assert battle is not None
+    assert battle.winner_choice == "rob"
+    assert battle.reward_level_progress == 1.0
+    assert battle.reward_balance == 500
+    assert battle.reward_rc is None
 
 
 async def test_count_total_last_24h_is_zero_with_no_history(battle_record_service, make_user):
