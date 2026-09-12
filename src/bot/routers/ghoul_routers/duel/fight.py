@@ -305,12 +305,14 @@ async def finalize_outcome(
 
     # Счётчики побед/поражений (BATTLE_ENGINE.md 5.2) - запрашиваются
     # ПОСЛЕ record_duel выше, поэтому уже учитывают этот самый бой.
-    winner_wins = await services.battle_record_service.count_wins(winner_id)
-    winner_losses = await services.battle_record_service.count_losses(winner_id)
-    winner_total = await services.battle_record_service.count_total_battles(winner_id)
-    loser_wins = await services.battle_record_service.count_wins(loser_id)
-    loser_losses = await services.battle_record_service.count_losses(loser_id)
-    loser_total = await services.battle_record_service.count_total_battles(loser_id)
+    # ТОЛЬКО против игроков (_vs_players) - смешивать сюда бои с мобами
+    # нельзя (см. чат), это счёт именно этой дуэли.
+    winner_wins = await services.battle_record_service.count_wins_vs_players(winner_id)
+    winner_losses = await services.battle_record_service.count_losses_vs_players(winner_id)
+    winner_total = await services.battle_record_service.count_total_battles_vs_players(winner_id)
+    loser_wins = await services.battle_record_service.count_wins_vs_players(loser_id)
+    loser_losses = await services.battle_record_service.count_losses_vs_players(loser_id)
+    loser_total = await services.battle_record_service.count_total_battles_vs_players(loser_id)
     outcome_text += (
         f"\n\n📊 {winner_name}: {winner_total} боёв ({winner_wins}П/{winner_losses})"
         f"\n📊 {loser_name}: {loser_total} боёв ({loser_wins}П/{loser_losses})"

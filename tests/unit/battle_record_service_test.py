@@ -251,6 +251,41 @@ async def test_count_wins_losses_total_are_zero_with_no_history(battle_record_se
     assert await battle_record_service.count_total_battles(500_000_024) == 0
 
 
+async def test_vs_players_and_vs_mobs_counters_do_not_mix(battle_record_service, make_user):
+    """Регрессия по мотивам чата: показывать смешанный счёт (дуэли +
+    мобы вперемешку) после конкретного боя нельзя ни в коем случае -
+    count_*_vs_players и count_*_vs_mobs обязаны честно изолировать
+    один тип боя от другого, а count_* без суффикса - видеть оба разом."""
+
+    await make_user(telegram_id=500_000_025)
+    await make_user(telegram_id=500_000_026, username="tw_500026")
+
+    # 025 выигрывает дуэль у 026...
+    await battle_record_service.record_duel(
+        telegram_id_a=500_000_025, telegram_id_b=500_000_026, winner="a", ended_naturally=True
+    )
+    # ...и проигрывает ДВА боя с мобом.
+    await battle_record_service.record_mob_fight(
+        telegram_id=500_000_025, mob_name="Тестовый моб", winner="b", ended_naturally=True
+    )
+    await battle_record_service.record_mob_fight(
+        telegram_id=500_000_025, mob_name="Тестовый моб", winner="b", ended_naturally=True
+    )
+
+    assert await battle_record_service.count_wins_vs_players(500_000_025) == 1
+    assert await battle_record_service.count_losses_vs_players(500_000_025) == 0
+    assert await battle_record_service.count_total_battles_vs_players(500_000_025) == 1
+
+    assert await battle_record_service.count_wins_vs_mobs(500_000_025) == 0
+    assert await battle_record_service.count_losses_vs_mobs(500_000_025) == 2
+    assert await battle_record_service.count_total_battles_vs_mobs(500_000_025) == 2
+
+    # Без суффикса - оба типа разом (1 победа в дуэли + 2 поражения мобам).
+    assert await battle_record_service.count_wins(500_000_025) == 1
+    assert await battle_record_service.count_losses(500_000_025) == 2
+    assert await battle_record_service.count_total_battles(500_000_025) == 3
+
+
 # --- Интеграция: BattleService.validate_ghoul(has_pending_confirmation=...) --
 
 

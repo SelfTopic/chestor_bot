@@ -42,6 +42,9 @@ def build_ghoul_profile_rich_message(
     wins: int,
     losses: int,
     total_battles: int,
+    mob_wins: int,
+    mob_losses: int,
+    mob_battles: int,
 ) -> InputRichMessage:
     """Собирает профиль гуля как rich-сообщение (Bot API 10.1+, aiogram
     3.29+), см. BATTLE_DESIGN.md ("UX профиля"). Блоки собираются из
@@ -51,7 +54,10 @@ def build_ghoul_profile_rich_message(
 
     "Всего боёв" из мокапа - теперь реализовано (BATTLE_ENGINE.md 5.2),
     источник - BattleRecordService.count_wins/count_losses/count_total_battles
-    (таблица `battles`, всё время, не дневное окно)."""
+    (таблица `battles`, всё время, не дневное окно). Отдельная строка под
+    бои с мобами (count_*_vs_mobs) - НЕ смешивать с дуэлями в одном числе
+    (см. чат) - "Всего боёв" включает оба типа разом, вторая строка честно
+    показывает только мобов."""
 
     tier = get_hunger_tier(ghoul.hunger)
 
@@ -98,6 +104,7 @@ def build_ghoul_profile_rich_message(
         ),
         _paragraph(f"🥩 Съедено гулей: {ghoul.eat_ghouls}"),
         _paragraph(f"⚔️ Всего боёв: {total_battles} ({wins} побед / {losses} поражений)"),
+        _paragraph(f"👹 Боёв с мобами: {mob_battles} ({mob_wins} побед / {mob_losses} поражений)"),
         InputRichBlockDivider(),
         _paragraph(f"🧬 Какуджа: {'Есть' if ghoul.is_kakuja else 'Нет'}"),
         _paragraph(f"☠️ Смертей: {ghoul.deaths}"),
@@ -155,9 +162,22 @@ async def profile_handler(
         wins = await battle_record_service.count_wins(profile.telegram_id)
         losses = await battle_record_service.count_losses(profile.telegram_id)
         total_battles = await battle_record_service.count_total_battles(profile.telegram_id)
+        mob_wins = await battle_record_service.count_wins_vs_mobs(profile.telegram_id)
+        mob_losses = await battle_record_service.count_losses_vs_mobs(profile.telegram_id)
+        mob_battles = await battle_record_service.count_total_battles_vs_mobs(profile.telegram_id)
 
         rich_message = build_ghoul_profile_rich_message(
-            user, profile, ghoul_service, danger_rank, power, wins, losses, total_battles
+            user,
+            profile,
+            ghoul_service,
+            danger_rank,
+            power,
+            wins,
+            losses,
+            total_battles,
+            mob_wins,
+            mob_losses,
+            mob_battles,
         )
 
         try:
@@ -192,6 +212,9 @@ async def profile_handler(
                 wins=wins,
                 losses=losses,
                 total_battles=total_battles,
+                mob_wins=mob_wins,
+                mob_losses=mob_losses,
+                mob_battles=mob_battles,
             )
             return await message.answer(text=fallback_text)
 

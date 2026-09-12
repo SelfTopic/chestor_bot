@@ -156,17 +156,43 @@ class BattleRecordService:
             telegram_id_a, telegram_id_b, utcnow_naive() - _DAY
         )
 
-    async def count_wins(self, telegram_id: int) -> int:
-        """Счётчик побед за всё время - для профиля (BATTLE_ENGINE.md 5.2),
-        не для дневных лимитов (см. count_total_last_24h)."""
+    # Счётчики побед/поражений/боёв за всё время - для профиля
+    # (BATTLE_ENGINE.md 5.2), не для дневных лимитов (см.
+    # count_total_last_24h). У каждого - 3 варианта: без суффикса - ЛЮБОЙ
+    # тип боя разом (для общего "Всего боёв" в профиле), "_vs_players" -
+    # только дуэли, "_vs_mobs" - только бои с мобами. НАМЕРЕННО раздельные
+    # методы, а не один с параметром - смешивать дуэли и мобов в одном
+    # счётчике там, где показывается конкретный только что прошедший бой,
+    # нельзя ни в коем случае (см. чат - "смешанные значения счётчиков"):
+    # после дуэли должен показываться счёт именно с игроками, после боя с
+    # мобом - именно с мобами, а не общая цифра, куда намешано и то, и то.
 
+    async def count_wins(self, telegram_id: int) -> int:
         return await self.battle_repository.count_wins(telegram_id)
+
+    async def count_wins_vs_players(self, telegram_id: int) -> int:
+        return await self.battle_repository.count_wins(telegram_id, battle_type="duel")
+
+    async def count_wins_vs_mobs(self, telegram_id: int) -> int:
+        return await self.battle_repository.count_wins(telegram_id, battle_type="mob")
 
     async def count_losses(self, telegram_id: int) -> int:
         return await self.battle_repository.count_losses(telegram_id)
 
+    async def count_losses_vs_players(self, telegram_id: int) -> int:
+        return await self.battle_repository.count_losses(telegram_id, battle_type="duel")
+
+    async def count_losses_vs_mobs(self, telegram_id: int) -> int:
+        return await self.battle_repository.count_losses(telegram_id, battle_type="mob")
+
     async def count_total_battles(self, telegram_id: int) -> int:
         return await self.battle_repository.count_total(telegram_id)
+
+    async def count_total_battles_vs_players(self, telegram_id: int) -> int:
+        return await self.battle_repository.count_total(telegram_id, battle_type="duel")
+
+    async def count_total_battles_vs_mobs(self, telegram_id: int) -> int:
+        return await self.battle_repository.count_total(telegram_id, battle_type="mob")
 
 
 __all__ = ["BattleRecordService"]

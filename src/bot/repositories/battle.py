@@ -101,51 +101,56 @@ class BattleRepository(Base):
         )
         return (await self.session.scalar(stmt)) or 0
 
-    async def count_wins(self, telegram_id: int) -> int:
-        """Всего побед за всё время (BATTLE_ENGINE.md 5.2) - НЕ по 24ч
-        окну, в отличие от count_total_since/count_pair_since (те - под
-        дневные лимиты). Работает и для боёв с мобами (participant_b - NULL,
+    async def count_wins(self, telegram_id: int, battle_type: Optional[str] = None) -> int:
+        """Побед за всё время (BATTLE_ENGINE.md 5.2) - НЕ по 24ч окну, в
+        отличие от count_total_since/count_pair_since (те - под дневные
+        лимиты). Работает и для боёв с мобами (participant_b - NULL,
         winner="a"/"b" относительно самого игрока, см. BattleRecordService.
-        record_mob_fight)."""
+        record_mob_fight).
 
-        stmt = (
-            select(func.count())
-            .select_from(Battle)
-            .where(
-                or_(
-                    (Battle.participant_a_telegram_id == telegram_id) & (Battle.winner == "a"),
-                    (Battle.participant_b_telegram_id == telegram_id) & (Battle.winner == "b"),
-                )
+        `battle_type=None` - ЛЮБОЙ тип боя разом (дуэли и мобы вперемешку -
+        ВАЖНО: не использовать это значение там, где счёт должен быть
+        честным по одному виду соперника, см. чат про "смешанные значения
+        счётчиков"). "duel"/"mob" - строго один тип."""
+
+        conditions = [
+            or_(
+                (Battle.participant_a_telegram_id == telegram_id) & (Battle.winner == "a"),
+                (Battle.participant_b_telegram_id == telegram_id) & (Battle.winner == "b"),
             )
-        )
+        ]
+        if battle_type is not None:
+            conditions.append(Battle.battle_type == battle_type)
+
+        stmt = select(func.count()).select_from(Battle).where(*conditions)
         return (await self.session.scalar(stmt)) or 0
 
-    async def count_losses(self, telegram_id: int) -> int:
-        stmt = (
-            select(func.count())
-            .select_from(Battle)
-            .where(
-                or_(
-                    (Battle.participant_a_telegram_id == telegram_id) & (Battle.winner == "b"),
-                    (Battle.participant_b_telegram_id == telegram_id) & (Battle.winner == "a"),
-                )
+    async def count_losses(self, telegram_id: int, battle_type: Optional[str] = None) -> int:
+        conditions = [
+            or_(
+                (Battle.participant_a_telegram_id == telegram_id) & (Battle.winner == "b"),
+                (Battle.participant_b_telegram_id == telegram_id) & (Battle.winner == "a"),
             )
-        )
+        ]
+        if battle_type is not None:
+            conditions.append(Battle.battle_type == battle_type)
+
+        stmt = select(func.count()).select_from(Battle).where(*conditions)
         return (await self.session.scalar(stmt)) or 0
 
-    async def count_total(self, telegram_id: int) -> int:
+    async def count_total(self, telegram_id: int, battle_type: Optional[str] = None) -> int:
         """Все бои за всё время (включая ничьи) - победы+поражения+ничьи."""
 
-        stmt = (
-            select(func.count())
-            .select_from(Battle)
-            .where(
-                or_(
-                    Battle.participant_a_telegram_id == telegram_id,
-                    Battle.participant_b_telegram_id == telegram_id,
-                )
+        conditions = [
+            or_(
+                Battle.participant_a_telegram_id == telegram_id,
+                Battle.participant_b_telegram_id == telegram_id,
             )
-        )
+        ]
+        if battle_type is not None:
+            conditions.append(Battle.battle_type == battle_type)
+
+        stmt = select(func.count()).select_from(Battle).where(*conditions)
         return (await self.session.scalar(stmt)) or 0
 
 

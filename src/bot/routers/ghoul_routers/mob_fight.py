@@ -171,10 +171,12 @@ async def mob_fight_handler(
     else:
         summary = "Ничья - силы примерно равны."
 
-    wins = await battle_record_service.count_wins(telegram_id)
-    losses = await battle_record_service.count_losses(telegram_id)
-    total = await battle_record_service.count_total_battles(telegram_id)
-    summary += f"\n📊 Всего боёв: {total} ({wins} побед / {losses} поражений)"
+    # ТОЛЬКО против мобов (_vs_mobs) - смешивать сюда дуэли нельзя (см. чат),
+    # это счёт именно боёв с мобами.
+    wins = await battle_record_service.count_wins_vs_mobs(telegram_id)
+    losses = await battle_record_service.count_losses_vs_mobs(telegram_id)
+    total = await battle_record_service.count_total_battles_vs_mobs(telegram_id)
+    summary += f"\n📊 Боёв с мобами: {total} ({wins} побед / {losses} поражений)"
 
     await message.answer(text=summary)
     return None

@@ -60,7 +60,17 @@ def test_build_ghoul_profile_rich_message_returns_valid_input_rich_message():
     user = SimpleNamespace(full_name="Test User")
 
     message = build_ghoul_profile_rich_message(
-        user, ghoul, FakeGhoulService(), danger_rank="B", power=123, wins=7, losses=3, total_battles=10
+        user,
+        ghoul,
+        FakeGhoulService(),
+        danger_rank="B",
+        power=123,
+        wins=7,
+        losses=3,
+        total_battles=10,
+        mob_wins=4,
+        mob_losses=1,
+        mob_battles=5,
     )
 
     assert isinstance(message, InputRichMessage)
@@ -77,7 +87,17 @@ def test_build_ghoul_profile_rich_message_lists_only_owned_kagune_types():
     user = SimpleNamespace(full_name="Test User")
 
     message = build_ghoul_profile_rich_message(
-        user, ghoul, FakeGhoulService(), danger_rank="B", power=123, wins=7, losses=3, total_battles=10
+        user,
+        ghoul,
+        FakeGhoulService(),
+        danger_rank="B",
+        power=123,
+        wins=7,
+        losses=3,
+        total_battles=10,
+        mob_wins=4,
+        mob_losses=1,
+        mob_battles=5,
     )
 
     dumped = message.model_dump_json(exclude_none=True)
@@ -92,7 +112,17 @@ def test_build_ghoul_profile_rich_message_includes_deaths_and_kakuja():
     user = SimpleNamespace(full_name="Test User")
 
     message = build_ghoul_profile_rich_message(
-        user, ghoul, FakeGhoulService(), danger_rank="B", power=123, wins=7, losses=3, total_battles=10
+        user,
+        ghoul,
+        FakeGhoulService(),
+        danger_rank="B",
+        power=123,
+        wins=7,
+        losses=3,
+        total_battles=10,
+        mob_wins=4,
+        mob_losses=1,
+        mob_battles=5,
     )
 
     dumped = message.model_dump_json(exclude_none=True)
@@ -105,8 +135,20 @@ def test_build_ghoul_profile_rich_message_includes_battle_counters():
     user = SimpleNamespace(full_name="Test User")
 
     message = build_ghoul_profile_rich_message(
-        user, ghoul, FakeGhoulService(), danger_rank="B", power=123, wins=7, losses=3, total_battles=10
+        user,
+        ghoul,
+        FakeGhoulService(),
+        danger_rank="B",
+        power=123,
+        wins=7,
+        losses=3,
+        total_battles=10,
+        mob_wins=4,
+        mob_losses=1,
+        mob_battles=5,
     )
 
     dumped = message.model_dump_json(exclude_none=True)
     assert "Всего боёв: 10 (7 побед / 3 поражений)" in dumped
+    # Бои с мобами - ОТДЕЛЬНАЯ строка, не смешивается с общим счётом дуэлей.
+    assert "Боёв с мобами: 5 (4 побед / 1 поражений)" in dumped
