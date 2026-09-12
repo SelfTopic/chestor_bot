@@ -34,17 +34,25 @@ async def run_and_announce_fight(
     чтобы не тянуть сюда зависимость от фоновых задач (см. докстринг
     модуля)."""
 
-    initiator_ghoul = await services.ghoul_service.get(duel_session.initiator_telegram_id)
+    initiator_ghoul = await services.ghoul_service.get(
+        duel_session.initiator_telegram_id
+    )
     target_ghoul = await services.ghoul_service.get(duel_session.target_telegram_id)
-    initiator_user = await services.user_service.get(find_by=duel_session.initiator_telegram_id)
-    target_user = await services.user_service.get(find_by=duel_session.target_telegram_id)
+    initiator_user = await services.user_service.get(
+        find_by=duel_session.initiator_telegram_id
+    )
+    target_user = await services.user_service.get(
+        find_by=duel_session.target_telegram_id
+    )
 
     if not initiator_ghoul or not target_ghoul or not initiator_user or not target_user:
         logger.error("duel %s: participant vanished mid-flow", duel_session.id)
         await services.battle_record_service.release(
             duel_session.initiator_telegram_id, duel_session.target_telegram_id
         )
-        await services.duel_service.atomic_update(duel_session.id, "running", stage="done")
+        await services.duel_service.atomic_update(
+            duel_session.id, "running", stage="done"
+        )
         return None
 
     fighter_a = services.battle_service.ghoul_to_fighter(
@@ -54,8 +62,12 @@ async def run_and_announce_fight(
         target_ghoul, target_user.full_name, services.ghoul_service
     )
 
-    compress_hp = duel_session.compress_hp if duel_session.compress_hp is not None else True
-    result = services.battle_service.run_duel(fighter_a, fighter_b, compress_hp=compress_hp)
+    compress_hp = (
+        duel_session.compress_hp if duel_session.compress_hp is not None else True
+    )
+    result = services.battle_service.run_duel(
+        fighter_a, fighter_b, compress_hp=compress_hp
+    )
 
     new_health_a = BattleService.resolve_post_battle_health(
         initiator_ghoul.health, result.stats_a.health, result.final_hp_a
@@ -107,13 +119,21 @@ async def run_and_announce_fight(
         winner_power = services.ghoul_service.calculate_power(winner_ghoul)
         loser_power = services.ghoul_service.calculate_power(loser_ghoul)
         # Формула левел-апа (BATTLE_DESIGN.md) - 1% * (сила соперника / своя сила).
-        reward_level_progress = 1.0 * loser_power / winner_power if winner_power > 0 else 0.0
-        await services.level_up_service.add_progress(winner_telegram_id, reward_level_progress)
+        reward_level_progress = (
+            1.0 * loser_power / winner_power if winner_power > 0 else 0.0
+        )
+        await services.level_up_service.add_progress(
+            winner_telegram_id, reward_level_progress
+        )
 
     rich_message = services.battle_text_generator.build_rich_message(
         result, fighter_a, fighter_b, rank_a, rank_b
     )
-    keyboard = outcome_keyboard(duel_session.id, winner_telegram_id) if winner_telegram_id else None
+    keyboard = (
+        outcome_keyboard(duel_session.id, winner_telegram_id)
+        if winner_telegram_id
+        else None
+    )
 
     fallback_text: Optional[str] = None
 
@@ -134,7 +154,9 @@ async def run_and_announce_fight(
                 )
             except TelegramAPIError:
                 logger.warning(
-                    "duel %s: failed to announce fight result to %s", duel_session.id, chat_id
+                    "duel %s: failed to announce fight result to %s",
+                    duel_session.id,
+                    chat_id,
                 )
                 return None
 
@@ -145,7 +167,10 @@ async def run_and_announce_fight(
         # message_id не трекаем (в отличие от группового случая) - в
         # приватном происхождении не пытаемся дальше редактировать/убирать
         # клавиатуру исхода, это чисто косметика.
-        for chat_id in (duel_session.initiator_telegram_id, duel_session.target_telegram_id):
+        for chat_id in (
+            duel_session.initiator_telegram_id,
+            duel_session.target_telegram_id,
+        ):
             await _announce(chat_id)
     else:
         sent = await _announce(duel_session.chat_id)
@@ -163,7 +188,9 @@ async def run_and_announce_fight(
         await services.battle_record_service.release(
             duel_session.initiator_telegram_id, duel_session.target_telegram_id
         )
-        return await services.duel_service.atomic_update(duel_session.id, "running", stage="done")
+        return await services.duel_service.atomic_update(
+            duel_session.id, "running", stage="done"
+        )
 
     return await services.duel_service.atomic_update(
         duel_session.id,
@@ -201,7 +228,9 @@ async def finalize_outcome(
 
     if action == "outcome_rob":
         if loser_user and loser_user.balance > 0:
-            percent = random.uniform(DUEL_CONFIG.rob_percent_min, DUEL_CONFIG.rob_percent_max)
+            percent = random.uniform(
+                DUEL_CONFIG.rob_percent_min, DUEL_CONFIG.rob_percent_max
+            )
             amount = round(loser_user.balance * percent / 100.0)
             if amount > 0:
                 await services.user_service.minus_balance(
@@ -217,12 +246,16 @@ async def finalize_outcome(
             power = services.ghoul_service.calculate_power(loser_ghoul)
             rc = round(
                 power
-                * random.uniform(DUEL_CONFIG.eat_rc_multiplier_min, DUEL_CONFIG.eat_rc_multiplier_max)
+                * random.uniform(
+                    DUEL_CONFIG.eat_rc_multiplier_min, DUEL_CONFIG.eat_rc_multiplier_max
+                )
             )
             if rc > 0:
                 await services.ghoul_service.increment_fields(winner_id, rc_money=rc)
                 reward_rc = rc
-        await services.ghoul_service.apply_death(loser_id, cause="eaten", killer_telegram_id=winner_id)
+        await services.ghoul_service.apply_death(
+            loser_id, cause="eaten", killer_telegram_id=winner_id
+        )
 
     winner_label = "a" if winner_id == duel_session.initiator_telegram_id else "b"
     await services.battle_record_service.record_duel(
@@ -256,19 +289,19 @@ async def finalize_outcome(
         outcome_text = (
             f"💰 {winner_name} ограбил {loser_name} и забрал {reward_balance} CheSton's!"
             if reward_balance
-            else f"💰 {winner_name} попытался ограбить {loser_name}, но у того было нечего взять."
+            else f"💰 {winner_name} попытался ограбить {loser_name}, но у тот оказался ебаный бомж и у нечего взять."
         )
     elif action == "outcome_eat":
         outcome_text = (
-            f"🍖 {winner_name} сожрал {loser_name} и получил {reward_rc} RC-клеток!"
+            f"🍖 {winner_name} нещадно добил и сожрал {loser_name}, получив {reward_rc} RC-клеток"
             if reward_rc
-            else f"🍖 {winner_name} сожрал {loser_name}."
+            else f"🍖 {winner_name} нещадно добил и сожрал {loser_name}, но в его теле не оказалось пригодных для переваривания RC клеток"
         )
     else:
         outcome_text = f"🕊️ {winner_name} решил отпустить {loser_name}."
 
     if duel_session.reward_level_progress is not None:
-        outcome_text += f"\n📈 {winner_name} получил {duel_session.reward_level_progress:.2f}% опыта."
+        outcome_text += f"\n📈 {winner_name} получил {duel_session.reward_level_progress:.2f}% опыта за победу."
 
     # Счётчики побед/поражений (BATTLE_ENGINE.md 5.2) - запрашиваются
     # ПОСЛЕ record_duel выше, поэтому уже учитывают этот самый бой.
@@ -279,8 +312,8 @@ async def finalize_outcome(
     loser_losses = await services.battle_record_service.count_losses(loser_id)
     loser_total = await services.battle_record_service.count_total_battles(loser_id)
     outcome_text += (
-        f"\n📊 {winner_name}: {winner_total} боёв ({winner_wins}П/{winner_losses}Пор)"
-        f"\n📊 {loser_name}: {loser_total} боёв ({loser_wins}П/{loser_losses}Пор)"
+        f"\n📊 {winner_name}: {winner_total} боёв ({winner_wins}П/{winner_losses})"
+        f"\n📊 {loser_name}: {loser_total} боёв ({loser_wins}П/{loser_losses})"
     )
 
     # Всегда дублируем итог в ЛС обоим участникам (не только тому, кто на
@@ -289,7 +322,10 @@ async def finalize_outcome(
     # (решено в чате). В приватном происхождении это и так единственная
     # доставка - `chat_id` совпадает с одним из личных чатов, добавлять
     # его отдельно незачем.
-    target_chat_ids = {duel_session.initiator_telegram_id, duel_session.target_telegram_id}
+    target_chat_ids = {
+        duel_session.initiator_telegram_id,
+        duel_session.target_telegram_id,
+    }
     if not duel_session.is_private_origin:
         target_chat_ids.add(duel_session.chat_id)
 
