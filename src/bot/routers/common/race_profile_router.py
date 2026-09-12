@@ -84,7 +84,9 @@ def build_ghoul_profile_rich_message(
             text=f"👤 Профиль гуля {danger_rank} ранга {user.full_name}", size=3
         ),
         _paragraph(f"📈 Уровень: {ghoul.level}"),
-        _paragraph(f"{level_progress_bar(ghoul.level_progress)} {round(ghoul.level_progress)}%"),
+        _paragraph(
+            f"{level_progress_bar(ghoul.level_progress)} {round(ghoul.level_progress)}%"
+        ),
         _paragraph(f"🍖 Голод: {ghoul.hunger}% ({tier.name})"),
         _paragraph(f"♦️ RC-клеток: {ghoul.rc_money}"),
         InputRichBlockDetails(
@@ -103,8 +105,12 @@ def build_ghoul_profile_rich_message(
             ],
         ),
         _paragraph(f"🥩 Съедено гулей: {ghoul.eat_ghouls}"),
-        _paragraph(f"⚔️ Всего боёв: {total_battles} ({wins} побед / {losses} поражений)"),
-        _paragraph(f"👹 Боёв с мобами: {mob_battles} ({mob_wins} побед / {mob_losses} поражений)"),
+        _paragraph(
+            f"⚔️ Всего боёв: {total_battles} ({wins} побед / {losses} поражений)"
+        ),
+        _paragraph(
+            f"👹 Боёв с мобами: {mob_battles} ({mob_wins} побед / {mob_losses} поражений)"
+        ),
         InputRichBlockDivider(),
         _paragraph(f"🧬 Какуджа: {'Есть' if ghoul.is_kakuja else 'Нет'}"),
         _paragraph(f"☠️ Смертей: {ghoul.deaths}"),
@@ -121,7 +127,9 @@ async def profile_handler(
     user_service: UserService = Provide[Container.user_service],
     dialog_service: DialogService = Provide[Container.dialog_service],
     ghoul_service: GhoulService = Provide[Container.ghoul_service],
-    battle_record_service: BattleRecordService = Provide[Container.battle_record_service],
+    battle_record_service: BattleRecordService = Provide[
+        Container.battle_record_service
+    ],
 ) -> Message:
     if not message.from_user:
         logger.error("User not found in message.")
@@ -159,12 +167,20 @@ async def profile_handler(
         power = ghoul_service.calculate_power(profile)
         danger_rank = ghoul_service.get_danger_rank(power)
 
-        wins = await battle_record_service.count_wins(profile.telegram_id)
-        losses = await battle_record_service.count_losses(profile.telegram_id)
-        total_battles = await battle_record_service.count_total_battles(profile.telegram_id)
+        wins = await battle_record_service.count_wins_vs_players(profile.telegram_id)
+        losses = await battle_record_service.count_losses_vs_players(
+            profile.telegram_id
+        )
+        total_battles = await battle_record_service.count_total_battles_vs_players(
+            profile.telegram_id
+        )
         mob_wins = await battle_record_service.count_wins_vs_mobs(profile.telegram_id)
-        mob_losses = await battle_record_service.count_losses_vs_mobs(profile.telegram_id)
-        mob_battles = await battle_record_service.count_total_battles_vs_mobs(profile.telegram_id)
+        mob_losses = await battle_record_service.count_losses_vs_mobs(
+            profile.telegram_id
+        )
+        mob_battles = await battle_record_service.count_total_battles_vs_mobs(
+            profile.telegram_id
+        )
 
         rich_message = build_ghoul_profile_rich_message(
             user,
