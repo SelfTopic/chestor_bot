@@ -16,8 +16,14 @@
 from __future__ import annotations
 
 import random
-from typing import TYPE_CHECKING, Dict, List, Optional, Protocol, Tuple
+from typing import TYPE_CHECKING, Callable, Dict, List, Optional, Protocol, Tuple
 
+from ...exceptions import (
+    FighterHasPendingBattleError,
+    FighterIsDeadError,
+    FighterNotCombatReadyError,
+)
+from ...game_configs import BATTLE_CONFIG
 from ...types import KaguneType
 from .core import Battle, BattleResult, Fighter, FighterSnapshot
 from .mob import MobService
@@ -42,6 +48,54 @@ class _KaguneLookup(Protocol):
 class BattleService:
     def __init__(self, mob_service: MobService) -> None:
         self._mob_service = mob_service
+
+    def validate_ghoul(
+        self,
+        ghoul: "Ghoul",
+        has_pending_confirmation: Optional[Callable[["Ghoul"], bool]] = None,
+    ) -> None:
+        """Бросает `BattleError` (см. подклассы в `exceptions/battle.py`),
+        если ЭТОТ гуль прямо сейчас не может вступить в бой - вызывать
+        ПЕРЕД любой попыткой построить `Fighter`/`Battle` (не тратить время
+        на сборку боя, который всё равно нельзя провести).
+
+        Для дуэли вызвать на ОБЕИХ сторон (см. `validate_duel`) - для боя с
+        мобом достаточно вызвать один раз на игрока, у моба нет ни
+        `is_dead`, ни ожидающих подтверждения вызовов.
+
+        `has_pending_confirmation` - опциональный колбэк "есть ли у этого
+        гуля неподтверждённый вызов на бой?" (см. `FighterHasPendingBattleError`) -
+        персистентности для отслеживания pending-вызовов ещё нет (флоу
+        согласия на дуэль не построен, см. BATTLE_ENGINE.md 1.1/1.5),
+        поэтому параметр опционален и по умолчанию эта проверка
+        пропускается. Как только появится реальное хранилище - вызывающий
+        код передаст сюда настоящую проверку, без изменений в самом
+        BattleService."""
+
+        if ghoul.is_dead:
+            raise FighterIsDeadError(ghoul.id)
+
+        if ghoul.health < BATTLE_CONFIG.min_health_to_fight:
+            raise FighterNotCombatReadyError(
+                ghoul.id, ghoul.health, BATTLE_CONFIG.min_health_to_fight
+            )
+
+        if has_pending_confirmation is not None and has_pending_confirmation(ghoul):
+            raise FighterHasPendingBattleError(ghoul.id)
+
+    def validate_duel(
+        self,
+        ghoul_a: "Ghoul",
+        ghoul_b: "Ghoul",
+        has_pending_confirmation: Optional[Callable[["Ghoul"], bool]] = None,
+    ) -> None:
+        """Удобный шорткат для PvP - `validate_ghoul` на обе стороны.
+        Останавливается на первой же провалившейся проверке (не пытается
+        собрать сразу все причины отказа - вызывающему коду для
+        сообщения игроку достаточно одной)."""
+
+        self.validate_ghoul(ghoul_a, has_pending_confirmation)
+        self.validate_ghoul(ghoul_b, has_pending_confirmation)
 
     def ghoul_to_fighter(self, ghoul: "Ghoul", name: str, ghoul_service: _KaguneLookup) -> Fighter:
         kagune_strength: Dict[KaguneType, int] = {}

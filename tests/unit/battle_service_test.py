@@ -1,5 +1,13 @@
 import random
 
+import pytest
+
+from src.bot.exceptions import (
+    FighterHasPendingBattleError,
+    FighterIsDeadError,
+    FighterNotCombatReadyError,
+)
+from src.bot.game_configs import BATTLE_CONFIG
 from src.bot.services.battle_engine.battle_service import BattleService
 from src.bot.services.battle_engine.core import Fighter
 from src.bot.services.battle_engine.mob import MobService
@@ -30,6 +38,7 @@ def make_ghoul(
     max_health: int = 200,
     hunger: int = 80,
     is_kakuja: bool = False,
+    is_dead: bool = False,
     kagune_strength_ukaku: "int | None" = None,
     kagune_strength_koukaku: "int | None" = None,
     kagune_strength_rinkaku: "int | None" = None,
@@ -46,6 +55,7 @@ def make_ghoul(
         max_health=max_health,
         hunger=hunger,
         is_kakuja=is_kakuja,
+        is_dead=is_dead,
         kagune_strength_ukaku=kagune_strength_ukaku,
         kagune_strength_koukaku=kagune_strength_koukaku,
         kagune_strength_rinkaku=kagune_strength_rinkaku,
@@ -55,6 +65,60 @@ def make_ghoul(
 
 def make_service() -> BattleService:
     return BattleService(mob_service=MobService())
+
+
+# --- validate_ghoul / validate_duel ------------------------------------------
+
+
+def test_validate_ghoul_raises_for_a_dead_ghoul():
+    ghoul = make_ghoul(is_dead=True)
+    with pytest.raises(FighterIsDeadError):
+        make_service().validate_ghoul(ghoul)
+
+
+def test_validate_ghoul_raises_when_health_below_threshold():
+    ghoul = make_ghoul(health=BATTLE_CONFIG.min_health_to_fight - 1)
+    with pytest.raises(FighterNotCombatReadyError) as exc_info:
+        make_service().validate_ghoul(ghoul)
+    assert exc_info.value.health == BATTLE_CONFIG.min_health_to_fight - 1
+    assert exc_info.value.threshold == BATTLE_CONFIG.min_health_to_fight
+
+
+def test_validate_ghoul_passes_when_health_at_threshold():
+    # "ниже 5" - строго меньше, ровно на пороге всё ещё можно драться.
+    ghoul = make_ghoul(health=BATTLE_CONFIG.min_health_to_fight)
+    make_service().validate_ghoul(ghoul)  # не должно бросать
+
+
+def test_validate_ghoul_passes_for_a_healthy_living_ghoul():
+    ghoul = make_ghoul(health=100, is_dead=False)
+    make_service().validate_ghoul(ghoul)  # не должно бросать
+
+
+def test_validate_ghoul_skips_pending_check_when_no_callback_given():
+    ghoul = make_ghoul()
+    make_service().validate_ghoul(ghoul, has_pending_confirmation=None)  # не должно бросать
+
+
+def test_validate_ghoul_raises_when_pending_confirmation_callback_says_so():
+    ghoul = make_ghoul()
+    with pytest.raises(FighterHasPendingBattleError):
+        make_service().validate_ghoul(ghoul, has_pending_confirmation=lambda g: True)
+
+
+def test_validate_ghoul_does_not_raise_when_pending_confirmation_callback_says_no():
+    ghoul = make_ghoul()
+    make_service().validate_ghoul(ghoul, has_pending_confirmation=lambda g: False)  # не должно бросать
+
+
+def test_validate_duel_checks_both_sides():
+    healthy = make_ghoul()
+    dead = make_ghoul(is_dead=True)
+
+    with pytest.raises(FighterIsDeadError):
+        make_service().validate_duel(healthy, dead)
+    with pytest.raises(FighterIsDeadError):
+        make_service().validate_duel(dead, healthy)
 
 
 # --- ghoul_to_fighter --------------------------------------------------------

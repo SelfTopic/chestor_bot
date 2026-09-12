@@ -18,7 +18,11 @@ from aiogram.types import Message
 from dependency_injector.wiring import Provide, inject
 
 from ...containers import Container
-from ...exceptions import GhoulNotFoundInDatabase
+from ...exceptions import (
+    FighterIsDeadError,
+    FighterNotCombatReadyError,
+    GhoulNotFoundInDatabase,
+)
 from ...services import (
     BattleService,
     BattleTextGenerator,
@@ -54,8 +58,20 @@ async def mob_fight_preview_handler(
     if not ghoul:
         raise GhoulNotFoundInDatabase("Ghoul not found for user")
 
-    if ghoul.is_dead:
+    # has_pending_confirmation не передаём - для боя с мобом нечего
+    # проверять (моб не участвует в очереди дуэлей), и хранилища pending-
+    # вызовов пока всё равно нет (см. BattleService.validate_ghoul).
+    try:
+        battle_service.validate_ghoul(ghoul)
+    except FighterIsDeadError:
         await message.reply(text=dialog_service.text(key="dead_ghoul_reply"))
+        return None
+    except FighterNotCombatReadyError as exc:
+        await message.reply(
+            text=dialog_service.text(
+                key="not_combat_ready", health=exc.health, threshold=exc.threshold
+            )
+        )
         return None
 
     player = battle_service.ghoul_to_fighter(ghoul, user.full_name, ghoul_service)
