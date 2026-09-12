@@ -2,7 +2,10 @@ from types import SimpleNamespace
 
 from aiogram.types import InputRichMessage
 
-from src.bot.routers.common.race_profile_router import build_ghoul_profile_rich_message
+from src.bot.routers.common.race_profile_router import (
+    build_ghoul_profile_rich_message,
+    build_kagune_info_rich_message,
+)
 from src.bot.types import KaguneType
 from src.database.models import Ghoul
 
@@ -152,3 +155,28 @@ def test_build_ghoul_profile_rich_message_includes_battle_counters():
     assert "Всего боёв: 10 (7 побед / 3 поражений)" in dumped
     # Бои с мобами - ОТДЕЛЬНАЯ строка, не смешивается с общим счётом дуэлей.
     assert "Боёв с мобами: 5 (4 побед / 1 поражений)" in dumped
+
+
+def test_build_kagune_info_rich_message_is_valid_and_lists_all_types():
+    """Справочная таблица не зависит от гуля - проверяем только, что дерево
+    сериализуется и что в нём реально таблица с 4 типами кагуне."""
+
+    message = build_kagune_info_rich_message()
+
+    assert isinstance(message, InputRichMessage)
+    dumped = message.model_dump_json(exclude_none=True)
+    assert '"type":"table"' in dumped
+    for name in ("Укаку", "Коукаку", "Ринкаку", "Бикаку"):
+        assert f'"text":"{name}"' in dumped
+    # Приоритетный стат каждого типа помечен звёздочкой (правило стаков) -
+    # у Ринкаку это регенерация (×1.8), а не ловкость (×1.3, без звезды).
+    assert "×1.8★" in dumped
+    assert "×1.3" in dumped and "×1.3★" not in dumped
+    # Общая (лорная + механика урона) информация - раскрывающийся блок
+    # в самом начале сообщения (details содержит heading внутри blocks).
+    assert '"type":"details"' in dumped
+    assert '"summary"' in dumped
+    assert "Какухо" in dumped
+    details_index = dumped.index('"type":"details"')
+    heading_index = dumped.index('"type":"heading"')
+    assert details_index < heading_index

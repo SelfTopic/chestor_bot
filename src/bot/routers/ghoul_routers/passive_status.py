@@ -5,7 +5,7 @@ from aiogram.types import Message
 from dependency_injector.wiring import Provide, inject
 
 from ...containers import Container
-from ...services import DialogService, GhoulService
+from ...services import BattleService, DialogService, GhoulService
 from ...utils import (
     format_duration,
     get_hunger_tier,
@@ -70,6 +70,7 @@ async def regen_status_handler(
 async def hunger_status_handler(
     message: Message,
     ghoul_service: GhoulService = Provide[Container.ghoul_service],
+    battle_service: BattleService = Provide[Container.battle_service],
     dialog_service: DialogService = Provide[Container.dialog_service],
 ) -> Message:
     if not message.from_user:
@@ -90,12 +91,27 @@ async def hunger_status_handler(
     else:
         time_left = f"До истощения: {format_duration(int(hours_left * 3600))}"
 
+    # BATTLE_ENGINE.md 8.3 - не только тир, но и его АКТИВНЫЕ множители
+    # (падающие/растущие) и итоговые эффективные статы после их применения.
+    # Собираем Fighter только ради compute_effective_stats - боя тут нет,
+    # тот же приём, что и в mob_fight_preview.py/распрофиль.
+    fighter = battle_service.ghoul_to_fighter(ghoul, message.from_user.full_name, ghoul_service)
+    stats = fighter.stats
+
     return await message.answer(
         text=dialog_service.text(
             key="hunger_status",
             hunger=ghoul.hunger,
             tier=tier.name,
             time_left=time_left,
+            falling_multiplier=tier.falling_multiplier,
+            rising_multiplier=tier.rising_multiplier,
+            effective_strength=round(stats.strength, 1),
+            effective_dexterity=round(stats.dexterity, 1),
+            effective_speed=round(stats.speed, 1),
+            effective_health=round(stats.health, 1),
+            effective_regeneration=round(stats.regeneration, 1),
+            effective_kagune_strength=round(stats.kagune_strength, 1),
         )
     )
 

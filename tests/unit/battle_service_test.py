@@ -217,6 +217,38 @@ def test_power_of_is_lower_than_calculate_power_when_wounded():
     assert BattleService.power_of(fighter.snapshot) < calculate_power_equivalent
 
 
+# --- effective_power_of --------------------------------------------------------
+
+
+def test_effective_power_of_matches_power_of_when_modifier_chain_is_identity():
+    # hunger=80 (дефолт make_ghoul) - тир "не голоден" (75-100), falling/
+    # rising множители = 1.0/1.0; без кагуне/какуджи цепочка модификаторов
+    # ничего не меняет - вакуумная и эффективная мощь должны совпасть.
+    ghoul = make_ghoul(strength=10, dexterity=20, speed=30, regeneration=40, health=50, max_health=50)
+    fighter = make_service().ghoul_to_fighter(ghoul, "chestor", FakeGhoulService())
+
+    assert BattleService.effective_power_of(fighter.stats) == BattleService.power_of(
+        fighter.snapshot
+    )
+
+
+def test_effective_power_of_reflects_hunger_penalty():
+    ghoul = make_ghoul(
+        strength=100,
+        dexterity=100,
+        speed=100,
+        regeneration=100,
+        health=100,
+        max_health=100,
+        hunger=0,  # "смертельный голод" - falling=0.1, rising=0.5
+    )
+    fighter = make_service().ghoul_to_fighter(ghoul, "chestor", FakeGhoulService())
+
+    effective = BattleService.effective_power_of(fighter.stats)
+    vacuum = BattleService.power_of(fighter.snapshot)
+    assert effective < vacuum
+
+
 # --- run_against_mob ----------------------------------------------------------
 
 
