@@ -1,7 +1,10 @@
 """Боевой движок. `core/` - чистый домен без БД (статы, формулы, раунды,
-Battle/Fighter). Слой оркестрации (роутеры, сохранение BattleLog в БД) -
-будущая задача, сюда пока ничего не добавлено."""
+Battle/Fighter). `BattleService`/`MobService`/`BattleTextGenerator` -
+мосты между игровым миром (Ghoul из БД, aiogram) и движком. Роутеры/
+сохранение BattleLog в БД - будущая задача, сюда пока ничего не
+добавлено."""
 
+from .battle_service import BattleService
 from .core import (
     AttackAction,
     AttackType,
@@ -24,6 +27,7 @@ from .mob import MobService
 from .text_generator import MAX_WIDTH_TEXT_RICH_MESSAGE, BattleTextGenerator
 
 __all__ = [
+    "BattleService",
     "BattleTextGenerator",
     "MAX_WIDTH_TEXT_RICH_MESSAGE",
     "MobService",

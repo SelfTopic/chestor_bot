@@ -19,6 +19,7 @@ from .repositories import (
 )
 from .services import (
     BanService,
+    BattleService,
     BattleTextGenerator,
     BroadcastService,
     ChatService,
@@ -85,6 +86,8 @@ class Container(containers.DeclarativeContainer):
     )
 
     mob_service = providers.Factory(MobService)
+
+    battle_service = providers.Factory(BattleService, mob_service=mob_service)
 
     media_downloader = providers.Factory(MediaDownloader, bot=bot)
 
