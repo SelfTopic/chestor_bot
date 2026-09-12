@@ -105,10 +105,16 @@ class BattleRecordService:
         is_forced: bool = False,
         reward_level_progress: Optional[float] = None,
         reward_rc: Optional[int] = None,
+        reward_balance: Optional[int] = None,
     ) -> None:
-        """`winner_choice`/`reward_balance` не принимаются - "ограбить/
-        отпустить/съесть" (см. BATTLE_DESIGN.md "Исход боя") применимо
-        только к дуэли, у моба нет ни баланса, ни строки `User`."""
+        """`winner_choice` не принимается - "ограбить/отпустить/съесть"
+        (см. BATTLE_DESIGN.md "Исход боя") применимо только к дуэли, у
+        моба нет строки `User`, отбирать нечего.
+
+        `reward_balance` здесь - НЕ "отнято у моба" (мобу нечего отнимать)
+        - это CheSton-награда игроку за победу (ECONOMY.md часть 4,
+        `MOB_CONFIG.cheston_reward_for_mob_win`), тот же смысл столбца,
+        что и денежная часть исхода дуэли, просто другой источник."""
 
         await self.battle_repository.insert(
             battle_type="mob",
@@ -120,6 +126,7 @@ class BattleRecordService:
             is_forced=is_forced,
             reward_level_progress=reward_level_progress,
             reward_rc=reward_rc,
+            reward_balance=reward_balance,
         )
 
     async def record_duel(

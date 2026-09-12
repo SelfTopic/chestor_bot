@@ -141,6 +141,7 @@ async def test_record_mob_fight_persists_forced_flag_and_rewards(
         is_forced=True,
         reward_level_progress=0.2,
         reward_rc=2,
+        reward_balance=1800,
     )
 
     battle = await session.scalar(
@@ -150,9 +151,10 @@ async def test_record_mob_fight_persists_forced_flag_and_rewards(
     assert battle.is_forced is True
     assert battle.reward_level_progress == 0.2
     assert battle.reward_rc == 2
-    # "ограбить/съесть" не применимо к бою с мобом.
+    # reward_balance здесь - CheSton-награда за победу (ECONOMY.md часть 4),
+    # НЕ "ограбление" (тому нечего отбирать - у моба нет строки User).
+    assert battle.reward_balance == 1800
     assert battle.winner_choice is None
-    assert battle.reward_balance is None
 
 
 async def test_record_mob_fight_defaults_to_not_forced(battle_record_service, make_user, session):

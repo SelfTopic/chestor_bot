@@ -1,5 +1,5 @@
 from dataclasses import dataclass, field
-from random import randint
+from random import randint, uniform
 from typing import List, Optional
 
 
@@ -360,6 +360,31 @@ class MobConfig:
     rc_drop_chance: float = 0.15
     rc_drop_min: int = 1
     rc_drop_max: int = 2
+
+    # CheSton-награда за победу над мобом - ECONOMY.md часть 4 (ранее было
+    # ❓ "пробел" - только целевое ощущение "1-2 победы -> 50% от шага
+    # прокачки", без формулы). Решено автором: считать от ЦЕНЫ прокачки
+    # эталонного стата (не от произвольного числа) - `StatUpgradeConfig.
+    # price` растёт степенно (** 1.35) с текущим значением стата, поэтому
+    # берём её в СЕРЕДИНЕ окна текущего уровня (между потолком прошлого
+    # уровня и потолком текущего), а не от реального стата игрока. Из-за
+    # этого сама награда за один бой остаётся примерно постоянной весь
+    # уровень, а вот РЕАЛЬНАЯ цена следующего шага прокачки растёт по мере
+    # приближения к потолку уровня - в начале уровня прокачка кажется
+    # лёгкой (моба-два хватает), под конец - ощутимо тяжелее (нужно больше
+    # моба), что и было целью (см. чат).
+    cheston_reward_reference_stat: str = "strength"
+    cheston_reward_multiplier_min: float = 0.7
+    cheston_reward_multiplier_max: float = 1.1
+
+    def cheston_reward_for_mob_win(self, ghoul_level: int) -> int:
+        floor = stat_cap_for_level(ghoul_level - 1, self.cheston_reward_reference_stat)
+        ceiling = stat_cap_for_level(ghoul_level, self.cheston_reward_reference_stat)
+        reference_stat = (floor + ceiling) // 2
+        price = STAT_UPGRADE_CONFIG.price(reference_stat, 1, self.cheston_reward_reference_stat)
+        return round(
+            price * uniform(self.cheston_reward_multiplier_min, self.cheston_reward_multiplier_max)
+        )
 
 
 MOB_CONFIG = MobConfig()

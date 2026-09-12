@@ -120,6 +120,7 @@ async def mob_fight_handler(
 
     reward_level_progress = None
     reward_rc = None
+    reward_cheston = None
 
     if result.winner == "a":
         mob_power = battle_service.power_of(mob.snapshot)
@@ -137,6 +138,13 @@ async def mob_fight_handler(
             reward_rc = random.randint(MOB_CONFIG.rc_drop_min, MOB_CONFIG.rc_drop_max)
             await ghoul_service.increment_fields(telegram_id, rc_money=reward_rc)
 
+        # ECONOMY.md часть 4 - CheSton за победу, привязано к цене
+        # прокачки эталонного стата на текущем уровне (см. MOB_CONFIG).
+        reward_cheston = MOB_CONFIG.cheston_reward_for_mob_win(ghoul.level)
+        await user_service.plus_balance(
+            telegram_id, change_balance=reward_cheston, log="mob fight reward"
+        )
+
     await battle_record_service.record_mob_fight(
         telegram_id=telegram_id,
         mob_name=mob.name,
@@ -145,6 +153,7 @@ async def mob_fight_handler(
         is_forced=False,
         reward_level_progress=reward_level_progress,
         reward_rc=reward_rc,
+        reward_balance=reward_cheston,
     )
     await battle_record_service.release(telegram_id)
     await cooldown_service.set_cooldown(telegram_id=telegram_id, cooldown_type=_COOLDOWN_NAME)
@@ -164,6 +173,7 @@ async def mob_fight_handler(
 
     if result.winner == "a":
         summary = f"📈 Получено опыта: {reward_level_progress:.2f}%"
+        summary += f"\n💰 Получено CheSton: {reward_cheston}"
         if reward_rc:
             summary += f"\n♦️ Дополнительно найдено: {reward_rc} RC-клеток!"
     elif result.winner == "b":
