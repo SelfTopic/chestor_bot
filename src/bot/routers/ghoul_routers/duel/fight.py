@@ -225,6 +225,7 @@ async def finalize_outcome(
 
     reward_rc: Optional[int] = None
     reward_balance: Optional[int] = None
+    hunger_restored: Optional[int] = None
 
     if action == "outcome_rob":
         if loser_user and loser_user.balance > 0:
@@ -261,6 +262,12 @@ async def finalize_outcome(
         # вести отдельно (найдено как баг - распрофиль показывал 0, хотя
         # съедения были).
         await services.ghoul_service.increment_fields(winner_id, eat_ghouls=1)
+        # Поедание есть поедание независимо от того, кого едят - те же
+        # проценты, что у "сожрать человека" (найдено как баг: раньше
+        # "съесть" в дуэли давал только RC, голод победителя не трогался).
+        _, hunger_restored = await services.ghoul_service.restore_hunger_from_eating(
+            winner_id
+        )
 
     winner_label = "a" if winner_id == duel_session.initiator_telegram_id else "b"
     await services.battle_record_service.record_duel(
@@ -302,6 +309,8 @@ async def finalize_outcome(
             if reward_rc
             else f"🍖 {winner_name} нещадно добил и сожрал {loser_name}, но в его теле не оказалось пригодных для переваривания RC клеток"
         )
+        if hunger_restored is not None:
+            outcome_text += f"\n🍖 Голод {winner_name} восстановлен на {hunger_restored}%."
     else:
         outcome_text = f"🕊️ {winner_name} решил отпустить {loser_name}."
 

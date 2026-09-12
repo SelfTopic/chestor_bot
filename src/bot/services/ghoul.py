@@ -284,10 +284,57 @@ class GhoulService(Base):
         кодом (заворот через 100% и т.п.)."""
         return await self.ghoul_repository.upsert(telegram_id, **values)
 
+    async def restore_hunger_from_eating(
+        self, telegram_id: int, **extra_upsert_fields: Any
+    ) -> Tuple[Ghoul, int]:
+        """Общая часть "поесть" - откатывает голод на случайные
+        EAT_HUMAN_CONFIG.min/max_hunger_restore% (то же восстановление,
+        что даёт обычное "сожрать человека"). Используется и там
+        (`eat_human` ниже, добавляет `eat_humans+1` в тот же upsert через
+        `extra_upsert_fields`), и в исходе дуэли "съесть" (`finalize_outcome`
+        в `duel/fight.py`, без доп. полей - `eat_ghouls` там инкрементится
+        отдельным атомарным `increment_fields`) - раньше "съесть" в дуэли
+        давал только RC, голод победителя не трогался вообще, хотя по
+        лору поедание есть поедание независимо от того, кого едят
+        (человека или гуля) - найдено как баг задним числом (см. чат).
+
+        Возвращает (обновлённый_гуль, сколько_голода_восстановлено)."""
+
+        logger.debug(
+            f"Called method restore_hunger_from_eating. Params: telegram_id={telegram_id}"
+        )
+
+        ghoul = await self.get(telegram_id)
+
+        if not ghoul:
+            logger.error("Ghoul not found for restore_hunger_from_eating operation")
+            raise ValueError("Ghoul not found")
+
+        restore = EAT_HUMAN_CONFIG.hunger_restore
+        new_hunger = apply_hunger_restore(ghoul.hunger, restore)
+
+        updated_ghoul = await self.ghoul_repository.upsert(
+            telegram_id=telegram_id,
+            hunger=new_hunger,
+            hunger_updated_at=utcnow_naive(),
+            **extra_upsert_fields,
+        )
+
+        # Голод только что осознанно изменился - расписание пуша по голоду
+        # обязано пересчитаться сейчас же, а не ждать следующего чтения.
+        await self.sync_notification_schedule(updated_ghoul, now=utcnow_naive())
+
+        logger.debug(
+            f"restore_hunger_from_eating: hunger {ghoul.hunger}->{new_hunger} (+{restore})"
+        )
+
+        return updated_ghoul, restore
+
     async def eat_human(self, telegram_id: int) -> Tuple[Ghoul, int]:
-        """Фаза 3a ("Поесть человека" в BATTLE_DESIGN.md) - без риска
-        нападения моба, это 3b, требует боевого движка. Кулдаун (1 сутки)
-        проверяется в роутере через CooldownService, не здесь.
+        """Фазы 3a/3b ("Поесть человека" в BATTLE_DESIGN.md) - 3b (засада
+        моба) реализована во внешнем слое (`eat_human.py`), здесь только
+        честное восстановление голода. Кулдаун проверяется в роутере
+        через CooldownService, не здесь.
 
         Возвращает (обновлённый_гуль, сколько_голода_восстановлено)."""
 
@@ -299,26 +346,9 @@ class GhoulService(Base):
             logger.error("Ghoul not found for eat_human operation")
             raise ValueError("Ghoul not found")
 
-        restore = EAT_HUMAN_CONFIG.hunger_restore
-        new_hunger = apply_hunger_restore(ghoul.hunger, restore)
-
-        updated_ghoul = await self.ghoul_repository.upsert(
-            telegram_id=telegram_id,
-            hunger=new_hunger,
-            hunger_updated_at=utcnow_naive(),
-            eat_humans=ghoul.eat_humans + 1,
+        return await self.restore_hunger_from_eating(
+            telegram_id, eat_humans=ghoul.eat_humans + 1
         )
-
-        # Голод только что осознанно изменился - расписание пуша по голоду
-        # обязано пересчитаться сейчас же, а не ждать следующего чтения.
-        await self.sync_notification_schedule(updated_ghoul, now=utcnow_naive())
-
-        logger.debug(
-            f"eat_human: hunger {ghoul.hunger}->{new_hunger} (+{restore}), "
-            f"eat_humans={updated_ghoul.eat_humans}"
-        )
-
-        return updated_ghoul, restore
 
     async def snap_finger(self, telegram_id: int) -> Ghoul:
         logger.debug(f"Called method snap_finger. Params: telegram_id={telegram_id}")
