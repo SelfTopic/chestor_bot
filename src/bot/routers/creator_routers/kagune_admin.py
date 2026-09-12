@@ -6,7 +6,7 @@ from aiogram.types import Message
 from dependency_injector.wiring import Provide, inject
 
 from ...containers import Container
-from ...services import GhoulService
+from ...services import GhoulService, UserService
 from ...types import KaguneType
 
 logger = logging.getLogger(__name__)
@@ -28,11 +28,21 @@ def _resolve_target(message: Message) -> tuple[list[str], int | None]:
     return args, None
 
 
+async def _resolve_telegram_id(query: str, user_service: UserService) -> int | None:
+    """id или @username в telegram_id - тот же приём, что уже используют
+    BanService._resolve_user/ResetService/PlayerLookupService/BroadcastService."""
+
+    search = int(query) if query.lstrip("-").isdigit() else query.lstrip("@")
+    user = await user_service.get(search)
+    return user.telegram_id if user else None
+
+
 @router.message(Command("give_kagune"))
 @inject
 async def give_kagune(
     message: Message,
     ghoul_service: GhoulService = Provide[Container.ghoul_service],
+    user_service: UserService = Provide[Container.user_service],
 ) -> None:
     args, telegram_id = _resolve_target(message)
 
@@ -49,13 +59,11 @@ async def give_kagune(
                 f"Использование: /give_kagune <id или @username> <{_TYPE_NAMES}|all>"
             )
             return
-        query = args[1].strip().lstrip("@")
-        if not query.isdigit():
-            await message.answer(
-                "❌ Укажи числовой telegram_id (по username пока нет резолва)."
-            )
+        query = args[1].strip()
+        telegram_id = await _resolve_telegram_id(query, user_service)
+        if telegram_id is None:
+            await message.answer(f"❌ Пользователь не найден: {query}")
             return
-        telegram_id = int(query)
         type_name = args[2].strip().lower()
 
     try:
@@ -86,6 +94,7 @@ async def give_kagune(
 async def remove_kagune(
     message: Message,
     ghoul_service: GhoulService = Provide[Container.ghoul_service],
+    user_service: UserService = Provide[Container.user_service],
 ) -> None:
     args, telegram_id = _resolve_target(message)
 
@@ -100,13 +109,11 @@ async def remove_kagune(
                 f"Использование: /remove_kagune <id или @username> <{_TYPE_NAMES}>"
             )
             return
-        query = args[1].strip().lstrip("@")
-        if not query.isdigit():
-            await message.answer(
-                "❌ Укажи числовой telegram_id (по username пока нет резолва)."
-            )
+        query = args[1].strip()
+        telegram_id = await _resolve_telegram_id(query, user_service)
+        if telegram_id is None:
+            await message.answer(f"❌ Пользователь не найден: {query}")
             return
-        telegram_id = int(query)
         type_name = args[2].strip().lower()
 
     kagune_type = _TYPE_BY_NAME.get(type_name)

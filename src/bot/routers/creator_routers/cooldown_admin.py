@@ -6,7 +6,7 @@ from aiogram.types import Message
 from dependency_injector.wiring import Provide, inject
 
 from ...containers import Container
-from ...services import CooldownService
+from ...services import CooldownService, UserService
 
 logger = logging.getLogger(__name__)
 router = Router()
@@ -26,11 +26,25 @@ def _resolve_target(message: Message) -> tuple[list[str], int | None]:
     return args, None
 
 
+async def _resolve_telegram_id(query: str, user_service: UserService) -> int | None:
+    """id или @username в telegram_id - тот же приём, что уже используют
+    BanService._resolve_user/ResetService/PlayerLookupService/BroadcastService
+    (`int(query) если цифры, иначе username без "@"`, поиск через
+    `UserRepository.get`), только здесь без своего сервиса-обёртки - эти
+    creator-команды и так работают напрямую с ghoul/cooldown/level_up-
+    сервисами, а не с User."""
+
+    search = int(query) if query.lstrip("-").isdigit() else query.lstrip("@")
+    user = await user_service.get(search)
+    return user.telegram_id if user else None
+
+
 @router.message(Command("clear_cooldown"))
 @inject
 async def clear_cooldown(
     message: Message,
     cooldown_service: CooldownService = Provide[Container.cooldown_service],
+    user_service: UserService = Provide[Container.user_service],
 ) -> None:
     """Снять конкретный (или все разом - "all") кулдаун у ЛЮБОГО игрока -
     нужно для эмпирической проверки случайных шансов (например будущей
@@ -52,13 +66,11 @@ async def clear_cooldown(
                 "Использование: /clear_cooldown <id или @username> <тип|all>"
             )
             return
-        query = args[1].strip().lstrip("@")
-        if not query.isdigit():
-            await message.answer(
-                "❌ Укажи числовой telegram_id (по username пока нет резолва)."
-            )
+        query = args[1].strip()
+        telegram_id = await _resolve_telegram_id(query, user_service)
+        if telegram_id is None:
+            await message.answer(f"❌ Пользователь не найден: {query}")
             return
-        telegram_id = int(query)
         type_name = args[2].strip()
 
     if type_name.lower() == "all":

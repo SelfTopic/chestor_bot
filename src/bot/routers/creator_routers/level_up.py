@@ -6,10 +6,19 @@ from aiogram.types import Message
 from dependency_injector.wiring import Provide, inject
 
 from ...containers import Container
-from ...services import LevelUpService
+from ...services import LevelUpService, UserService
 
 logger = logging.getLogger(__name__)
 router = Router()
+
+
+async def _resolve_telegram_id(query: str, user_service: UserService) -> int | None:
+    """id или @username в telegram_id - тот же приём, что уже используют
+    BanService._resolve_user/ResetService/PlayerLookupService/BroadcastService."""
+
+    search = int(query) if query.lstrip("-").isdigit() else query.lstrip("@")
+    user = await user_service.get(search)
+    return user.telegram_id if user else None
 
 
 @router.message(Command("force_levelup"))
@@ -17,6 +26,7 @@ router = Router()
 async def force_levelup(
     message: Message,
     level_up_service: LevelUpService = Provide[Container.level_up_service],
+    user_service: UserService = Provide[Container.user_service],
 ) -> None:
     """Тестовая команда - вызывает LevelUpService.level_up() напрямую, без
     ожидания реального источника левел-апа (боя/поедания гулей), которого
@@ -32,11 +42,11 @@ async def force_levelup(
         await message.answer("Использование: /force_levelup <id или @username>")
         return
 
-    query = args[1].strip().lstrip("@")
-    telegram_id = int(query) if query.isdigit() else None
+    query = args[1].strip()
+    telegram_id = await _resolve_telegram_id(query, user_service)
 
     if telegram_id is None:
-        await message.answer("❌ Укажи числовой telegram_id (по username пока нет резолва).")
+        await message.answer(f"❌ Пользователь не найден: {query}")
         return
 
     try:
@@ -57,6 +67,7 @@ async def force_levelup(
 async def add_progress(
     message: Message,
     level_up_service: LevelUpService = Provide[Container.level_up_service],
+    user_service: UserService = Provide[Container.user_service],
 ) -> None:
     """Тестовая команда - начисляет level_progress напрямую (от -100 до 100),
     чтобы симулировать реальный источник левел-апа (бой/поедание гулей),
@@ -87,13 +98,11 @@ async def add_progress(
                 "<дельта от -100 до 100>"
             )
             return
-        query = args[1].strip().lstrip("@")
-        if not query.isdigit():
-            await message.answer(
-                "❌ Укажи числовой telegram_id (по username пока нет резолва)."
-            )
+        query = args[1].strip()
+        telegram_id = await _resolve_telegram_id(query, user_service)
+        if telegram_id is None:
+            await message.answer(f"❌ Пользователь не найден: {query}")
             return
-        telegram_id = int(query)
         raw_delta = args[2].strip()
 
     try:
