@@ -101,5 +101,52 @@ class BattleRepository(Base):
         )
         return (await self.session.scalar(stmt)) or 0
 
+    async def count_wins(self, telegram_id: int) -> int:
+        """Всего побед за всё время (BATTLE_ENGINE.md 5.2) - НЕ по 24ч
+        окну, в отличие от count_total_since/count_pair_since (те - под
+        дневные лимиты). Работает и для боёв с мобами (participant_b - NULL,
+        winner="a"/"b" относительно самого игрока, см. BattleRecordService.
+        record_mob_fight)."""
+
+        stmt = (
+            select(func.count())
+            .select_from(Battle)
+            .where(
+                or_(
+                    (Battle.participant_a_telegram_id == telegram_id) & (Battle.winner == "a"),
+                    (Battle.participant_b_telegram_id == telegram_id) & (Battle.winner == "b"),
+                )
+            )
+        )
+        return (await self.session.scalar(stmt)) or 0
+
+    async def count_losses(self, telegram_id: int) -> int:
+        stmt = (
+            select(func.count())
+            .select_from(Battle)
+            .where(
+                or_(
+                    (Battle.participant_a_telegram_id == telegram_id) & (Battle.winner == "b"),
+                    (Battle.participant_b_telegram_id == telegram_id) & (Battle.winner == "a"),
+                )
+            )
+        )
+        return (await self.session.scalar(stmt)) or 0
+
+    async def count_total(self, telegram_id: int) -> int:
+        """Все бои за всё время (включая ничьи) - победы+поражения+ничьи."""
+
+        stmt = (
+            select(func.count())
+            .select_from(Battle)
+            .where(
+                or_(
+                    Battle.participant_a_telegram_id == telegram_id,
+                    Battle.participant_b_telegram_id == telegram_id,
+                )
+            )
+        )
+        return (await self.session.scalar(stmt)) or 0
+
 
 __all__ = ["BattleRepository"]

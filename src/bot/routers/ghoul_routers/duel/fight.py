@@ -267,6 +267,22 @@ async def finalize_outcome(
     else:
         outcome_text = f"🕊️ {winner_name} решил отпустить {loser_name}."
 
+    if duel_session.reward_level_progress is not None:
+        outcome_text += f"\n📈 {winner_name} получил {duel_session.reward_level_progress:.2f}% опыта."
+
+    # Счётчики побед/поражений (BATTLE_ENGINE.md 5.2) - запрашиваются
+    # ПОСЛЕ record_duel выше, поэтому уже учитывают этот самый бой.
+    winner_wins = await services.battle_record_service.count_wins(winner_id)
+    winner_losses = await services.battle_record_service.count_losses(winner_id)
+    winner_total = await services.battle_record_service.count_total_battles(winner_id)
+    loser_wins = await services.battle_record_service.count_wins(loser_id)
+    loser_losses = await services.battle_record_service.count_losses(loser_id)
+    loser_total = await services.battle_record_service.count_total_battles(loser_id)
+    outcome_text += (
+        f"\n📊 {winner_name}: {winner_total} боёв ({winner_wins}П/{winner_losses}Пор)"
+        f"\n📊 {loser_name}: {loser_total} боёв ({loser_wins}П/{loser_losses}Пор)"
+    )
+
     # Всегда дублируем итог в ЛС обоим участникам (не только тому, кто на
     # неё нажал) - чтобы бой можно было найти в переписке в любой момент,
     # даже если исходное сообщение с логом боя потерялось в истории чата

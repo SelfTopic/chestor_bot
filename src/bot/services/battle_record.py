@@ -156,5 +156,17 @@ class BattleRecordService:
             telegram_id_a, telegram_id_b, utcnow_naive() - _DAY
         )
 
+    async def count_wins(self, telegram_id: int) -> int:
+        """Счётчик побед за всё время - для профиля (BATTLE_ENGINE.md 5.2),
+        не для дневных лимитов (см. count_total_last_24h)."""
+
+        return await self.battle_repository.count_wins(telegram_id)
+
+    async def count_losses(self, telegram_id: int) -> int:
+        return await self.battle_repository.count_losses(telegram_id)
+
+    async def count_total_battles(self, telegram_id: int) -> int:
+        return await self.battle_repository.count_total(telegram_id)
+
 
 __all__ = ["BattleRecordService"]

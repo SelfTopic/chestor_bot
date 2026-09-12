@@ -200,6 +200,57 @@ async def test_count_total_last_24h_is_zero_with_no_history(battle_record_servic
     assert await battle_record_service.count_total_last_24h(500_000_014) == 0
 
 
+# --- Счётчики побед/поражений для профиля (BATTLE_ENGINE.md 5.2) -----------
+
+
+async def test_count_wins_losses_total_for_duels(battle_record_service, make_user):
+    await make_user(telegram_id=500_000_021)
+    await make_user(telegram_id=500_000_022, username="tw_500022")
+
+    # 021 выигрывает у 022, потом проигрывает 022 (порядок a/b намеренно
+    # разный - счётчик не должен зависеть от того, кто был "a" в записи).
+    await battle_record_service.record_duel(
+        telegram_id_a=500_000_021, telegram_id_b=500_000_022, winner="a", ended_naturally=True
+    )
+    await battle_record_service.record_duel(
+        telegram_id_a=500_000_022, telegram_id_b=500_000_021, winner="a", ended_naturally=True
+    )
+
+    assert await battle_record_service.count_wins(500_000_021) == 1
+    assert await battle_record_service.count_losses(500_000_021) == 1
+    assert await battle_record_service.count_total_battles(500_000_021) == 2
+
+    assert await battle_record_service.count_wins(500_000_022) == 1
+    assert await battle_record_service.count_losses(500_000_022) == 1
+    assert await battle_record_service.count_total_battles(500_000_022) == 2
+
+
+async def test_count_wins_losses_for_mob_fights(battle_record_service, make_user):
+    """winner="a" в записи о бое с мобом означает "игрок победил" -
+    winner="b" означает "моб победил" (см. record_mob_fight) - счётчик
+    должен читать это так же, как и для дуэлей, без спец-кейсов."""
+
+    await make_user(telegram_id=500_000_023)
+
+    await battle_record_service.record_mob_fight(
+        telegram_id=500_000_023, mob_name="Тестовый моб", winner="a", ended_naturally=True
+    )
+    await battle_record_service.record_mob_fight(
+        telegram_id=500_000_023, mob_name="Тестовый моб", winner="b", ended_naturally=True
+    )
+
+    assert await battle_record_service.count_wins(500_000_023) == 1
+    assert await battle_record_service.count_losses(500_000_023) == 1
+    assert await battle_record_service.count_total_battles(500_000_023) == 2
+
+
+async def test_count_wins_losses_total_are_zero_with_no_history(battle_record_service, make_user):
+    await make_user(telegram_id=500_000_024)
+    assert await battle_record_service.count_wins(500_000_024) == 0
+    assert await battle_record_service.count_losses(500_000_024) == 0
+    assert await battle_record_service.count_total_battles(500_000_024) == 0
+
+
 # --- Интеграция: BattleService.validate_ghoul(has_pending_confirmation=...) --
 
 

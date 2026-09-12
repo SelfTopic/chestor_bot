@@ -60,7 +60,7 @@ def test_build_ghoul_profile_rich_message_returns_valid_input_rich_message():
     user = SimpleNamespace(full_name="Test User")
 
     message = build_ghoul_profile_rich_message(
-        user, ghoul, FakeGhoulService(), danger_rank="B", power=123
+        user, ghoul, FakeGhoulService(), danger_rank="B", power=123, wins=7, losses=3, total_battles=10
     )
 
     assert isinstance(message, InputRichMessage)
@@ -77,7 +77,7 @@ def test_build_ghoul_profile_rich_message_lists_only_owned_kagune_types():
     user = SimpleNamespace(full_name="Test User")
 
     message = build_ghoul_profile_rich_message(
-        user, ghoul, FakeGhoulService(), danger_rank="B", power=123
+        user, ghoul, FakeGhoulService(), danger_rank="B", power=123, wins=7, losses=3, total_battles=10
     )
 
     dumped = message.model_dump_json(exclude_none=True)
@@ -92,9 +92,21 @@ def test_build_ghoul_profile_rich_message_includes_deaths_and_kakuja():
     user = SimpleNamespace(full_name="Test User")
 
     message = build_ghoul_profile_rich_message(
-        user, ghoul, FakeGhoulService(), danger_rank="B", power=123
+        user, ghoul, FakeGhoulService(), danger_rank="B", power=123, wins=7, losses=3, total_battles=10
     )
 
     dumped = message.model_dump_json(exclude_none=True)
     assert "Смертей: 5" in dumped
     assert "Какуджа: Есть" in dumped
+
+
+def test_build_ghoul_profile_rich_message_includes_battle_counters():
+    ghoul = _make_ghoul()
+    user = SimpleNamespace(full_name="Test User")
+
+    message = build_ghoul_profile_rich_message(
+        user, ghoul, FakeGhoulService(), danger_rank="B", power=123, wins=7, losses=3, total_battles=10
+    )
+
+    dumped = message.model_dump_json(exclude_none=True)
+    assert "Всего боёв: 10 (7 побед / 3 поражений)" in dumped
