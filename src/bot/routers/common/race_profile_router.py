@@ -10,9 +10,11 @@ from aiogram.types import (
     InputRichBlockListItem,
     InputRichBlockParagraph,
     InputRichBlockSectionHeading,
+    InputRichBlockTable,
     InputRichBlockUnion,
     InputRichMessage,
     Message,
+    RichBlockTableCell,
 )
 from dependency_injector.wiring import Provide, inject
 
@@ -21,7 +23,8 @@ from src.database.models import Ghoul
 from ...containers import Container
 from ...game_configs import STATS
 from ...services import BattleRecordService, DialogService, GhoulService, UserService
-from ...types import Race
+from ...services.battle_engine.core import KAGUNE_TYPE_MULTIPLIERS, KAGUNE_TYPE_PRIORITY_STAT
+from ...types import KaguneType, Race
 from ...utils import calculate_kagune, get_hunger_tier, level_progress_bar
 
 logger = logging.getLogger(__name__)
@@ -31,6 +34,83 @@ router = Router(name=__name__)
 
 def _paragraph(text: str) -> InputRichBlockParagraph:
     return InputRichBlockParagraph(text=text)
+
+
+def _table_cell(text: str, *, header: bool = False) -> RichBlockTableCell:
+    return RichBlockTableCell(
+        align="center", valign="middle", text=text, is_header=header or None
+    )
+
+
+# Порядок и подписи статов в таблице влияния кагуне - тот же порядок, что
+# используется в "боевая мощь" (combat_power.py), для единообразия UI.
+_KAGUNE_STAT_LABELS: list[tuple[str, str]] = [
+    ("strength", "Сила"),
+    ("dexterity", "Ловкость"),
+    ("speed", "Скорость"),
+    ("health", "Здоровье"),
+    ("regeneration", "Регенерация"),
+]
+
+
+def build_kagune_info_rich_message() -> InputRichMessage:
+    """Справочная таблица "какой тип кагуне на какой стат и с каким
+    множителем влияет" (BATTLE_DESIGN.md "Множители типов кагуне") - не
+    привязана к конкретному гулю (нет входных параметров), поэтому команда
+    доступна всем без похода в профиль - см. `race_profile_router` вместо
+    отдельного роутера, чтобы не плодить модуль ради одного хендлера."""
+
+    header_row = [_table_cell("Тип", header=True)] + [
+        _table_cell(label, header=True) for _, label in _KAGUNE_STAT_LABELS
+    ]
+
+    rows = [header_row]
+    for kagune_type in KaguneType:
+        multipliers = KAGUNE_TYPE_MULTIPLIERS.get(kagune_type, {})
+        row = [_table_cell(str(kagune_type.value["name"]))]
+        for stat_key, _ in _KAGUNE_STAT_LABELS:
+            if stat_key not in multipliers:
+                row.append(_table_cell("—"))
+                continue
+            mark = "★" if KAGUNE_TYPE_PRIORITY_STAT[kagune_type] == stat_key else ""
+            row.append(_table_cell(f"×{multipliers[stat_key]}{mark}"))
+        rows.append(row)
+
+    table = InputRichBlockTable(cells=rows, is_bordered=True, is_striped=True)
+
+    blocks: list[InputRichBlockUnion] = [
+        InputRichBlockSectionHeading(text="♦️ Влияние типов кагуне на статы", size=3),
+        table,
+        _paragraph(
+            "★ - приоритетный стат типа: если открыто несколько типов, "
+            "трогающих один стат, побеждает «хозяин» (★), иначе берётся "
+            "наименьший из множителей (правило стаков, см. BATTLE_DESIGN.md)."
+        ),
+        _paragraph(
+            "Сила кагуне (сумма силы всех открытых типов) сама по себе НЕ "
+            "множится типом кагуне - только голодом (растущий стат) и "
+            "какуджей."
+        ),
+    ]
+
+    return InputRichMessage(blocks=blocks)
+
+
+@router.message(F.text.lower() == "кагуне")
+@router.message(Command("kagune"))
+@inject
+async def kagune_info_handler(
+    message: Message,
+    dialog_service: DialogService = Provide[Container.dialog_service],
+) -> Message:
+    try:
+        return await message.answer_rich(rich_message=build_kagune_info_rich_message())
+    except TelegramAPIError:
+        logger.warning(
+            "send_rich_message failed for kagune info, falling back to plain text",
+            exc_info=True,
+        )
+        return await message.answer(text=dialog_service.text(key="kagune_info"))
 
 
 def build_ghoul_profile_rich_message(

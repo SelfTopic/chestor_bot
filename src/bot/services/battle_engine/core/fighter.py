@@ -162,36 +162,65 @@ def validate_snapshot(fighter: FighterSnapshot) -> None:
         )
 
 
-def compute_effective_stats(fighter: FighterSnapshot) -> EffectiveStats:
-    """База -> голод-тир -> тип кагуне -> какудж, см. BATTLE_ENGINE.md 1.3.
-    `health` эффективный может честно превысить вакуумный `max_health`
-    профиля (не участвует здесь вообще - он не боевой стат, см. 4.2)."""
+@dataclass(frozen=True)
+class StatBreakdown:
+    """Разбивка ОДНОГО эффективного стата по шагам цепочки модификаторов
+    (BATTLE_ENGINE.md 1.3) - нужна только для UX ("боевая мощь", 8.4,
+    команда "кагуне"), которому важно показать игроку, ОТКУДА взялось
+    финальное число, а не только само число. `after_kagune` - последний
+    шаг цепочки (после типа кагуне И какуджи) - всегда совпадает с
+    соответствующим полем `EffectiveStats` (тем значением, которое РЕАЛЬНО
+    участвует в бою)."""
+
+    base: float
+    after_hunger: float
+    after_kagune: float
+
+
+def compute_stat_breakdown(fighter: FighterSnapshot) -> Dict[str, StatBreakdown]:
+    """Разбивка для strength/dexterity/speed/health/regeneration (те же 5,
+    что даёт EffectiveStats без kagune_strength - у него отдельная, более
+    простая цепочка без типового множителя, см. ниже)."""
 
     tier = get_hunger_tier(fighter.hunger)
     owned = fighter.owned_kagune_types
     kakuja_mult = PASSIVE_STATS_CONFIG.kakuja_multiplier if fighter.is_kakuja else 1.0
 
-    def chain(base: float, stat_name: str, is_rising: bool) -> float:
+    def breakdown(base: float, stat_name: str, is_rising: bool) -> StatBreakdown:
         hunger_mult = tier.rising_multiplier if is_rising else tier.falling_multiplier
+        after_hunger = base * hunger_mult
         kagune_mult = resolve_kagune_multiplier(stat_name, owned)
-        return base * hunger_mult * kagune_mult * kakuja_mult
+        after_kagune = after_hunger * kagune_mult * kakuja_mult
+        return StatBreakdown(base=base, after_hunger=after_hunger, after_kagune=after_kagune)
 
-    strength = chain(fighter.strength, "strength", is_rising=True)
-    dexterity = chain(fighter.dexterity, "dexterity", is_rising=False)
-    regeneration = chain(fighter.regeneration, "regeneration", is_rising=False)
-    speed = chain(fighter.speed, "speed", is_rising=False)
-    health = chain(fighter.health, "health", is_rising=False)
+    return {
+        "strength": breakdown(fighter.strength, "strength", is_rising=True),
+        "dexterity": breakdown(fighter.dexterity, "dexterity", is_rising=False),
+        "speed": breakdown(fighter.speed, "speed", is_rising=False),
+        "health": breakdown(fighter.health, "health", is_rising=False),
+        "regeneration": breakdown(fighter.regeneration, "regeneration", is_rising=False),
+    }
+
+
+def compute_effective_stats(fighter: FighterSnapshot) -> EffectiveStats:
+    """База -> голод-тир -> тип кагуне -> какудж, см. BATTLE_ENGINE.md 1.3.
+    `health` эффективный может честно превысить вакуумный `max_health`
+    профиля (не участвует здесь вообще - он не боевой стат, см. 4.2)."""
+
+    breakdown = compute_stat_breakdown(fighter)
+    tier = get_hunger_tier(fighter.hunger)
+    kakuja_mult = PASSIVE_STATS_CONFIG.kakuja_multiplier if fighter.is_kakuja else 1.0
 
     # kagune_strength сознательно НЕ идёт через resolve_kagune_multiplier -
     # исключён из таблицы типов кагуне, только голод (растущий) + какудж.
     kagune_strength = fighter.total_kagune_strength * tier.rising_multiplier * kakuja_mult
 
     return EffectiveStats(
-        strength=strength,
-        dexterity=dexterity,
-        regeneration=regeneration,
-        speed=speed,
-        health=health,
+        strength=breakdown["strength"].after_kagune,
+        dexterity=breakdown["dexterity"].after_kagune,
+        regeneration=breakdown["regeneration"].after_kagune,
+        speed=breakdown["speed"].after_kagune,
+        health=breakdown["health"].after_kagune,
         kagune_strength=kagune_strength,
     )
 
@@ -295,7 +324,9 @@ __all__ = [
     "resolve_kagune_multiplier",
     "FighterSnapshot",
     "EffectiveStats",
+    "StatBreakdown",
     "validate_snapshot",
     "compute_effective_stats",
+    "compute_stat_breakdown",
     "Fighter",
 ]

@@ -37,6 +37,9 @@ class FakeGhoulService:
             + self.total_kagune_strength(ghoul)
         )
 
+    def get_danger_rank(self, power: int) -> str:
+        return "F" if power < 500 else "D"
+
 
 def _make_ghoul(**overrides) -> Ghoul:
     defaults = dict(
@@ -65,47 +68,62 @@ def _make_battle_service() -> BattleService:
 def test_build_combat_power_rich_message_returns_valid_input_rich_message():
     """Единственное, что можно проверить без живого бота - что дерево
     блоков реально сериализуется в JSON в том виде, в котором Bot API
-    его ожидает (та же проверка, что и у профиля гуля)."""
+    его ожидает (та же проверка, что и у профиля гуля), и что там
+    действительно две таблицы (см. BATTLE_ENGINE.md 8.4 - "фиктивная" и
+    "боевая")."""
 
     ghoul = _make_ghoul()
     user = SimpleNamespace(full_name="Test User")
+    fake_service = FakeGhoulService()
 
     message = build_combat_power_rich_message(
-        user, ghoul, FakeGhoulService(), _make_battle_service()
+        user, ghoul, fake_service.get_danger_rank(fake_service.calculate_power(ghoul)),
+        fake_service, _make_battle_service(),
     )
 
     assert isinstance(message, InputRichMessage)
     assert message.blocks
     dumped = message.model_dump_json(exclude_none=True)
     assert '"type":"heading"' in dumped
+    assert dumped.count('"type":"table"') == 2
 
 
 def test_build_combat_power_rich_message_health_column_uses_max_health_not_current():
     # health=50 (текущее, раненое) vs max_health=100 (вакуумный потолок,
-    # "паспортное" значение) - вакуумная колонка обязана показывать именно
-    # max_health (см. BATTLE_ENGINE.md 4.2/1.3), не текущее health.
+    # "паспортное" значение) - вакуумная таблица обязана показывать именно
+    # max_health (см. BATTLE_ENGINE.md 4.2/1.3), боевая - текущее (базовое
+    # значение цепочки), не max_health.
     ghoul = _make_ghoul(health=50, max_health=100)
     user = SimpleNamespace(full_name="Test User")
+    fake_service = FakeGhoulService()
 
     message = build_combat_power_rich_message(
-        user, ghoul, FakeGhoulService(), _make_battle_service()
+        user, ghoul, "F", fake_service, _make_battle_service()
     )
     dumped = message.model_dump_json(exclude_none=True)
 
-    # При hunger=80 (тождественная цепочка) эффективное здоровье = текущему.
-    assert "Здоровье: 100 → 50.0" in dumped
+    # Вакуумная таблица: "Здоровье" -> "100".
+    assert '"text":"Здоровье"' in dumped
+    assert '"text":"100"' in dumped
+    # Боевая таблица: базовое значение для здоровья = текущее (50), при
+    # hunger=80 (тождественная цепочка) финальное эффективное тоже 50.0.
+    assert '"text":"50"' in dumped
+    assert '"text":"50.0"' in dumped
 
 
 def test_build_combat_power_rich_message_effective_power_reflects_hunger():
     ghoul = _make_ghoul(hunger=0)  # "смертельный голод" - падающие статы просажены
     user = SimpleNamespace(full_name="Test User")
+    fake_service = FakeGhoulService()
 
     message = build_combat_power_rich_message(
-        user, ghoul, FakeGhoulService(), _make_battle_service()
+        user, ghoul, "F", fake_service, _make_battle_service()
     )
     dumped = message.model_dump_json(exclude_none=True)
 
-    # Вакуумная мощь (calculate_power) не зависит от голода, эффективная -
-    # зависит - числа "до" и "после" стрелки обязаны различаться.
-    assert "Итого: 500 →" in dumped
-    assert "Итого: 500 → 500.0" not in dumped
+    # Вакуумная мощь (Итого в фиктивной таблице) не зависит от голода (500).
+    # Эффективная (Итого в боевой таблице, последний столбец) - зависит:
+    # hunger=0 -> falling=0.1/rising=0.5, health=50 (текущее, из дефолта):
+    # 100*0.5 + 100*0.1 + 100*0.1 + 50*0.1 + 100*0.1 + 0 = 85.0.
+    assert '"text":"500"' in dumped
+    assert '"text":"85.0"' in dumped
