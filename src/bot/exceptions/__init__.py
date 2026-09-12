@@ -1,3 +1,9 @@
+from .battle import (
+    BattleError,
+    FighterHasPendingBattleError,
+    FighterIsDeadError,
+    FighterNotCombatReadyError,
+)
 from .chat import ChatError, ChatMemberUpdateMessageError, ChatRulesError
 from .chat_not_found import ChatNotFound, ChatNotFoundInDatabase, ChatNotFoundInMessage
 from .ghoul_not_found import GhoulNotFound, GhoulNotFoundInDatabase
@@ -27,6 +33,10 @@ from .user_not_found import (
 )
 
 __all__ = [
+    "BattleError",
+    "FighterHasPendingBattleError",
+    "FighterIsDeadError",
+    "FighterNotCombatReadyError",
     "ChatError",
     "ChatMemberUpdateMessageError",
     "ChatRulesError",

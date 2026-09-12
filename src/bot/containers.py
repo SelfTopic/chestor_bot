@@ -5,9 +5,12 @@ from dependency_injector import containers, providers
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from .repositories import (
+    ActiveBattleRepository,
     BalancesLogRepository,
+    BattleRepository,
     ChatRepository,
     DeathLogRepository,
+    DuelSessionRepository,
     GhoulRepository,
     LotteryRepository,
     MediaRepository,
@@ -19,15 +22,20 @@ from .repositories import (
 )
 from .services import (
     BanService,
+    BattleRecordService,
+    BattleService,
+    BattleTextGenerator,
     BroadcastService,
     ChatService,
     CooldownService,
     DialogService,
+    DuelService,
     GhoulQuizService,
     GhoulService,
     LevelUpService,
     MediaDownloader,
     MediaService,
+    MobService,
     NotificationTicker,
     PlayerLookupService,
     ResetService,
@@ -76,7 +84,29 @@ class Container(containers.DeclarativeContainer):
 
     death_log_repository = providers.Factory(DeathLogRepository, session=db_session)
 
+    active_battle_repository = providers.Factory(ActiveBattleRepository, session=db_session)
+    battle_repository = providers.Factory(BattleRepository, session=db_session)
+    duel_session_repository = providers.Factory(DuelSessionRepository, session=db_session)
+
     dialog_service = providers.Factory(DialogService)
+
+    battle_text_generator = providers.Factory(
+        BattleTextGenerator, dialog_service=dialog_service
+    )
+
+    mob_service = providers.Factory(MobService)
+
+    battle_service = providers.Factory(BattleService, mob_service=mob_service)
+
+    battle_record_service = providers.Factory(
+        BattleRecordService,
+        active_battle_repository=active_battle_repository,
+        battle_repository=battle_repository,
+    )
+
+    duel_service = providers.Factory(
+        DuelService, duel_session_repository=duel_session_repository
+    )
 
     media_downloader = providers.Factory(MediaDownloader, bot=bot)
 

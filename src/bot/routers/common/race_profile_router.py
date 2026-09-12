@@ -20,7 +20,7 @@ from src.database.models import Ghoul
 
 from ...containers import Container
 from ...game_configs import STATS
-from ...services import DialogService, GhoulService, UserService
+from ...services import BattleRecordService, DialogService, GhoulService, UserService
 from ...types import Race
 from ...utils import calculate_kagune, get_hunger_tier, level_progress_bar
 
@@ -34,7 +34,17 @@ def _paragraph(text: str) -> InputRichBlockParagraph:
 
 
 def build_ghoul_profile_rich_message(
-    user, ghoul: Ghoul, ghoul_service: GhoulService, danger_rank: str, power: int
+    user,
+    ghoul: Ghoul,
+    ghoul_service: GhoulService,
+    danger_rank: str,
+    power: int,
+    wins: int,
+    losses: int,
+    total_battles: int,
+    mob_wins: int,
+    mob_losses: int,
+    mob_battles: int,
 ) -> InputRichMessage:
     """Собирает профиль гуля как rich-сообщение (Bot API 10.1+, aiogram
     3.29+), см. BATTLE_DESIGN.md ("UX профиля"). Блоки собираются из
@@ -42,8 +52,12 @@ def build_ghoul_profile_rich_message(
     markdown-диалекта для sendRichMessage нигде в исходниках aiogram не
     задокументирован (только сами типы), рисковать его угадать не стали.
 
-    "Всего боёв" из мокапа сознательно не показан - счётчиков побед/поражений
-    ещё не существует, боевого движка нет (фаза 4)."""
+    "Всего боёв" из мокапа - теперь реализовано (BATTLE_ENGINE.md 5.2),
+    источник - BattleRecordService.count_wins/count_losses/count_total_battles
+    (таблица `battles`, всё время, не дневное окно). Отдельная строка под
+    бои с мобами (count_*_vs_mobs) - НЕ смешивать с дуэлями в одном числе
+    (см. чат) - "Всего боёв" включает оба типа разом, вторая строка честно
+    показывает только мобов."""
 
     tier = get_hunger_tier(ghoul.hunger)
 
@@ -70,7 +84,9 @@ def build_ghoul_profile_rich_message(
             text=f"👤 Профиль гуля {danger_rank} ранга {user.full_name}", size=3
         ),
         _paragraph(f"📈 Уровень: {ghoul.level}"),
-        _paragraph(f"{level_progress_bar(ghoul.level_progress)} {round(ghoul.level_progress)}%"),
+        _paragraph(
+            f"{level_progress_bar(ghoul.level_progress)} {round(ghoul.level_progress)}%"
+        ),
         _paragraph(f"🍖 Голод: {ghoul.hunger}% ({tier.name})"),
         _paragraph(f"♦️ RC-клеток: {ghoul.rc_money}"),
         InputRichBlockDetails(
@@ -89,6 +105,12 @@ def build_ghoul_profile_rich_message(
             ],
         ),
         _paragraph(f"🥩 Съедено гулей: {ghoul.eat_ghouls}"),
+        _paragraph(
+            f"⚔️ Всего боёв: {total_battles} ({wins} побед / {losses} поражений)"
+        ),
+        _paragraph(
+            f"👹 Боёв с мобами: {mob_battles} ({mob_wins} побед / {mob_losses} поражений)"
+        ),
         InputRichBlockDivider(),
         _paragraph(f"🧬 Какуджа: {'Есть' if ghoul.is_kakuja else 'Нет'}"),
         _paragraph(f"☠️ Смертей: {ghoul.deaths}"),
@@ -105,6 +127,9 @@ async def profile_handler(
     user_service: UserService = Provide[Container.user_service],
     dialog_service: DialogService = Provide[Container.dialog_service],
     ghoul_service: GhoulService = Provide[Container.ghoul_service],
+    battle_record_service: BattleRecordService = Provide[
+        Container.battle_record_service
+    ],
 ) -> Message:
     if not message.from_user:
         logger.error("User not found in message.")
@@ -142,8 +167,33 @@ async def profile_handler(
         power = ghoul_service.calculate_power(profile)
         danger_rank = ghoul_service.get_danger_rank(power)
 
+        wins = await battle_record_service.count_wins_vs_players(profile.telegram_id)
+        losses = await battle_record_service.count_losses_vs_players(
+            profile.telegram_id
+        )
+        total_battles = await battle_record_service.count_total_battles_vs_players(
+            profile.telegram_id
+        )
+        mob_wins = await battle_record_service.count_wins_vs_mobs(profile.telegram_id)
+        mob_losses = await battle_record_service.count_losses_vs_mobs(
+            profile.telegram_id
+        )
+        mob_battles = await battle_record_service.count_total_battles_vs_mobs(
+            profile.telegram_id
+        )
+
         rich_message = build_ghoul_profile_rich_message(
-            user, profile, ghoul_service, danger_rank, power
+            user,
+            profile,
+            ghoul_service,
+            danger_rank,
+            power,
+            wins,
+            losses,
+            total_battles,
+            mob_wins,
+            mob_losses,
+            mob_battles,
         )
 
         try:
@@ -175,6 +225,12 @@ async def profile_handler(
                 level=profile.level,
                 power=power,
                 danger_rank=danger_rank,
+                wins=wins,
+                losses=losses,
+                total_battles=total_battles,
+                mob_wins=mob_wins,
+                mob_losses=mob_losses,
+                mob_battles=mob_battles,
             )
             return await message.answer(text=fallback_text)
 

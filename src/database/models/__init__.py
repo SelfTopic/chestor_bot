@@ -1,8 +1,11 @@
+from .active_battle import ActiveBattle
 from .balances_log import BalancesLog
 from .base import Base
+from .battle import Battle
 from .chat import Chat
 from .cooldown import Cooldown
 from .death_log import DeathLog
+from .duel_session import DuelSession
 from .ghoul import Ghoul
 from .lottery import Lottery
 from .media import Media
@@ -13,7 +16,9 @@ from .user_cooldowns import UserCooldown
 from .rp_commands import Rp
 
 __all__ = [
+    "ActiveBattle",
     "Base",
+    "Battle",
     "Chat",
     "Cooldown",
     "Ghoul",
@@ -26,4 +31,5 @@ __all__ = [
     "Transfer",
     "ScheduledNotification",
     "DeathLog",
+    "DuelSession",
 ]

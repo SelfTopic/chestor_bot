@@ -17,18 +17,18 @@ class StatUpgradeService:
         self.user_service = user_service
         self.dialog_service = dialog_service
 
-    def _cap(self, ghoul) -> int:
-        return stat_cap_for_level(ghoul.level)
+    def _cap(self, ghoul, stat_key: str) -> int:
+        return stat_cap_for_level(ghoul.level, stat_key)
 
-    def price_and_actual(self, cur_stat: int, want: int) -> Tuple[int, int]:
-        price = STAT_UPGRADE_CONFIG.price(cur_stat, want)
+    def price_and_actual(self, cur_stat: int, want: int, stat_key: str = "") -> Tuple[int, int]:
+        price = STAT_UPGRADE_CONFIG.price(cur_stat, want, stat_key)
         return price, want
 
     def build_message(self, ghoul, user) -> Tuple[str, InlineKeyboardMarkup]:
         lines = [f"Баланс: {user.balance if user else 0}", ""]
-        cap = self._cap(ghoul)
 
         for label, key, emoji in STATS:
+            cap = self._cap(ghoul, key)
             cur = getattr(ghoul, key)
             remaining = max(0, cap - cur)
             prices = []
@@ -37,7 +37,7 @@ class StatUpgradeService:
                 if buy <= 0:
                     prices.append("—")
                 else:
-                    prices.append(str(STAT_UPGRADE_CONFIG.price(cur, buy)))
+                    prices.append(str(STAT_UPGRADE_CONFIG.price(cur, buy, key)))
 
             lines.append(f"{emoji}{label}: {cur}  х5: {prices[1]} х10: {prices[2]}")
 
@@ -45,6 +45,7 @@ class StatUpgradeService:
 
         inline_rows = []
         for label, key, emoji in STATS:
+            cap = self._cap(ghoul, key)
             cur: int = getattr(ghoul, key)
             remaining = max(0, cap - cur)
             buttons = []
@@ -57,7 +58,7 @@ class StatUpgradeService:
                         )
                     )
                 else:
-                    price = STAT_UPGRADE_CONFIG.price(cur, buy)
+                    price = STAT_UPGRADE_CONFIG.price(cur, buy, key)
                     buttons.append(
                         InlineKeyboardButton(
                             text=f"{emoji} +{m} ({price})",
@@ -78,13 +79,13 @@ class StatUpgradeService:
         if cur is None:
             raise ValueError("Unknown stat")
 
-        cap = self._cap(ghoul)
+        cap = self._cap(ghoul, stat_key)
         remaining = max(0, cap - cur)
         to_buy = min(count, remaining)
         if to_buy <= 0:
             return ghoul, None, 0, 0
 
-        price = STAT_UPGRADE_CONFIG.price(cur, to_buy)
+        price = STAT_UPGRADE_CONFIG.price(cur, to_buy, stat_key)
 
         user = await self.user_service.get(find_by=telegram_id)
         if not user:

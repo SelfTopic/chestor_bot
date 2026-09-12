@@ -73,7 +73,7 @@
 
     "profile": "❕Твой профиль:\n\n👤 Имя:{name}\n❓ Раса: {race}\n💲 Баланс: {balance}\n\nДля открытия расового профиля используйте команду /race_profile или 'распрофиль'",
 
-    "ghoul_profile": "👤 Профиль гуля {danger_rank} ранга {name} \n\n📈 Уровень: {level}\n👁‍🗨 Типы кагуне:\n  🔸 {kagune_type}\n\n💪 Сила кагуне: {strength_kagune}\n👌Щелкнул пальцем: {snap_count}\n♦️RC-клеток: {rc_count}\n\n🤟 Сила: {strength}\n🏃‍♀️ Скорость: {speed}\n🤾‍♀️ Ловкость: {dexterity}\n❤️ Текущее/Максимальное HP: {health}/{max_health}\n❣️ Сила регенерации: {regeneration}\n⚡ Боевая мощь: {power}\n☕️ Выпито кофе: {coffee_count}\n🥩 Съедено людей: {eat_humans}\n🥩 Съедено гулей: {eat_ghouls}\n🧬 Какуджа: {is_kakuja}",
+    "ghoul_profile": "👤 Профиль гуля {danger_rank} ранга {name} \n\n📈 Уровень: {level}\n👁‍🗨 Типы кагуне:\n  🔸 {kagune_type}\n\n💪 Сила кагуне: {strength_kagune}\n👌Щелкнул пальцем: {snap_count}\n♦️RC-клеток: {rc_count}\n\n🤟 Сила: {strength}\n🏃‍♀️ Скорость: {speed}\n🤾‍♀️ Ловкость: {dexterity}\n❤️ Текущее/Максимальное HP: {health}/{max_health}\n❣️ Сила регенерации: {regeneration}\n⚡ Боевая мощь: {power}\n☕️ Выпито кофе: {coffee_count}\n🥩 Съедено людей: {eat_humans}\n🥩 Съедено гулей: {eat_ghouls}\n⚔️ Всего боёв: {total_battles} ({wins} побед / {losses} поражений)\n👹 Боёв с мобами: {mob_battles} ({mob_wins} побед / {mob_losses} поражений)\n🧬 Какуджа: {is_kakuja}",
 
     "not_enough_money": "Ты успокойся нахуй. Ты ебаная бомжиха. На твоем балансе не хватает {money} CheSton для покупки.",
 
@@ -109,7 +109,11 @@
 
     "dead_ghoul_reply": "Да ты сдох, что ты собираешься использовать?.",
 
+    "not_combat_ready": "Ты небоеспособен: {health} HP (нужно минимум {threshold}). Дай себе время восстановиться.",
+
     "dead_ghoul_profile": "💀 {name} мёртв.\n\nУровень: мёртв\nГолод: мёртв\nRC-клеток: мёртв\nКагуне: мёртв\nСтаты: мёртв\n\nЧтобы начать заново - напиши \"растить кагуне\".",
 
-    "rebirth_accept": "🐣 Вау, отныне ты гуль... Снова. Новый тип кагуне: {kagune_type}.\n\nВсё остальное - с чистого листа."
+    "rebirth_accept": "🐣 Вау, отныне ты гуль... Снова. Новый тип кагуне: {kagune_type}.\n\nВсё остальное - с чистого листа.",
+
+    "battle_result_summary": "⚔️ Бой\n\n{rank_line_a}\nVS\n{rank_line_b}\n\n{winner_line}\n{loser_line}\n{hp_line_a}\n{hp_line_b}\n📜 Раундов: {rounds}"
 }
