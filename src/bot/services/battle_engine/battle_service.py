@@ -124,6 +124,14 @@ class BattleService:
             # внутри GhoulService.get) досчитывает health на текущий
             # момент ДО того, как ghoul попадёт сюда - значение уже честное.
             health=ghoul.health,
+            # Вакуумный потолок из профиля - НЕ участвует в самом бою
+            # (движок работает от текущего health выше), но нужен
+            # MobService.generate_mob, чтобы масштабировать моба от
+            # вакуумной "мощности" игрока, а не от того, сколько у него
+            # HP прямо сейчас (иначе искусственно раздутый/просевший
+            # health давал бы такого же противоестественного моба - см.
+            # чат, найдено как баг).
+            max_health=ghoul.max_health,
             hunger=ghoul.hunger,
             is_kakuja=ghoul.is_kakuja,
             kagune_strength=kagune_strength,

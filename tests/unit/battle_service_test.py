@@ -150,6 +150,10 @@ def test_ghoul_to_fighter_maps_stats_and_uses_current_health_not_max():
     assert fighter.snapshot.speed == 67
     assert fighter.snapshot.regeneration == 89
     assert fighter.snapshot.health == 1
+    # max_health - отдельно, вакуумный потолок из профиля (нужен
+    # MobService.generate_mob - см. mob_service_test.py) - не путать с
+    # health выше, это разные величины по конструкции.
+    assert fighter.snapshot.max_health == 500
 
 
 def test_ghoul_to_fighter_only_includes_owned_kagune_types():

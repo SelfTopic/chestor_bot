@@ -15,6 +15,7 @@ def make_player_snapshot(
     regeneration: int = 1000,
     speed: int = 1000,
     health: int = 5000,
+    max_health: Optional[int] = None,
     hunger: int = 100,
     is_kakuja: bool = False,
     kagune_strength: Optional[Dict[KaguneType, int]] = None,
@@ -27,6 +28,7 @@ def make_player_snapshot(
         regeneration=regeneration,
         speed=speed,
         health=health,
+        max_health=max_health,
         hunger=hunger,
         is_kakuja=is_kakuja,
         kagune_strength=kagune_strength or {},
@@ -116,3 +118,28 @@ def test_generate_mob_id_is_not_a_real_player_id():
     player = make_player_snapshot(id=12345)
     mob = MobService().generate_mob(player, rng=random.Random(0))
     assert mob.id != player.id
+
+
+def test_generate_mob_health_scales_from_max_health_not_current_health():
+    """Регрессия по живому багу: игрок искусственно поднял себе текущий
+    health намного выше max_health (например через /set_stat) - моб всё
+    равно должен масштабироваться от вакуумного max_health, а не от
+    раздутого текущего HP, иначе игрок мог бы намеренно накрутить себе
+    гигантский пул и получать таких же гигантских мобов (или наоборот -
+    просевший после боя health не должен занижать моба)."""
+
+    player = make_player_snapshot(health=100, max_health=5)
+    rng = random.Random(3)
+    for _ in range(200):
+        mob = MobService().generate_mob(player, rng=rng)
+        # health=100 с множителем 0.5-2.0 дал бы 50-200, max_health=5 - 2-10
+        # (округление + пол в 1) - диапазоны не пересекаются, поэтому
+        # достаточно и одного прогона, но гоняем несколько для надёжности.
+        assert mob.health <= 10
+
+
+def test_generate_mob_health_still_defaults_to_current_health_when_max_health_not_given():
+    # Обратная совместимость - большинство существующих тестов/вызовов не
+    # указывают max_health явно, там health==max_health и раньше.
+    player = make_player_snapshot(health=1000)
+    assert player.max_health == 1000

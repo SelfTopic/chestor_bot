@@ -12,7 +12,7 @@ from __future__ import annotations
 
 import random
 from dataclasses import dataclass, field
-from typing import Dict, List
+from typing import Dict, List, Optional
 
 from ....game_configs import BATTLE_CONFIG, PASSIVE_STATS_CONFIG
 from ....types import KaguneType
@@ -84,7 +84,19 @@ def resolve_kagune_multiplier(stat: str, owned_types: List[KaguneType]) -> float
 class FighterSnapshot:
     """Всё, что нужно движку про одного бойца - вакуумные (профильные)
     значения ДО цепочки модификаторов. `kagune_strength` - только открытые
-    типы (как nullable-колонки в Ghoul), не все 4 подряд."""
+    типы (как nullable-колонки в Ghoul), не все 4 подряд.
+
+    `health` - ТЕКУЩЕЕ здоровье (то, с чем боец реально входит в бой -
+    см. `ghoul_to_fighter`, сознательно НЕ `max_health`, чтобы проигрыш
+    в прошлом бою переживал реген между боями). `max_health` - отдельная,
+    честно вакуумная величина (потолок из профиля, не связана с текущим
+    боевым состоянием) - нужна там, где важна именно вакуумная "мощность"
+    бойца независимо от того, сколько HP у него прямо сейчас (например
+    `MobService.generate_mob` - моб масштабируется от вакуумного потолка
+    игрока, а не от его текущего HP, иначе игрок с искусственно раздутым
+    `health` получал бы и искусственно раздутого моба - найдено как баг,
+    см. чат). По умолчанию равен `health` (для мест, которым эта разница
+    не важна - большинство тестов ядра движка)."""
 
     id: int
     name: str
@@ -96,6 +108,11 @@ class FighterSnapshot:
     hunger: int
     is_kakuja: bool
     kagune_strength: Dict[KaguneType, int] = field(default_factory=dict)
+    max_health: Optional[int] = None
+
+    def __post_init__(self) -> None:
+        if self.max_health is None:
+            object.__setattr__(self, "max_health", self.health)
 
     @property
     def owned_kagune_types(self) -> List[KaguneType]:

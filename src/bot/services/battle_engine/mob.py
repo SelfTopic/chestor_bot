@@ -40,9 +40,20 @@ class MobService:
         не по отдельности на каждый - иначе моб рассыпался бы на набор
         несвязанных случайных чисел вместо цельного "плюс-минус такой же
         по силе противника") от ВАКУУМНЫХ статов `player_snapshot` - см.
-        MOB_CONFIG."""
+        MOB_CONFIG.
+
+        Здоровье - от `player_snapshot.max_health` (вакуумный потолок), а
+        НЕ от `player_snapshot.health` (текущее, боевое) - иначе игрок с
+        просевшим/искусственно раздутым текущим HP получал бы моба той же
+        степени просевшего/раздутого, хотя моб должен зависеть только от
+        вакуумной "мощности" игрока (найдено как баг, см. чат)."""
 
         multiplier = rng.uniform(MOB_CONFIG.stat_multiplier_min, MOB_CONFIG.stat_multiplier_max)
+        vacuum_health = (
+            player_snapshot.max_health
+            if player_snapshot.max_health is not None
+            else player_snapshot.health
+        )
 
         return FighterSnapshot(
             id=-1,  # не персистентная сущность - не из БД, id-заглушка
@@ -51,7 +62,7 @@ class MobService:
             dexterity=max(_MIN_POSITIVE_STAT, round(player_snapshot.dexterity * multiplier)),
             regeneration=max(0, round(player_snapshot.regeneration * multiplier)),
             speed=max(_MIN_POSITIVE_STAT, round(player_snapshot.speed * multiplier)),
-            health=max(_MIN_POSITIVE_STAT, round(player_snapshot.health * multiplier)),
+            health=max(_MIN_POSITIVE_STAT, round(vacuum_health * multiplier)),
             hunger=100,  # "чистый" снапшот - цепочка модификаторов = тождество
             is_kakuja=False,
             kagune_strength={},
