@@ -187,12 +187,24 @@ PASSIVE_STATS_CONFIG = PassiveStatsConfig()
 
 @dataclass
 class EatHumanConfig:
-    """Фаза 3a из BATTLE_DESIGN.md - без риска нападения моба (это 3b, после
-    боевого движка). Кулдаун (1 сутки) живёт в таблице cooldowns, см.
-    migrations/versions/*_insert_new_cooldown_type_eat_human.py."""
+    """Фазы 3a+3b из BATTLE_DESIGN.md - обе теперь реализованы в одном
+    роутере (`eat_human.py`): 3a - просто восстановление голода, 3b -
+    засада моба (см. `ambush_chance_percent`), после которой 3a наступает,
+    только если игрок выиграл бой. Кулдаун живёт в таблице cooldowns, см.
+    migrations/versions/*_insert_new_cooldown_type_eat_human.py и
+    *_lower_eat_human_cooldown_duration.py (снижен с 24ч до 15ч - по
+    живой обратной связи игроков: голод восполнялся несоразмерно медленнее
+    кулдауна)."""
 
-    min_hunger_restore: int = 5
-    max_hunger_restore: int = 25
+    min_hunger_restore: int = 15
+    max_hunger_restore: int = 30
+
+    # 3b - фиксированный шанс (не зависит от голода/статов/удачи предыдущих
+    # попыток) на то, что во время еды нападает моб-гуль, тоже претендующий
+    # на человека - решено в чате явно. Бой в этом случае ВСЕГДА
+    # принудительный (без согласия и, пока, без попытки сбежать - см.
+    # BattleService.run_against_mob) - голод самого гуля на это не влияет.
+    ambush_chance_percent: float = 25.0
 
     @property
     def hunger_restore(self) -> int:
