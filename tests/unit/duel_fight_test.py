@@ -3,6 +3,7 @@ from typing import cast
 
 from aiogram import Bot
 
+from src.bot.game_configs import EAT_HUMAN_CONFIG
 from src.bot.repositories.duel_session import DuelSessionRepository
 from src.bot.repositories.ghoul import GhoulRepository
 from src.bot.routers.ghoul_routers.duel.fight import finalize_outcome, run_and_announce_fight
@@ -125,3 +126,42 @@ async def test_finalize_outcome_eat_increments_winner_eat_ghouls(session, make_u
 
     assert winner is not None and winner.eat_ghouls == 3
     assert loser is not None and loser.is_dead is True
+
+
+async def test_finalize_outcome_eat_restores_winner_hunger(session, make_user, make_ghoul):
+    """Регрессия: выбор "съесть" начислял RC и eat_ghouls, но НИКОГДА не
+    восстанавливал голод победителя - хотя по лору поедание есть поедание,
+    и должно давать те же проценты, что обычное "сожрать человека"
+    (см. чат - найдено на живых игроках после выбора "съесть" в дуэли)."""
+
+    await make_user(telegram_id=700_000_005)
+    await make_user(telegram_id=700_000_006, username="tw_700006")
+    await make_ghoul(telegram_id=700_000_005, health=50, max_health=50, hunger=50)
+    await make_ghoul(telegram_id=700_000_006, health=50, max_health=50, hunger=50)
+
+    duel_session_repository = DuelSessionRepository(session)
+    duel_session = await duel_session_repository.create(
+        chat_id=-1, initiator_telegram_id=700_000_005, target_telegram_id=700_000_006
+    )
+    duel_session = await duel_session_repository.atomic_update(
+        duel_session.id,
+        "awaiting_consent",
+        stage="awaiting_winner_choice",
+        winner_telegram_id=700_000_005,
+        loser_telegram_id=700_000_006,
+    )
+    assert duel_session is not None
+
+    fake_bot = cast(Bot, _FakeBot())
+    services = build_services(session, fake_bot)
+    await finalize_outcome(fake_bot, duel_session, "outcome_eat", services)
+
+    ghoul_repository = GhoulRepository(session)
+    winner = await ghoul_repository.get(700_000_005)
+
+    assert winner is not None
+    assert (
+        50 + EAT_HUMAN_CONFIG.min_hunger_restore
+        <= winner.hunger
+        <= 50 + EAT_HUMAN_CONFIG.max_hunger_restore
+    )
