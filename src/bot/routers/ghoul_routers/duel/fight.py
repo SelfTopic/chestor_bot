@@ -191,11 +191,15 @@ async def finalize_outcome(
     winner_id = duel_session.winner_telegram_id
     loser_id = duel_session.loser_telegram_id
 
+    winner_user = await services.user_service.get(find_by=winner_id)
+    loser_user = await services.user_service.get(find_by=loser_id)
+    winner_name = winner_user.full_name if winner_user else str(winner_id)
+    loser_name = loser_user.full_name if loser_user else str(loser_id)
+
     reward_rc: Optional[int] = None
     reward_balance: Optional[int] = None
 
     if action == "outcome_rob":
-        loser_user = await services.user_service.get(find_by=loser_id)
         if loser_user and loser_user.balance > 0:
             percent = random.uniform(DUEL_CONFIG.rob_percent_min, DUEL_CONFIG.rob_percent_max)
             amount = round(loser_user.balance * percent / 100.0)
@@ -238,12 +242,6 @@ async def finalize_outcome(
         duel_session.initiator_telegram_id, duel_session.target_telegram_id
     )
 
-    choice_label = {
-        "outcome_rob": "ограбить 💰",
-        "outcome_release": "отпустить 🕊️",
-        "outcome_eat": "съесть 🍖",
-    }[action]
-
     if duel_session.outcome_message_id:
         try:
             await bot.edit_message_reply_markup(
@@ -254,16 +252,34 @@ async def finalize_outcome(
         except TelegramAPIError:
             pass
 
-    outcome_text = f"Победитель выбрал: {choice_label}."
-    if duel_session.is_private_origin:
-        for chat_id in (duel_session.initiator_telegram_id, duel_session.target_telegram_id):
-            try:
-                await bot.send_message(chat_id=chat_id, text=outcome_text)
-            except TelegramAPIError:
-                pass
+    if action == "outcome_rob":
+        outcome_text = (
+            f"💰 {winner_name} ограбил {loser_name} и забрал {reward_balance} CheSton's!"
+            if reward_balance
+            else f"💰 {winner_name} попытался ограбить {loser_name}, но у того было нечего взять."
+        )
+    elif action == "outcome_eat":
+        outcome_text = (
+            f"🍖 {winner_name} сожрал {loser_name} и получил {reward_rc} RC-клеток!"
+            if reward_rc
+            else f"🍖 {winner_name} сожрал {loser_name}."
+        )
     else:
+        outcome_text = f"🕊️ {winner_name} решил отпустить {loser_name}."
+
+    # Всегда дублируем итог в ЛС обоим участникам (не только тому, кто на
+    # неё нажал) - чтобы бой можно было найти в переписке в любой момент,
+    # даже если исходное сообщение с логом боя потерялось в истории чата
+    # (решено в чате). В приватном происхождении это и так единственная
+    # доставка - `chat_id` совпадает с одним из личных чатов, добавлять
+    # его отдельно незачем.
+    target_chat_ids = {duel_session.initiator_telegram_id, duel_session.target_telegram_id}
+    if not duel_session.is_private_origin:
+        target_chat_ids.add(duel_session.chat_id)
+
+    for chat_id in target_chat_ids:
         try:
-            await bot.send_message(chat_id=duel_session.chat_id, text=outcome_text)
+            await bot.send_message(chat_id=chat_id, text=outcome_text)
         except TelegramAPIError:
             pass
 

@@ -106,6 +106,15 @@ async def _handle_consent(
 
     await callback_query.answer("Оба подтвердили!")
 
+    # Кнопки согласия больше не нужны - оба уже нажали, само сообщение с
+    # ними только зашумляет чат (решено в чате: удалять, а не оставлять
+    # отредактированным).
+    if updated.consent_message_id:
+        try:
+            await bot.delete_message(chat_id=updated.chat_id, message_id=updated.consent_message_id)
+        except TelegramAPIError:
+            pass
+
     initiator_ghoul = await services.ghoul_service.get(updated.initiator_telegram_id)
     target_ghoul = await services.ghoul_service.get(updated.target_telegram_id)
     if not initiator_ghoul or not target_ghoul:
@@ -144,11 +153,13 @@ async def _handle_consent(
     if not session:
         return
 
-    if updated.consent_message_id:
+    if not updated.is_private_origin:
+        # В приватном происхождении статусные сообщения и так не
+        # показывались (consent_message_id там не трекается, см.
+        # invite_router.py) - здесь та же логика: чисто косметика.
         try:
-            await bot.edit_message_text(
+            await bot.send_message(
                 chat_id=updated.chat_id,
-                message_id=updated.consent_message_id,
                 text="⚔️ Оба согласились! Ждём решения сильнейшей стороны.",
             )
         except TelegramAPIError:
