@@ -256,6 +256,11 @@ async def finalize_outcome(
         await services.ghoul_service.apply_death(
             loser_id, cause="eaten", killer_telegram_id=winner_id
         )
+        # apply_death трогает только строку проигравшего (is_dead + запись
+        # в death_log) - счётчик "сколько гулей съел" у победителя нужно
+        # вести отдельно (найдено как баг - распрофиль показывал 0, хотя
+        # съедения были).
+        await services.ghoul_service.increment_fields(winner_id, eat_ghouls=1)
 
     winner_label = "a" if winner_id == duel_session.initiator_telegram_id else "b"
     await services.battle_record_service.record_duel(
