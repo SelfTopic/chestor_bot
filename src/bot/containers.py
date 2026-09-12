@@ -10,6 +10,7 @@ from .repositories import (
     BattleRepository,
     ChatRepository,
     DeathLogRepository,
+    DuelSessionRepository,
     GhoulRepository,
     LotteryRepository,
     MediaRepository,
@@ -28,6 +29,7 @@ from .services import (
     ChatService,
     CooldownService,
     DialogService,
+    DuelService,
     GhoulQuizService,
     GhoulService,
     LevelUpService,
@@ -84,6 +86,7 @@ class Container(containers.DeclarativeContainer):
 
     active_battle_repository = providers.Factory(ActiveBattleRepository, session=db_session)
     battle_repository = providers.Factory(BattleRepository, session=db_session)
+    duel_session_repository = providers.Factory(DuelSessionRepository, session=db_session)
 
     dialog_service = providers.Factory(DialogService)
 
@@ -99,6 +102,10 @@ class Container(containers.DeclarativeContainer):
         BattleRecordService,
         active_battle_repository=active_battle_repository,
         battle_repository=battle_repository,
+    )
+
+    duel_service = providers.Factory(
+        DuelService, duel_session_repository=duel_session_repository
     )
 
     media_downloader = providers.Factory(MediaDownloader, bot=bot)

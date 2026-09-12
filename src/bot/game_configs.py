@@ -350,3 +350,41 @@ class MobConfig:
 
 
 MOB_CONFIG = MobConfig()
+
+
+@dataclass
+class DuelConfig:
+    """Параметры роутера дуэлей между игроками (см. BATTLE_ENGINE.md 1.1/
+    1.2/1.5/3.x и чат) - сами таймауты/пороги, не боевая математика (та
+    живёт в BattleConfig)."""
+
+    # 1.1 - таймаут на согласие обеих сторон, дальше авто-отказ.
+    invite_timeout_seconds: int = 60
+
+    # 1.5 - таймаут на выбор "всерьёз/дать фору" сильной стороной при
+    # перевесе >= power_ratio_threshold, дальше авто-фора (безопасный
+    # дефолт - compress_hp=True).
+    serious_or_handicap_timeout_seconds: int = 30
+    power_ratio_threshold: float = 2.0
+
+    # 3.3 - таймаут на выбор победителя "ограбить/отпустить/съесть",
+    # дальше авто-"отпустить".
+    winner_choice_timeout_seconds: int = 60
+
+    # 1.2/4.4 - дневные лимиты на бои с игроками (фарм мобов не считается).
+    max_battles_per_day_total: int = 20
+    max_battles_per_day_pair: int = 5
+
+    # 4.3 - RC за "съесть" = вакуумная сила проигравшего * случайный
+    # коэффициент (тело нельзя доесть целиком).
+    eat_rc_multiplier_min: float = 0.3
+    eat_rc_multiplier_max: float = 0.6
+
+    # "Ограбить" (BATTLE_DESIGN.md "Исход боя") - % от текущего баланса
+    # проигравшего. Число не обсуждалось в чате, взято произвольно как
+    # разумная отправная точка - подвинуть одной строкой при балансировке.
+    rob_percent_min: float = 10.0
+    rob_percent_max: float = 25.0
+
+
+DUEL_CONFIG = DuelConfig()

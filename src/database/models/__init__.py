@@ -5,6 +5,7 @@ from .battle import Battle
 from .chat import Chat
 from .cooldown import Cooldown
 from .death_log import DeathLog
+from .duel_session import DuelSession
 from .ghoul import Ghoul
 from .lottery import Lottery
 from .media import Media
@@ -30,4 +31,5 @@ __all__ = [
     "Transfer",
     "ScheduledNotification",
     "DeathLog",
+    "DuelSession",
 ]

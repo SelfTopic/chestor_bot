@@ -2,6 +2,7 @@ from aiogram import Router
 
 from .coffee import router as CoffeeRouter
 from .dep import router as DepRouter
+from .duel import router as DuelRouter
 from .eat_human import router as EatHumanRouter
 from .mob_fight_preview import router as MobFightPreviewRouter
 from .passive_status import router as PassiveStatusRouter
@@ -24,6 +25,7 @@ def include_ghoul_routers(rt: Router) -> None:
         PassiveStatusRouter,
         EatHumanRouter,
         MobFightPreviewRouter,
+        DuelRouter,
     )
 
 

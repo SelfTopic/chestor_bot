@@ -174,5 +174,33 @@ class BattleService:
             + snapshot.total_kagune_strength
         )
 
+    @staticmethod
+    def resolve_post_battle_health(
+        base_health_before: int, effective_max: float, final_hp: float
+    ) -> int:
+        """Переводит HP бойца ПОСЛЕ боя обратно на вакуумный масштаб
+        `Ghoul.health` - `Fighter.stats.health`/`BattleResult.final_hp_*`
+        живут на "эффективном" масштабе (после голода/типа кагуне/какуджи
+        И после compress_hp-сжатия, см. `Battle._compress_hp_pools`),
+        который отличается от того, что хранится в БД.
+
+        `base_health_before` - `ghoul.health` ДО боя (то, что ушло в
+        `ghoul_to_fighter`); `effective_max`/`final_hp` - `EffectiveStats.
+        health`/`BattleResult.final_hp_*` ОДНОЙ и той же стороны.
+
+        0 эффективного HP (естественный проигрыш или настоящая ничья, см.
+        BATTLE_ENGINE.md 2.6) флорится в 1 - "бой сам по себе не убивает"
+        (3.1) это игровое правило, а не физика, поэтому не выводится из
+        пропорции. Иначе - переносим ДОЛЮ оставшегося HP на вакуумный
+        масштаб (не на max_health - та же причина, что и в
+        ghoul_to_fighter: гуль мог войти в бой уже не при полном
+        здоровье)."""
+
+        if final_hp <= 0:
+            return 1
+
+        fraction = final_hp / effective_max if effective_max > 0 else 0.0
+        return max(1, round(base_health_before * fraction))
+
 
 __all__ = ["BattleService"]

@@ -263,3 +263,48 @@ def test_run_duel_is_deterministic_with_the_same_seed_and_compress_hp_flag():
 
     assert result1.winner == result2.winner
     assert result1.final_hp_a == result2.final_hp_a
+
+
+# --- resolve_post_battle_health --------------------------------------------
+
+
+def test_resolve_post_battle_health_zero_final_hp_floors_to_one():
+    assert BattleService.resolve_post_battle_health(
+        base_health_before=500, effective_max=1000.0, final_hp=0.0
+    ) == 1
+
+
+def test_resolve_post_battle_health_full_health_is_unchanged():
+    assert BattleService.resolve_post_battle_health(
+        base_health_before=500, effective_max=1000.0, final_hp=1000.0
+    ) == 500
+
+
+def test_resolve_post_battle_health_partial_damage_scales_proportionally():
+    # Осталось 25% эффективного пула -> 25% от вакуумного значения ДО боя.
+    assert BattleService.resolve_post_battle_health(
+        base_health_before=400, effective_max=1000.0, final_hp=250.0
+    ) == 100
+
+
+def test_resolve_post_battle_health_small_positive_final_hp_uses_proportion_not_floor():
+    # mutual_ko_winner_hp - переопределённое значение ВЫШЕ нуля (см.
+    # BATTLE_CONFIG.mutual_ko_winner_hp) - должно идти через пропорцию, а
+    # не через флор "final_hp<=0 -> 1". Проверяем на числах, где
+    # пропорция явно даёт результат БОЛЬШЕ 1 - иначе тест не отличил бы
+    # этот путь от случайного max(1, ...) при малой пропорции.
+    assert BattleService.resolve_post_battle_health(
+        base_health_before=1000, effective_max=100.0, final_hp=1.0
+    ) == 10
+
+
+def test_resolve_post_battle_health_never_goes_below_one():
+    assert BattleService.resolve_post_battle_health(
+        base_health_before=1, effective_max=1000.0, final_hp=0.001
+    ) >= 1
+
+
+def test_resolve_post_battle_health_zero_effective_max_does_not_divide_by_zero():
+    assert BattleService.resolve_post_battle_health(
+        base_health_before=100, effective_max=0.0, final_hp=0.0
+    ) == 1

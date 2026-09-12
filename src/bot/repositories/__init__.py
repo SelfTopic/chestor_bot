@@ -4,6 +4,7 @@ from .base import Base
 from .battle import BattleRepository
 from .chat import ChatRepository
 from .death_log import DeathLogRepository
+from .duel_session import DuelSessionRepository
 from .ghoul import GhoulRepository
 from .lottery import LotteryRepository
 from .media import MediaRepository
@@ -28,4 +29,5 @@ __all__ = [
     "TransferRepository",
     "ScheduledNotificationRepository",
     "DeathLogRepository",
+    "DuelSessionRepository",
 ]

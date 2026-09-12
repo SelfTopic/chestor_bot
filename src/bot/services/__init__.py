@@ -11,6 +11,7 @@ from .battle_record import BattleRecordService
 from .chat import ChatService
 from .cooldown import CooldownService
 from .dialog import DialogService
+from .duel import DuelService
 from .duration_parser import DurationParser
 from .ghoul import GhoulService
 from .ghoul_game import CoffeeService, LotteryService
@@ -31,6 +32,7 @@ __all__ = [
     "BattleService",
     "BattleTextGenerator",
     "BattleRecordService",
+    "DuelService",
     "MobService",
     "DialogService",
     "UserService",
