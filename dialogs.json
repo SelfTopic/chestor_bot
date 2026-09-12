@@ -75,6 +75,8 @@
 
     "ghoul_profile": "👤 Профиль гуля {danger_rank} ранга {name} \n\n📈 Уровень: {level}\n👁‍🗨 Типы кагуне:\n  🔸 {kagune_type}\n\n💪 Сила кагуне: {strength_kagune}\n👌Щелкнул пальцем: {snap_count}\n♦️RC-клеток: {rc_count}\n\n🤟 Сила: {strength}\n🏃‍♀️ Скорость: {speed}\n🤾‍♀️ Ловкость: {dexterity}\n❤️ Текущее/Максимальное HP: {health}/{max_health}\n❣️ Сила регенерации: {regeneration}\n⚡ Боевая мощь: {power}\n☕️ Выпито кофе: {coffee_count}\n🥩 Съедено людей: {eat_humans}\n🥩 Съедено гулей: {eat_ghouls}\n⚔️ Всего боёв: {total_battles} ({wins} побед / {losses} поражений)\n👹 Боёв с мобами: {mob_battles} ({mob_wins} побед / {mob_losses} поражений)\n🧬 Какуджа: {is_kakuja}",
 
+    "combat_power": "⚡ Боевая мощь {name}\n\n🤟 Сила: {vacuum_strength} → {effective_strength}\n🤾‍♀️ Ловкость: {vacuum_dexterity} → {effective_dexterity}\n🏃 Скорость: {vacuum_speed} → {effective_speed}\n❤️ Здоровье: {vacuum_health} → {effective_health}\n❣️ Регенерация: {vacuum_regeneration} → {effective_regeneration}\n♦️ Кагуне: {vacuum_kagune} → {effective_kagune}\n\n📊 Итого: {vacuum_power} → {effective_power}",
+
     "not_enough_money": "Ты успокойся нахуй. Ты ебаная бомжиха. На твоем балансе не хватает {money} CheSton для покупки.",
 
     "upgrade_kagune_cooldown_error": "Вышел нахуй отсюда еблан тупорылый. И не заходи ещё {minutes} минут и {seconds} секунд",
@@ -93,7 +95,7 @@
 
     "regen_status": "❤️ Здоровье: {health}/{max_health}\n⚡ Скорость регенерации сейчас: {hp_per_hour} HP/ч\n🕰 {time_left}",
 
-    "hunger_status": "🍖 Голод: {hunger}% ({tier})\n🕰 {time_left}",
+    "hunger_status": "🍖 Голод: {hunger}% ({tier})\n🕰 {time_left}\n\n📉 Падающие статы (ловкость/скорость/регенерация/здоровье) сейчас: ×{falling_multiplier}\n📈 Растущие статы (сила/кагуне) сейчас: ×{rising_multiplier}\n\n⚡ Эффективные статы прямо сейчас:\n🤟 Сила: {effective_strength}\n🤾‍♀️ Ловкость: {effective_dexterity}\n🏃 Скорость: {effective_speed}\n❤️ Здоровье: {effective_health}\n❣️ Регенерация: {effective_regeneration}\n♦️ Кагуне: {effective_kagune_strength}",
 
     "eat_human_accept": "🍽 Ты сожрал человека. \n\n🍖 Голод восстановлен на {restored}%, теперь: {hunger}%\n🥩 Всего съедено людей: {count}",
 

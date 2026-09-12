@@ -25,7 +25,7 @@ from ...exceptions import (
 )
 from ...game_configs import BATTLE_CONFIG
 from ...types import KaguneType
-from .core import Battle, BattleResult, Fighter, FighterSnapshot
+from .core import Battle, BattleResult, EffectiveStats, Fighter, FighterSnapshot
 from .mob import MobService
 
 if TYPE_CHECKING:
@@ -180,6 +180,23 @@ class BattleService:
             + snapshot.health
             + snapshot.regeneration
             + snapshot.total_kagune_strength
+        )
+
+    @staticmethod
+    def effective_power_of(stats: EffectiveStats) -> float:
+        """Та же сумма, что `power_of`, но по `EffectiveStats` (ПОСЛЕ
+        цепочки модификаторов голод → тип кагуне → какудж) - для команды
+        "боевая мощь" (BATTLE_ENGINE.md 8.4), чтобы показать игроку не
+        только вакуумную мощь (`power_of`/`calculate_power`), но и то,
+        сколько из неё реально мобилизуется на бой ПРЯМО СЕЙЧАС."""
+
+        return (
+            stats.strength
+            + stats.dexterity
+            + stats.speed
+            + stats.health
+            + stats.regeneration
+            + stats.kagune_strength
         )
 
     @staticmethod
