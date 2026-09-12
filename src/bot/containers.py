@@ -5,7 +5,9 @@ from dependency_injector import containers, providers
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from .repositories import (
+    ActiveBattleRepository,
     BalancesLogRepository,
+    BattleRepository,
     ChatRepository,
     DeathLogRepository,
     GhoulRepository,
@@ -19,6 +21,7 @@ from .repositories import (
 )
 from .services import (
     BanService,
+    BattleRecordService,
     BattleService,
     BattleTextGenerator,
     BroadcastService,
@@ -79,6 +82,9 @@ class Container(containers.DeclarativeContainer):
 
     death_log_repository = providers.Factory(DeathLogRepository, session=db_session)
 
+    active_battle_repository = providers.Factory(ActiveBattleRepository, session=db_session)
+    battle_repository = providers.Factory(BattleRepository, session=db_session)
+
     dialog_service = providers.Factory(DialogService)
 
     battle_text_generator = providers.Factory(
@@ -88,6 +94,12 @@ class Container(containers.DeclarativeContainer):
     mob_service = providers.Factory(MobService)
 
     battle_service = providers.Factory(BattleService, mob_service=mob_service)
+
+    battle_record_service = providers.Factory(
+        BattleRecordService,
+        active_battle_repository=active_battle_repository,
+        battle_repository=battle_repository,
+    )
 
     media_downloader = providers.Factory(MediaDownloader, bot=bot)
 

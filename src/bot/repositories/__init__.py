@@ -1,5 +1,7 @@
+from .active_battle import ActiveBattleRepository
 from .balances_log import BalancesLogRepository
 from .base import Base
+from .battle import BattleRepository
 from .chat import ChatRepository
 from .death_log import DeathLogRepository
 from .ghoul import GhoulRepository
@@ -12,6 +14,8 @@ from .user_coldown import UserCooldownRepository
 from .rp_commands import RpCommandsRepository
 
 __all__ = [
+    "ActiveBattleRepository",
+    "BattleRepository",
     "Base",
     "UserRepository",
     "GhoulRepository",

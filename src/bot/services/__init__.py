@@ -7,6 +7,7 @@ from .admin import (
 )
 from .base import Base
 from .battle_engine import BattleService, BattleTextGenerator, MobService
+from .battle_record import BattleRecordService
 from .chat import ChatService
 from .cooldown import CooldownService
 from .dialog import DialogService
@@ -29,6 +30,7 @@ __all__ = [
     "Base",
     "BattleService",
     "BattleTextGenerator",
+    "BattleRecordService",
     "MobService",
     "DialogService",
     "UserService",
