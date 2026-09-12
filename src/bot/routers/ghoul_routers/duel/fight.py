@@ -16,6 +16,7 @@ from src.database.models import DuelSession
 
 from ....game_configs import DUEL_CONFIG
 from ....services import BattleService
+from ....utils import utcnow_naive
 from .keyboards import outcome_keyboard
 from .services import Services
 
@@ -62,8 +63,21 @@ async def run_and_announce_fight(
     new_health_b = BattleService.resolve_post_battle_health(
         target_ghoul.health, result.stats_b.health, result.final_hp_b
     )
-    await services.ghoul_service.set_fields(duel_session.initiator_telegram_id, health=new_health_a)
-    await services.ghoul_service.set_fields(duel_session.target_telegram_id, health=new_health_b)
+    # ВАЖНО: health_updated_at обязательно двигать ВМЕСТЕ с health - иначе
+    # следующий materialize_passive_stats (GhoulService.get) пересчитает
+    # реген от СТАРОЙ метки времени поверх уже честно списанного урона и
+    # может утащить здоровье обратно к максимуму, если та метка была
+    # достаточно старой (найдено как реальный баг на живом тесте - у
+    # победителя HP "магически" вернулось на полное после боя). Тот же
+    # инвариант, что materialize_passive_stats сама соблюдает при
+    # собственной записи (см. ghoul.py).
+    now = utcnow_naive()
+    await services.ghoul_service.set_fields(
+        duel_session.initiator_telegram_id, health=new_health_a, health_updated_at=now
+    )
+    await services.ghoul_service.set_fields(
+        duel_session.target_telegram_id, health=new_health_b, health_updated_at=now
+    )
 
     rank_a = services.ghoul_service.get_danger_rank(
         services.battle_service.power_of(fighter_a.snapshot)
