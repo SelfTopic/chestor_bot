@@ -2,6 +2,7 @@ from aiogram import Router
 
 from .ban import router as BanRouter
 from .broadcast import router as BroadcastRouter
+from .cooldown_admin import router as CooldownAdminRouter
 from .kagune_admin import router as KaguneAdminRouter
 from .kill import router as KillRouter
 from .level_up import router as LevelUpRouter
@@ -21,6 +22,7 @@ CreatorRouter.include_routers(
     LevelUpRouter,
     KaguneAdminRouter,
     KillRouter,
+    CooldownAdminRouter,
 )
 
 __all__ = ["CreatorRouter"]

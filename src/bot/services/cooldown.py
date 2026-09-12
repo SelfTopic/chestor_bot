@@ -97,6 +97,34 @@ class CooldownService(Base):
         )
         return new_cooldown
 
+    async def clear_cooldown(self, telegram_id: int, cooldown_type: str) -> bool:
+        logger.debug(
+            f"Called method clear_cooldown. Params: telegram_id={telegram_id}, cooldown_type={cooldown_type}"
+        )
+
+        cleared = await self.cooldown_repository.delete_user_cooldown(
+            user_id=telegram_id, cooldown_type=cooldown_type
+        )
+
+        logger.debug(f"Cooldown cleared: {cleared}. End process.")
+        return cleared
+
+    async def clear_all_cooldowns(self, telegram_id: int) -> int:
+        logger.debug(f"Called method clear_all_cooldowns. Params: telegram_id={telegram_id}")
+
+        count = await self.cooldown_repository.delete_all_user_cooldowns(user_id=telegram_id)
+
+        logger.debug(f"Cooldowns cleared: {count}. End process.")
+        return count
+
+    async def list_cooldown_types(self) -> list[str]:
+        logger.debug("Called method list_cooldown_types.")
+
+        names = await self.cooldown_repository.list_cooldown_types()
+
+        logger.debug(f"Cooldown types found: {len(names)}. End process.")
+        return names
+
     async def is_end_cooldown(self, telegram_id: int, cooldown_type: str):
         logger.debug(
             f"Called method is_end_cooldown. Params: telegram_id={telegram_id}, cooldown_type={cooldown_type}"
