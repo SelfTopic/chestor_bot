@@ -301,7 +301,7 @@ async def finalize_outcome(
         outcome_text = f"🕊️ {winner_name} решил отпустить {loser_name}."
 
     if duel_session.reward_level_progress is not None:
-        outcome_text += f"\n📈 {winner_name} получил {duel_session.reward_level_progress:.2f}% опыта за победу."
+        outcome_text += f"\n\n📈 {winner_name} получил {duel_session.reward_level_progress:.2f}% опыта за победу."
 
     # Счётчики побед/поражений (BATTLE_ENGINE.md 5.2) - запрашиваются
     # ПОСЛЕ record_duel выше, поэтому уже учитывают этот самый бой.
@@ -312,7 +312,7 @@ async def finalize_outcome(
     loser_losses = await services.battle_record_service.count_losses(loser_id)
     loser_total = await services.battle_record_service.count_total_battles(loser_id)
     outcome_text += (
-        f"\n📊 {winner_name}: {winner_total} боёв ({winner_wins}П/{winner_losses})"
+        f"\n\n📊 {winner_name}: {winner_total} боёв ({winner_wins}П/{winner_losses})"
         f"\n📊 {loser_name}: {loser_total} боёв ({loser_wins}П/{loser_losses})"
     )
 
