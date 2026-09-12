@@ -237,4 +237,49 @@ async def combat_power_handler(
         return await message.answer(text=fallback_text)
 
 
+@router.message(F.text.lower() == "бм")
+@inject
+async def combat_power_short_handler(
+    message: Message,
+    user_service: UserService = Provide[Container.user_service],
+    ghoul_service: GhoulService = Provide[Container.ghoul_service],
+    battle_service: BattleService = Provide[Container.battle_service],
+    dialog_service: DialogService = Provide[Container.dialog_service],
+) -> Message:
+    """Короткий алиас "боевой мощи" (пожелание игроков по UX после
+    тестирования) - без похода в rich-таблицы, просто два числа: вакуумная
+    мощь (вне боя) и эффективная (в бою прямо сейчас)."""
+
+    if not message.from_user:
+        logger.error("User not found in message")
+        raise ValueError("User not found in message")
+
+    user = await user_service.get(message.from_user.id)
+    if not user:
+        logger.error("User not found in database")
+        raise ValueError("User not found in database")
+
+    ghoul = await ghoul_service.get(message)
+    if not ghoul:
+        logger.error(f"Ghoul not found for {message.from_user.id} despite GhoulMiddleware")
+        raise ValueError("Ghoul not found")
+
+    if ghoul.is_dead:
+        return await message.answer(
+            text=dialog_service.text(key="dead_ghoul_profile", name=user.full_name)
+        )
+
+    vacuum_power = ghoul_service.calculate_power(ghoul)
+    fighter = battle_service.ghoul_to_fighter(ghoul, user.full_name, ghoul_service)
+    effective_power = battle_service.effective_power_of(fighter.stats)
+
+    return await message.answer(
+        text=dialog_service.text(
+            key="combat_power_short",
+            vacuum_power=vacuum_power,
+            effective_power=round(effective_power, 1),
+        )
+    )
+
+
 __all__ = ["router"]
