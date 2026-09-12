@@ -64,7 +64,7 @@ class LotteryConfig:
 
     # Коэффициенты выигрыша и шансы для каждого цвета
     # formato: {цвет: (коэффициент, шанс_в_процентах)}
-    color_multipliers: Optional[dict] = None
+    color_multipliers: Optional[dict[str, tuple[float, int]]] = None
 
     def __post_init__(self):
         if self.colors is None:
@@ -84,11 +84,21 @@ class LotteryConfig:
 
     def get_multiplier(self, color: str) -> float:
         """Получить коэффициент для цвета"""
-        return self.color_multipliers.get(color, 2.0)[0]
+        if not self.color_multipliers:
+            raise ValueError()
+        multiplier = self.color_multipliers.get(color)
+        if not multiplier:
+            raise ValueError()
+        return multiplier[0]
 
     def get_chance(self, color: str) -> int:
         """Получить шанс выпадения цвета в процентах"""
-        return self.color_multipliers.get(color, 25)[1]
+        if not self.color_multipliers:
+            raise ValueError()
+        multiplier = self.color_multipliers.get(color)
+        if not multiplier:
+            raise ValueError()
+        return multiplier[1]
 
 
 LOTTERY_CONFIG = LotteryConfig()
@@ -205,7 +215,8 @@ class LevelUpConfig:
 
     def cheston_reward(self, new_level: int) -> int:
         return randint(
-            self.cheston_min_per_level * new_level, self.cheston_max_per_level * new_level
+            self.cheston_min_per_level * new_level,
+            self.cheston_max_per_level * new_level,
         )
 
     def rc_reward(self, new_level: int) -> int:
