@@ -1,7 +1,10 @@
 import pytest
 
+from src.bot.exceptions import FighterHasPendingBattleError
 from src.bot.repositories.active_battle import ActiveBattleRepository
 from src.bot.repositories.battle import BattleRepository
+from src.bot.services.battle_engine.battle_service import BattleService
+from src.bot.services.battle_engine.mob import MobService
 from src.bot.services.battle_record import BattleRecordService
 
 
@@ -126,3 +129,38 @@ async def test_record_and_count_duel_for_both_sides(battle_record_service, make_
 async def test_count_total_last_24h_is_zero_with_no_history(battle_record_service, make_user):
     await make_user(telegram_id=500_000_014)
     assert await battle_record_service.count_total_last_24h(500_000_014) == 0
+
+
+# --- Интеграция: BattleService.validate_ghoul(has_pending_confirmation=...) --
+
+
+async def test_validate_ghoul_raises_when_battle_record_service_reports_busy(
+    battle_record_service, make_user, make_ghoul
+):
+    """Реальное подключение хранилища к validate_ghoul - именно то, ради
+    чего has_pending_confirmation стал асинхронным колбэком (см. чат)."""
+
+    await make_user(telegram_id=500_000_015)
+    ghoul = await make_ghoul(telegram_id=500_000_015)
+
+    await battle_record_service.try_claim_mob_fight(500_000_015)
+
+    battle_service = BattleService(mob_service=MobService())
+    with pytest.raises(FighterHasPendingBattleError):
+        await battle_service.validate_ghoul(
+            ghoul,
+            has_pending_confirmation=lambda g: battle_record_service.is_busy(g.telegram_id),
+        )
+
+
+async def test_validate_ghoul_passes_when_battle_record_service_reports_free(
+    battle_record_service, make_user, make_ghoul
+):
+    await make_user(telegram_id=500_000_016)
+    ghoul = await make_ghoul(telegram_id=500_000_016)
+
+    battle_service = BattleService(mob_service=MobService())
+    await battle_service.validate_ghoul(
+        ghoul,
+        has_pending_confirmation=lambda g: battle_record_service.is_busy(g.telegram_id),
+    )  # не должно бросать

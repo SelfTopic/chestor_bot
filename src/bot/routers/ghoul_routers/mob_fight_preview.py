@@ -62,7 +62,7 @@ async def mob_fight_preview_handler(
     # проверять (моб не участвует в очереди дуэлей), и хранилища pending-
     # вызовов пока всё равно нет (см. BattleService.validate_ghoul).
     try:
-        battle_service.validate_ghoul(ghoul)
+        await battle_service.validate_ghoul(ghoul)
     except FighterIsDeadError:
         await message.reply(text=dialog_service.text(key="dead_ghoul_reply"))
         return None

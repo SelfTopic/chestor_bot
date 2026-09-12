@@ -16,7 +16,7 @@
 from __future__ import annotations
 
 import random
-from typing import TYPE_CHECKING, Callable, Dict, List, Optional, Protocol, Tuple
+from typing import TYPE_CHECKING, Awaitable, Callable, Dict, List, Optional, Protocol, Tuple
 
 from ...exceptions import (
     FighterHasPendingBattleError,
@@ -49,10 +49,10 @@ class BattleService:
     def __init__(self, mob_service: MobService) -> None:
         self._mob_service = mob_service
 
-    def validate_ghoul(
+    async def validate_ghoul(
         self,
         ghoul: "Ghoul",
-        has_pending_confirmation: Optional[Callable[["Ghoul"], bool]] = None,
+        has_pending_confirmation: Optional[Callable[["Ghoul"], Awaitable[bool]]] = None,
     ) -> None:
         """Бросает `BattleError` (см. подклассы в `exceptions/battle.py`),
         если ЭТОТ гуль прямо сейчас не может вступить в бой - вызывать
@@ -63,14 +63,16 @@ class BattleService:
         мобом достаточно вызвать один раз на игрока, у моба нет ни
         `is_dead`, ни ожидающих подтверждения вызовов.
 
-        `has_pending_confirmation` - опциональный колбэк "есть ли у этого
-        гуля неподтверждённый вызов на бой?" (см. `FighterHasPendingBattleError`) -
-        персистентности для отслеживания pending-вызовов ещё нет (флоу
-        согласия на дуэль не построен, см. BATTLE_ENGINE.md 1.1/1.5),
-        поэтому параметр опционален и по умолчанию эта проверка
-        пропускается. Как только появится реальное хранилище - вызывающий
-        код передаст сюда настоящую проверку, без изменений в самом
-        BattleService."""
+        `has_pending_confirmation` - опциональный АСИНХРОННЫЙ колбэк "есть
+        ли у этого гуля неподтверждённый вызов на бой?" (см.
+        `FighterHasPendingBattleError`) - асинхронный, потому что реальная
+        проверка идёт в БД (`BattleRecordService.is_busy`, см.
+        `active_battles` - тот самый лок, который закрывает эксплойт
+        "твинк-дуэль + бой с мобом одновременно"). Вызывающий код передаёт
+        сюда что-то вроде `lambda g: battle_record_service.is_busy(g.telegram_id)`.
+        Параметр опционален (по умолчанию проверка пропускается) - для
+        боя с мобом-превью (`mob_fight_preview.py`) она не нужна вовсе,
+        он не персистентен и лок не занимает."""
 
         if ghoul.is_dead:
             raise FighterIsDeadError(ghoul.id)
@@ -80,22 +82,22 @@ class BattleService:
                 ghoul.id, ghoul.health, BATTLE_CONFIG.min_health_to_fight
             )
 
-        if has_pending_confirmation is not None and has_pending_confirmation(ghoul):
+        if has_pending_confirmation is not None and await has_pending_confirmation(ghoul):
             raise FighterHasPendingBattleError(ghoul.id)
 
-    def validate_duel(
+    async def validate_duel(
         self,
         ghoul_a: "Ghoul",
         ghoul_b: "Ghoul",
-        has_pending_confirmation: Optional[Callable[["Ghoul"], bool]] = None,
+        has_pending_confirmation: Optional[Callable[["Ghoul"], Awaitable[bool]]] = None,
     ) -> None:
         """Удобный шорткат для PvP - `validate_ghoul` на обе стороны.
         Останавливается на первой же провалившейся проверке (не пытается
         собрать сразу все причины отказа - вызывающему коду для
         сообщения игроку достаточно одной)."""
 
-        self.validate_ghoul(ghoul_a, has_pending_confirmation)
-        self.validate_ghoul(ghoul_b, has_pending_confirmation)
+        await self.validate_ghoul(ghoul_a, has_pending_confirmation)
+        await self.validate_ghoul(ghoul_b, has_pending_confirmation)
 
     def ghoul_to_fighter(self, ghoul: "Ghoul", name: str, ghoul_service: _KaguneLookup) -> Fighter:
         kagune_strength: Dict[KaguneType, int] = {}
