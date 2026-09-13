@@ -1,6 +1,7 @@
 import logging
 import os
 import random
+import uuid
 from pathlib import Path
 
 import numpy as np
@@ -140,7 +141,23 @@ class LotteryGenerator:
         self._draw_arrow(draw, center_x, self.strip_y + self.circle_radius + 25)
         return np.array(img)
 
-    def generate_video(self, winner_color: str, output_path: str):
+    def generate_video(self, winner_color: str, output_path: str | Path):
+        """Рендерит один ролик и АТОМАРНО кладёт его в `output_path` - пишет
+        во временный файл РЯДОМ (та же папка → та же ФС → `os.replace`
+        гарантированно атомарен на POSIX) и только потом переименовывает.
+        Без этого ротация (`rotate_all`, гоняется отдельным процессом
+        параллельно с ботом, см. `rotate_lottery_videos.py`) могла бы
+        перезаписать файл ровно в момент, когда бот его читает для отправки
+        игроку - `moviepy`/`ffmpeg` сами по себе temp-file+rename не делают,
+        пишут прямо в целевой путь."""
+
+        output_path = Path(output_path)
+        # Суффикс ДОЛЖЕН остаться ".mp4" - moviepy/ffmpeg определяют
+        # контейнер/кодек по расширению файла, а не содержимому; с любым
+        # другим хвостом (например ".mp4.tmp-...") запись молча уходит в
+        # никуда - файл не создаётся вообще, без исключения (проверено).
+        tmp_path = output_path.with_name(f".{output_path.stem}.tmp-{uuid.uuid4().hex}.mp4")
+
         seed = random.randint(0, 2**31)
         start_scroll = random.randint(50, 200) * self.circle_spacing
         extra_slots = random.randint(15, 30)
@@ -165,18 +182,23 @@ class LotteryGenerator:
         pause_clip = VideoClip(lambda _: winner_frame, duration=self.pause_duration)
         full_clip = concatenate_videoclips([spin_clip, pause_clip])
 
-        full_clip.write_videofile(
-            output_path,
-            fps=self.fps,
-            codec="libx264",
-            audio=False,
-            logger=None,
-            ffmpeg_params=["-crf", "28", "-preset", "fast"],
-        )
-        spin_clip.close()
-        pause_clip.close()
-        full_clip.close()
-        logger.debug("Saved: %s", output_path)
+        try:
+            full_clip.write_videofile(
+                str(tmp_path),
+                fps=self.fps,
+                codec="libx264",
+                audio=False,
+                logger=None,
+                ffmpeg_params=["-crf", "28", "-preset", "fast"],
+            )
+            os.replace(tmp_path, output_path)
+            logger.debug("Saved: %s", output_path)
+        finally:
+            spin_clip.close()
+            pause_clip.close()
+            full_clip.close()
+            if tmp_path.exists():
+                tmp_path.unlink(missing_ok=True)
 
     def get_random_video(self, winner_color: str) -> str:
         folder = os.path.join(self.output_dir, winner_color)
@@ -218,3 +240,52 @@ class LotteryGenerator:
                 done += 1
 
         logger.info("Finished! %d videos saved to '%s/'", done, self.output_dir)
+
+    def rotate_all(self, replace_count: int = 2) -> int:
+        """Гоняется периодически (см. `rotate_lottery_videos.py`),
+        ОТДЕЛЬНЫМ процессом параллельно с ботом - рендер синхронный
+        (`moviepy`/`ffmpeg`), внутри самого бота это заморозило бы event
+        loop на реальные секунды (тот же класс бага, что уже чинили с
+        нарезкой видео в `anime_router` - см. чат).
+
+        Сначала дозаполняет пул до `videos_per_color` на цвет (первый
+        запуск / пул увеличили руками), затем заменяет `replace_count`
+        САМЫХ СТАРЫХ (по mtime) роликов на цвет свежими - пул медленно, но
+        непрерывно обновляется, не разрастаясь на диске бесконечно.
+        `generate_video` сам пишет атомарно (temp-файл + `os.replace`),
+        поэтому подмена безопасна, даже если в этот момент бот как раз
+        читает один из старых файлов для отправки игроку.
+
+        Returns:
+            int: сколько роликов реально было заменено (без учёта
+            дозаполнения недостающих слотов).
+        """
+
+        os.makedirs(self.output_dir, exist_ok=True)
+        replaced = 0
+
+        for color_name in self.colors:
+            color_dir = os.path.join(self.output_dir, color_name)
+            os.makedirs(color_dir, exist_ok=True)
+
+            for idx in range(1, self.videos_per_color + 1):
+                filename = f"{color_name}_{idx:03d}.mp4"
+                output_path = os.path.join(color_dir, filename)
+                if not os.path.exists(output_path):
+                    logger.info("Filling missing slot %s ...", filename)
+                    self.generate_video(color_name, output_path)
+
+            current_files = [
+                os.path.join(color_dir, f)
+                for f in os.listdir(color_dir)
+                if f.endswith(".mp4")
+            ]
+            current_files.sort(key=os.path.getmtime)
+
+            for path in current_files[:replace_count]:
+                logger.info("Rotating %s ...", path)
+                self.generate_video(color_name, path)
+                replaced += 1
+
+        logger.info("Rotation done: %d video(s) replaced.", replaced)
+        return replaced

@@ -109,10 +109,24 @@ services:
     env_file:
       - src/userbot_parser/.env
     volumes:
-      - .:/app 
+      - .:/app
     restart: "no"
     networks:
       - app_network
+
+  lottery_video_rotator:
+    # Отдельный процесс, НЕ внутри бота - рендер (moviepy/ffmpeg) синхронный
+    # и блокирующий, гонять его в event loop'е бота нельзя (тот же класс
+    # бага, что уже чинили с нарезкой видео в anime_router). Раз в 30 минут
+    # заменяет несколько самых старых лотерейных роликов на цвет свежими
+    # (см. LotteryGenerator.rotate_all) - тот же паттерн цикла, что уже
+    # используется у rclone_backup.
+    build: .
+    entrypoint: /bin/sh -c "while true; do poetry run python -m src.bot.utils.rotate_lottery_videos; sleep 1800; done"
+    volumes:
+      - .:/app
+    working_dir: /app
+    restart: unless-stopped
 
         
 
