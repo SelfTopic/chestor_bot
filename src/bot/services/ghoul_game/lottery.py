@@ -17,6 +17,18 @@ from ...types.dep import DepColor, DepResult
 
 logger = logging.getLogger(__name__)
 
+# Сильная ссылка на фоновые "досыпание+результат" задачи лотереи - иначе
+# GC может собрать task ещё до завершения (asyncio.create_task сам
+# ссылку не хранит - тот же приём, что в duel/background.py).
+_background_tasks: set[asyncio.Task] = set()
+
+
+def _spawn(coro) -> None:
+    task = asyncio.create_task(coro)
+    _background_tasks.add(task)
+    task.add_done_callback(_background_tasks.discard)
+
+
 COLOR_TO_FOLDER = {
     "красный": "red",
     "синий": "blue",
@@ -186,29 +198,53 @@ class LotteryService:
             video_message.animation.duration if video_message.animation else 2
         )
 
+        # Пауза + текст с итогом - чистое ожидание ради UX (не спойлерить
+        # исход раньше, чем доиграется гифка), БД тут вообще не участвует.
+        # Раньше это был синхронный await прямо в хендлере - DatabaseMiddleware
+        # держит транзакцию (а внутри неё - лок на строку User от
+        # change_balance_atomic из execute()) открытой, пока хендлер не
+        # вернётся, то есть всё это время сна тоже. Следующая же ставка/
+        # любое другое изменение баланса ЭТОГО игрока честно вставало в
+        # очередь на уровне Postgres (тот же баг, что чинили в
+        # SyncEntitiesMiddleware, см. чат). Выносим в fire-and-forget
+        # задачу - хендлер возвращается сразу после отправки анимации,
+        # транзакция коммитится, а результат прилетает отдельным
+        # сообщением чуть позже, никого не блокируя.
+        _spawn(self._send_delayed_result(message, dep_result, animation_duration))
+
+        return video_message
+
+    async def _send_delayed_result(
+        self, message: Message, dep_result: DepResult, animation_duration: float
+    ) -> None:
         await asyncio.sleep(animation_duration + 1)
 
-        if dep_result.is_won:
-            multiplier = LOTTERY_CONFIG.get_multiplier(dep_result.winning_color.value)
-            text = self.dialog_service.text(
-                key="lottery_win",
-                chosen_color=dep_result.chosen_color.value,
-                winning_color=dep_result.winning_color.value,
-                bet=dep_result.bet_amount,
-                earned=dep_result.earned,
-                balance=dep_result.user.balance,
-                multiplier=f"{multiplier}x",
-            )
-        else:
-            text = self.dialog_service.text(
-                key="lottery_lose",
-                chosen_color=dep_result.chosen_color.value,
-                winning_color=dep_result.winning_color.value,
-                bet=dep_result.bet_amount,
-                balance=dep_result.user.balance,
-            )
+        try:
+            if dep_result.is_won:
+                multiplier = LOTTERY_CONFIG.get_multiplier(
+                    dep_result.winning_color.value
+                )
+                text = self.dialog_service.text(
+                    key="lottery_win",
+                    chosen_color=dep_result.chosen_color.value,
+                    winning_color=dep_result.winning_color.value,
+                    bet=dep_result.bet_amount,
+                    earned=dep_result.earned,
+                    balance=dep_result.user.balance,
+                    multiplier=f"{multiplier}x",
+                )
+            else:
+                text = self.dialog_service.text(
+                    key="lottery_lose",
+                    chosen_color=dep_result.chosen_color.value,
+                    winning_color=dep_result.winning_color.value,
+                    bet=dep_result.bet_amount,
+                    balance=dep_result.user.balance,
+                )
 
-        return await message.reply(text=text)
+            await message.reply(text=text)
+        except Exception:
+            logger.error("Failed to send delayed lottery result", exc_info=True)
 
 
 __all__ = ["LotteryService"]
