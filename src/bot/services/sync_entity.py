@@ -76,13 +76,15 @@ class SyncEntitiesService(Base):
 
             await self.chat_repository.upsert(chat_insert_data)
 
-            # "Кто вообще писал в этом чате" - самый дешёвый доступный
-            # сигнал о членстве (Bot API не даёт список участников целиком
-            # ни одним методом) - используется командой "выбери участника"
-            # (fun_router.py). Только для реальных сообщений от юзера, не
-            # для CallbackQuery (там события чата в этом же виде нет).
+            # Счётчик сообщений + "кто вообще писал в этом чате" - самый
+            # дешёвый доступный сигнал о членстве (Bot API не даёт список
+            # участников целиком ни одним методом), используется командами
+            # "выбери участника"/"случайный участник" (fun_router.py) и
+            # будущей статистикой активности. Только для реальных
+            # сообщений от юзера, не для CallbackQuery (там события чата в
+            # этом же виде нет).
             if event.event.from_user:
-                await self.chat_participant_repository.upsert(
+                await self.chat_participant_repository.record_message(
                     chat_id=event.event.chat.id,
                     telegram_id=event.event.from_user.id,
                 )

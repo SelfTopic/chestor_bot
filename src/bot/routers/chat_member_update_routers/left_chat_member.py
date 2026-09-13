@@ -26,10 +26,14 @@ async def left_chat_member(
     
     chat = await chat_service.get_by_telegram_id(telegram_id=event.chat.id)
 
-    if not chat: 
+    if not chat:
         raise ChatNotFoundInDatabase()
-    
+
+    await chat_service.remove_participant(
+        chat_id=event.chat.id, telegram_id=event.new_chat_member.user.id
+    )
+
     if not chat.goodbye_message:
-        return None 
-    
+        return None
+
     await event.answer(chat.goodbye_message)

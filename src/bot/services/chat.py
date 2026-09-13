@@ -1,4 +1,5 @@
 import logging
+from datetime import datetime
 from typing import Optional
 
 from ...database.models import Chat, User
@@ -50,6 +51,31 @@ class ChatService(Base):
             return None
 
         return await self.user_repository.get(telegram_id)
+
+    async def record_participant_join(
+        self,
+        chat_id: int,
+        telegram_id: int,
+        joined_at: datetime,
+        join_method: str,
+    ) -> None:
+        """Событие входа в чат (`chat_member_update_routers/new_chat_member.py`) -
+        см. `ChatParticipantRepository.record_join`."""
+
+        await self.chat_participant_repository.record_join(
+            chat_id=chat_id,
+            telegram_id=telegram_id,
+            joined_at=joined_at,
+            join_method=join_method,
+        )
+
+    async def remove_participant(self, chat_id: int, telegram_id: int) -> None:
+        """Событие выхода из чата (`chat_member_update_routers/left_chat_member.py`) -
+        строка `ChatParticipant` удаляется целиком, см. докстринг модели."""
+
+        await self.chat_participant_repository.remove(
+            chat_id=chat_id, telegram_id=telegram_id
+        )
 
     async def upsert(
         self,
