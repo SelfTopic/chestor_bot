@@ -169,7 +169,6 @@ class Container(containers.DeclarativeContainer):
     lottery_service = providers.Factory(
         LotteryService,
         user_service=user_service,
-        ghoul_service=ghoul_service,
         cooldown_service=cooldown_service,
         media_service=media_service,
         dialog_service=dialog_service,

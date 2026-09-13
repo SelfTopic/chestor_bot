@@ -1,7 +1,7 @@
 from dataclasses import dataclass
 from enum import Enum
 
-from src.database.models import Ghoul, User
+from src.database.models import User
 
 
 class DepColor(Enum):
@@ -14,7 +14,6 @@ class DepColor(Enum):
 
 @dataclass
 class DepResult:
-    ghoul: Ghoul
     user: User
     bet_amount: int
     chosen_color: DepColor

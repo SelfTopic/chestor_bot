@@ -3,6 +3,7 @@ from .common.anime_router import router as AnimeRouter
 from .common.bot_router import router as BotRouter
 from .common.check_balance import router as BalanceRouter
 from .common.check_rules_router import router as CheckRulesRouter
+from .common.dep_router import router as DepRouter
 from .common.error_router import router as ErrorRouter
 from .common.help_router import router as HelpRouter
 from .common.profile_router import router as ProfileRouter
@@ -32,4 +33,5 @@ __all__ = [
     "WordleRouter",
     "AnimeRouter",
     "TransferRouter",
+    "DepRouter",
 ]

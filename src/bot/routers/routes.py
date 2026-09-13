@@ -41,6 +41,7 @@ def include_routers(dp: Dispatcher) -> None:
         WordleRouter,
         AnimeRouter,
         TransferRouter,
+        DepRouter,
     )
 
     include_ghoul_routers(GhoulRouter)

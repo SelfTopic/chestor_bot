@@ -5,12 +5,10 @@ import random
 from aiogram.exceptions import TelegramBadRequest
 from aiogram.types import FSInputFile, Message
 
-from ...exceptions import GhoulNotFoundInDatabase
 from ...game_configs import LOTTERY_CONFIG
 from ...repositories.lottery import LotteryRepository
 from ...services.cooldown import CooldownService
 from ...services.dialog import DialogService
-from ...services.ghoul import GhoulService
 from ...services.media import MediaService
 from ...services.user import UserService
 from ...types.dep import DepColor, DepResult
@@ -42,14 +40,12 @@ class LotteryService:
     def __init__(
         self,
         media_service: MediaService,
-        ghoul_service: GhoulService,
         dialog_service: DialogService,
         cooldown_service: CooldownService,
         user_service: UserService,
         lottery_repository: LotteryRepository,
     ):
         self.media_service = media_service
-        self.ghoul_service = ghoul_service
         self.dialog_service = dialog_service
         self.cooldown_service = cooldown_service
         self.user_service = user_service
@@ -67,11 +63,6 @@ class LotteryService:
 
         if not user:
             raise ValueError("Пользователь не найден")
-
-        ghoul = await self.ghoul_service.get(find_by=user.telegram_id)
-
-        if not ghoul:
-            raise GhoulNotFoundInDatabase()
 
         if user.balance < bet_amount:
             raise ValueError("Недостаточно денег для такой ставки")
@@ -109,7 +100,6 @@ class LotteryService:
         )
 
         return DepResult(
-            ghoul=ghoul,
             user=user,
             bet_amount=bet_amount,
             chosen_color=chosen_color,
