@@ -35,11 +35,16 @@ class CalculatorError(ValueError):
     уже человекочитаемый, роутер отдаёт его как есть."""
 
 
-def evaluate(expression: str) -> Number:
+def evaluate(expression: str, *, require_operator: bool = False) -> Number:
     """Считает арифметическое выражение (+, -, *, /, //, %, **, унарные
     +/-, скобки) и возвращает число. Бросает `CalculatorError` на любое
     невалидное или запрещённое выражение (не просто "ошибка", а с
-    объяснением, что именно не так)."""
+    объяснением, что именно не так).
+
+    `require_operator=True` - для пассивного триггера в чате
+    (fun_router.py, "просто написать 2+2 без команды"): голое число или
+    просто число со знаком ("5", "-5") не считается калькулятором, иначе
+    бот отвечал бы на каждое случайно упомянутое в чате число."""
 
     try:
         # ast.parse(mode="eval") трактует ведущий пробел/отступ как
@@ -48,6 +53,9 @@ def evaluate(expression: str) -> Number:
         tree = ast.parse(expression.strip(), mode="eval")
     except SyntaxError as exc:
         raise CalculatorError("Не удалось разобрать выражение.") from exc
+
+    if require_operator and not _contains_binary_operator(tree.body):
+        raise CalculatorError("Нет ни одного оператора.")
 
     try:
         result = _eval_node(tree.body)
@@ -88,6 +96,20 @@ def _eval_node(node: ast.AST) -> Number:
         return op_func(_eval_node(node.operand))
 
     raise CalculatorError("Разрешены только числа, +, -, *, /, //, %, ** и скобки.")
+
+
+def _contains_binary_operator(node: ast.AST) -> bool:
+    """Есть ли где-то в дереве настоящая бинарная операция (не просто знак
+    перед числом) - см. `require_operator`. Рекурсия только через
+    `UnaryOp.operand`, потому что по белому списку `_eval_node` дерево
+    состоит исключительно из Constant/BinOp/UnaryOp - других узлов тут
+    просто не бывает."""
+
+    if isinstance(node, ast.BinOp):
+        return True
+    if isinstance(node, ast.UnaryOp):
+        return _contains_binary_operator(node.operand)
+    return False
 
 
 __all__ = ["evaluate", "CalculatorError"]

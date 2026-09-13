@@ -56,3 +56,28 @@ def test_evaluate_rejects_huge_power_exponent():
 
     with pytest.raises(CalculatorError):
         evaluate("2 ** 10000000")
+
+
+# --- require_operator (пассивный триггер в чате, fun_router.py) --------------
+
+
+@pytest.mark.parametrize("expression", ["5", "-5", "+5", " 42 "])
+def test_require_operator_rejects_bare_numbers(expression):
+    with pytest.raises(CalculatorError):
+        evaluate(expression, require_operator=True)
+
+
+@pytest.mark.parametrize(
+    "expression,expected",
+    [("2+2", 4), ("-(2+3)", -5), ("(2+2)*10", 40), ("2**10", 1024)],
+)
+def test_require_operator_allows_real_expressions(expression, expected):
+    assert evaluate(expression, require_operator=True) == expected
+
+
+def test_require_operator_false_by_default_still_allows_bare_numbers():
+    """require_operator по умолчанию False - явная команда "посчитай"
+    (если она вообще где-то останется) не должна внезапно сломаться на
+    голых числах."""
+
+    assert evaluate("5") == 5

@@ -1,33 +1,53 @@
 """Простые развлекательные команды для любых пользователей (не привязаны
-к расе/гулю) - "выбери <список>" / "выбери участника" / "число <мин>
-<макс>" / "посчитай <выражение>". Никакого игрового состояния не меняют,
-кроме "выбери участника" (читает ChatParticipant, см. SyncEntitiesService)."""
+к расе/гулю). Триггеры "бот"/"честор выбери/кто/случайный участник" -
+явные, требуют обращения к боту по имени; калькулятор - единственное
+исключение, слушает ЛЮБОЕ сообщение пассивно (см. `CalculatorFilter`,
+паттерн - как у `RpCommandFilter`) и молчит, если выражение не разобралось
+(никакого "❌ ошибка" в чат на случайный текст)."""
 
 import logging
 import random
 import re
+from typing import Any, Union
 
-from aiogram import Router
+from aiogram import F, Router
+from aiogram.filters import Filter
 from aiogram.types import Message
 from dependency_injector.wiring import Provide, inject
 
 from ...containers import Container
-from ...filters import Text
 from ...services import ChatService
 from ...utils import CalculatorError, evaluate
 
 router = Router(name=__name__)
 logger = logging.getLogger(__name__)
 
-_PICK_PATTERN = re.compile(r"^выбери\s+(.+)$", re.IGNORECASE | re.DOTALL)
-_NUMBER_PATTERN = re.compile(r"^число\s+(-?\d+)\s+(-?\d+)\s*$", re.IGNORECASE)
-_CALC_PATTERN = re.compile(r"^посчитай\s+(.+)$", re.IGNORECASE | re.DOTALL)
+_BOT_PREFIX = r"(?:бот|честор)"
+_PICK_PATTERN = re.compile(rf"^{_BOT_PREFIX}\s+выбери\s+(.+)$", re.IGNORECASE | re.DOTALL)
+_WHO_PATTERN = re.compile(rf"^{_BOT_PREFIX}\s+кто\s+(.+)$", re.IGNORECASE | re.DOTALL)
+_RANDOM_PARTICIPANT_PATTERN = re.compile(
+    rf"^{_BOT_PREFIX}\s+случайный\s+участник\s*$", re.IGNORECASE
+)
+_NUMBER_PATTERN = re.compile(
+    rf"^{_BOT_PREFIX}\s+число\s+(-?\d+)\s+(-?\d+)\s*$", re.IGNORECASE
+)
+_ITEM_SEPARATOR = re.compile(r"\s*(?:,|\bили\b)\s*", re.IGNORECASE)
 
 _MAX_PICK_ITEMS = 50
 _MAX_ITEM_LENGTH = 200
 
 
-@router.message(Text(command="выбери", startswith=True))
+async def _mention_random_participant(chat_service: ChatService, chat_id: int) -> str | None:
+    """HTML-упоминание случайного участника чата, или None, если для
+    чата ещё никого не записано (см. ChatParticipant)."""
+
+    participant = await chat_service.get_random_participant(chat_id)
+    if not participant:
+        return None
+    return f'<a href="tg://user?id={participant.telegram_id}">{participant.full_name}</a>'
+
+
+@router.message(F.text.regexp(_PICK_PATTERN))
 @inject
 async def pick_handler(
     message: Message,
@@ -38,35 +58,14 @@ async def pick_handler(
 
     match = _PICK_PATTERN.match(message.text)
     if not match:
-        await message.reply(
-            text='Использование: выбери <вариант1>, <вариант2>, ... или "выбери участника"'
-        )
         return
 
     rest = match.group(1).strip()
-
-    if rest.lower() == "участника":
-        participant = await chat_service.get_random_participant(message.chat.id)
-        if not participant:
-            await message.reply(
-                text="Пока некого выбирать - в этом чате ещё никто не написал боту."
-            )
-            return
-
-        await message.reply(
-            text=(
-                f'🎲 Выбор пал на <a href="tg://user?id={participant.telegram_id}">'
-                f"{participant.full_name}</a>!"
-            ),
-            parse_mode="HTML",
-        )
-        return
-
-    items = [item.strip() for item in rest.split(",") if item.strip()]
+    items = [item.strip() for item in _ITEM_SEPARATOR.split(rest) if item.strip()]
 
     if len(items) < 2:
         await message.reply(
-            text="Нужно минимум 2 варианта через запятую: выбери пицца, суши, бургер"
+            text='Нужно минимум 2 варианта: бот выбери пицца или суши или бургер'
         )
         return
 
@@ -81,16 +80,57 @@ async def pick_handler(
     await message.reply(text=f"🎲 Выбор пал на: {random.choice(items)}")
 
 
-@router.message(Text(command="число", startswith=True))
+@router.message(F.text.regexp(_WHO_PATTERN))
+@inject
+async def who_handler(
+    message: Message,
+    chat_service: ChatService = Provide[Container.chat_service],
+) -> None:
+    if not message.text:
+        return
+
+    match = _WHO_PATTERN.match(message.text)
+    if not match:
+        return
+
+    question = match.group(1).strip()
+
+    mention = await _mention_random_participant(chat_service, message.chat.id)
+    if not mention:
+        await message.reply(
+            text="Пока некого выбирать - в этом чате ещё никто не написал боту."
+        )
+        return
+
+    await message.reply(
+        text=f"По моим расчётам {question} {mention}",
+        parse_mode="HTML",
+    )
+
+
+@router.message(F.text.regexp(_RANDOM_PARTICIPANT_PATTERN))
+@inject
+async def random_participant_handler(
+    message: Message,
+    chat_service: ChatService = Provide[Container.chat_service],
+) -> None:
+    mention = await _mention_random_participant(chat_service, message.chat.id)
+    if not mention:
+        await message.reply(
+            text="Пока некого выбирать - в этом чате ещё никто не написал боту."
+        )
+        return
+
+    await message.reply(text=f"🎲 Выбор пал на {mention}!", parse_mode="HTML")
+
+
+@router.message(F.text.regexp(_NUMBER_PATTERN))
 async def random_number_handler(message: Message) -> None:
     if not message.text:
         return
 
     match = _NUMBER_PATTERN.match(message.text)
     if not match:
-        await message.reply(
-            text="Использование: число <мин> <макс>, например: число 1 100"
-        )
         return
 
     low, high = int(match.group(1)), int(match.group(2))
@@ -100,30 +140,31 @@ async def random_number_handler(message: Message) -> None:
     await message.reply(text=f"🎲 {random.randint(low, high)}")
 
 
-@router.message(Text(command="посчитай", startswith=True))
-async def calculator_handler(message: Message) -> None:
-    if not message.text:
-        return
+class CalculatorFilter(Filter):
+    """Пассивный триггер - пробует разобрать ЛЮБОЕ сообщение как
+    арифметику (с хотя бы одним оператором, см. `evaluate(...,
+    require_operator=True)`), молча пропускает (False), если не
+    получилось - тот же паттерн, что уже используется `RpCommandFilter`."""
 
-    match = _CALC_PATTERN.match(message.text)
-    if not match:
-        await message.reply(
-            text="Использование: посчитай <выражение>, например: посчитай (2+2)*10"
-        )
-        return
+    async def __call__(self, message: Message) -> Union[bool, dict[str, Any]]:
+        if not message.text:
+            return False
 
-    expression = match.group(1).strip()
+        try:
+            result = evaluate(message.text, require_operator=True)
+        except CalculatorError:
+            return False
 
-    try:
-        result = evaluate(expression)
-    except CalculatorError as e:
-        await message.reply(text=f"❌ {e}")
-        return
+        return {"calculator_result": result}
 
+
+@router.message(CalculatorFilter())
+async def calculator_handler(message: Message, calculator_result: Union[int, float]) -> None:
+    result = calculator_result
     if isinstance(result, float) and result.is_integer():
         result = int(result)
 
-    await message.reply(text=f"🧮 {result}")
+    await message.reply(text=str(result))
 
 
-__all__ = ["router"]
+__all__ = ["router", "CalculatorFilter"]
