@@ -123,7 +123,7 @@ async def main(bot_token: str, env: str) -> None:
 
         database_middleware = DatabaseMiddleware(session_factory=session_factory)
         dp.update.middleware(database_middleware)
-        dp.update.middleware(SyncEntitiesMiddleware())
+        dp.update.middleware(SyncEntitiesMiddleware(session_factory=session_factory))
         dp.update.middleware(BanMiddleware())
 
         include_routers(dp)
