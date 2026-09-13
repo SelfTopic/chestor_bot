@@ -5,6 +5,7 @@ from .common.check_balance import router as BalanceRouter
 from .common.check_rules_router import router as CheckRulesRouter
 from .common.dep_router import router as DepRouter
 from .common.error_router import router as ErrorRouter
+from .common.fun_router import router as FunRouter
 from .common.help_router import router as HelpRouter
 from .common.profile_router import router as ProfileRouter
 from .common.race_profile_router import router as RaceProfileRouter
@@ -34,4 +35,5 @@ __all__ = [
     "AnimeRouter",
     "TransferRouter",
     "DepRouter",
+    "FunRouter",
 ]

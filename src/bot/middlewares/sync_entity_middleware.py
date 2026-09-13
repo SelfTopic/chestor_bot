@@ -6,6 +6,7 @@ from aiogram.types import TelegramObject
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 
 from ..repositories import (
+    ChatParticipantRepository,
     ChatRepository,
     GhoulRepository,
     UserCooldownRepository,
@@ -51,6 +52,7 @@ class SyncEntitiesMiddleware(BaseMiddleware):
                 ghoul_repository=GhoulRepository(session),
                 user_cooldown_repository=UserCooldownRepository(session),
                 chat_repository=ChatRepository(session),
+                chat_participant_repository=ChatParticipantRepository(session),
             )
             await sync_service.sync(event=event, bot=data["bot"])
             await session.commit()

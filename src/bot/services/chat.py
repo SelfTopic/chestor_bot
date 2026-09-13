@@ -1,11 +1,18 @@
 import logging
 from typing import Optional
 
-from ...database.models import Chat
+from ...database.models import Chat, User
 from ..exceptions import (
     ChatMemberUpdateMessageError,
     ChatNotFoundInDatabase,
     ChatRulesError,
+)
+from ..repositories import (
+    ChatParticipantRepository,
+    ChatRepository,
+    GhoulRepository,
+    UserCooldownRepository,
+    UserRepository,
 )
 from ..types.insert import ChatInsert
 from .base import Base
@@ -14,6 +21,36 @@ logger = logging.getLogger(__name__)
 
 
 class ChatService(Base):
+    def __init__(
+        self,
+        user_repository: UserRepository,
+        ghoul_repository: GhoulRepository,
+        user_cooldown_repository: UserCooldownRepository,
+        chat_repository: ChatRepository,
+        chat_participant_repository: ChatParticipantRepository,
+    ) -> None:
+        super().__init__(
+            user_repository=user_repository,
+            ghoul_repository=ghoul_repository,
+            user_cooldown_repository=user_cooldown_repository,
+            chat_repository=chat_repository,
+        )
+        self.chat_participant_repository = chat_participant_repository
+
+    async def get_random_participant(self, chat_id: int) -> Optional[User]:
+        """Случайный юзер среди тех, кто хоть раз писал в этом чате (см.
+        ChatParticipant) - для команды "выбери участника" (fun_router.py).
+        None, если для чата ещё никого не записано (пустой чат/только что
+        созданный)."""
+
+        telegram_id = await self.chat_participant_repository.get_random_participant(
+            chat_id
+        )
+        if telegram_id is None:
+            return None
+
+        return await self.user_repository.get(telegram_id)
+
     async def upsert(
         self,
         telegram_id: int,

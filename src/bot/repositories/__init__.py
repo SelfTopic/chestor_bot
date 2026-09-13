@@ -3,6 +3,7 @@ from .balances_log import BalancesLogRepository
 from .base import Base
 from .battle import BattleRepository
 from .chat import ChatRepository
+from .chat_participant import ChatParticipantRepository
 from .death_log import DeathLogRepository
 from .duel_session import DuelSessionRepository
 from .ghoul import GhoulRepository
@@ -22,6 +23,7 @@ __all__ = [
     "GhoulRepository",
     "UserCooldownRepository",
     "ChatRepository",
+    "ChatParticipantRepository",
     "MediaRepository",
     "LotteryRepository",
     "RpCommandsRepository",

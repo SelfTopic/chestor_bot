@@ -1,3 +1,4 @@
+from .calculator import CalculatorError, evaluate
 from .kagune_calculate import calculate_kagune
 from .level_progress_calculate import apply_level_progress, level_progress_bar
 from .parse_time import format_duration, parse_seconds
@@ -16,6 +17,8 @@ from .regen_calculate import (
 from .time_now import utcnow_naive
 
 __all__ = [
+    "evaluate",
+    "CalculatorError",
     "calculate_kagune",
     "apply_level_progress",
     "level_progress_bar",

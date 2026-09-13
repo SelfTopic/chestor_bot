@@ -8,6 +8,7 @@ from .repositories import (
     ActiveBattleRepository,
     BalancesLogRepository,
     BattleRepository,
+    ChatParticipantRepository,
     ChatRepository,
     DeathLogRepository,
     DuelSessionRepository,
@@ -41,7 +42,6 @@ from .services import (
     ResetService,
     RpCommandsService,
     StatsEditService,
-    SyncEntitiesService,
     TransferService,
     UserService,
     WikipediaService,
@@ -67,6 +67,9 @@ class Container(containers.DeclarativeContainer):
         UserCooldownRepository, session=db_session
     )
     chat_repository = providers.Factory(ChatRepository, session=db_session)
+    chat_participant_repository = providers.Factory(
+        ChatParticipantRepository, session=db_session
+    )
 
     media_repository = providers.Factory(MediaRepository, session=db_session)
 
@@ -123,14 +126,6 @@ class Container(containers.DeclarativeContainer):
         balances_log_repository,
     )
 
-    sync_entities_service = providers.Factory(
-        SyncEntitiesService,
-        user_repository,
-        ghoul_repository,
-        user_cooldown_repository,
-        chat_repository,
-    )
-
     ghoul_service = providers.Factory(
         GhoulService,
         user_repository,
@@ -155,6 +150,7 @@ class Container(containers.DeclarativeContainer):
         ghoul_repository,
         user_cooldown_repository,
         chat_repository,
+        chat_participant_repository,
     )
 
     coffee_service = providers.Factory(

@@ -3,6 +3,7 @@ from .balances_log import BalancesLog
 from .base import Base
 from .battle import Battle
 from .chat import Chat
+from .chat_participant import ChatParticipant
 from .cooldown import Cooldown
 from .death_log import DeathLog
 from .duel_session import DuelSession
@@ -20,6 +21,7 @@ __all__ = [
     "Base",
     "Battle",
     "Chat",
+    "ChatParticipant",
     "Cooldown",
     "Ghoul",
     "User",
