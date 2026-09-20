@@ -63,6 +63,27 @@ services:
     networks:
       - app_network
 
+  # Порт на selfrotgram (ветка feature/port-to-selfrotgram), только для тестового
+  # стенда. profiles: обычный `docker compose up` (прод) его не запускает, а
+  # `docker compose -p chestor_test up selfrot_bot` включает профиль сам.
+  selfrot_bot:
+    build: .
+    profiles: ["selfrot"]
+    tty: true
+    command: ["poetry", "run", "python", "-m", "src.selfrot_bot"]
+    env_file:
+      - .env
+    environment:
+      # Отдельная переменная, а не BOT_TOKEN: порт не запустится на токене прода.
+      - SELFROT_BOT_TOKEN=${SELFROT_BOT_TOKEN:-}
+      - PYTHONUNBUFFERED=1
+    volumes:
+      - .:/app
+    working_dir: /app
+    restart: "no"
+    networks:
+      - app_network
+
   migrations:
     build: .
     tty: true
