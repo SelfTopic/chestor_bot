@@ -489,9 +489,7 @@ class TestTopKagune:
         assert "Вася - 7" in edited["text"]
         assert button_data(edited, "⬅️ Сумма") is not None
 
-    async def test_malformed_callback_data_is_silently_ignored(
-        self, feed, telegram, session_factory
-    ):
+    async def test_malformed_callback_data(self, feed, telegram, session_factory):
         await seed(session_factory, UID, "Вася")
         await seed_ghoul(session_factory, UID)
 
@@ -499,7 +497,25 @@ class TestTopKagune:
             callback_update("topkagune:not_a_number:sum:ukaku", uid=UID)
         )
 
-        assert result.calls == []
+        (answer,) = result.bodies("answerCallbackQuery")
+        assert answer["text"] == "Неверные данные кнопки"
+        assert result.methods_called("editMessageText") == 0
+
+    async def test_inaccessible_message(self, feed, session_factory):
+        await seed(session_factory, UID, "Вася")
+        await seed_ghoul(session_factory, UID)
+        update = callback_update("topkagune:20:sum:ukaku", uid=UID)
+        # сообщение старше 48 часов: Telegram отдаёт InaccessibleMessage (date=0)
+        update["callback_query"]["message"] = {
+            "message_id": 44,
+            "date": 0,
+            "chat": {"id": UID, "type": "private", "first_name": "Вася"},
+        }
+
+        result = await feed(update)
+
+        (answer,) = result.bodies("answerCallbackQuery")
+        assert answer["text"] == "Невозможно обработать запрос"
 
 
 def group_callback_update(data: str, uid: int, chat: int = -100500) -> dict:

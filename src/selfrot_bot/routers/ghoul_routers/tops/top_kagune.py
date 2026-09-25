@@ -7,15 +7,14 @@
 from typing import Any, get_args
 
 from selfrot import BaseRouter, InlineKeyboard, MessageHandler
-from selfrot.filter import HasMessageCallbackQuery, TextStartswith
+from selfrot.filter import CallbackDataStartswith, TextStartswith
 from selfrot.handlers import CallbackQueryHandler
 from selfrot.keyboard import button
-from selfrot.types import InlineKeyboardMarkup, Message, TextMessage
+from selfrot.types import DataCallbackQuery, InlineKeyboardMarkup, Message, TextMessage
 
 from src.bot.types import KaguneType
 
 from ....context import AppContext
-from ....types import DataMessageCallbackQuery
 from .callback_data import TopKaguneView, ViewName
 
 _PREFIX = "топ кагуне"
@@ -104,15 +103,16 @@ class TopKaguneHandler(MessageHandler[AppContext[TextMessage]]):
         await ctx.message.answer(body, reply_markup=keyboard)
 
 
-class TopKaguneViewHandler(CallbackQueryHandler[AppContext[DataMessageCallbackQuery]]):
+class TopKaguneViewHandler(CallbackQueryHandler[AppContext[DataCallbackQuery]]):
     press = TopKaguneView.filter()
-    query = press & HasMessageCallbackQuery()
+    query = press
 
     async def handle(self) -> None:
         ctx = self.ctx
         message = ctx.callback_query.message
 
         if not isinstance(message, Message):
+            await ctx.callback_query.answer("Невозможно обработать запрос")
             return
 
         payload = self.press.parse(ctx)
@@ -127,5 +127,14 @@ class TopKaguneViewHandler(CallbackQueryHandler[AppContext[DataMessageCallbackQu
         await ctx.callback_query.answer()
 
 
+class TopKaguneBadDataHandler(CallbackQueryHandler[AppContext[DataCallbackQuery]]):
+    """Кнопка топа, данные которой не разобрались, как у прода."""
+
+    query = CallbackDataStartswith("topkagune")
+
+    async def handle(self) -> None:
+        await self.ctx.callback_query.answer("Неверные данные кнопки")
+
+
 class TopKaguneRouter(BaseRouter[AppContext]):
-    handlers = (TopKaguneHandler, TopKaguneViewHandler)
+    handlers = (TopKaguneHandler, TopKaguneViewHandler, TopKaguneBadDataHandler)
