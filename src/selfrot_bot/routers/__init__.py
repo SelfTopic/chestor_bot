@@ -14,6 +14,7 @@ from .common.start_router import StartRouter
 from .common.tops import CommonTopsRouter
 from .common.transfer import TransferRouter
 from .common.wordle import WordleRouter
+from .creator_routers import CreatorRouter
 
 
 class RootRouter(BaseRouter[AppContext]):
@@ -27,6 +28,7 @@ class RootRouter(BaseRouter[AppContext]):
         ProfileRouter,
         RaceProfileRouter,
         CheckRulesRouter,
+        CreatorRouter,
         CommonTopsRouter,
         RolePlayRouter,
         WordleRouter,
