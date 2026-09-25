@@ -15,6 +15,7 @@ from src.bot.services import (
     BanService,
     BattleRecordService,
     BattleService,
+    BattleTextGenerator,
     ChatService,
     CoffeeService,
     CooldownService,
@@ -110,6 +111,12 @@ class AppContext(BaseContext[TEvent]):
     @cached_property
     def battle_service(self) -> BattleService:
         return self.container.battle_service()
+
+    @cached_property
+    def battle_text_generator(self) -> BattleTextGenerator:
+        # Его rich-сообщение — aiogram-тип; в selfrot его переводит
+        # routers/ghoul_routers/battle_text.py.
+        return self.container.battle_text_generator()
 
     @cached_property
     def battle_record_service(self) -> BattleRecordService:

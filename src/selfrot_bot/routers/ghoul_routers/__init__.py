@@ -4,6 +4,7 @@ from ...context import AppContext
 from .coffee import CoffeeRouter
 from .combat_power import CombatPowerRouter
 from .middleware import GhoulMiddleware
+from .mob_fight import MobFightRouter
 from .passive_status import PassiveStatusRouter
 from .quiz import QuizRouter
 from .snap import SnapRouter
@@ -26,5 +27,6 @@ class GhoulRouter(BaseRouter[AppContext]):
         QuizRouter,
         UpgradeStatRouter,
         PassiveStatusRouter,
+        MobFightRouter,
         CombatPowerRouter,
     )
