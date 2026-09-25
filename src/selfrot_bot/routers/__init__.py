@@ -22,8 +22,7 @@ from .moderator_routers import ModeratorRouter
 
 class RootRouter(BaseRouter[AppContext]):
     # Порядок как в include_routers у прода: апдейт достаётся первому подошедшему.
-    # ErrorRouter стал Dispatcher.on_error; ghoul_routers переносится по одному
-    # файлу (пока coffee, snap, tops, upgrade_kagune).
+    # ErrorRouter стал Dispatcher.on_error.
     routers = (
         StartRouter,
         BotRouter,

@@ -19,6 +19,7 @@ from src.bot.services import (
     ChatService,
     CoffeeService,
     CooldownService,
+    DuelService,
     GhoulQuizService,
     GhoulService,
     PlayerLookupService,
@@ -117,6 +118,10 @@ class AppContext(BaseContext[TEvent]):
         # Его rich-сообщение — aiogram-тип; в selfrot его переводит
         # routers/ghoul_routers/battle_text.py.
         return self.container.battle_text_generator()
+
+    @cached_property
+    def duel_service(self) -> DuelService:
+        return self.container.duel_service()
 
     @cached_property
     def battle_record_service(self) -> BattleRecordService:

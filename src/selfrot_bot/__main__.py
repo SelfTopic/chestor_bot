@@ -17,6 +17,7 @@ from .context import AppContext
 from .media import UnsupportedMediaDownloader
 from .middlewares import BanMiddleware, DatabaseMiddleware, SyncEntitiesMiddleware
 from .routers import RootRouter
+from .routers.ghoul_routers.duel import DuelTicker
 from .services.notification_ticker import NotificationTicker
 from .services.notify import SelfrotBotNotifier
 
@@ -59,6 +60,12 @@ class Dispatcher(BaseDispatcher[AppContext]):
             notifier=SelfrotBotNotifier(self.api),
             dialog_service=self.dialog_service,
         )
+        self.duel_ticker = DuelTicker(
+            session_factory=session_factory,
+            bot=self.api,
+            container=self.container,
+            dialog_service=self.dialog_service,
+        )
 
     def create_context(self, update: Update) -> AppContext:
         return self.context(
@@ -72,10 +79,12 @@ class Dispatcher(BaseDispatcher[AppContext]):
     async def on_startup(self) -> None:
         await self.container.video_worker().start()
         await self.notification_ticker.start()
+        await self.duel_ticker.start()
 
     async def on_shutdown(self) -> None:
         await self.container.video_worker().stop()
         await self.notification_ticker.stop()
+        await self.duel_ticker.stop()
 
     async def on_error(self, ctx: AppContext, exc: Exception) -> None:
         """
