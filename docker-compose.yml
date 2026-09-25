@@ -77,10 +77,17 @@ services:
       # Отдельная переменная, а не BOT_TOKEN: порт не запустится на токене прода.
       - SELFROT_BOT_TOKEN=${SELFROT_BOT_TOKEN:-}
       - PYTHONUNBUFFERED=1
+      - POSTGRES_HOSTNAME=postgres
+      - DB_HOST=postgres
     volumes:
       - .:/app
     working_dir: /app
     restart: "no"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      migrations:
+        condition: service_completed_successfully
     networks:
       - app_network
 
