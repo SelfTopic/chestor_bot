@@ -9,6 +9,8 @@ ctx.cooldown_remaining, а CoffeeService.execute_cooldown, который сам
 import json
 
 import pytest
+from dependency_injector import providers
+from ghoul_quiz import AnswerResponse, QuestionOption
 
 from src.bot.config import game_config
 from src.bot.game_configs import STAT_UPGRADE_CONFIG
@@ -702,3 +704,132 @@ class TestHungerStatus:
         (reply,) = await send("голод", uid=UID)
 
         assert "🕰 Голод уже на нуле.\n" in reply
+
+
+class FakeQuiz:
+    """Вместо GhoulQuizService: внешний API в тестах недоступен."""
+
+    def __init__(self, options: list[str], answer: str) -> None:
+        self.question = QuestionOption(
+            id=17, question="Кто?", answer_options=options, answer_group="g"
+        )
+        self.answer = AnswerResponse(
+            id=17, question="Кто?", answer=answer, answer_group="g"
+        )
+
+    async def get_random_quiz(self) -> QuestionOption:
+        return self.question
+
+    async def get_answer_by_id(self, question_id: int) -> AnswerResponse:
+        assert question_id == self.question.id
+        return self.answer
+
+
+def keyboard_callback(body: dict, label: str, uid: int) -> dict:
+    """Нажатие кнопки label под сообщением body, с клавиатурой этого сообщения."""
+    update = callback_update(button_data(body, label), uid=uid)
+    update["callback_query"]["message"]["reply_markup"] = body["reply_markup"]
+    return update
+
+
+class TestQuiz:
+    OPTIONS = ["Канеки", "Тоука", "Хинами", "Ута"]
+
+    @pytest.fixture
+    def quiz(self, dispatcher) -> FakeQuiz:
+        fake = FakeQuiz(self.OPTIONS, answer="Канеки")
+        dispatcher.container.ghoul_quiz_service.override(providers.Object(fake))
+        return fake
+
+    async def _ask(self, feed, session_factory, uid: int = UID) -> dict:
+        await seed(session_factory, uid, "Вася")
+        await seed_ghoul(session_factory, uid)
+        telegram = await feed(message_update("/quiz", uid=uid))
+        (body,) = telegram.bodies("sendMessage")
+        return body
+
+    async def test_question_with_four_options_two_per_row(
+        self, feed, session_factory, quiz
+    ):
+        body = await self._ask(feed, session_factory)
+
+        assert body["text"] == "Кто?"
+        assert body["reply_parameters"]["message_id"] == 1
+        rows = body["reply_markup"]["inline_keyboard"]
+        assert [len(row) for row in rows] == [2, 2]
+        labels = [b["text"] for row in rows for b in row]
+        assert sorted(labels) == sorted(self.OPTIONS)
+        assert button_data(body, labels[3]) == "quiz_answer:17:3"
+
+    async def test_correct_answer_pays_and_offers_restart(
+        self, feed, session_factory, quiz
+    ):
+        body = await self._ask(feed, session_factory)
+
+        telegram = await feed(keyboard_callback(body, "Канеки", UID))
+
+        (edited,) = telegram.bodies("editMessageText")
+        head, award = edited["text"].split("Получено CheSton: ")
+        assert head == (
+            "Вопрос: Кто? \nОтвет: Канеки.\nТвой выбор: Канеки\nСтатус: верно\n\n"
+        )
+        assert await balance_of(session_factory, UID) == int(award)
+        assert button_data(edited, "Play Again") == "quiz_restart"
+        # как у прода: часики на кнопке не закрываются
+        assert telegram.methods_called("answerCallbackQuery") == 0
+
+    async def test_wrong_answer(self, feed, session_factory, quiz):
+        body = await self._ask(feed, session_factory)
+
+        telegram = await feed(keyboard_callback(body, "Тоука", UID))
+
+        (edited,) = telegram.bodies("editMessageText")
+        assert edited["text"] == (
+            "Вопрос: Кто? \nОтвет: Канеки.\nТвой выбор: Тоука\nСтатус: неверно"
+        )
+        assert await balance_of(session_factory, UID) == 0
+
+    async def test_second_answer_is_not_active(self, feed, session_factory, quiz):
+        body = await self._ask(feed, session_factory)
+        await feed(keyboard_callback(body, "Тоука", UID))
+
+        telegram = await feed(keyboard_callback(body, "Канеки", UID))
+
+        (answer,) = telegram.bodies("answerCallbackQuery")
+        assert answer["text"] == "Quiz is not active."
+        assert await balance_of(session_factory, UID) == 0
+
+    async def test_someone_elses_quiz_is_not_active(self, feed, session_factory, quiz):
+        body = await self._ask(feed, session_factory)
+        await seed(session_factory, UID + 1, "Петя")
+        await seed_ghoul(session_factory, UID + 1)
+
+        telegram = await feed(keyboard_callback(body, "Канеки", UID + 1))
+
+        (answer,) = telegram.bodies("answerCallbackQuery")
+        assert answer["text"] == "Quiz is not active."
+
+    async def test_play_again_asks_a_new_question(self, feed, session_factory, quiz):
+        body = await self._ask(feed, session_factory)
+        telegram = await feed(keyboard_callback(body, "Тоука", UID))
+        (edited,) = telegram.bodies("editMessageText")
+
+        telegram = await feed(keyboard_callback(edited, "Play Again", UID))
+
+        (question,) = telegram.bodies("editMessageText")
+        assert question["text"] == "Кто?"
+        telegram = await feed(keyboard_callback(question, "Канеки", UID))
+        (result,) = telegram.bodies("editMessageText")
+        assert "Статус: верно" in result["text"]
+
+    async def test_long_option_fits_the_button(self, feed, session_factory, dispatcher):
+        # у прода текст варианта едет в callback_data и такой вопрос не отправить
+        long = "Кен Канеки после встречи с Ризе Камиширо"
+        fake = FakeQuiz([long, "а_б", "в", "г"], answer=long)
+        dispatcher.container.ghoul_quiz_service.override(providers.Object(fake))
+        body = await self._ask(feed, session_factory)
+
+        telegram = await feed(keyboard_callback(body, long, UID))
+
+        (edited,) = telegram.bodies("editMessageText")
+        assert f"Твой выбор: {long}\nСтатус: верно" in edited["text"]

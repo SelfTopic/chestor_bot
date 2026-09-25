@@ -18,6 +18,7 @@ from src.bot.services import (
     ChatService,
     CoffeeService,
     CooldownService,
+    GhoulQuizService,
     GhoulService,
     PlayerLookupService,
     ResetService,
@@ -95,6 +96,10 @@ class AppContext(BaseContext[TEvent]):
         # check_snap_limit()/send_answer() держат aiogram Message явно — их
         # заменяют ctx.ghoul_service.get()/ctx.reply_gif в самом хендлере.
         return self.container.coffee_service()
+
+    @cached_property
+    def ghoul_quiz_service(self) -> GhoulQuizService:
+        return self.container.ghoul_quiz_service()
 
     @cached_property
     def stat_upgrade_service(self) -> StatUpgradeService:
