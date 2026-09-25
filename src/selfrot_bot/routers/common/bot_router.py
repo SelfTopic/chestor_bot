@@ -1,8 +1,8 @@
 from selfrot import BaseRouter, MessageHandler
 from selfrot.filter import Text
-from selfrot.types import TextMessage
 
 from ...context import AppContext
+from ...types import TextMessage
 
 
 class BotHandler(MessageHandler[AppContext[TextMessage]]):

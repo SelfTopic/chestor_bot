@@ -22,3 +22,13 @@ async def test_ignores_everything_else(send, text):
 
 async def test_polls_only_messages(send):
     assert send.dispatcher.used_update_types() == {"message"}
+
+
+async def test_link_previews_are_disabled_like_in_prod(feed, telegram):
+    # DefaultBotProperties(link_preview_is_disabled=True) у прода: Bot.defaults
+    from .conftest import message_update
+
+    await feed(message_update("бот"))
+
+    (body,) = telegram.bodies("sendMessage")
+    assert body["link_preview_options"] == {"is_disabled": True}
