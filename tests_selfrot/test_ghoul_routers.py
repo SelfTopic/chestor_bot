@@ -833,3 +833,64 @@ class TestQuiz:
 
         (edited,) = telegram.bodies("editMessageText")
         assert f"Твой выбор: {long}\nСтатус: верно" in edited["text"]
+
+
+class TestCombatPower:
+    async def _seed(self, session_factory) -> Ghoul:
+        await seed(session_factory, UID, "Вася")
+        await seed_ghoul(
+            session_factory,
+            UID,
+            strength=10,
+            max_health=50,
+            health=20,
+            hunger=100,
+            kagune_type_bit=KaguneType.UKAKU.value["bit"],
+            kagune_strength_ukaku=4,
+        )
+        ghoul = await get_ghoul(session_factory, UID)
+        assert ghoul is not None
+        return ghoul
+
+    async def test_rich_tables(self, feed, session_factory):
+        await self._seed(session_factory)
+
+        telegram = await feed(message_update("Боевая мощь", uid=UID))
+
+        (rich,) = telegram.bodies("sendRichMessage")
+        blocks = rich["rich_message"]["blocks"]
+        # у БД-пользователя без фамилии full_name с пробелом на конце, как у прода
+        assert blocks[0]["text"].startswith("⚡ Боевая мощь гуля ")
+        assert blocks[0]["text"].endswith(" ранга Вася ")
+        vacuum = [[c["text"] for c in row] for row in blocks[1]["cells"]]
+        assert vacuum[1] == ["Сила", "10"]
+        assert vacuum[4] == ["Здоровье", "50"]  # паспортный max_health
+        assert vacuum[6] == ["Кагуне", "4"]
+        combat = [[c["text"] for c in row] for row in blocks[4]["cells"]]
+        assert combat[0] == ["Стат", "Значение", "Влияние голода", "Влияние кагуне"]
+        assert combat[4][:2] == ["Здоровье", "20"]  # текущее health
+        assert telegram.sent == []
+
+    async def test_plain_text_when_rich_fails(self, feed, telegram, session_factory):
+        await self._seed(session_factory)
+        telegram.errors["sendRichMessage"] = (400, "Bad Request: rich not supported")
+
+        (reply,) = (await feed(message_update("боевая мощь", uid=UID))).sent
+
+        assert reply.startswith("⚡ Боевая мощь гуля ")
+        assert "\n\n🤟 Сила: 10 → " in reply
+        assert "\n❤️ Здоровье: 50 → " in reply
+        assert "\n♦️ Кагуне: 4 → " in reply
+        assert reply.endswith("используй /kagune.")
+
+    async def test_short_alias(self, send, session_factory):
+        ghoul = await self._seed(session_factory)
+        power = sum(
+            (ghoul.strength, ghoul.dexterity, ghoul.speed, ghoul.max_health)
+        ) + (ghoul.regeneration + 4)  # + сила кагуне
+
+        (reply,) = await send("БМ", uid=UID)
+
+        vacuum, effective = reply.split("\n")
+        assert vacuum == f"Твоя боевая мощь вне боя: {power}"
+        assert effective.startswith("Твоя боевая мощь в бою: ")
