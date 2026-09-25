@@ -449,8 +449,46 @@ class TestTopSnap:
 
         assert reply == "Топ не может выходить за пределы значений 1-50"
 
+    @pytest.mark.parametrize(
+        ("text", "reply"),
+        [
+            # как у прода (isdigit): отрицательное — "не цифра", а 0 — вне диапазона
+            ("топ щелк -5", "Топ нужно указывать положительной цифрой"),
+            ("топ щелк 0", "Топ не может выходить за пределы значений 1-50"),
+            ("Топ Щелк 2 лишнее", None),  # регистр и хвост после числа не мешают
+        ],
+    )
+    async def test_count_edge_cases(self, send, session_factory, text, reply):
+        await seed(session_factory, UID, "Вася")
+        await seed_ghoul(session_factory, UID)
+
+        (answer,) = await send(text, uid=UID)
+
+        if reply is None:
+            assert answer.startswith("Топ 2 самых сломанных пальцев")
+        else:
+            assert answer == reply
+
+    async def test_longer_word_is_not_a_command(self, send, session_factory):
+        # исправленный прод-баг: "топ щелкает" ловилось по началу текста и падало
+        await seed(session_factory, UID, "Вася")
+        await seed_ghoul(session_factory, UID)
+
+        assert await send("топ щелкает", uid=UID) == []
+
 
 class TestTopKagune:
+    async def test_count_errors_like_top_snap(self, send, session_factory):
+        await seed(session_factory, UID, "Вася")
+        await seed_ghoul(session_factory, UID)
+
+        assert await send("топ кагуне абв", uid=UID) == [
+            "Топ нужно указывать положительной цифрой"
+        ]
+        assert await send("топ кагуне 99", uid=UID) == [
+            "Топ не может выходить за пределы значений 1-50"
+        ]
+
     async def test_sum_view_with_keyboard(self, feed, session_factory):
         await seed(session_factory, UID, "Вася")
         await seed_ghoul(

@@ -1,38 +1,23 @@
 """
-"топ щелк [N]": топ по количеству "щелчков". TextStartswith — как и у прод-Text(...,
-startswith=True) — совпадает и с "топ щелкает" (нет проверки границы слова);
-message.text.split()[2] тогда падает IndexError. Известная особенность, оставлена
-как есть (см. журнал порта: обсуждали с пользователем, чинить не сейчас).
+"топ щелк [N]": топ по количеству "щелчков". N разбирает GhoulTopHandler (count.py).
+
+Исправленный прод-баг: прод ловил команду по началу текста и падал IndexError на
+"топ щелкает" (split()[2] там нет). Здесь это команда "топ щелк" целиком.
 """
 
 from selfrot import BaseRouter, MessageHandler
-from selfrot.filter import TextStartswith
 from selfrot.types import TextMessage
 
 from ....context import AppContext
+from .count import GhoulTopHandler, top_command
 
-_PREFIX = "топ щелк"
 
+class TopSnapHandler(GhoulTopHandler, MessageHandler[AppContext[TextMessage]]):
+    cmd = top_command("топ щелк")
+    query = cmd
 
-class TopSnapHandler(MessageHandler[AppContext[TextMessage]]):
-    query = TextStartswith(_PREFIX, ignore_case=True)
-
-    async def handle(self) -> None:
+    async def show(self, count: int) -> None:
         ctx = self.ctx
-        text = ctx.message.text
-        count = 20
-
-        if text.lower() != _PREFIX:
-            count_str = text.split()[2]
-            if not count_str.isdigit():
-                await ctx.message.answer("Топ нужно указывать положительной цифрой")
-                return
-            count = int(count_str)
-
-        if count < 1 or count > 50:
-            await ctx.message.answer("Топ не может выходить за пределы значений 1-50")
-            return
-
         top = await ctx.ghoul_service.get_top_snap(count)
         if not top:
             await ctx.message.answer("А нету топа прикинь нахуй.")

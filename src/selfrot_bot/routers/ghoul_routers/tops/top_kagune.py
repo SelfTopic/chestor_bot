@@ -7,7 +7,7 @@
 from typing import Any, get_args
 
 from selfrot import BaseRouter, InlineKeyboard, MessageHandler
-from selfrot.filter import CallbackDataStartswith, TextStartswith
+from selfrot.filter import CallbackDataStartswith
 from selfrot.handlers import CallbackQueryHandler
 from selfrot.keyboard import button
 from selfrot.types import DataCallbackQuery, InlineKeyboardMarkup, Message, TextMessage
@@ -16,8 +16,8 @@ from src.bot.types import KaguneType
 
 from ....context import AppContext
 from .callback_data import TopKaguneView, ViewName
+from .count import GhoulTopHandler, top_command
 
-_PREFIX = "топ кагуне"
 _VIEWS: tuple[ViewName, ...] = get_args(ViewName)
 _VIEW_LABELS: dict[ViewName, str] = {
     "sum": "Сумма",
@@ -80,27 +80,13 @@ async def _render(
     return text, _build_keyboard(current=current, previous=previous, count=count)
 
 
-class TopKaguneHandler(MessageHandler[AppContext[TextMessage]]):
-    query = TextStartswith(_PREFIX, ignore_case=True)
+class TopKaguneHandler(GhoulTopHandler, MessageHandler[AppContext[TextMessage]]):
+    cmd = top_command("топ кагуне")
+    query = cmd
 
-    async def handle(self) -> None:
-        ctx = self.ctx
-        text = ctx.message.text
-        count = 20
-
-        if text.lower() != _PREFIX:
-            count_str = text.split()[2]
-            if not count_str.isdigit():
-                await ctx.message.answer("Топ нужно указывать положительной цифрой")
-                return
-            count = int(count_str)
-
-        if count < 1 or count > 50:
-            await ctx.message.answer("Топ не может выходить за пределы значений 1-50")
-            return
-
-        body, keyboard = await _render(ctx, current="sum", previous=None, count=count)
-        await ctx.message.answer(body, reply_markup=keyboard)
+    async def show(self, count: int) -> None:
+        body, keyboard = await _render(self.ctx, current="sum", previous=None, count=count)
+        await self.ctx.message.answer(body, reply_markup=keyboard)
 
 
 class TopKaguneViewHandler(CallbackQueryHandler[AppContext[DataCallbackQuery]]):
