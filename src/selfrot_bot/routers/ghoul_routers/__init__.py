@@ -3,6 +3,7 @@ from selfrot import BaseRouter
 from ...context import AppContext
 from .coffee import CoffeeRouter
 from .middleware import GhoulMiddleware
+from .passive_status import PassiveStatusRouter
 from .snap import SnapRouter
 from .tops import TopsGhoulRouter
 from .upgrade_kagune import UpgradeKaguneRouter
@@ -21,4 +22,5 @@ class GhoulRouter(BaseRouter[AppContext]):
         TopsGhoulRouter,
         CoffeeRouter,
         UpgradeStatRouter,
+        PassiveStatusRouter,
     )

@@ -14,7 +14,13 @@ from src.bot.config import game_config
 from src.bot.game_configs import STAT_UPGRADE_CONFIG
 from src.bot.repositories import GhoulRepository, UserCooldownRepository
 from src.bot.types import KaguneType
-from src.bot.utils import calculate_kagune
+from src.bot.utils import (
+    calculate_kagune,
+    format_duration,
+    get_hunger_tier,
+    health_regen_per_hour,
+    hours_until_full_health,
+)
 from src.database.models import Cooldown, Ghoul
 
 from .conftest import (
@@ -624,3 +630,75 @@ class TestUpgradeStat:
         assert answer["text"] == "Эта операция доступна только в личных сообщениях."
         ghoul = await get_ghoul(session_factory, UID)
         assert ghoul is not None and ghoul.strength == 1
+
+
+class TestRegenStatus:
+    async def test_full_health(self, send, session_factory):
+        await seed(session_factory, UID, "Вася")
+        await seed_ghoul(session_factory, UID, health=5, max_health=5)
+
+        (reply,) = await send("Реген", uid=UID)
+
+        assert reply.startswith("❤️ Здоровье: 5/5\n")
+        assert reply.endswith("🕰 Уже полностью здоров(а).")
+
+    async def test_time_until_full_health(self, send, session_factory):
+        await seed(session_factory, UID, "Вася")
+        await seed_ghoul(
+            session_factory,
+            UID,
+            health=1,
+            max_health=500,
+            regeneration=3,
+            hunger=100,
+            kagune_type_bit=KaguneType.UKAKU.value["bit"],
+        )
+
+        (reply,) = await send("реген", uid=UID)
+
+        per_hour = health_regen_per_hour(3, 100, KaguneType.UKAKU.value["bit"], False)
+        assert f"Скорость регенерации сейчас: {round(per_hour, 2)} HP/ч" in reply
+        hours = hours_until_full_health(1, 500, per_hour)
+        assert hours is not None
+        assert reply.endswith(
+            f"До полного здоровья: {format_duration(int(hours * 3600))}"
+        )
+
+    async def test_zero_regeneration_never_heals(self, send, session_factory):
+        await seed(session_factory, UID, "Вася")
+        await seed_ghoul(session_factory, UID, health=1, max_health=500, regeneration=0)
+
+        (reply,) = await send("реген", uid=UID)
+
+        assert reply.endswith(
+            "При текущей скорости регенерации здоровье само не восстановится."
+        )
+
+
+class TestHungerStatus:
+    async def test_status_with_effective_stats(self, send, session_factory):
+        await seed(session_factory, UID, "Вася")
+        await seed_ghoul(
+            session_factory,
+            UID,
+            hunger=80,
+            strength=10,
+            kagune_type_bit=KaguneType.UKAKU.value["bit"],
+            kagune_strength_ukaku=4,
+        )
+
+        (reply,) = await send("Голод", uid=UID)
+
+        tier = get_hunger_tier(80)
+        assert reply.startswith(f"🍖 Голод: 80% ({tier.name})\n🕰 До истощения: ")
+        assert f"сейчас: ×{tier.falling_multiplier}\n" in reply
+        assert f"сейчас: ×{tier.rising_multiplier}\n" in reply
+        assert "🤟 Сила: " in reply and "♦️ Кагуне: " in reply
+
+    async def test_starved(self, send, session_factory):
+        await seed(session_factory, UID, "Вася")
+        await seed_ghoul(session_factory, UID, hunger=0)
+
+        (reply,) = await send("голод", uid=UID)
+
+        assert "🕰 Голод уже на нуле.\n" in reply

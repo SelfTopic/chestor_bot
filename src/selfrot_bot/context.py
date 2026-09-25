@@ -14,6 +14,7 @@ from src.bot.exceptions import UserNotFound
 from src.bot.services import (
     BanService,
     BattleRecordService,
+    BattleService,
     ChatService,
     CoffeeService,
     CooldownService,
@@ -100,6 +101,10 @@ class AppContext(BaseContext[TEvent]):
         # Только purchase(): build_message() собирает aiogram-клавиатуру, её
         # заменяет своя сборка в routers/ghoul_routers/upgrade_stat.py.
         return self.container.stat_upgrade_service()
+
+    @cached_property
+    def battle_service(self) -> BattleService:
+        return self.container.battle_service()
 
     @cached_property
     def battle_record_service(self) -> BattleRecordService:
