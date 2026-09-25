@@ -14,3 +14,6 @@ backups/
 rclone.conf
 
 src/assets/videos/tokio_ghoul/
+
+# Сессия квиза (refresh-токены ghoul_quiz)
+.ghoul_quiz/

@@ -3,6 +3,7 @@ import os
 import sys
 
 from dependency_injector import providers
+from ghoul_quiz import DEFAULT_BASE_URL as DEFAULT_QUIZ_URL
 from selfrot import BaseDispatcher
 from selfrot.middleware import LoggingMiddleware
 from selfrot.types import Message, Update
@@ -20,6 +21,7 @@ from .routers import RootRouter
 from .routers.ghoul_routers.duel import DuelTicker
 from .services.notification_ticker import NotificationTicker
 from .services.notify import SelfrotBotNotifier
+from .services.quiz import QuizService
 
 logger = logging.getLogger(__name__)
 
@@ -60,6 +62,11 @@ class Dispatcher(BaseDispatcher[AppContext]):
             notifier=SelfrotBotNotifier(self.api),
             dialog_service=self.dialog_service,
         )
+        # Один клиент квиза на процесс: refresh-токены ghoul_quiz 0.2 одноразовые.
+        self.quiz_service = QuizService(
+            email=os.environ.get("GHOUL_QUIZ_EMAIL"),
+            base_url=os.environ.get("GHOUL_QUIZ_API_URL", DEFAULT_QUIZ_URL),
+        )
         self.duel_ticker = DuelTicker(
             session_factory=session_factory,
             bot=self.api,
@@ -74,6 +81,7 @@ class Dispatcher(BaseDispatcher[AppContext]):
             self.dialog_service,
             self.container,
             self.session_factory,
+            self.quiz_service,
         )
 
     async def on_startup(self) -> None:
@@ -85,6 +93,7 @@ class Dispatcher(BaseDispatcher[AppContext]):
         await self.container.video_worker().stop()
         await self.notification_ticker.stop()
         await self.duel_ticker.stop()
+        await self.quiz_service.close()
 
     async def on_error(self, ctx: AppContext, exc: Exception) -> None:
         """

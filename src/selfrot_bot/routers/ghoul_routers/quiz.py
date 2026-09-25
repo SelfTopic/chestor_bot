@@ -1,6 +1,6 @@
 """
-/quiz: вопрос по «Токийскому гулю» из внешнего API (GhoulQuizService, ходит в
-http://chestor.site:3300 с GHOUL_QUIZ_API_KEY) и 4 варианта ответа кнопками.
+/quiz: вопрос по «Токийскому гулю» из внешнего API (ctx.ghoul_quiz_service —
+services/quiz.py, ghoul_quiz 0.2, https://chestor.site/api) и 4 варианта ответа кнопками.
 
 Исправленный прод-баг: у прода кнопка несёт сам текст варианта
 ("quiz_answer_<id>_<вариант>"), поэтому вариант с "_" роняет разбор, а длинный

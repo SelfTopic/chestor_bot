@@ -20,7 +20,6 @@ from src.bot.services import (
     CoffeeService,
     CooldownService,
     DuelService,
-    GhoulQuizService,
     GhoulService,
     PlayerLookupService,
     ResetService,
@@ -45,6 +44,7 @@ from .services.broadcast import BroadcastService
 from .services.level_up import LevelUpService
 from .services.lookup import find_user
 from .services.notify import Notifier, SelfrotBotNotifier
+from .services.quiz import QuizService
 
 logger = logging.getLogger(__name__)
 
@@ -74,6 +74,9 @@ class AppContext(BaseContext[TEvent]):
     dialog_service: DialogService
     container: Container
     session_factory: async_sessionmaker[AsyncSession]
+    # Не прод-GhoulQuizService из контейнера: один клиент ghoul_quiz 0.2 на
+    # процесс, его держит Dispatcher (см. services/quiz.py).
+    ghoul_quiz_service: QuizService
 
     @cached_property
     def user_service(self) -> UserService:
@@ -98,10 +101,6 @@ class AppContext(BaseContext[TEvent]):
         # check_snap_limit()/send_answer() держат aiogram Message явно — их
         # заменяют ctx.ghoul_service.get()/ctx.reply_gif в самом хендлере.
         return self.container.coffee_service()
-
-    @cached_property
-    def ghoul_quiz_service(self) -> GhoulQuizService:
-        return self.container.ghoul_quiz_service()
 
     @cached_property
     def stat_upgrade_service(self) -> StatUpgradeService:

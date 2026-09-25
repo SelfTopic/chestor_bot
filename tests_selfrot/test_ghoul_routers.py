@@ -9,8 +9,7 @@ ctx.cooldown_remaining, а CoffeeService.execute_cooldown, который сам
 import json
 
 import pytest
-from dependency_injector import providers
-from ghoul_quiz import AnswerResponse, QuestionOption
+from ghoul_quiz import Answer, Question
 
 from src.bot.config import game_config
 from src.bot.game_configs import STAT_UPGRADE_CONFIG
@@ -723,20 +722,20 @@ class TestHungerStatus:
 
 
 class FakeQuiz:
-    """Вместо GhoulQuizService: внешний API в тестах недоступен."""
+    """Вместо QuizService: внешний API в тестах недоступен."""
 
     def __init__(self, options: list[str], answer: str) -> None:
-        self.question = QuestionOption(
+        self.question = Question(
             id=17, question="Кто?", answer_options=options, answer_group="g"
         )
-        self.answer = AnswerResponse(
+        self.answer = Answer(
             id=17, question="Кто?", answer=answer, answer_group="g"
         )
 
-    async def get_random_quiz(self) -> QuestionOption:
+    async def get_random_quiz(self) -> Question:
         return self.question
 
-    async def get_answer_by_id(self, question_id: int) -> AnswerResponse:
+    async def get_answer_by_id(self, question_id: int) -> Answer:
         assert question_id == self.question.id
         return self.answer
 
@@ -752,9 +751,9 @@ class TestQuiz:
     OPTIONS = ["Канеки", "Тоука", "Хинами", "Ута"]
 
     @pytest.fixture
-    def quiz(self, dispatcher) -> FakeQuiz:
+    def quiz(self, dispatcher, monkeypatch) -> FakeQuiz:
         fake = FakeQuiz(self.OPTIONS, answer="Канеки")
-        dispatcher.container.ghoul_quiz_service.override(providers.Object(fake))
+        monkeypatch.setattr(dispatcher, "quiz_service", fake)
         return fake
 
     async def _ask(self, feed, session_factory, uid: int = UID) -> dict:
@@ -838,11 +837,13 @@ class TestQuiz:
         (result,) = telegram.bodies("editMessageText")
         assert "Статус: верно" in result["text"]
 
-    async def test_long_option_fits_the_button(self, feed, session_factory, dispatcher):
+    async def test_long_option_fits_the_button(
+        self, feed, session_factory, dispatcher, monkeypatch
+    ):
         # у прода текст варианта едет в callback_data и такой вопрос не отправить
         long = "Кен Канеки после встречи с Ризе Камиширо"
         fake = FakeQuiz([long, "а_б", "в", "г"], answer=long)
-        dispatcher.container.ghoul_quiz_service.override(providers.Object(fake))
+        monkeypatch.setattr(dispatcher, "quiz_service", fake)
         body = await self._ask(feed, session_factory)
 
         telegram = await feed(keyboard_callback(body, long, UID))

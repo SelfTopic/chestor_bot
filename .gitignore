@@ -13,3 +13,6 @@ videos/
 *.pstats
 assets/
 *.session
+
+# Сессия квиза (refresh-токены ghoul_quiz)
+.ghoul_quiz/
