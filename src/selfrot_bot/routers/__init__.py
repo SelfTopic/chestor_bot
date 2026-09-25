@@ -16,15 +16,18 @@ from .common.transfer import TransferRouter
 from .common.wordle import WordleRouter
 from .chat_member_update_routers import ChatMemberUpdateRouter
 from .creator_routers import CreatorRouter
+from .ghoul_routers import GhoulRouter
 from .moderator_routers import ModeratorRouter
 
 
 class RootRouter(BaseRouter[AppContext]):
     # Порядок как в include_routers у прода: апдейт достаётся первому подошедшему.
-    # ErrorRouter стал Dispatcher.on_error.
+    # ErrorRouter стал Dispatcher.on_error; ghoul_routers переносится по одному
+    # файлу (пока coffee, snap, tops, upgrade_kagune).
     routers = (
         StartRouter,
         BotRouter,
+        GhoulRouter,
         BalanceRouter,
         HelpRouter,
         ProfileRouter,
