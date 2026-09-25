@@ -14,7 +14,6 @@ from src.bot.exceptions import UserNotFound
 from src.bot.services import (
     BanService,
     BattleRecordService,
-    BattleService,
     BattleTextGenerator,
     ChatService,
     CoffeeService,
@@ -33,6 +32,7 @@ from src.bot.services import (
     WordleService,
 )
 from src.bot.repositories import MediaRepository
+from src.bot.services import BattleService as BattleEngine
 from src.bot.services.dialog import DialogService
 from src.bot.services.ghoul_game import LotteryService
 from src.bot.services.stat_upgrade import StatUpgradeService
@@ -40,6 +40,8 @@ from src.bot.types import TimeComponents
 from src.bot.utils import parse_seconds
 from src.database.models import Ghoul, Media, User
 
+from .repositories.battle import FightRepository
+from .services.battle import BattleService
 from .services.broadcast import BroadcastService
 from .services.level_up import LevelUpService
 from .services.lookup import find_user
@@ -109,8 +111,24 @@ class AppContext(BaseContext[TEvent]):
         return self.container.stat_upgrade_service()
 
     @cached_property
-    def battle_service(self) -> BattleService:
+    def battle_engine(self) -> BattleEngine:
+        """Прод-мост к движку боя: гуль → боец, мощь, проверка готовности к бою."""
         return self.container.battle_service()
+
+    @cached_property
+    def battle_service(self) -> BattleService:
+        """Бои целиком: участники, бой, последствия, счёт (services/battle.py)."""
+        return BattleService(
+            engine=self.battle_engine,
+            fights=FightRepository(
+                self.container.db_session(), self.container.ghoul_repository()
+            ),
+            ghoul_service=self.ghoul_service,
+            user_service=self.user_service,
+            level_up_service=self.level_up_service,
+            battle_record_service=self.battle_record_service,
+            duel_service=self.duel_service,
+        )
 
     @cached_property
     def battle_text_generator(self) -> BattleTextGenerator:

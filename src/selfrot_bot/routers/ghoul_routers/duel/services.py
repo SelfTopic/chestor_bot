@@ -9,39 +9,28 @@ from dataclasses import dataclass
 from typing import Any
 
 from src.bot.containers import Container
-from src.bot.services import (
-    BattleRecordService,
-    BattleService,
-    BattleTextGenerator,
-    DuelService,
-    GhoulService,
-    UserService,
-)
+from src.bot.services import BattleRecordService, BattleTextGenerator, DuelService
 from src.bot.services.dialog import DialogService
 
 from ....context import AppContext
+from ....repositories.battle import FightRepository
+from ....services.battle import BattleService
 from ....services.level_up import LevelUpService
 from ....services.notify import Notifier
 
 
 @dataclass(frozen=True)
 class DuelServices:
-    user_service: UserService
-    ghoul_service: GhoulService
-    battle_service: BattleService
+    battle: BattleService
     battle_text_generator: BattleTextGenerator
-    level_up_service: LevelUpService
     battle_record_service: BattleRecordService
     duel_service: DuelService
 
     @classmethod
     def from_ctx(cls, ctx: AppContext[Any]) -> "DuelServices":
         return cls(
-            user_service=ctx.user_service,
-            ghoul_service=ctx.ghoul_service,
-            battle_service=ctx.battle_service,
+            battle=ctx.battle_service,
             battle_text_generator=ctx.battle_text_generator,
-            level_up_service=ctx.level_up_service,
             battle_record_service=ctx.battle_record_service,
             duel_service=ctx.duel_service,
         )
@@ -54,14 +43,22 @@ class DuelServices:
         как DatabaseMiddleware."""
         user_service = container.user_service()
         ghoul_service = container.ghoul_service()
-        return cls(
-            user_service=user_service,
+        battle_record_service = container.battle_record_service()
+        duel_service = container.duel_service()
+        battle = BattleService(
+            engine=container.battle_service(),
+            fights=FightRepository(container.db_session(), container.ghoul_repository()),
             ghoul_service=ghoul_service,
-            battle_service=container.battle_service(),
-            battle_text_generator=container.battle_text_generator(),
+            user_service=user_service,
             level_up_service=LevelUpService(
                 user_service, ghoul_service, dialog_service, notifier
             ),
-            battle_record_service=container.battle_record_service(),
-            duel_service=container.duel_service(),
+            battle_record_service=battle_record_service,
+            duel_service=duel_service,
+        )
+        return cls(
+            battle=battle,
+            battle_text_generator=container.battle_text_generator(),
+            battle_record_service=battle_record_service,
+            duel_service=duel_service,
         )

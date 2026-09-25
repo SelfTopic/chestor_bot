@@ -8,46 +8,61 @@ selfrot InputRichMessage через JSON (model_dump → model_validate), а н�
 переписывается второй раз.
 """
 
-from selfrot.types import InputRichMessage, Message
+from dataclasses import dataclass
+from functools import cached_property
+
+from selfrot import Bot
+from selfrot.exceptions import TelegramAPIError
+from selfrot.types import InlineKeyboardMarkup, InputRichMessage, Message
 
 from src.bot.services import BattleTextGenerator
-from src.bot.services.battle_engine.core import BattleResult, Fighter
 
+from ...services.battle import FightReport
 from ..common.race_profile.rich import answer_rich_or_text
 
 
-def battle_rich(
-    generator: BattleTextGenerator,
-    result: BattleResult,
-    fighter_a: Fighter,
-    fighter_b: Fighter,
-    rank_a: str,
-    rank_b: str,
-) -> InputRichMessage:
-    rendered = generator.build_rich_message(
-        result, fighter_a, fighter_b, rank_a, rank_b
-    )
-    return InputRichMessage.model_validate(
-        rendered.model_dump(mode="json", exclude_none=True)
-    )
+@dataclass
+class BattleMessage:
+    """Итог одного боя. Оба вида строятся по разу, даже если чатов несколько, а
+    текст — только если rich где-то не прошёл."""
 
+    generator: BattleTextGenerator
+    report: FightReport
 
-async def answer_battle(
-    message: Message,
-    generator: BattleTextGenerator,
-    result: BattleResult,
-    fighter_a: Fighter,
-    fighter_b: Fighter,
-    rank_a: str,
-    rank_b: str,
-    *,
-    what: str,
-) -> None:
-    await answer_rich_or_text(
-        message,
-        battle_rich(generator, result, fighter_a, fighter_b, rank_a, rank_b),
-        lambda: generator.build_plain_text(
-            result, fighter_a, fighter_b, rank_a, rank_b
-        ),
-        what=what,
-    )
+    @cached_property
+    def rich(self) -> InputRichMessage:
+        r = self.report
+        rendered = self.generator.build_rich_message(
+            r.result, r.fighter_a, r.fighter_b, r.rank_a, r.rank_b
+        )
+        return InputRichMessage.model_validate(
+            rendered.model_dump(mode="json", exclude_none=True)
+        )
+
+    @cached_property
+    def plain_text(self) -> str:
+        r = self.report
+        return self.generator.build_plain_text(
+            r.result, r.fighter_a, r.fighter_b, r.rank_a, r.rank_b
+        )
+
+    async def answer(self, message: Message, *, what: str) -> None:
+        """В чат сообщения (бой с мобом)."""
+        await answer_rich_or_text(message, self.rich, lambda: self.plain_text, what=what)
+
+    async def send(
+        self, bot: Bot, chat_id: int, reply_markup: InlineKeyboardMarkup | None = None
+    ) -> Message | None:
+        """В чат по id (дуэль). None — не доставлено ни rich, ни текстом."""
+        try:
+            return await bot.send_rich_message(
+                chat_id=chat_id, rich_message=self.rich, reply_markup=reply_markup
+            )
+        except TelegramAPIError:
+            pass
+        try:
+            return await bot.send_message(
+                chat_id=chat_id, text=self.plain_text, reply_markup=reply_markup
+            )
+        except TelegramAPIError:
+            return None

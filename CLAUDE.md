@@ -49,7 +49,14 @@ Postgres + SQLAlchemy (async), миграции Alembic, запуск в Docker 
 
 **Переиспользуй прод.** Репозитории, сервисы и доменная логика из `src/bot`, которые не
 завязаны на aiogram, импортируются как есть. В порте переписывается только то, что трогает
-Telegram.
+Telegram. Запросы, которых у прод-репозиториев нет (например, несколько чисел одним
+запросом вместо нескольких), живут в `src/selfrot_bot/repositories/`.
+
+**Бои — `ctx.battle_service`** (`services/battle.py`): участники одним запросом, гуль →
+боец, бой, здоровье после боя, награды, история, лок и стадии дуэли. Возвращает итог
+одним объектом (`DuelFight`, `DuelOutcome`, `MobFight`, внутри `FightReport` для
+показа), а роутер только отправляет: `battle_text.BattleMessage` (rich, иначе текст).
+Прод-мост к движку (гуль → боец, мощь, готовность к бою) — `ctx.battle_engine`.
 
 **Telegram — не в сервисах.** Сервис не принимает `Message` и не шлёт сообщения сам.
 Если сервису нужно отправлять (рассылка, level up, тикер уведомлений), он получает
@@ -109,8 +116,8 @@ JSON, `.get()`) сужай через `isinstance` / `assert`, прежде че
 ## Что осталось портировать
 
 Ничего: порт `src/bot` завершён, `src/bot/routers/ghoul_routers/` перенесён целиком.
-Бои с мобом (`mob_fight`, засада в `eat_human`) делят `ghoul_routers/mob_battle.py`,
-итог любого боя отправляет `ghoul_routers/battle_text.py`. Таймауты дуэлей ведёт
+Бои с мобом и дуэли считает `services/battle.py`, показывают `ghoul_routers/mob_battle.py`,
+`duel/fight.py` и `battle_text.py`. Таймауты дуэлей ведёт
 `DuelTicker` (`ghoul_routers/duel/ticker.py`), задача уровня диспетчера, как
 `NotificationTicker`. Новая работа идёт уже как новые модули порта.
 

@@ -22,7 +22,7 @@ from src.bot.types import MediaDownloadType
 from ...context import AppContext
 from ...services.media_paths import random_media
 from ...types import TextUserMessage
-from .mob_battle import answer_mob_battle, run_mob_battle
+from .mob_battle import answer_mob_battle, rewards_text
 
 COOLDOWN_NAME = "EAT_HUMAN"
 
@@ -40,8 +40,7 @@ class EatHumanHandler(MessageHandler[AppContext[TextUserMessage]]):
         ctx = self.ctx
         message = ctx.message
 
-        battle = await run_mob_battle(
-            ctx,
+        battle = await ctx.battle_service.fight_mob(
             await ctx.db_user(),
             await ctx.db_ghoul(),
             is_forced=True,
@@ -53,13 +52,13 @@ class EatHumanHandler(MessageHandler[AppContext[TextUserMessage]]):
             ctx, message, battle, what="mob ambush during eat_human"
         )
 
-        if battle.winner == "a":
+        if battle.report.winner == "a":
             await message.answer(
-                battle.rewards_text() + "\n\n🍽 Соперник повержен - человек твой."
+                rewards_text(battle) + "\n\n🍽 Соперник повержен - человек твой."
             )
             return True
 
-        if battle.winner == "b":
+        if battle.report.winner == "b":
             await message.answer("Моб оказался сильнее - человек достался ему.")
         else:
             await message.answer("Ничья - в суматохе добыча сбежала, поесть не вышло.")

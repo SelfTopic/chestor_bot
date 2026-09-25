@@ -22,7 +22,27 @@ from .services.lookup import find_user
 TArgs = TypeVar("TArgs", bound=CommandArgs)
 
 
-class RepliedTargetHandler(Generic[TArgs]):
+class _TargetErrors:
+    """Ответы на ошибки аргументов, общие для обоих миксинов."""
+
+    usage: str = ""
+    # True — ошибкой отвечать реплаем на команду (как прод-«дуэль»), а не отдельным сообщением.
+    reply_errors: bool = False
+    ctx: AppContext[Any]
+
+    async def say(self, text: str) -> None:
+        message = self.ctx.message
+        await (message.reply(text) if self.reply_errors else message.answer(text))
+
+    async def on_error(self, exc: Exception) -> None:
+        if isinstance(exc, CommandArgsError):
+            await self.say(self.usage)
+            return
+
+        raise exc
+
+
+class RepliedTargetHandler(_TargetErrors, Generic[TArgs]):
     """
     Цель — автор сообщения, на которое ответили. Наследник:
       - второе основание — MessageHandler[AppContext[X]], X включает ReplyUserMessage;
@@ -32,8 +52,6 @@ class RepliedTargetHandler(Generic[TArgs]):
     """
 
     cmd: Command[TArgs]
-    usage: str = ""
-    ctx: AppContext[Any]  # у наследника уже конкретный; здесь — общий для миксина
 
     async def handle(self) -> None:
         args = self.cmd.parse(self.ctx)
@@ -42,13 +60,6 @@ class RepliedTargetHandler(Generic[TArgs]):
 
     async def perform(self, telegram_id: int, args: TArgs) -> None:
         raise NotImplementedError
-
-    async def on_error(self, exc: Exception) -> None:
-        if isinstance(exc, CommandArgsError):
-            await self.ctx.message.answer(self.usage)
-            return
-
-        raise exc
 
 
 class TargetArgs(CommandArgs):
@@ -60,7 +71,7 @@ class TargetArgs(CommandArgs):
 TTargetArgs = TypeVar("TTargetArgs", bound=TargetArgs)
 
 
-class ExplicitTargetHandler(Generic[TTargetArgs]):
+class ExplicitTargetHandler(_TargetErrors, Generic[TTargetArgs]):
     """
     Цель — id/@username аргументом. Наследник:
       - второе основание — MessageHandler[AppContext[X]] (обычно TextMessage);
@@ -69,25 +80,17 @@ class ExplicitTargetHandler(Generic[TTargetArgs]):
     """
 
     cmd: Command[TTargetArgs]
-    usage: str = ""
-    ctx: AppContext[Any]
+    not_found_text: str = "❌ Пользователь не найден: {target}"
 
     async def handle(self) -> None:
         args = self.cmd.parse(self.ctx)
 
         user = await find_user(self.ctx.user_service, args.target)
         if user is None:
-            await self.ctx.message.answer(f"❌ Пользователь не найден: {args.target}")
+            await self.say(self.not_found_text.format(target=args.target))
             return
 
         await self.perform(user.telegram_id, args)
 
     async def perform(self, telegram_id: int, args: TTargetArgs) -> None:
         raise NotImplementedError
-
-    async def on_error(self, exc: Exception) -> None:
-        if isinstance(exc, CommandArgsError):
-            await self.ctx.message.answer(self.usage)
-            return
-
-        raise exc

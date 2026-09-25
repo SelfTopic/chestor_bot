@@ -76,7 +76,7 @@ class HungerStatusHandler(MessageHandler[AppContext[TextUserMessage]]):
         # Не только тир, но и его активные множители и итоговые эффективные статы
         # (BATTLE_ENGINE.md 8.3). Fighter собирается только ради compute_effective_stats,
         # боя тут нет.
-        fighter = ctx.battle_service.ghoul_to_fighter(
+        fighter = ctx.battle_engine.ghoul_to_fighter(
             ghoul, full_name(ctx.message.user), ctx.ghoul_service
         )
         stats = fighter.stats

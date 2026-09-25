@@ -2,182 +2,141 @@
 Шаг 1, "дуэль": приглашение с двумя кнопками (для инициатора и для соперника: сама
 команда ещё не согласие). Таймаут согласия ведёт DuelTicker.
 
-До приглашения проверяется всё: оба живы, боеспособны и не заняты другим боем,
-дневные лимиты (5 на пару, 20 в сутки, BATTLE_ENGINE.md 1.2/4.4), у обоих открыта
-личка с ботом (без неё некуда доставить секретный выбор "всерьёз/фора").
+Проверки перед приглашением (оба живы, боеспособны, не заняты, дневные лимиты, у
+обоих открыта личка с ботом) делает BattleService.open_duel; здесь только тексты
+отказов и доставка приглашения. Дуэль из лички инициатора (соперник через
+@username): сопернику эта личка не видна, поэтому приглашение уходит в обе лички
+(is_private_origin у DuelSession).
 
-Дуэль из лички инициатора (соперник через @username): сопернику эта личка не видна,
-поэтому приглашение уходит в обе лички (is_private_origin у DuelSession).
+Цель — ответом или @username/id: по CLAUDE.md это два хендлера на миксинах
+targeting.py. Как у прода, цель — весь остаток текста после команды, а ошибки
+приходят реплаем.
 
-Цель — ответом или @username/id: по CLAUDE.md это два хендлера. Как у прода, команда
-ловится по началу текста: "дуэльный" тоже её запускает и получает подсказку или
-"Пользователь не найден", а цель — весь остаток текста после первого слова.
+Исправленный прод-баг: прод ловил команду по началу текста, поэтому на "дуэльный
+вызов" в чате бот отвечал "Пользователь не найден: вызов". Здесь это команда
+"дуэль" целым словом (Command с prefixes="").
 """
 
 import logging
 from typing import Any
 
-from selfrot import MessageHandler
+from selfrot import CommandArgs, MessageHandler, Rest
 from selfrot.exceptions import TelegramAPIError
-from selfrot.filter import HasReplyUser, HasUser, TextStartswith
+from selfrot.filter import Command, HasReplyUser, HasUser
 
-from src.bot.exceptions import (
-    FighterHasPendingBattleError,
-    FighterIsDeadError,
-    FighterNotCombatReadyError,
-)
 from src.bot.game_configs import DUEL_CONFIG
 
 from ....context import AppContext
-from ....services.lookup import find_user
+from ....services.battle import DuelRefusal, DuelRefused
+from ....targeting import ExplicitTargetHandler, RepliedTargetHandler, TargetArgs
 from ....types import TextUserMessage, TextUserReplyMessage
 from .keyboards import consent_keyboard
 
 logger = logging.getLogger(__name__)
 
-_COMMAND = TextStartswith("дуэль", ignore_case=True) & HasUser()
+_NO_PRIVATE_CHAT = (
+    "{who} нужно один раз написать боту в ЛС (подойдёт /start) - иначе "
+    "часть сообщений о бое некуда будет доставить."
+)
 
 
 class DuelInvite:
-    """Общая часть обоих хендлеров: всё после того, как соперник найден. Как и
-    миксины targeting.py, не наследует MessageHandler: его каждый хендлер пишет
-    вторым базовым классом сам."""
+    """Общая часть обоих хендлеров: соперник уже известен. Как и миксины
+    targeting.py, не наследует MessageHandler: его каждый хендлер пишет сам."""
 
     ctx: AppContext[Any]
 
-    async def invite(self, target_id: int) -> None:
+    refusals = {
+        DuelRefusal.SELF: "Нельзя вызвать на дуэль самого себя.",
+        DuelRefusal.NOT_REGISTERED: "Один из участников не зарегистрирован.",
+        DuelRefusal.INITIATOR_NO_PRIVATE_CHAT: _NO_PRIVATE_CHAT.format(who="Тебе"),
+        DuelRefusal.TARGET_NO_PRIVATE_CHAT: _NO_PRIVATE_CHAT.format(who="Сопернику"),
+        DuelRefusal.INITIATOR_NO_GHOUL: "У тебя ещё нет гуля.",
+        DuelRefusal.TARGET_NO_GHOUL: "У соперника ещё нет гуля.",
+        DuelRefusal.DEAD: "Один из участников мёртв.",
+        DuelRefusal.NOT_COMBAT_READY: (
+            "Один из участников небоеспособен: {health} HP (нужно минимум {threshold})."
+        ),
+        DuelRefusal.BUSY: "Один из участников уже занят другим боем.",
+        DuelRefusal.PAIR_LIMIT: (
+            "Лимит боёв с этим соперником на сегодня исчерпан ({per_pair}/сутки)."
+        ),
+        DuelRefusal.INITIATOR_DAY_LIMIT: "Твой дневной лимит боёв исчерпан ({per_day}/сутки).",
+        DuelRefusal.TARGET_DAY_LIMIT: "У соперника исчерпан дневной лимит боёв на сегодня.",
+        DuelRefusal.CLAIM_FAILED: "Не удалось начать дуэль - один из участников уже занят.",
+    }
+
+    def refusal_text(self, refused: DuelRefused) -> str:
+        return self.refusals[refused.reason].format(
+            health=refused.health,
+            threshold=refused.threshold,
+            per_pair=DUEL_CONFIG.max_battles_per_day_pair,
+            per_day=DUEL_CONFIG.max_battles_per_day_total,
+        )
+
+    async def perform(self, telegram_id: int, args: Any) -> None:
         ctx = self.ctx
         message = ctx.message
-        initiator_id: int = message.user.id
-        battles = ctx.battle_record_service
-
-        if target_id == initiator_id:
-            await message.reply("Нельзя вызвать на дуэль самого себя.")
-            return
-
-        initiator_user = await ctx.user_service.get(find_by=initiator_id)
-        target_user = await ctx.user_service.get(find_by=target_id)
-        if not initiator_user or not target_user:
-            await message.reply("Один из участников не зарегистрирован.")
-            return
-
-        if not initiator_user.has_private_chat or not target_user.has_private_chat:
-            who = "Тебе" if not initiator_user.has_private_chat else "Сопернику"
-            await message.reply(
-                f"{who} нужно один раз написать боту в ЛС (подойдёт /start) - иначе "
-                f"часть сообщений о бое некуда будет доставить."
-            )
-            return
-
-        initiator_ghoul = await ctx.ghoul_service.get(initiator_id)
-        target_ghoul = await ctx.ghoul_service.get(target_id)
-        if not initiator_ghoul:
-            await message.reply("У тебя ещё нет гуля.")
-            return
-        if not target_ghoul:
-            await message.reply("У соперника ещё нет гуля.")
-            return
+        private = message.chat.type == "private"
 
         try:
-            await ctx.battle_service.validate_duel(
-                initiator_ghoul,
-                target_ghoul,
-                has_pending_confirmation=lambda g: battles.is_busy(g.telegram_id),
+            duel = await ctx.battle_service.open_duel(
+                message.user.id, telegram_id, chat_id=message.chat.id, private=private
             )
-        except FighterIsDeadError:
-            await message.reply("Один из участников мёртв.")
-            return
-        except FighterNotCombatReadyError as exc:
-            await message.reply(
-                f"Один из участников небоеспособен: {exc.health} HP "
-                f"(нужно минимум {exc.threshold})."
-            )
-            return
-        except FighterHasPendingBattleError:
-            await message.reply("Один из участников уже занят другим боем.")
+        except DuelRefused as refused:
+            await message.reply(self.refusal_text(refused))
             return
 
-        per_pair = DUEL_CONFIG.max_battles_per_day_pair
-        per_day = DUEL_CONFIG.max_battles_per_day_total
-        if await battles.count_pair_last_24h(initiator_id, target_id) >= per_pair:
-            await message.reply(
-                f"Лимит боёв с этим соперником на сегодня исчерпан ({per_pair}/сутки)."
-            )
-            return
-        if await battles.count_total_last_24h(initiator_id) >= per_day:
-            await message.reply(f"Твой дневной лимит боёв исчерпан ({per_day}/сутки).")
-            return
-        if await battles.count_total_last_24h(target_id) >= per_day:
-            await message.reply("У соперника исчерпан дневной лимит боёв на сегодня.")
-            return
-
-        if not await battles.try_claim_duel(initiator_id, target_id):
-            await message.reply(
-                "Не удалось начать дуэль - один из участников уже занят."
-            )
-            return
-
-        is_private_origin = message.chat.type == "private"
-        duel_session = await ctx.duel_service.create(
-            chat_id=message.chat.id,
-            initiator_telegram_id=initiator_id,
-            target_telegram_id=target_id,
-            is_private_origin=is_private_origin,
-        )
-
+        session = duel.session
         # full_name БД-пользователя без фамилии кончается пробелом: как у прода.
-        invite_text = (
-            f"⚔️ {initiator_user.full_name} вызывает {target_user.full_name} на дуэль!\n"
+        text = (
+            f"⚔️ {duel.initiator_name} вызывает {duel.target_name} на дуэль!\n"
             f"Бой начнётся только после подтверждения ОБЕИХ сторон."
         )
-        keyboard = consent_keyboard(duel_session.id, initiator_id, target_id)
+        keyboard = consent_keyboard(
+            session.id, session.initiator_telegram_id, session.target_telegram_id
+        )
 
-        if not is_private_origin:
-            sent = await message.answer(invite_text, reply_markup=keyboard)
+        if not private:
+            sent = await message.answer(text, reply_markup=keyboard)
             await ctx.duel_service.atomic_update(
-                duel_session.id, "awaiting_consent", consent_message_id=sent.message_id
+                session.id, "awaiting_consent", consent_message_id=sent.message_id
             )
             return
 
         # Лички инициатора и соперника друг другу не видны: приглашение в обе.
         # id сообщений не запоминаются, дальше их не редактируем.
-        for chat_id in (initiator_id, target_id):
+        for chat_id in (session.initiator_telegram_id, session.target_telegram_id):
             try:
-                await ctx.bot.send_message(
-                    chat_id=chat_id, text=invite_text, reply_markup=keyboard
-                )
+                await ctx.bot.send_message(chat_id=chat_id, text=text, reply_markup=keyboard)
             except TelegramAPIError:
-                logger.warning(
-                    "duel %s: failed to deliver invite to %s", duel_session.id, chat_id
-                )
+                logger.warning("duel %s: failed to deliver invite to %s", session.id, chat_id)
 
 
-class DuelRepliedHandler(DuelInvite, MessageHandler[AppContext[TextUserReplyMessage]]):
-    query = _COMMAND & HasReplyUser()
-
-    async def handle(self) -> None:
-        await self.invite(self.ctx.message.reply_to_message.user.id)
+class DuelRepliedArgs(CommandArgs):
+    note: Rest = ""  # текст после "дуэль" в ответе на сообщение не нужен, как у прода
 
 
-class DuelHandler(DuelInvite, MessageHandler[AppContext[TextUserMessage]]):
-    query = _COMMAND & ~HasReplyUser()
+class DuelRepliedHandler(
+    DuelInvite,
+    RepliedTargetHandler[DuelRepliedArgs],
+    MessageHandler[AppContext[TextUserReplyMessage]],
+):
+    cmd = Command("дуэль", DuelRepliedArgs, prefixes="", ignore_case=True)
+    query = cmd & HasUser() & HasReplyUser()
 
-    usage = (
-        "Вызови реплаем на сообщение соперника, либо «дуэль @username» / «дуэль <id>»."
-    )
 
-    async def handle(self) -> None:
-        message = self.ctx.message
+class DuelArgs(TargetArgs):
+    target: Rest  # весь остаток: "дуэль @a b" ищет "@a b", как у прода
 
-        args = message.text.split(maxsplit=1)
-        if len(args) < 2:
-            await message.reply(self.usage)
-            return
 
-        query = args[1].strip()
-        target = await find_user(self.ctx.user_service, query)
-        if target is None:
-            await message.reply(f"Пользователь не найден: {query}")
-            return
-
-        await self.invite(target.telegram_id)
+class DuelHandler(
+    DuelInvite,
+    ExplicitTargetHandler[DuelArgs],
+    MessageHandler[AppContext[TextUserMessage]],
+):
+    cmd = Command("дуэль", DuelArgs, prefixes="", ignore_case=True)
+    query = cmd & HasUser() & ~HasReplyUser()
+    usage = "Вызови реплаем на сообщение соперника, либо «дуэль @username» / «дуэль <id>»."
+    not_found_text = "Пользователь не найден: {target}"
+    reply_errors = True

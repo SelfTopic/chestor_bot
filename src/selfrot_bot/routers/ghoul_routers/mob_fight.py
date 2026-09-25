@@ -20,7 +20,7 @@ from src.bot.exceptions import (
 
 from ...context import AppContext
 from ...types import TextUserMessage
-from .mob_battle import answer_mob_battle, run_mob_battle
+from .mob_battle import answer_mob_battle, rewards_text
 
 COOLDOWN_NAME = "MOB_FIGHT"
 
@@ -40,7 +40,7 @@ class MobFightHandler(MessageHandler[AppContext[TextUserMessage]]):
         ghoul = await ctx.db_ghoul()
 
         try:
-            await ctx.battle_service.validate_ghoul(
+            await ctx.battle_engine.validate_ghoul(
                 ghoul, has_pending_confirmation=lambda g: battles.is_busy(g.telegram_id)
             )
         except FighterIsDeadError:
@@ -69,25 +69,26 @@ class MobFightHandler(MessageHandler[AppContext[TextUserMessage]]):
             await message.reply(self.busy_text)
             return
 
-        battle = await run_mob_battle(
-            ctx, user, ghoul, is_forced=False, reward_log="mob fight reward"
+        battle = await ctx.battle_service.fight_mob(
+            user, ghoul, is_forced=False, reward_log="mob fight reward"
         )
         await ctx.cooldown_service.set_cooldown(telegram_id, COOLDOWN_NAME)
 
         await answer_mob_battle(ctx, message, battle, what="mob fight")
 
-        if battle.winner == "a":
-            summary = battle.rewards_text()
-        elif battle.winner == "b":
+        if battle.report.winner == "a":
+            summary = rewards_text(battle)
+        elif battle.report.winner == "b":
             summary = "Моб оказался сильнее в этот раз."
         else:
             summary = "Ничья - силы примерно равны."
 
         # Счёт только боёв с мобами: дуэли сюда не смешиваются.
-        wins = await battles.count_wins_vs_mobs(telegram_id)
-        losses = await battles.count_losses_vs_mobs(telegram_id)
-        total = await battles.count_total_battles_vs_mobs(telegram_id)
-        summary += f"\n📊 Боёв с мобами: {total} ({wins} побед / {losses} поражений)"
+        score = await ctx.battle_service.score(telegram_id, "mob")
+        summary += (
+            f"\n📊 Боёв с мобами: {score.total} "
+            f"({score.wins} побед / {score.losses} поражений)"
+        )
 
         await message.answer(summary)
 

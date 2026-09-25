@@ -17,8 +17,6 @@ from selfrot.filter import CallbackDataStartswith
 from selfrot.handlers import CallbackQueryHandler
 from selfrot.types import DataCallbackQuery, Message
 
-from src.bot.game_configs import DUEL_CONFIG
-
 from ....context import AppContext
 from .callback_data import DuelPress
 from .fight import finalize_outcome, run_and_announce_fight
@@ -89,30 +87,11 @@ class DuelPressHandler(CallbackQueryHandler[AppContext[DataCallbackQuery]]):
             except TelegramAPIError:
                 pass
 
-        ghoul_service = services.ghoul_service
-        battle_service = services.battle_service
-        initiator_ghoul = await ghoul_service.get(updated.initiator_telegram_id)
-        target_ghoul = await ghoul_service.get(updated.target_telegram_id)
-        if not initiator_ghoul or not target_ghoul:
-            await services.battle_record_service.release(
-                updated.initiator_telegram_id, updated.target_telegram_id
-            )
-            await services.duel_service.atomic_update(
-                duel_id, "awaiting_consent", stage="done"
-            )
+        odds = await services.battle.duel_odds(updated)
+        if odds is None:
             return
 
-        fighter_a = battle_service.ghoul_to_fighter(initiator_ghoul, "a", ghoul_service)
-        fighter_b = battle_service.ghoul_to_fighter(target_ghoul, "b", ghoul_service)
-        power_a = battle_service.power_of(fighter_a.snapshot)
-        power_b = battle_service.power_of(fighter_b.snapshot)
-        weaker_power = min(power_a, power_b)
-        stronger_power = max(power_a, power_b)
-        power_ratio = (
-            stronger_power / weaker_power if weaker_power > 0 else float("inf")
-        )
-
-        if power_ratio < DUEL_CONFIG.power_ratio_threshold:
+        if not odds.needs_fora_choice:
             session = await services.duel_service.atomic_update(
                 duel_id, "awaiting_consent", stage="running", compress_hp=True
             )
@@ -120,11 +99,7 @@ class DuelPressHandler(CallbackQueryHandler[AppContext[DataCallbackQuery]]):
                 await run_and_announce_fight(bot, session, services)
             return
 
-        favored_id = (
-            updated.initiator_telegram_id
-            if power_a >= power_b
-            else updated.target_telegram_id
-        )
+        favored_id = odds.favored_telegram_id
         session = await services.duel_service.atomic_update(
             duel_id,
             "awaiting_consent",

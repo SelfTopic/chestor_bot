@@ -111,13 +111,21 @@ class TestInvite:
             "«дуэль <id>»."
         ]
 
-    async def test_startswith_quirk(self, send, session_factory):
-        # как у прода: команда ловится по началу текста
+    async def test_word_starting_with_duel_is_not_a_command(self, send, session_factory):
+        # исправленный прод-баг: прод ловил команду по началу текста и отвечал
+        # на "дуэльный вызов" "Пользователь не найден: вызов"
         await seed_duelist(session_factory, A, "Вася")
 
-        assert await send("дуэльный вызов", uid=A, chat=GROUP) == [
-            "Пользователь не найден: вызов"
-        ]
+        assert await send("дуэльный вызов", uid=A, chat=GROUP) == []
+
+    async def test_errors_are_replies(self, send, telegram, session_factory):
+        # как у прода: подсказка, "не найден" и отказы приходят реплаем
+        await seed_duelist(session_factory, A, "Вася")
+
+        await send("дуэль @nobody", uid=A, chat=GROUP)
+
+        (body,) = telegram.bodies("sendMessage")
+        assert "reply_parameters" in body
 
     async def test_unknown_username(self, send, session_factory):
         await seed_duelist(session_factory, A, "Вася")

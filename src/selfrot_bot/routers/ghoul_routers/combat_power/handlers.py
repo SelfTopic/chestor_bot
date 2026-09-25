@@ -23,9 +23,9 @@ class CombatPowerHandler(MessageHandler[AppContext[TextUserMessage]]):
     def plain_text(self, user: User, ghoul: Ghoul, danger_rank: str) -> str:
         ctx = self.ctx
         ghoul_service = ctx.ghoul_service
-        battle_service = ctx.battle_service
+        engine = ctx.battle_engine
 
-        fighter = battle_service.ghoul_to_fighter(ghoul, user.full_name, ghoul_service)
+        fighter = engine.ghoul_to_fighter(ghoul, user.full_name, ghoul_service)
         stats = fighter.stats
         return ctx.dialog_service.text(
             key="combat_power",
@@ -44,7 +44,7 @@ class CombatPowerHandler(MessageHandler[AppContext[TextUserMessage]]):
             vacuum_kagune=ghoul_service.total_kagune_strength(ghoul),
             effective_kagune=round(stats.kagune_strength, 1),
             vacuum_power=ghoul_service.calculate_power(ghoul),
-            effective_power=round(battle_service.effective_power_of(stats), 1),
+            effective_power=round(engine.effective_power_of(stats), 1),
         )
 
     async def handle(self) -> None:
@@ -66,7 +66,7 @@ class CombatPowerHandler(MessageHandler[AppContext[TextUserMessage]]):
         await answer_rich_or_text(
             ctx.message,
             combat_power_rich(
-                user, ghoul, danger_rank, ghoul_service, ctx.battle_service
+                user, ghoul, danger_rank, ghoul_service, ctx.battle_engine
             ),
             lambda: self.plain_text(user, ghoul, danger_rank),
             what="combat power",
@@ -87,7 +87,7 @@ class CombatPowerShortHandler(MessageHandler[AppContext[TextUserMessage]]):
             )
             return
 
-        fighter = ctx.battle_service.ghoul_to_fighter(
+        fighter = ctx.battle_engine.ghoul_to_fighter(
             ghoul, user.full_name, ctx.ghoul_service
         )
         await ctx.message.answer(
@@ -95,7 +95,7 @@ class CombatPowerShortHandler(MessageHandler[AppContext[TextUserMessage]]):
                 key="combat_power_short",
                 vacuum_power=ctx.ghoul_service.calculate_power(ghoul),
                 effective_power=round(
-                    ctx.battle_service.effective_power_of(fighter.stats), 1
+                    ctx.battle_engine.effective_power_of(fighter.stats), 1
                 ),
             )
         )

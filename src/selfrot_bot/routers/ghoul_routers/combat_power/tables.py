@@ -43,15 +43,15 @@ def combat_power_rich(
     ghoul: Ghoul,
     danger_rank: str,
     ghoul_service: GhoulService,
-    battle_service: BattleService,
+    engine: BattleService,
 ) -> InputRichMessage:
-    fighter = battle_service.ghoul_to_fighter(ghoul, user.full_name, ghoul_service)
+    fighter = engine.ghoul_to_fighter(ghoul, user.full_name, ghoul_service)
     breakdown: dict[str, StatBreakdown] = compute_stat_breakdown(fighter.snapshot)
 
     vacuum_kagune = ghoul_service.total_kagune_strength(ghoul)
     vacuum_power = ghoul_service.calculate_power(ghoul)
-    combat_base_power = battle_service.power_of(fighter.snapshot)
-    effective_power = battle_service.effective_power_of(fighter.stats)
+    combat_base_power = engine.power_of(fighter.snapshot)
+    effective_power = engine.effective_power_of(fighter.stats)
 
     vacuum_values = {
         "strength": ghoul.strength,
