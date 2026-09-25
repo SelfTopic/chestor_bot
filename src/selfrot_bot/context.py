@@ -32,6 +32,7 @@ from src.bot.services import (
 from src.bot.repositories import MediaRepository
 from src.bot.services.dialog import DialogService
 from src.bot.services.ghoul_game import LotteryService
+from src.bot.services.stat_upgrade import StatUpgradeService
 from src.bot.types import TimeComponents
 from src.bot.utils import parse_seconds
 from src.database.models import Ghoul, Media, User
@@ -93,6 +94,12 @@ class AppContext(BaseContext[TEvent]):
         # check_snap_limit()/send_answer() держат aiogram Message явно — их
         # заменяют ctx.ghoul_service.get()/ctx.reply_gif в самом хендлере.
         return self.container.coffee_service()
+
+    @cached_property
+    def stat_upgrade_service(self) -> StatUpgradeService:
+        # Только purchase(): build_message() собирает aiogram-клавиатуру, её
+        # заменяет своя сборка в routers/ghoul_routers/upgrade_stat.py.
+        return self.container.stat_upgrade_service()
 
     @cached_property
     def battle_record_service(self) -> BattleRecordService:

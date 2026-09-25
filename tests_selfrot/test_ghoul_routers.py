@@ -11,12 +11,19 @@ import json
 import pytest
 
 from src.bot.config import game_config
+from src.bot.game_configs import STAT_UPGRADE_CONFIG
 from src.bot.repositories import GhoulRepository, UserCooldownRepository
 from src.bot.types import KaguneType
 from src.bot.utils import calculate_kagune
 from src.database.models import Cooldown, Ghoul
 
-from .conftest import button_data, callback_update, message_update
+from .conftest import (
+    button_data,
+    callback_update,
+    chat_dict,
+    message_update,
+    owner_dict,
+)
 from .test_common_routers import seed
 from .test_update_middlewares import get_user
 
@@ -485,3 +492,135 @@ class TestTopKagune:
         )
 
         assert result.calls == []
+
+
+def group_callback_update(data: str, uid: int, chat: int = -100500) -> dict:
+    """Нажатие кнопки под сообщением в группе (callback_update — всегда личка)."""
+    update = callback_update(data, uid=uid)
+    update["callback_query"]["message"]["chat"] = chat_dict(chat)
+    return update
+
+
+class TestUpgradeStat:
+    async def test_group_is_refused(self, send, telegram, session_factory):
+        telegram.results["getChatAdministrators"] = [owner_dict(99)]
+        await seed(session_factory, UID, "Вася")
+        await seed_ghoul(session_factory, UID)
+
+        assert await send("качаться", uid=UID, chat=-100500) == [
+            "Эта команда работает только в личных сообщениях с ботом."
+        ]
+
+    async def test_shop_text_and_buttons(self, feed, session_factory):
+        await seed(session_factory, UID, "Вася", balance=12345)
+        await seed_ghoul(session_factory, UID, strength=1, level=1)
+
+        telegram = await feed(message_update("Качаться", uid=UID))
+
+        (body,) = telegram.bodies("sendMessage")
+        lines = body["text"].split("\n")
+        assert lines[0] == "Баланс: 12345"
+        price5 = STAT_UPGRADE_CONFIG.price(1, 5, "strength")
+        price10 = STAT_UPGRADE_CONFIG.price(1, 10, "strength")
+        assert lines[2] == f"💪Сила: 1  х5: {price5} х10: {price10}"
+        price1 = STAT_UPGRADE_CONFIG.price(1, 1, "strength")
+        assert button_data(body, f"💪 +1 ({price1})") == "stat_buy:strength:1"
+        assert button_data(body, f"💪 +10 ({price10})") == "stat_buy:strength:10"
+
+    async def test_capped_stat_shows_nop_buttons(self, feed, session_factory):
+        await seed(session_factory, UID, "Вася")
+        await seed_ghoul(session_factory, UID, strength=98, level=1)  # потолок 100
+
+        telegram = await feed(message_update("качаться", uid=UID))
+
+        (body,) = telegram.bodies("sendMessage")
+        price2 = STAT_UPGRADE_CONFIG.price(98, 2, "strength")
+        # у прода в тексте и на кнопках — цена того, что реально влезет до потолка
+        assert f"💪Сила: 98  х5: {price2} х10: {price2}" in body["text"]
+        assert button_data(body, f"💪 +5 ({price2})") == "stat_buy:strength:5"
+
+        await seed_ghoul(session_factory, UID, strength=100)
+        telegram = await feed(message_update("качаться", uid=UID))
+        (body,) = telegram.bodies("sendMessage")
+        assert "💪Сила: 100  х5: — х10: —" in body["text"]
+        assert button_data(body, "💪 +1 (—)") == "stat_nop"
+
+    async def test_buy_edits_shop_and_answers(self, feed, session_factory):
+        await seed(session_factory, UID, "Вася", balance=100000)
+        await seed_ghoul(session_factory, UID, strength=1, level=1)
+        price = STAT_UPGRADE_CONFIG.price(1, 5, "strength")
+
+        telegram = await feed(callback_update("stat_buy:strength:5", uid=UID))
+
+        (edited,) = telegram.bodies("editMessageText")
+        assert edited["text"].startswith(f"Баланс: {100000 - price}")
+        assert "💪Сила: 6 " in edited["text"]
+        (answer,) = telegram.bodies("answerCallbackQuery")
+        assert answer["text"] == f"Прокачано 💪Сила +5. Потрачено: {price}"
+
+        ghoul = await get_ghoul(session_factory, UID)
+        assert ghoul is not None and ghoul.strength == 6
+        assert await balance_of(session_factory, UID) == 100000 - price
+
+    async def test_buy_max_health_heals_by_the_same_amount(self, feed, session_factory):
+        await seed(session_factory, UID, "Вася", balance=100000)
+        await seed_ghoul(session_factory, UID, max_health=5, health=3, level=1)
+
+        await feed(callback_update("stat_buy:max_health:1", uid=UID))
+
+        ghoul = await get_ghoul(session_factory, UID)
+        assert ghoul is not None
+        assert (ghoul.max_health, ghoul.health) == (6, 4)
+
+    async def test_buy_over_cap_buys_only_the_rest(self, feed, session_factory):
+        await seed(session_factory, UID, "Вася", balance=100000)
+        await seed_ghoul(session_factory, UID, strength=98, level=1)
+        price = STAT_UPGRADE_CONFIG.price(98, 2, "strength")
+
+        telegram = await feed(callback_update("stat_buy:strength:10", uid=UID))
+
+        (answer,) = telegram.bodies("answerCallbackQuery")
+        assert answer["text"] == f"Прокачано 💪Сила +2. Потрачено: {price}"
+
+    async def test_not_enough_money(self, feed, session_factory):
+        await seed(session_factory, UID, "Вася", balance=0)
+        await seed_ghoul(session_factory, UID, strength=1, level=1)
+
+        telegram = await feed(callback_update("stat_buy:strength:1", uid=UID))
+
+        (answer,) = telegram.bodies("answerCallbackQuery")
+        assert answer["text"] == "Недостаточно средств"
+        assert telegram.methods_called("editMessageText") == 0
+        ghoul = await get_ghoul(session_factory, UID)
+        assert ghoul is not None and ghoul.strength == 1
+
+    async def test_buy_at_cap(self, feed, session_factory):
+        await seed(session_factory, UID, "Вася", balance=100000)
+        await seed_ghoul(session_factory, UID, strength=100, level=1)
+
+        telegram = await feed(callback_update("stat_buy:strength:1", uid=UID))
+
+        (answer,) = telegram.bodies("answerCallbackQuery")
+        assert answer["text"] == "Достигнут предел прокачки для этого стата."
+        assert await balance_of(session_factory, UID) == 100000
+
+    async def test_nop_button(self, feed, session_factory):
+        await seed(session_factory, UID, "Вася")
+        await seed_ghoul(session_factory, UID)
+
+        telegram = await feed(callback_update("stat_nop", uid=UID))
+
+        (answer,) = telegram.bodies("answerCallbackQuery")
+        assert answer["text"] == "Достигнут предел прокачки для этого стата."
+
+    @pytest.mark.parametrize("data", ["stat_nop", "stat_buy:strength:1"])
+    async def test_press_in_group_is_refused(self, feed, session_factory, data):
+        await seed(session_factory, UID, "Вася", balance=100000)
+        await seed_ghoul(session_factory, UID, strength=1, level=1)
+
+        telegram = await feed(group_callback_update(data, uid=UID))
+
+        (answer,) = telegram.bodies("answerCallbackQuery")
+        assert answer["text"] == "Эта операция доступна только в личных сообщениях."
+        ghoul = await get_ghoul(session_factory, UID)
+        assert ghoul is not None and ghoul.strength == 1

@@ -6,6 +6,7 @@ from .middleware import GhoulMiddleware
 from .snap import SnapRouter
 from .tops import TopsGhoulRouter
 from .upgrade_kagune import UpgradeKaguneRouter
+from .upgrade_stat import UpgradeStatRouter
 
 
 class GhoulRouter(BaseRouter[AppContext]):
@@ -14,4 +15,10 @@ class GhoulRouter(BaseRouter[AppContext]):
     прод-include_ghoul_routers (боевые — eat_human/mob_fight/duel — последними)."""
 
     middlewares = (GhoulMiddleware,)
-    routers = (UpgradeKaguneRouter, SnapRouter, TopsGhoulRouter, CoffeeRouter)
+    routers = (
+        UpgradeKaguneRouter,
+        SnapRouter,
+        TopsGhoulRouter,
+        CoffeeRouter,
+        UpgradeStatRouter,
+    )
