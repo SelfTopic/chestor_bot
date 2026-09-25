@@ -108,10 +108,11 @@ JSON, `.get()`) сужай через `isinstance` / `assert`, прежде че
 
 ## Что осталось портировать
 
-Всё, кроме части `src/bot/routers/ghoul_routers/`. Уже перенесены `coffee`, `snap`, `tops`,
-`upgrade_kagune`. Осталось: `upgrade_stat`, `passive_status`, `quiz` (внешний API,
-`GHOUL_QUIZ_API_KEY`), `combat_power`, `mob_fight`, `eat_human`, `duel/*` (приглашение,
-бой, фоновая задача, два игрока). Порядок — от простых к дуэлям.
+Ничего: порт `src/bot` завершён, `src/bot/routers/ghoul_routers/` перенесён целиком.
+Бои с мобом (`mob_fight`, засада в `eat_human`) делят `ghoul_routers/mob_battle.py`,
+итог любого боя отправляет `ghoul_routers/battle_text.py`. Таймауты дуэлей ведёт
+`DuelTicker` (`ghoul_routers/duel/ticker.py`), задача уровня диспетчера, как
+`NotificationTicker`. Новая работа идёт уже как новые модули порта.
 
 ## Git
 
