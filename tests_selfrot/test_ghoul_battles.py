@@ -7,7 +7,8 @@ import json
 import pytest
 from dependency_injector import providers
 
-from src.bot.game_configs import MOB_CONFIG
+from src.bot.config import game_config
+from src.bot.game_configs import EAT_HUMAN_CONFIG, MOB_CONFIG
 from src.bot.repositories import ActiveBattleRepository, BattleRepository
 from src.bot.services.battle_engine.core import FighterSnapshot
 from src.bot.services.battle_record import BattleRecordService
@@ -52,8 +53,9 @@ class FakeMobService:
         )
 
 
-# Игрок против "weak" побеждает с первого удара; против "strong" проигрывает;
-# с нулевой силой против своего зеркала урона нет ни у кого — ничья по раундам.
+# Исходы без случайности: у "weak" нулевая сила, он не может победить сильного
+# игрока; игрок с нулевой силой не может победить "strong"; против своего зеркала
+# урона нет ни у кого, и бой кончается ничьей по раундам.
 STRONG_PLAYER = dict(
     strength=500, dexterity=100, speed=100, health=500, max_health=500, regeneration=1
 )
@@ -145,7 +147,7 @@ class TestMobFight:
 
     async def test_loss(self, send, session_factory, mob):
         mob("strong")
-        await self._seed(session_factory, **STRONG_PLAYER)
+        await self._seed(session_factory, **HARMLESS_PLAYER)
 
         assert await send("бить моба", uid=UID) == [
             "Моб оказался сильнее в этот раз.\n"
@@ -215,3 +217,137 @@ class TestMobFight:
         (reply,) = await send("бить моба", uid=UID)
 
         assert reply.startswith("Ты небоеспособен")
+
+
+class TestEatHuman:
+    @pytest.fixture(autouse=True)
+    def assets(self, monkeypatch, tmp_path):
+        monkeypatch.setattr(game_config, "path_to_assets", str(tmp_path))
+        return tmp_path
+
+    @pytest.fixture
+    def ambush(self, monkeypatch):
+        def _set(percent: float) -> None:
+            monkeypatch.setattr(EAT_HUMAN_CONFIG, "ambush_chance_percent", percent)
+
+        return _set
+
+    async def _seed(self, session_factory, **ghoul) -> None:
+        await seed(session_factory, UID, "Вася")
+        await seed_ghoul(session_factory, UID, **{"hunger": 10, **ghoul})
+        await seed_cooldown_type(session_factory, "EAT_HUMAN", duration=54000)
+
+    async def test_eats_without_ambush(self, send, session_factory, ambush):
+        ambush(0)
+        await self._seed(session_factory, eat_humans=2)
+
+        (reply,) = await send("Сожрать человека", uid=UID)
+
+        ghoul = await get_ghoul(session_factory, UID)
+        assert ghoul is not None and ghoul.eat_humans == 3
+        restored = ghoul.hunger - 10
+        assert reply == (
+            f"🍽 Ты сожрал человека. \n\n🍖 Голод восстановлен на {restored}%, "
+            f"теперь: {ghoul.hunger}%\n🥩 Всего съедено людей: 3"
+        )
+        assert await mob_battles(session_factory, UID) == (0, 0, 0)
+
+    async def test_cooldown(self, send, session_factory, ambush):
+        ambush(0)
+        await self._seed(session_factory)
+        await send("сожрать человека", uid=UID)
+
+        (reply,) = await send("сожрать человека", uid=UID)
+
+        # 14 или ровно 15 часов: остаток округляется до секунд
+        assert reply.startswith(
+            "А не дохуя ли ты у нас жрать собрался? Попробуй через 1"
+        )
+        ghoul = await get_ghoul(session_factory, UID)
+        assert ghoul is not None and ghoul.eat_humans == 1
+
+    async def test_sends_gif_when_one_exists(
+        self, feed, telegram, session_factory, ambush, assets
+    ):
+        ambush(0)
+        folder = assets / "animation" / "eat"
+        folder.mkdir(parents=True)
+        (folder / "eat.mp4").write_bytes(b"gif-bytes")
+        await self._seed(session_factory)
+
+        telegram = await feed(message_update("сожрать человека", uid=UID))
+
+        (body,) = telegram.bodies("sendAnimation")
+        assert body["animation"] == "<file:eat.mp4>"
+        assert body["caption"].startswith("🍽 Ты сожрал человека.")
+
+    async def test_ambush_won_then_eats(self, feed, session_factory, ambush, mob):
+        ambush(100)
+        mob("weak")
+        await self._seed(session_factory, **STRONG_PLAYER)
+
+        telegram = await feed(message_update("сожрать человека", uid=UID))
+
+        assert telegram.methods_called("sendRichMessage") == 1
+        ambushed, rewards, eaten = telegram.sent
+        assert ambushed.startswith("🐺 Пока ты подкрадывался к добыче")
+        assert rewards.startswith("📈 Получено опыта: ")
+        assert rewards.endswith("\n\n🍽 Соперник повержен - человек твой.")
+        assert eaten.startswith("🍽 Ты сожрал человека.")
+
+        ghoul = await get_ghoul(session_factory, UID)
+        assert ghoul is not None and ghoul.eat_humans == 1
+        assert await mob_battles(session_factory, UID) == (1, 1, 0)
+        assert not await is_busy(session_factory, UID)
+
+    async def test_ambush_lost_spends_cooldown(
+        self, send, session_factory, ambush, mob
+    ):
+        ambush(100)
+        mob("strong")
+        await self._seed(session_factory, **HARMLESS_PLAYER)
+
+        ambushed, lost = await send("сожрать человека", uid=UID)
+
+        assert ambushed.startswith("🐺 ")
+        assert lost == "Моб оказался сильнее - человек достался ему."
+        ghoul = await get_ghoul(session_factory, UID)
+        assert ghoul is not None and ghoul.eat_humans == 0 and ghoul.hunger == 10
+        (again,) = await send("сожрать человека", uid=UID)
+        assert again.startswith("А не дохуя ли ты у нас жрать собрался?")
+
+    async def test_ambush_draw(self, send, session_factory, ambush, mob):
+        ambush(100)
+        mob("mirror")
+        # голод в засаде не влияет на исход, но меняет эффективные статы игрока:
+        # для честного зеркала он полный, как у моба
+        await self._seed(session_factory, **HARMLESS_PLAYER, hunger=100)
+
+        ambushed, draw = await send("сожрать человека", uid=UID)
+
+        assert draw == "Ничья - в суматохе добыча сбежала, поесть не вышло."
+
+    async def test_busy_player_is_not_ambushed(
+        self, send, session_factory, ambush, mob
+    ):
+        ambush(100)
+        mob("strong")
+        await self._seed(session_factory, **STRONG_PLAYER)
+        await claim_mob_fight(session_factory, UID)
+
+        (reply,) = await send("сожрать человека", uid=UID)
+
+        assert reply.startswith("🍽 Ты сожрал человека.")
+        assert await mob_battles(session_factory, UID) == (0, 0, 0)
+
+    async def test_ambush_ignores_combat_readiness(
+        self, send, session_factory, ambush, mob
+    ):
+        # как у прода: засада нападает и на гуля, которому "бить моба" отказал бы
+        ambush(100)
+        mob("weak")
+        await self._seed(session_factory, **{**STRONG_PLAYER, "health": 1})
+
+        replies = await send("сожрать человека", uid=UID)
+
+        assert replies[0].startswith("🐺 ")

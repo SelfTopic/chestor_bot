@@ -3,6 +3,7 @@ from selfrot import BaseRouter
 from ...context import AppContext
 from .coffee import CoffeeRouter
 from .combat_power import CombatPowerRouter
+from .eat_human import EatHumanRouter
 from .middleware import GhoulMiddleware
 from .mob_fight import MobFightRouter
 from .passive_status import PassiveStatusRouter
@@ -27,6 +28,7 @@ class GhoulRouter(BaseRouter[AppContext]):
         QuizRouter,
         UpgradeStatRouter,
         PassiveStatusRouter,
+        EatHumanRouter,
         MobFightRouter,
         CombatPowerRouter,
     )
