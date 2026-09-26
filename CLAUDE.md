@@ -159,7 +159,7 @@ JSON, `.get()`) сужай через `isinstance` / `assert`, прежде че
 2. ✓ Отвязать от aiogram сервисы, которые использует порт: `containers.py` (провайдер `bot`),
    `ghoul.get`, `user.upsert`, `media` (скачивание), `stat_upgrade.build_message`, методы
    отправки в `coffee` / `lottery`, `battle_engine/text_generator` (→ selfrot-типы, к роутерам).
-3. Удалить `aiogram` из `pyproject.toml`, `poetry lock`.
+3. ✓ Удалить `aiogram` из `pyproject.toml`, `poetry lock`.
 4. Слить `src/selfrot_bot` в `src/bot` (`git mv` + импорты), прод-мост `BattleService`
    движка переименовать в `BattleEngine`, обновить `test_layout.py`, compose, `selfrot check`.
 5. Тесты прода: нужные (домен, репозитории, гонки) перенести, дубли и ненужные удалить;
