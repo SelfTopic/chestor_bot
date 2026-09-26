@@ -7,6 +7,7 @@ from .repositories import (
     ActiveBattleRepository,
     BalancesLogRepository,
     BattleRepository,
+    ChatParticipantRepository,
     ChatRepository,
     DeathLogRepository,
     DuelSessionRepository,
@@ -58,6 +59,9 @@ class Container(containers.DeclarativeContainer):
         UserCooldownRepository, session=db_session
     )
     chat_repository = providers.Factory(ChatRepository, session=db_session)
+    chat_participant_repository = providers.Factory(
+        ChatParticipantRepository, session=db_session
+    )
 
     media_repository = providers.Factory(MediaRepository, session=db_session)
 
@@ -132,6 +136,7 @@ class Container(containers.DeclarativeContainer):
         ghoul_repository,
         user_cooldown_repository,
         chat_repository,
+        chat_participant_repository,
     )
 
     coffee_service = providers.Factory(

@@ -1,11 +1,19 @@
 import logging
+from datetime import datetime
 from typing import Optional
 
-from ...database.models import Chat
+from ...database.models import Chat, User
 from ..exceptions import (
     ChatMemberUpdateMessageError,
     ChatNotFoundInDatabase,
     ChatRulesError,
+)
+from ..repositories import (
+    ChatParticipantRepository,
+    ChatRepository,
+    GhoulRepository,
+    UserCooldownRepository,
+    UserRepository,
 )
 from ..types.insert import ChatInsert
 from .base import Base
@@ -14,6 +22,52 @@ logger = logging.getLogger(__name__)
 
 
 class ChatService(Base):
+    def __init__(
+        self,
+        user_repository: UserRepository,
+        ghoul_repository: GhoulRepository,
+        user_cooldown_repository: UserCooldownRepository,
+        chat_repository: ChatRepository,
+        chat_participant_repository: ChatParticipantRepository,
+    ) -> None:
+        super().__init__(
+            user_repository=user_repository,
+            ghoul_repository=ghoul_repository,
+            user_cooldown_repository=user_cooldown_repository,
+            chat_repository=chat_repository,
+        )
+        self.chat_participant_repository = chat_participant_repository
+
+    async def random_participant(self, chat_id: int) -> Optional[User]:
+        return await self.chat_participant_repository.random_participant(chat_id)
+
+    async def record_participant_join(
+        self,
+        chat_id: int,
+        telegram_id: int,
+        first_name: str,
+        last_name: Optional[str],
+        username: Optional[str],
+        joined_at: datetime,
+        join_method: str,
+    ) -> None:
+        # Вход в чат не проходит через SyncEntitiesMiddleware, а участник ссылается на User.
+        await self.user_repository.upsert(
+            telegram_id=telegram_id,
+            first_name=first_name,
+            last_name=last_name,
+            username=username,
+        )
+        await self.chat_participant_repository.record_join(
+            chat_id=chat_id,
+            telegram_id=telegram_id,
+            joined_at=joined_at,
+            join_method=join_method,
+        )
+
+    async def remove_participant(self, chat_id: int, telegram_id: int) -> None:
+        await self.chat_participant_repository.remove(chat_id, telegram_id)
+
     async def upsert(
         self,
         telegram_id: int,

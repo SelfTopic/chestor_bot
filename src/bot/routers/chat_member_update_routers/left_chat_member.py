@@ -17,6 +17,10 @@ class LeftChatMemberHandler(ChatMemberHandler[AppContext[ChatMemberUpdated]]):
         if chat is None:
             raise ChatNotFoundInDatabase()
 
+        await self.ctx.chat_service.remove_participant(
+            event.chat.id, event.new_chat_member.user.id
+        )
+
         if not chat.goodbye_message:
             return
 

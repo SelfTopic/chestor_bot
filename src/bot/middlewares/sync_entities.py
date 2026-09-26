@@ -1,7 +1,11 @@
 from selfrot import BaseMiddleware
 from selfrot.types import CallbackQuery, ChatMemberOwner, Message
 
-from src.bot.repositories import ChatRepository, UserRepository
+from src.bot.repositories import (
+    ChatParticipantRepository,
+    ChatRepository,
+    UserRepository,
+)
 from src.bot.types.insert import ChatInsert
 
 from ..context import AppContext
@@ -45,6 +49,10 @@ class SyncEntitiesMiddleware(BaseMiddleware[AppContext]):
                         creator_id=creator.user.id,
                     )
                 )
+                if event.user is not None:
+                    await ChatParticipantRepository(session).record_message(
+                        event.chat.id, event.user.id
+                    )
 
             await session.commit()
 

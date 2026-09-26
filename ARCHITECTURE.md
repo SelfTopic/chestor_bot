@@ -46,7 +46,8 @@
     показ боя (`battle_text.py`, `battle_text_generator.py`).
   - `creator_routers/` — админ-команды (`ADMIN_IDS` проверяет middleware пакета).
   - `moderator_routers/` — приветствие/прощание/правила чата.
-  - `chat_member_update_routers/` — вход и выход участников.
+  - `chat_member_update_routers/` — вход и выход участников; ведут учёт участников чата
+    (`ChatParticipant`, сообщения в группе считает `SyncEntitiesMiddleware`).
   - `rich.py`, `targeting.py`, `types.py`, `utils.py` — общее для нескольких областей.
 - **`services/`** — бизнес-логика, без Telegram. Отправлять сообщения сервис может только
   через `Notifier` (`services/notify.py`, единственный модуль слоя, знающий про selfrot).
