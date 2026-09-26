@@ -16,6 +16,7 @@ from src.database import session_factory as default_session_factory
 
 from .bot import AppBot
 from .context import AppContext
+from .logs import setup_logging
 from .media import UnsupportedMediaDownloader
 from .middlewares import BanMiddleware, DatabaseMiddleware, SyncEntitiesMiddleware
 from .routers import RootRouter
@@ -119,9 +120,10 @@ class Dispatcher(BaseDispatcher[AppContext]):
 
 
 def main() -> None:
-    logging.basicConfig(
-        level=logging.INFO, format="%(asctime)s %(levelname)s %(name)s: %(message)s"
-    )
+    try:
+        setup_logging()
+    except ValueError as e:
+        sys.exit(str(e))
 
     # Отдельная переменная, а не BOT_TOKEN из .env: порт нельзя случайно запустить
     # на токене прод-бота.
