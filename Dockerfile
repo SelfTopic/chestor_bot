@@ -1,19 +1,50 @@
-FROM python:3.11-slim
+# syntax=docker/dockerfile:1
+# Два этапа: компиляторы и заголовки нужны только для сборки зависимостей
+# (psycopg2, psycopg-c из исходников), в итоговый образ попадают готовое окружение,
+# ffmpeg и libpq. Кэши apt/pip/poetry — BuildKit cache mounts: в слои не попадают,
+# а при изменении poetry.lock пакеты не скачиваются заново.
 
-RUN apt-get update && apt-get install -y \
-    build-essential \
-    libpq-dev \
-    libffi-dev \
-    ffmpeg \
-    && rm -rf /var/lib/apt/lists/*
+FROM python:3.11-slim AS base
 
-RUN pip install --no-cache-dir poetry
+ENV PYTHONUNBUFFERED=1 \
+    POETRY_NO_INTERACTION=1 \
+    # Окружение вне /app: bot/selfrot_bot монтируют туда код (.:/app) и закрыли бы его.
+    POETRY_VIRTUALENVS_PATH=/opt/poetry-venvs
+
+# Иначе debian-образ удаляет скачанные .deb и кэш apt пуст.
+RUN rm -f /etc/apt/apt.conf.d/docker-clean
+
+# poetry остаётся и в итоговом образе: сервисы запускаются через `poetry run`.
+RUN --mount=type=cache,target=/root/.cache/pip \
+    pip install poetry
 
 WORKDIR /app
 
-COPY pyproject.toml poetry.lock* ./
 
-RUN poetry install --only main --no-root --no-interaction --no-ansi
+FROM base AS builder
+
+RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
+    --mount=type=cache,target=/var/lib/apt,sharing=locked \
+    apt-get update && apt-get install -y --no-install-recommends \
+    build-essential \
+    libpq-dev \
+    libffi-dev
+
+COPY pyproject.toml poetry.lock ./
+
+RUN --mount=type=cache,target=/root/.cache/pypoetry \
+    poetry install --only main --no-root --no-ansi
+
+
+FROM base AS runtime
+
+RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
+    --mount=type=cache,target=/var/lib/apt,sharing=locked \
+    apt-get update && apt-get install -y --no-install-recommends \
+    ffmpeg \
+    libpq5
+
+COPY --from=builder /opt/poetry-venvs /opt/poetry-venvs
 
 COPY . .
 
