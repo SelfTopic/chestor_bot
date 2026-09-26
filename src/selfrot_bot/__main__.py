@@ -11,6 +11,7 @@ from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 
 from src.bot.containers import Container
 from src.bot.services.dialog import DialogService
+from src.config import settings
 from src.database import session_factory as default_session_factory
 
 from .bot import AppBot
@@ -24,6 +25,9 @@ from .services.notify import SelfrotBotNotifier
 from .services.quiz import QuizService
 
 logger = logging.getLogger(__name__)
+
+# Как у прода: nginx отдаёт https://chestor.site/webhook… на 127.0.0.1:8999.
+WEBHOOK_PORT = 8999
 
 
 class Dispatcher(BaseDispatcher[AppContext]):
@@ -85,6 +89,10 @@ class Dispatcher(BaseDispatcher[AppContext]):
         )
 
     async def on_startup(self) -> None:
+        # Как у прода, перед любым режимом: старый вебхук снимается (иначе polling
+        # получает 409), накопившиеся апдейты отбрасываются. В режиме вебхука
+        # библиотека ставит новый уже после on_startup.
+        await self.api.delete_webhook(drop_pending_updates=True)
         await self.container.video_worker().start()
         await self.notification_ticker.start()
         await self.duel_ticker.start()
@@ -121,7 +129,25 @@ def main() -> None:
     if not token:
         sys.exit("Задайте SELFROT_BOT_TOKEN (токен dev-бота, не прод)")
 
-    Dispatcher(token=token).start_polling()
+    # Как у прода: ENV=DEV — polling, иначе вебхук. В отличие от прода секрет не в
+    # пути URL (там токен бота попадал в логи nginx), а в заголовке, как требует
+    # selfrotgram.
+    dispatcher = Dispatcher(token=token)
+    logger.info("ENV is %s", settings.ENV)
+    if settings.ENV == "DEV":
+        dispatcher.start_polling()
+        return
+
+    url = os.environ.get("SELFROT_WEBHOOK_URL")
+    secret = os.environ.get("SELFROT_WEBHOOK_SECRET")
+    if not url or not secret:
+        sys.exit(
+            f"ENV={settings.ENV} значит вебхук: задайте SELFROT_WEBHOOK_URL "
+            "и SELFROT_WEBHOOK_SECRET (или ENV=DEV для polling)"
+        )
+    dispatcher.start_webhook(
+        url=url, secret_token=secret, host="0.0.0.0", port=WEBHOOK_PORT
+    )
 
 
 if __name__ == "__main__":

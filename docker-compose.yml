@@ -76,9 +76,19 @@ services:
     environment:
       # Отдельная переменная, а не BOT_TOKEN: порт не запустится на токене прода.
       - SELFROT_BOT_TOKEN=${SELFROT_BOT_TOKEN:-}
+      # ENV из .env прода здесь не действует: по умолчанию стенд — polling.
+      # SELFROT_ENV=PROD — вебхук, тогда нужны SELFROT_WEBHOOK_URL и
+      # SELFROT_WEBHOOK_SECRET (см. .env.example).
+      - ENV=${SELFROT_ENV:-DEV}
+      - SELFROT_WEBHOOK_URL=${SELFROT_WEBHOOK_URL:-}
+      - SELFROT_WEBHOOK_SECRET=${SELFROT_WEBHOOK_SECRET:-}
       - PYTHONUNBUFFERED=1
       - POSTGRES_HOSTNAME=postgres
       - DB_HOST=postgres
+    # Для вебхука: nginx отдаёт https://chestor.site/webhook… на 127.0.0.1:8999, как
+    # прод-боту. Пока прод-бот запущен, порт занят: SELFROT_EXTERNAL_PORT сдвигает стенд.
+    ports:
+      - "127.0.0.1:${SELFROT_EXTERNAL_PORT:-8999}:8999"
     volumes:
       - .:/app
     working_dir: /app

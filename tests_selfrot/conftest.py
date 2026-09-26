@@ -153,6 +153,8 @@ class FakeTelegram:
             },
             "deleteMessage": True,
             "answerCallbackQuery": True,
+            "deleteWebhook": True,
+            "setWebhook": True,
         }.get(
             method,
             {
