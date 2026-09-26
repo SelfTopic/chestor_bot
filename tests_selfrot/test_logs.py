@@ -32,14 +32,15 @@ def log_file(tmp_path, monkeypatch):
 
 
 def emit_all() -> None:
-    # SQLAlchemy — чтобы проверить, что DEBUG показывает и чужие библиотеки.
-    logging.getLogger("sqlalchemy.engine").debug("SELECT 1")
+    logging.getLogger("aiohttp.client").debug("GET /bot/getMe")
+    logging.getLogger("sqlalchemy.engine").info("SELECT 1")
+    logging.getLogger("sqlalchemy.pool").warning("пул переполнен")
     logging.getLogger("src.selfrot_bot").info("бот запущен")
     logging.getLogger("selfrot").warning("повтор getUpdates")
     logging.getLogger("src.selfrot_bot").error("хендлер упал")
 
 
-def test_debug_shows_everything_in_console_file_keeps_warnings(
+def test_debug_shows_libraries_in_console_file_keeps_warnings(
     root, log_file, monkeypatch, capsys
 ):
     monkeypatch.setenv("LOG_LEVEL", "debug")
@@ -47,11 +48,22 @@ def test_debug_shows_everything_in_console_file_keeps_warnings(
     emit_all()
 
     console = capsys.readouterr().out
-    for text in ("SELECT 1", "бот запущен", "повтор getUpdates", "хендлер упал"):
+    for text in ("GET /bot/getMe", "бот запущен", "повтор getUpdates", "хендлер упал"):
         assert text in console
     saved = log_file.read_text()
-    assert "SELECT 1" not in saved and "бот запущен" not in saved
+    assert "GET /bot/getMe" not in saved and "бот запущен" not in saved
     assert "повтор getUpdates" in saved and "хендлер упал" in saved
+
+
+def test_sqlalchemy_only_warnings_even_in_debug(root, log_file, monkeypatch, capsys):
+    # SQL, пул и строки результатов забивали весь DEBUG-лог (DuelTicker — раз в секунду)
+    monkeypatch.setenv("LOG_LEVEL", "DEBUG")
+    setup_logging()
+    emit_all()
+
+    console = capsys.readouterr().out
+    assert "SELECT 1" not in console
+    assert "пул переполнен" in console
 
 
 def test_default_is_info(root, log_file, monkeypatch, capsys):
@@ -60,7 +72,7 @@ def test_default_is_info(root, log_file, monkeypatch, capsys):
     emit_all()
 
     console = capsys.readouterr().out
-    assert "SELECT 1" not in console
+    assert "GET /bot/getMe" not in console
     assert "бот запущен" in console
 
 

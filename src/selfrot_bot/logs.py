@@ -1,7 +1,8 @@
 """
 Логи порта: в консоль — всё от уровня LOG_LEVEL (по умолчанию INFO; DEBUG — всё,
-что пишут бот и библиотеки, включая SQL), в файл — только WARNING и выше, с
-ротацией. Прод писал в logs.log всё с DEBUG и растил его на мегабайты.
+что пишут бот и библиотеки, кроме SQLAlchemy: у неё только WARNING и выше), в файл —
+только WARNING и выше, с ротацией. Прод писал в logs.log всё с DEBUG и растил его на
+мегабайты.
 """
 
 import logging
@@ -62,9 +63,6 @@ def setup_logging() -> None:
     root.addHandler(console)
     root.addHandler(file)
 
-    # SQLAlchemy при импорте сам ставит своему логгеру WARNING, и уровень корня до
-    # него не доходит. В DEBUG — SQL и строки результатов; в INFO — как у SQLAlchemy,
-    # иначе каждый запрос попадал бы в обычный лог.
-    logging.getLogger("sqlalchemy").setLevel(
-        logging.DEBUG if level <= logging.DEBUG else logging.WARNING
-    )
+    # SQLAlchemy — только WARNING и выше при любом LOG_LEVEL: в DEBUG её SQL, пул и
+    # строки результатов (DuelTicker опрашивает базу раз в секунду) забивали весь лог.
+    logging.getLogger("sqlalchemy").setLevel(logging.WARNING)
