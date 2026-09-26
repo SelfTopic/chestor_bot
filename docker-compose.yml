@@ -1,3 +1,10 @@
+# Один образ приложения на проект (у прода chestor_bot-app, у стенда chestor_test-app):
+# собирает его только migrations, остальные сервисы берут готовый и никогда не
+# скачивают. Раньше каждый сервис с build: . экспортировал свою копию на ~2 ГБ.
+x-app-image: &app-image
+  image: ${COMPOSE_PROJECT_NAME}-app
+  pull_policy: never
+
 services:
 
   postgres:
@@ -37,7 +44,7 @@ services:
       - app_network
 
   bot:
-    build: .
+    <<: *app-image
     tty: true
     env_file:
       - .env
@@ -67,7 +74,7 @@ services:
   # стенда. profiles: обычный `docker compose up` (прод) его не запускает, а
   # `docker compose -p chestor_test up selfrot_bot` включает профиль сам.
   selfrot_bot:
-    build: .
+    <<: *app-image
     profiles: ["selfrot"]
     tty: true
     command: ["poetry", "run", "python", "-m", "src.selfrot_bot"]
@@ -102,6 +109,7 @@ services:
       - app_network
 
   migrations:
+    <<: *app-image
     build: .
     tty: true
     depends_on:
@@ -142,7 +150,9 @@ services:
       - app_network
 
   userbot_parser:
-    build: .
+    # Базой не пользуется, поэтому от migrations не зависит: запуск без образа —
+    # сначала `docker compose build migrations`.
+    <<: *app-image
     command: ["poetry", "run", "python", "-m", "src.userbot_parser.src.main"]
     env_file:
       - src/userbot_parser/.env
