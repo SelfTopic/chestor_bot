@@ -1,4 +1,4 @@
-"""FightRepository: участники и счёт одним запросом, с теми же числами, что у прода."""
+"""Репозитории порта: то, что прод читает несколькими запросами, — одним, с теми же числами."""
 
 from collections.abc import Iterator
 from contextlib import contextmanager
@@ -11,6 +11,7 @@ from src.bot.repositories import ActiveBattleRepository, BattleRepository, Ghoul
 from src.bot.services import BattleRecordService
 from src.bot.utils import utcnow_naive
 from src.selfrot_bot.repositories.battle import FightRepository, RecentBattles, Score
+from src.selfrot_bot.repositories.users import UserNameRepository
 
 from .test_common_routers import seed
 from .test_ghoul_routers import seed_ghoul
@@ -123,3 +124,18 @@ async def test_recent_battles_ignore_older_ones(session_factory):
         fights = FightRepository(session, GhoulRepository(session))
         future = utcnow_naive() + timedelta(minutes=1)
         assert await fights.recent_battles(A, B, future) == RecentBattles(0, 0, 0)
+
+
+async def test_first_names_in_one_query(session_factory):
+    await seed(session_factory, A, "Вася")
+    await seed(session_factory, B, "Петя")
+
+    async with session_factory() as session:
+        names = UserNameRepository(session)
+        with count_queries(session) as statements:
+            found = await names.first_names([A, B, C])
+            empty = await names.first_names([])
+
+    assert len(statements) == 1  # пустой список в БД не ходит
+    assert found == {A: "Вася", B: "Петя"}  # C нет в users
+    assert empty == {}

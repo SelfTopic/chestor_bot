@@ -23,10 +23,10 @@ class TopSnapHandler(GhoulTopHandler, MessageHandler[AppContext[TextMessage]]):
             await ctx.message.answer("А нету топа прикинь нахуй.")
             return
 
+        names = await ctx.first_names([ghoul.telegram_id for ghoul in top])
         answer_text = f"Топ {count} самых сломанных пальцев\n\n"
         for place, ghoul in enumerate(top, start=1):
-            user = await ctx.user_service.get(find_by=ghoul.telegram_id)
-            name = user.first_name if user is not None else "Unknown"
+            name = names.get(ghoul.telegram_id, "Unknown")
             answer_text += f"{place}. {name} - {ghoul.snap_count}\n"
 
         await ctx.message.answer(answer_text)

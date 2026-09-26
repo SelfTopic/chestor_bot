@@ -65,10 +65,10 @@ async def _render(
     if not top:
         text = f"{heading}\n\nА нету топа прикинь нахуй."
     else:
+        names = await ctx.first_names([ghoul.telegram_id for ghoul in top])
         lines = [heading, ""]
         for place, ghoul in enumerate(top, start=1):
-            user = await ctx.user_service.get(find_by=ghoul.telegram_id)
-            name = user.first_name if user is not None else "Unknown"
+            name = names.get(ghoul.telegram_id, "Unknown")
             value = (
                 ghoul_service.total_kagune_strength(ghoul)
                 if kagune_type is None

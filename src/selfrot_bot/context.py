@@ -1,6 +1,6 @@
 import logging
 import time
-from collections.abc import Awaitable, Callable
+from collections.abc import Awaitable, Callable, Collection
 from dataclasses import dataclass
 from functools import cached_property
 
@@ -41,6 +41,7 @@ from src.bot.utils import parse_seconds
 from src.database.models import Ghoul, Media, User
 
 from .repositories.battle import FightRepository
+from .repositories.users import UserNameRepository
 from .services.battle import BattleService
 from .services.broadcast import BroadcastService
 from .services.level_up import LevelUpService
@@ -227,6 +228,12 @@ class AppContext(BaseContext[TEvent]):
             raise ValueError("User not found in database")
 
         return user
+
+    async def first_names(self, telegram_ids: Collection[int]) -> dict[int, str]:
+        """Имена игроков одним запросом (топы: прод брал каждого отдельным get)."""
+        return await UserNameRepository(self.container.db_session()).first_names(
+            telegram_ids
+        )
 
     async def db_ghoul(self) -> Ghoul:
         """
