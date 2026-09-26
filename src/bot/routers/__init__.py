@@ -8,6 +8,7 @@ from .common import (
     CheckRulesRouter,
     CommonTopsRouter,
     DepRouter,
+    FunRouter,
     HelpRouter,
     ProfileRouter,
     RaceProfileRouter,
@@ -42,4 +43,5 @@ class RootRouter(BaseRouter[AppContext]):
         AnimeRouter,
         TransferRouter,
         DepRouter,
+        FunRouter,
     )

@@ -41,7 +41,7 @@
   `SyncEntitiesMiddleware` (апсерт `User`/`Chat` в отдельной сессии), `BanMiddleware`.
 - **`routers/`** — только приём апдейтов и ответы. `RootRouter` в `routers/__init__.py`.
   - `common/` — команды, не завязанные на расу (профиль, баланс, переводы, вордли, RP,
-    лотерея, аниме).
+    лотерея, аниме, `fun/`: «бот выбери/кто/число», калькулятор).
   - `ghoul_routers/` — механика гуля: голод, статы, кагуне, бои с мобами, дуэли (`duel/`),
     показ боя (`battle_text.py`, `battle_text_generator.py`).
   - `creator_routers/` — админ-команды (`ADMIN_IDS` проверяет middleware пакета).
