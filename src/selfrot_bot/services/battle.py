@@ -22,12 +22,12 @@ from src.bot.exceptions import (
 )
 from src.bot.game_configs import DUEL_CONFIG, MOB_CONFIG
 from src.bot.services import (
+    BattleEngine,
     BattleRecordService,
     DuelService,
     GhoulService,
     UserService,
 )
-from src.bot.services import BattleService as BattleEngine
 from src.bot.services.battle_engine.core import BattleResult, Fighter
 from src.bot.utils import utcnow_naive
 from src.database.models import DuelSession, Ghoul, User

@@ -1,6 +1,6 @@
 class BattleError(Exception):
     """Common base class for "бой невозможен" errors - см.
-    BattleService.validate_ghoul/validate_duel. Вызывать validate ПЕРЕД
+    BattleEngine.validate_ghoul/validate_duel. Вызывать validate ПЕРЕД
     любой попыткой построить Fighter/Battle - не тратить время на сборку
     боя, который всё равно нельзя провести."""
 

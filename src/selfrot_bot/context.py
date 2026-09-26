@@ -13,6 +13,7 @@ from src.bot.containers import Container
 from src.bot.exceptions import UserNotFound
 from src.bot.services import (
     BanService,
+    BattleEngine,
     BattleRecordService,
     ChatService,
     CoffeeService,
@@ -31,7 +32,6 @@ from src.bot.services import (
     WordleService,
 )
 from src.bot.repositories import MediaRepository
-from src.bot.services import BattleService as BattleEngine
 from src.bot.services.dialog import DialogService
 from src.bot.services.ghoul_game import LotteryService
 from src.bot.services.stat_upgrade import StatUpgradeService
@@ -107,7 +107,7 @@ class AppContext(BaseContext[TEvent]):
     @cached_property
     def battle_engine(self) -> BattleEngine:
         """Прод-мост к движку боя: гуль → боец, мощь, проверка готовности к бою."""
-        return self.container.battle_service()
+        return self.container.battle_engine()
 
     @cached_property
     def battle_service(self) -> BattleService:

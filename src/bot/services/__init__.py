@@ -5,7 +5,7 @@ from .admin import (
     StatsEditService,
 )
 from .base import Base
-from .battle_engine import BattleService, MobService
+from .battle_engine import BattleEngine, MobService
 from .battle_record import BattleRecordService
 from .chat import ChatService
 from .cooldown import CooldownService
@@ -24,7 +24,7 @@ from .wordle_game import WordleService
 
 __all__ = [
     "Base",
-    "BattleService",
+    "BattleEngine",
     "BattleRecordService",
     "DuelService",
     "MobService",

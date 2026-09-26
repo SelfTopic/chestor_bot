@@ -45,7 +45,7 @@ class _KaguneLookup(Protocol):
     def get_kagune_strength(self, ghoul: "Ghoul", kagune_type: KaguneType) -> Optional[int]: ...
 
 
-class BattleService:
+class BattleEngine:
     def __init__(self, mob_service: MobService) -> None:
         self._mob_service = mob_service
 
@@ -228,4 +228,4 @@ class BattleService:
         return max(1, round(base_health_before * fraction))
 
 
-__all__ = ["BattleService"]
+__all__ = ["BattleEngine"]

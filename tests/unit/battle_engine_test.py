@@ -8,7 +8,7 @@ from src.bot.exceptions import (
     FighterNotCombatReadyError,
 )
 from src.bot.game_configs import BATTLE_CONFIG
-from src.bot.services.battle_engine.battle_service import BattleService
+from src.bot.services.battle_engine.engine import BattleEngine
 from src.bot.services.battle_engine.core import Fighter
 from src.bot.services.battle_engine.mob import MobService
 from src.bot.types import KaguneType
@@ -63,8 +63,8 @@ def make_ghoul(
     )
 
 
-def make_service() -> BattleService:
-    return BattleService(mob_service=MobService())
+def make_service() -> BattleEngine:
+    return BattleEngine(mob_service=MobService())
 
 
 # --- validate_ghoul / validate_duel ------------------------------------------
@@ -181,7 +181,7 @@ def test_power_of_sums_stats_and_kagune_strength():
     fighter = make_service().ghoul_to_fighter(ghoul, "chestor", FakeGhoulService())
 
     # 10+20+30+50+40 (статы+HP) + 5 (кагуне)
-    assert BattleService.power_of(fighter.snapshot) == 155
+    assert BattleEngine.power_of(fighter.snapshot) == 155
 
 
 def test_power_of_matches_calculate_power_at_full_health():
@@ -199,7 +199,7 @@ def test_power_of_matches_calculate_power_at_full_health():
     calculate_power_equivalent = (
         ghoul.strength + ghoul.dexterity + ghoul.speed + ghoul.max_health + ghoul.regeneration
     )
-    assert BattleService.power_of(fighter.snapshot) == calculate_power_equivalent
+    assert BattleEngine.power_of(fighter.snapshot) == calculate_power_equivalent
 
 
 def test_power_of_is_lower_than_calculate_power_when_wounded():
@@ -214,7 +214,7 @@ def test_power_of_is_lower_than_calculate_power_when_wounded():
     calculate_power_equivalent = (
         ghoul.strength + ghoul.dexterity + ghoul.speed + ghoul.max_health + ghoul.regeneration
     )
-    assert BattleService.power_of(fighter.snapshot) < calculate_power_equivalent
+    assert BattleEngine.power_of(fighter.snapshot) < calculate_power_equivalent
 
 
 # --- effective_power_of --------------------------------------------------------
@@ -227,7 +227,7 @@ def test_effective_power_of_matches_power_of_when_modifier_chain_is_identity():
     ghoul = make_ghoul(strength=10, dexterity=20, speed=30, regeneration=40, health=50, max_health=50)
     fighter = make_service().ghoul_to_fighter(ghoul, "chestor", FakeGhoulService())
 
-    assert BattleService.effective_power_of(fighter.stats) == BattleService.power_of(
+    assert BattleEngine.effective_power_of(fighter.stats) == BattleEngine.power_of(
         fighter.snapshot
     )
 
@@ -244,8 +244,8 @@ def test_effective_power_of_reflects_hunger_penalty():
     )
     fighter = make_service().ghoul_to_fighter(ghoul, "chestor", FakeGhoulService())
 
-    effective = BattleService.effective_power_of(fighter.stats)
-    vacuum = BattleService.power_of(fighter.snapshot)
+    effective = BattleEngine.effective_power_of(fighter.stats)
+    vacuum = BattleEngine.power_of(fighter.snapshot)
     assert effective < vacuum
 
 
@@ -305,20 +305,20 @@ def test_run_duel_is_deterministic_with_the_same_seed_and_compress_hp_flag():
 
 
 def test_resolve_post_battle_health_zero_final_hp_floors_to_one():
-    assert BattleService.resolve_post_battle_health(
+    assert BattleEngine.resolve_post_battle_health(
         base_health_before=500, effective_max=1000.0, final_hp=0.0
     ) == 1
 
 
 def test_resolve_post_battle_health_full_health_is_unchanged():
-    assert BattleService.resolve_post_battle_health(
+    assert BattleEngine.resolve_post_battle_health(
         base_health_before=500, effective_max=1000.0, final_hp=1000.0
     ) == 500
 
 
 def test_resolve_post_battle_health_partial_damage_scales_proportionally():
     # Осталось 25% эффективного пула -> 25% от вакуумного значения ДО боя.
-    assert BattleService.resolve_post_battle_health(
+    assert BattleEngine.resolve_post_battle_health(
         base_health_before=400, effective_max=1000.0, final_hp=250.0
     ) == 100
 
@@ -329,18 +329,18 @@ def test_resolve_post_battle_health_small_positive_final_hp_uses_proportion_not_
     # не через флор "final_hp<=0 -> 1". Проверяем на числах, где
     # пропорция явно даёт результат БОЛЬШЕ 1 - иначе тест не отличил бы
     # этот путь от случайного max(1, ...) при малой пропорции.
-    assert BattleService.resolve_post_battle_health(
+    assert BattleEngine.resolve_post_battle_health(
         base_health_before=1000, effective_max=100.0, final_hp=1.0
     ) == 10
 
 
 def test_resolve_post_battle_health_never_goes_below_one():
-    assert BattleService.resolve_post_battle_health(
+    assert BattleEngine.resolve_post_battle_health(
         base_health_before=1, effective_max=1000.0, final_hp=0.001
     ) >= 1
 
 
 def test_resolve_post_battle_health_zero_effective_max_does_not_divide_by_zero():
-    assert BattleService.resolve_post_battle_health(
+    assert BattleEngine.resolve_post_battle_health(
         base_health_before=100, effective_max=0.0, final_hp=0.0
     ) == 1

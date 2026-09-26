@@ -22,7 +22,7 @@ from .repositories import (
 from .services import (
     BanService,
     BattleRecordService,
-    BattleService,
+    BattleEngine,
     ChatService,
     CooldownService,
     DialogService,
@@ -83,7 +83,7 @@ class Container(containers.DeclarativeContainer):
 
     mob_service = providers.Factory(MobService)
 
-    battle_service = providers.Factory(BattleService, mob_service=mob_service)
+    battle_engine = providers.Factory(BattleEngine, mob_service=mob_service)
 
     battle_record_service = providers.Factory(
         BattleRecordService,

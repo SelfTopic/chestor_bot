@@ -46,7 +46,7 @@ class DuelServices:
         battle_record_service = container.battle_record_service()
         duel_service = container.duel_service()
         battle = BattleService(
-            engine=container.battle_service(),
+            engine=container.battle_engine(),
             fights=FightRepository(container.db_session(), container.ghoul_repository()),
             ghoul_service=ghoul_service,
             user_service=user_service,

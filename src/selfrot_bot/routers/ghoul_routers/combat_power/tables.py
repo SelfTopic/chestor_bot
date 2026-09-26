@@ -17,7 +17,7 @@ from selfrot.types import (
     InputRichMessage,
 )
 
-from src.bot.services import BattleService, GhoulService
+from src.bot.services import BattleEngine, GhoulService
 from src.bot.services.battle_engine.core import StatBreakdown, compute_stat_breakdown
 from src.bot.utils import get_hunger_tier
 from src.database.models import Ghoul, User
@@ -43,7 +43,7 @@ def combat_power_rich(
     ghoul: Ghoul,
     danger_rank: str,
     ghoul_service: GhoulService,
-    engine: BattleService,
+    engine: BattleEngine,
 ) -> InputRichMessage:
     fighter = engine.ghoul_to_fighter(ghoul, user.full_name, ghoul_service)
     breakdown: dict[str, StatBreakdown] = compute_stat_breakdown(fighter.snapshot)

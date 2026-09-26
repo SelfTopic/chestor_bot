@@ -4,7 +4,7 @@ from sqlalchemy import select
 from src.bot.exceptions import FighterHasPendingBattleError
 from src.bot.repositories.active_battle import ActiveBattleRepository
 from src.bot.repositories.battle import BattleRepository
-from src.bot.services.battle_engine.battle_service import BattleService
+from src.bot.services.battle_engine.engine import BattleEngine
 from src.bot.services.battle_engine.mob import MobService
 from src.bot.services.battle_record import BattleRecordService
 from src.database.models import Battle
@@ -288,7 +288,7 @@ async def test_vs_players_and_vs_mobs_counters_do_not_mix(battle_record_service,
     assert await battle_record_service.count_total_battles(500_000_025) == 3
 
 
-# --- Интеграция: BattleService.validate_ghoul(has_pending_confirmation=...) --
+# --- Интеграция: BattleEngine.validate_ghoul(has_pending_confirmation=...) --
 
 
 async def test_validate_ghoul_raises_when_battle_record_service_reports_busy(
@@ -302,7 +302,7 @@ async def test_validate_ghoul_raises_when_battle_record_service_reports_busy(
 
     await battle_record_service.try_claim_mob_fight(500_000_015)
 
-    battle_service = BattleService(mob_service=MobService())
+    battle_service = BattleEngine(mob_service=MobService())
     with pytest.raises(FighterHasPendingBattleError):
         await battle_service.validate_ghoul(
             ghoul,
@@ -316,7 +316,7 @@ async def test_validate_ghoul_passes_when_battle_record_service_reports_free(
     await make_user(telegram_id=500_000_016)
     ghoul = await make_ghoul(telegram_id=500_000_016)
 
-    battle_service = BattleService(mob_service=MobService())
+    battle_service = BattleEngine(mob_service=MobService())
     await battle_service.validate_ghoul(
         ghoul,
         has_pending_confirmation=lambda g: battle_record_service.is_busy(g.telegram_id),

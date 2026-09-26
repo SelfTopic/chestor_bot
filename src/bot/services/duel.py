@@ -8,7 +8,7 @@ from ..repositories import DuelSessionRepository
 class DuelService:
     """Тонкая обёртка над `DuelSessionRepository` для DI - роутер по
     конвенции проекта вызывает только сервисы, не репозитории напрямую
-    (см. `BattleRecordService`/`BattleService` для того же паттерна)."""
+    (см. `BattleRecordService`/`BattleEngine` для того же паттерна)."""
 
     def __init__(self, duel_session_repository: DuelSessionRepository) -> None:
         self.duel_session_repository = duel_session_repository

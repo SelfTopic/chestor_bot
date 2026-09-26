@@ -203,7 +203,7 @@ class EatHumanConfig:
     # попыток) на то, что во время еды нападает моб-гуль, тоже претендующий
     # на человека - решено в чате явно. Бой в этом случае ВСЕГДА
     # принудительный (без согласия и, пока, без попытки сбежать - см.
-    # BattleService.run_against_mob) - голод самого гуля на это не влияет.
+    # BattleEngine.run_against_mob) - голод самого гуля на это не влияет.
     ambush_chance_percent: float = 25.0
 
     @property
@@ -308,7 +308,7 @@ class BattleConfig:
     # BATTLE_ENGINE.md, "не 0, а 1 HP").
     mutual_ko_winner_hp: float = 1.0
 
-    # BattleService.validate_ghoul - гуль с ТЕКУЩИМ HP ниже этого порога
+    # BattleEngine.validate_ghoul - гуль с ТЕКУЩИМ HP ниже этого порога
     # считается небоеспособным, бой не начинается вообще (см. чат). Число
     # больше mutual_ko_winner_hp/проигрышного "1 HP" (3.1) не случайно -
     # иначе гуль, только что закончивший бой на 1 HP, тут же попадал бы под

@@ -87,7 +87,7 @@ class BattleRecordService:
         await self.active_battle_repository.release(list(telegram_ids))
 
     async def is_busy(self, telegram_id: int) -> bool:
-        """Готовый источник для `BattleService.validate_ghoul(...,
+        """Готовый источник для `BattleEngine.validate_ghoul(...,
         has_pending_confirmation=...)`, когда появится реальный роутер
         дуэлей/боя с мобом - сейчас им никто не пользуется (mob_fight_preview
         не персистентна и не должна занимать лок)."""
