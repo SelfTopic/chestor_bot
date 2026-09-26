@@ -2,7 +2,6 @@ import logging
 import os
 import sys
 
-from dependency_injector import providers
 from ghoul_quiz import DEFAULT_BASE_URL as DEFAULT_QUIZ_URL
 from selfrot import BaseDispatcher
 from selfrot.middleware import LoggingMiddleware
@@ -17,7 +16,6 @@ from src.database import session_factory as default_session_factory
 from .bot import AppBot
 from .context import AppContext
 from .logs import setup_logging
-from .media import UnsupportedMediaDownloader
 from .middlewares import BanMiddleware, DatabaseMiddleware, SyncEntitiesMiddleware
 from .routers import RootRouter
 from .routers.ghoul_routers.duel import DuelTicker
@@ -51,16 +49,7 @@ class Dispatcher(BaseDispatcher[AppContext]):
     ) -> None:
         super().__init__(token)
         self.dialog_service = DialogService()
-        # Контейнер без bot: сервисы, которым нужен aiogram Bot (BroadcastService,
-        # LevelUpService, старый NotificationTicker), в него больше не ходят — у порта
-        # свои версии в .services, на Notifier вместо aiogram Bot (см. context.py и
-        # notification_ticker ниже). MediaDownloader (bot.download) заменён заглушкой:
-        # старому MediaService он ещё нужен как параметр конструктора, хотя /add_gif
-        # (единственный, кто раньше был вызывающим) теперь качает через ctx.download.
         self.container = Container()
-        self.container.media_downloader.override(
-            providers.Factory(UnsupportedMediaDownloader)
-        )
         self.session_factory = session_factory
         self.notification_ticker = NotificationTicker(
             session_factory=session_factory,

@@ -61,9 +61,8 @@ class DepnutHandler(MessageHandler[AppContext[TextUserMessage]]):
         self, lottery_service: LotteryService, dep_result: DepResult
     ) -> None:
         """
-        LotteryService.send_answer из прода принимает aiogram Message и FSInputFile,
-        поэтому здесь та же логика на типах selfrot. Разница одна: результат после
-        гифки приходит через self.defer (транзакция к тому времени закрыта и
+        Ответ как у прода (LotteryService.send_answer, тег aiogram-final). Разница
+        одна: результат после гифки приходит через self.defer (транзакция к тому времени закрыта и
         закоммичена, слот не занят), а не через create_task с sleep в сервисе.
         """
         message = self.ctx.message

@@ -1,8 +1,6 @@
 import logging
 from typing import Optional, Union
 
-from aiogram.types import User as TelegramUser
-
 from src.database.models import User
 
 from ..repositories import (
@@ -34,23 +32,6 @@ class UserService(Base):
             chat_repository=chat_repository,
         )
         self.balances_log_repository = balances_log_repository
-
-    async def upsert(self, telegram_user_data: TelegramUser) -> Optional[User]:
-        logger.debug(f"Called method upsert. User ID: {telegram_user_data.id}")
-
-        if telegram_user_data.is_bot == True:
-            logger.debug("User is bot, skipping registration")
-            return None
-
-        user = await self.user_repository.upsert(
-            telegram_id=telegram_user_data.id,
-            first_name=telegram_user_data.first_name,
-            last_name=telegram_user_data.last_name,
-            username=telegram_user_data.username,
-        )
-
-        logger.debug(f"Added/updated user (id={user.telegram_id}) in database")
-        return user
 
     async def get(self, find_by: Union[str, int]) -> Optional[User]:
         logger.debug(f"Called method get. Search parameter: {find_by}")

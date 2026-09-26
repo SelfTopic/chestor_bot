@@ -3,9 +3,8 @@
 обходить их лимит бесконечным кликаньем (COFFEE_CONFIG.snap_limit). Переиспользует
 CoffeeService.execute()/execute_cooldown() как есть — чистая логика с БД, включая
 day-cap рефанд при повторном клике во время кулдауна (execute_cooldown сам и
-проверяет, и ставит кулдаун). check_snap_limit()/send_answer() из прод-сервиса не
-тронуты: они держат aiogram Message явно — их заменяют ctx.db_ghoul() и
-ctx.reply_gif (context.py) здесь. Кулдаун — не через ctx.cooldown_remaining (тот
+проверяет, и ставит кулдаун). Лимит щелчков и ответ с гифкой — здесь, через
+ctx.db_ghoul() и ctx.reply_gif (context.py). Кулдаун — не через ctx.cooldown_remaining (тот
 только читает по имени кулдауна, а execute_cooldown сам решает COFFEE это или
 COFFEE_DAY и сразу отдаёт нужную запись).
 """

@@ -1,9 +1,7 @@
 """
 /add_gif: сохранить гиф или видео (в ответ на сообщение) в библиотеку медиа под нужной
-коллекцией. Раньше требовало aiogram Bot (MediaDownloader) — теперь скачивание делает
-ctx.download() (selfrotgram 0.1.4+). Разбор коллекции, путь на диск и запись в БД — та же
-доменная логика, что у прода (CollectionParser, game_config), она не трогала aiogram и
-раньше.
+коллекцией. Скачивание — ctx.download() (selfrotgram 0.1.4+); разбор коллекции, путь на
+диск и запись в БД — та же доменная логика, что у прода (CollectionParser, game_config).
 """
 
 from pathlib import Path

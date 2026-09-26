@@ -54,7 +54,7 @@ def _make_stat_service(session) -> StatUpgradeService:
     )
 
 
-async def test_build_message_shows_higher_cap_for_max_health(
+async def test_max_health_cap_is_higher_for_real_ghoul(
     make_user, make_ghoul, session
 ):
     telegram_id = 700_100_001
@@ -63,14 +63,9 @@ async def test_build_message_shows_higher_cap_for_max_health(
 
     service = _make_stat_service(session)
     ghoul = await service.ghoul_service.get(telegram_id)
-    user = await service.user_service.get(find_by=telegram_id)
 
     assert service._cap(ghoul, "max_health") == 250
     assert service._cap(ghoul, "strength") == 100
-
-    text, _ = service.build_message(ghoul, user)
-    assert "❤️Макс. здоровье: 100" in text
-    assert "💪Сила: 100  х5: —" in text  # уже упёрлись в потолок 100
 
 
 async def test_purchase_charges_discounted_price_for_max_health(

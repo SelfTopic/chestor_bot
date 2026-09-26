@@ -17,9 +17,8 @@ from .stats_edits import StatsEditRouter
 class CreatorRouter(BaseRouter[AppContext]):
     """
     Админ-команды: CreatorMiddleware пропускает дальше только settings.ADMIN_IDS,
-    молча для остальных. broadcast_service/level_up_service — порт-версии
-    (src/selfrot_bot/services), не прод-сервисы из Container: тем нужен aiogram Bot,
-    этим — Notifier (см. context.py, services/notify.py).
+    молча для остальных. broadcast_service/level_up_service шлют через Notifier
+    (см. context.py, services/notify.py).
     """
 
     middlewares = (CreatorMiddleware,)

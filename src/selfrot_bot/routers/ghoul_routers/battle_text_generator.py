@@ -1,8 +1,9 @@
 """Рендерер `BattleResult` в то, что реально увидит игрок - первый
 Telegram-фасад боевого движка (BATTLE_DESIGN.md прямо предвидел это
 разделение "лог событий боя" / "как его показать"). Живёт на уровне
-`battle_engine/`, а не `core/` - тянет aiogram-типы и `DialogService`,
-а `core/` обязан оставаться чистым доменом без БД/Telegram-зависимостей.
+роутеров боя, а не в `services/battle_engine/` - тянет Telegram-типы (selfrot)
+и `DialogService`, а `core/` обязан оставаться чистым доменом без
+БД/Telegram-зависимостей.
 
 Только ИТОГОВАЯ сводка по всему бою (см. чат) - не пораундовая анимация
 через `Battle.play_round()` + `edit_text()`. Та фича сложнее (таймеры,
@@ -53,21 +54,20 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import List, Optional, Tuple
 
-from aiogram.types import (
+from selfrot.types import (
+    InputRichBlock,
     InputRichBlockDetails,
     InputRichBlockDivider,
     InputRichBlockList,
     InputRichBlockListItem,
     InputRichBlockParagraph,
     InputRichBlockSectionHeading,
-    InputRichBlockUnion,
     InputRichMessage,
+    RichText,
     RichTextBold,
-    RichTextUnion,
 )
 
-from ..dialog import DialogService
-from .core import (
+from src.bot.services.battle_engine.core import (
     AttackAction,
     AttackType,
     BattleResult,
@@ -79,6 +79,7 @@ from .core import (
     RegenAction,
     RoundAction,
 )
+from src.bot.services.dialog import DialogService
 
 _HIT_ICON = {AttackType.PHYSICAL: "👊", AttackType.KAGUNE: "♦️"}
 
@@ -101,7 +102,7 @@ MAX_WIDTH_TEXT_RICH_MESSAGE = 54
 # `RichTextUnion` (не `List[Union[str, RichTextBold]]`) - `list` в pyright
 # инвариантен, и более узкий список не проходит структурную проверку под
 # рекурсивный `RichTextUnion`, даже когда реально в него укладывается.
-RichLine = RichTextUnion
+RichLine = RichText
 
 
 def _truncate_to_width(text: str, max_width: int) -> str:
@@ -327,7 +328,7 @@ class BattleTextGenerator:
 
         # Порядок (см. чат): имена+ранги -> ход боя -> итоги. Итоги - это
         # развязка, они идут ПОСЛЕ процесса, а не до него.
-        blocks: List[InputRichBlockUnion] = [
+        blocks: List[InputRichBlock] = [
             InputRichBlockSectionHeading(text="⚔️ Бой", size=3),
             InputRichBlockParagraph(text=rank_line_a),
             InputRichBlockParagraph(text="VS"),

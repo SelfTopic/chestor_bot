@@ -14,7 +14,6 @@ from src.bot.exceptions import UserNotFound
 from src.bot.services import (
     BanService,
     BattleRecordService,
-    BattleTextGenerator,
     ChatService,
     CoffeeService,
     CooldownService,
@@ -99,16 +98,10 @@ class AppContext(BaseContext[TEvent]):
 
     @cached_property
     def coffee_service(self) -> CoffeeService:
-        # Только execute()/execute_cooldown() — пара методов, не завязанных на
-        # aiogram (проверено чтением src/bot/services/ghoul_game/coffee.py).
-        # check_snap_limit()/send_answer() держат aiogram Message явно — их
-        # заменяют ctx.ghoul_service.get()/ctx.reply_gif в самом хендлере.
         return self.container.coffee_service()
 
     @cached_property
     def stat_upgrade_service(self) -> StatUpgradeService:
-        # Только purchase(): build_message() собирает aiogram-клавиатуру, её
-        # заменяет своя сборка в routers/ghoul_routers/upgrade_stat.py.
         return self.container.stat_upgrade_service()
 
     @cached_property
@@ -130,12 +123,6 @@ class AppContext(BaseContext[TEvent]):
             battle_record_service=self.battle_record_service,
             duel_service=self.duel_service,
         )
-
-    @cached_property
-    def battle_text_generator(self) -> BattleTextGenerator:
-        # Его rich-сообщение — aiogram-тип; в selfrot его переводит
-        # routers/ghoul_routers/battle_text.py.
-        return self.container.battle_text_generator()
 
     @cached_property
     def duel_service(self) -> DuelService:
@@ -191,8 +178,7 @@ class AppContext(BaseContext[TEvent]):
 
     @cached_property
     def media_repository(self) -> MediaRepository:
-        # Не сервис: /add_gif сам делает то немногое, что раньше было в MediaService
-        # (тот держал aiogram Bot внутри MediaDownloader), а до БД добирается репозиторием.
+        # Не сервис: /add_gif сам сохраняет файл, а до БД добирается репозиторием.
         return self.container.media_repository()
 
     @cached_property
@@ -201,8 +187,7 @@ class AppContext(BaseContext[TEvent]):
 
     @cached_property
     def broadcast_service(self) -> BroadcastService:
-        # Не из Container: там этот сервис собран с aiogram Bot, у порта его нет.
-        # Репозитории (не сервисы с Bot) из Container переиспользуются как есть.
+        # Не из Container: ему нужен Notifier, а тот живёт на Bot этого апдейта.
         return BroadcastService(
             self.container.user_repository(),
             self.container.chat_repository(),

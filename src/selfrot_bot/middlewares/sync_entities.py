@@ -11,11 +11,8 @@ class SyncEntitiesMiddleware(BaseMiddleware[AppContext]):
     """
     Апсертит User/Chat на каждое сообщение, намеренно в СВОЕЙ сразу коммитящейся
     сессии, а не в сессии хендлера: иначе INSERT ... ON CONFLICT держал бы строку
-    User залоченной до конца хендлера (см. src/bot/middlewares/sync_entity_middleware.py).
-
-    Логика та же, что у SyncEntitiesService.sync(), но без aiogram-типов: сервис
-    принимает aiogram.Update и Bot, а здесь нужны типы selfrot. Общая часть (вызовы
-    репозиториев) продублирована сознательно, пока aiogram-версия жива.
+    User залоченной до конца хендлера (как у прода: sync_entity_middleware.py, тег
+    aiogram-final).
     """
 
     async def pre_handle(self) -> bool:

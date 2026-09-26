@@ -1,8 +1,6 @@
 from typing import Tuple
 
-from aiogram.types import InlineKeyboardButton, InlineKeyboardMarkup
-
-from ..game_configs import STAT_UPGRADE_CONFIG, STATS, stat_cap_for_level
+from ..game_configs import STAT_UPGRADE_CONFIG, stat_cap_for_level
 from ..services import DialogService, GhoulService, UserService
 
 
@@ -23,52 +21,6 @@ class StatUpgradeService:
     def price_and_actual(self, cur_stat: int, want: int, stat_key: str = "") -> Tuple[int, int]:
         price = STAT_UPGRADE_CONFIG.price(cur_stat, want, stat_key)
         return price, want
-
-    def build_message(self, ghoul, user) -> Tuple[str, InlineKeyboardMarkup]:
-        lines = [f"Баланс: {user.balance if user else 0}", ""]
-
-        for label, key, emoji in STATS:
-            cap = self._cap(ghoul, key)
-            cur = getattr(ghoul, key)
-            remaining = max(0, cap - cur)
-            prices = []
-            for m in STAT_UPGRADE_CONFIG.multipliers:
-                buy = min(m, remaining)
-                if buy <= 0:
-                    prices.append("—")
-                else:
-                    prices.append(str(STAT_UPGRADE_CONFIG.price(cur, buy, key)))
-
-            lines.append(f"{emoji}{label}: {cur}  х5: {prices[1]} х10: {prices[2]}")
-
-        lines.append("")
-
-        inline_rows = []
-        for label, key, emoji in STATS:
-            cap = self._cap(ghoul, key)
-            cur: int = getattr(ghoul, key)
-            remaining = max(0, cap - cur)
-            buttons = []
-            for m in STAT_UPGRADE_CONFIG.multipliers:
-                buy = min(m, remaining)
-                if buy <= 0:
-                    buttons.append(
-                        InlineKeyboardButton(
-                            text=f"{emoji} +{m} (—)", callback_data="stat_nop"
-                        )
-                    )
-                else:
-                    price = STAT_UPGRADE_CONFIG.price(cur, buy, key)
-                    buttons.append(
-                        InlineKeyboardButton(
-                            text=f"{emoji} +{m} ({price})",
-                            callback_data=f"stat_buy_{key}_{m}",
-                        )
-                    )
-            inline_rows.append(buttons)
-
-        kb = InlineKeyboardMarkup(inline_keyboard=inline_rows)
-        return "\n".join(lines), kb
 
     async def purchase(self, telegram_id: int, stat_key: str, count: int):
         ghoul = await self.ghoul_service.get(telegram_id)

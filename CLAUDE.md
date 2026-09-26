@@ -156,7 +156,7 @@ JSON, `.get()`) сужай через `isinstance` / `assert`, прежде че
 1. ✓ Удалить оболочку прода: `src/bot/{routers,filters,middlewares,__main__.py}`, прод-версии
    сервисов, у которых в порте есть замена (`level_up`, `admin/broadcast`,
    `notification_ticker`, `sync_entity`), и их тесты.
-2. Отвязать от aiogram сервисы, которые использует порт: `containers.py` (провайдер `bot`),
+2. ✓ Отвязать от aiogram сервисы, которые использует порт: `containers.py` (провайдер `bot`),
    `ghoul.get`, `user.upsert`, `media` (скачивание), `stat_upgrade.build_message`, методы
    отправки в `coffee` / `lottery`, `battle_engine/text_generator` (→ selfrot-типы, к роутерам).
 3. Удалить `aiogram` из `pyproject.toml`, `poetry lock`.

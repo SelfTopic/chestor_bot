@@ -1,9 +1,7 @@
 import logging
 import random
 from datetime import datetime, timedelta
-from typing import Any, List, Optional, Tuple, Union
-
-from aiogram.types import Message
+from typing import Any, List, Optional, Tuple
 
 from src.database.models import Ghoul
 
@@ -45,35 +43,20 @@ class GhoulService(Base):
         # выставится), просто без записи в историю смертей.
         self.death_log_repository = death_log_repository
 
-    async def get(self, find_by: Union[Message, int]) -> Optional[Ghoul]:
-        logger.debug(
-            f"Called method get. Params: find_by={find_by if not isinstance(find_by, Message) else 'Message'}"
-        )
+    async def get(self, find_by: int) -> Optional[Ghoul]:
+        logger.debug(f"Called method get. Params: find_by={find_by}")
 
-        search_parameter = find_by
+        if find_by > 666000:
+            logger.debug(f"Looking up by Telegram ID: {find_by}")
+            ghoul = await self.ghoul_repository.get(find_by)
+        else:
+            logger.debug(f"Looking up by custom ID: {find_by}")
+            ghoul = await self.ghoul_repository.get_by_id(find_by)
 
-        if isinstance(find_by, Message):
-            logger.debug("Received Message object, extracting user ID")
-            if not find_by.from_user:
-                logger.warning("Message has no from_user attribute")
-                return None
-            search_parameter = find_by.from_user.id
-
-        if isinstance(search_parameter, int):
-            if search_parameter > 666000:
-                logger.debug(f"Looking up by Telegram ID: {search_parameter}")
-                ghoul = await self.ghoul_repository.get(search_parameter)
-            else:
-                logger.debug(f"Looking up by custom ID: {search_parameter}")
-                ghoul = await self.ghoul_repository.get_by_id(search_parameter)
-
-            logger.debug(f"Ghoul found: {ghoul is not None}")
-            if ghoul:
-                ghoul = await self.materialize_passive_stats(ghoul)
-            return ghoul
-
-        logger.error(f"Invalid parameter type: {type(search_parameter)}")
-        raise ValueError(f"Invalid type parameter: {type(search_parameter)}")
+        logger.debug(f"Ghoul found: {ghoul is not None}")
+        if ghoul:
+            ghoul = await self.materialize_passive_stats(ghoul)
+        return ghoul
 
     async def materialize_passive_stats(self, ghoul: Ghoul) -> Ghoul:
         """Досчитывает голод/здоровье на текущий момент (ленивый расчёт,

@@ -1,6 +1,5 @@
 from contextvars import ContextVar
 
-from aiogram import Bot
 from dependency_injector import containers, providers
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -24,13 +23,11 @@ from .services import (
     BanService,
     BattleRecordService,
     BattleService,
-    BattleTextGenerator,
     ChatService,
     CooldownService,
     DialogService,
     DuelService,
     GhoulService,
-    MediaDownloader,
     MediaService,
     MobService,
     PlayerLookupService,
@@ -51,7 +48,6 @@ session_context: ContextVar[AsyncSession] = ContextVar("session_context")
 
 class Container(containers.DeclarativeContainer):
     config = providers.Configuration()
-    bot = providers.Dependency(instance_of=Bot)
 
     db_session = providers.Factory(lambda: session_context.get())
 
@@ -85,10 +81,6 @@ class Container(containers.DeclarativeContainer):
 
     dialog_service = providers.Factory(DialogService)
 
-    battle_text_generator = providers.Factory(
-        BattleTextGenerator, dialog_service=dialog_service
-    )
-
     mob_service = providers.Factory(MobService)
 
     battle_service = providers.Factory(BattleService, mob_service=mob_service)
@@ -103,10 +95,8 @@ class Container(containers.DeclarativeContainer):
         DuelService, duel_session_repository=duel_session_repository
     )
 
-    media_downloader = providers.Factory(MediaDownloader, bot=bot)
-
     media_service = providers.Factory(
-        MediaService, downloader=media_downloader, media_repository=media_repository
+        MediaService, media_repository=media_repository
     )
 
     user_service = providers.Factory(
@@ -149,8 +139,6 @@ class Container(containers.DeclarativeContainer):
         user_service=user_service,
         ghoul_service=ghoul_service,
         cooldown_service=cooldown_service,
-        media_service=media_service,
-        dialog_service=dialog_service,
     )
 
     lottery_service = providers.Factory(
@@ -158,7 +146,6 @@ class Container(containers.DeclarativeContainer):
         user_service=user_service,
         cooldown_service=cooldown_service,
         media_service=media_service,
-        dialog_service=dialog_service,
         lottery_repository=lottery_repository,
     )
 
