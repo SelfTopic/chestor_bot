@@ -16,8 +16,8 @@ from src.bot.exceptions import ChatNotFoundInDatabase
 from src.bot.repositories import GhoulRepository, UserRepository
 from src.bot.services.wikipedia import WikipediaSummary
 from src.database.models import Chat
-from src.selfrot_bot.routers.common.anime.guard import cut_guard
-from src.selfrot_bot.routers.common.transfer.flow import TransferPress
+from src.bot.routers.common.anime.guard import cut_guard
+from src.bot.routers.common.transfer.flow import TransferPress
 
 from .conftest import (
     button_data,

@@ -14,8 +14,8 @@ from selfrot.types import TextMessage
 
 from src.bot.repositories import MediaRepository
 from src.database.models import Media
-from src.selfrot_bot.__main__ import Dispatcher
-from src.selfrot_bot.context import AppContext
+from src.bot.__main__ import Dispatcher
+from src.bot.context import AppContext
 
 from .conftest import message_update
 

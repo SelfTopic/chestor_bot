@@ -8,7 +8,7 @@ FROM python:3.11-slim AS base
 
 ENV PYTHONUNBUFFERED=1 \
     POETRY_NO_INTERACTION=1 \
-    # Окружение вне /app: bot/selfrot_bot монтируют туда код (.:/app) и закрыли бы его.
+    # Окружение вне /app: сервисы монтируют туда код (.:/app) и закрыли бы его.
     POETRY_VIRTUALENVS_PATH=/opt/poetry-venvs
 
 # Иначе debian-образ удаляет скачанные .deb и кэш apt пуст.
@@ -46,4 +46,4 @@ COPY --from=builder /opt/poetry-venvs /opt/poetry-venvs
 
 COPY . .
 
-CMD ["poetry", "run", "python", "-m", "src.selfrot_bot"]
+CMD ["poetry", "run", "python", "-m", "src.bot"]

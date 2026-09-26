@@ -3,8 +3,7 @@
 /add_gif и NotificationTicker (обоим нужно одно и то же имя папки и та же логика
 подбора случайного файла, порознь они бы неизбежно разошлись). Ничего из этого не
 знает про Telegram-библиотеку: только диск, БД (через MediaRepository) и доменные
-типы src.bot (CollectionParser/MediaCollection/MediaDownloadType), которые сами не
-завязаны на aiogram.
+типы (CollectionParser/MediaCollection/MediaDownloadType).
 """
 
 import random

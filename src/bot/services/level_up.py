@@ -1,6 +1,5 @@
-"""Левелапы: та же логика, что у src.bot.services.level_up.LevelUpService (UserService/
-GhoulService/DialogService не завязаны на aiogram и переиспользуются как есть), только
-уведомление игроку — через Notifier, а не aiogram Bot."""
+"""Левелапы: та же логика, что у прод-LevelUpService (тег aiogram-final), уведомление
+игроку — через Notifier."""
 
 import logging
 from dataclasses import dataclass, field

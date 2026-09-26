@@ -1,6 +1,5 @@
-"""Рассылки: та же логика, что у src.bot.services.admin.broadcast.BroadcastService
-(репозитории не завязаны на aiogram и переиспользуются как есть), только отправка —
-через Notifier, а не aiogram Bot."""
+"""Рассылки: та же логика, что у прод-BroadcastService (тег aiogram-final), отправка —
+через Notifier."""
 
 import asyncio
 import logging

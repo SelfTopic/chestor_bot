@@ -39,8 +39,8 @@ from src.bot.types import TimeComponents
 from src.bot.utils import parse_seconds
 from src.database.models import Ghoul, Media, User
 
-from .repositories.battle import FightRepository
-from .repositories.users import UserNameRepository
+from .repositories.fight import FightRepository
+from .repositories.user_names import UserNameRepository
 from .services.battle import BattleService
 from .services.broadcast import BroadcastService
 from .services.level_up import LevelUpService

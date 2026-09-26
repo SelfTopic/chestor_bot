@@ -49,7 +49,7 @@ services:
   bot:
     <<: *app-image
     tty: true
-    command: ["poetry", "run", "python", "-m", "src.selfrot_bot"]
+    command: ["poetry", "run", "python", "-m", "src.bot"]
     env_file:
       - .env
     environment:

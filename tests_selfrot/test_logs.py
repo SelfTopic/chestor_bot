@@ -4,7 +4,7 @@ import logging
 
 import pytest
 
-from src.selfrot_bot.logs import setup_logging
+from src.bot.logs import setup_logging
 
 
 @pytest.fixture
@@ -35,9 +35,9 @@ def emit_all() -> None:
     logging.getLogger("aiohttp.client").debug("GET /bot/getMe")
     logging.getLogger("sqlalchemy.engine").info("SELECT 1")
     logging.getLogger("sqlalchemy.pool").warning("пул переполнен")
-    logging.getLogger("src.selfrot_bot").info("бот запущен")
+    logging.getLogger("src.bot").info("бот запущен")
     logging.getLogger("selfrot").warning("повтор getUpdates")
-    logging.getLogger("src.selfrot_bot").error("хендлер упал")
+    logging.getLogger("src.bot").error("хендлер упал")
 
 
 def test_debug_shows_libraries_in_console_file_keeps_warnings(

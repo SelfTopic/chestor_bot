@@ -17,8 +17,8 @@ from src.bot.services.dialog import DialogService
 from src.bot.types import NotificationType
 from src.bot.utils import utcnow_naive
 from src.database.models import DeathLog, Media, ScheduledNotification
-from src.selfrot_bot.services.notification_ticker import NotificationTicker
-from src.selfrot_bot.services.notify import NotifyError, SelfrotBotNotifier
+from src.bot.services.notification_ticker import NotificationTicker
+from src.bot.services.notify import NotifyError, SelfrotBotNotifier
 
 from .test_common_routers import seed
 

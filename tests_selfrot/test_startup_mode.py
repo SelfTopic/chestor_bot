@@ -10,7 +10,7 @@ import pytest
 from pydantic import SecretStr
 
 from src.config import settings
-from src.selfrot_bot import __main__ as entry
+from src.bot import __main__ as entry
 
 from .conftest import message_update
 

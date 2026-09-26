@@ -109,9 +109,9 @@ generic-миксин она молча отключилась бы.
 Перед каждым коммитом всё должно быть чисто:
 
 ```bash
-ruff check src/selfrot_bot tests_selfrot
-pyright src/selfrot_bot tests_selfrot              # режим standard
-selfrot check --strict src.selfrot_bot.__main__:Dispatcher
+ruff check src/bot tests_selfrot
+pyright src/bot tests_selfrot              # режим standard
+selfrot check --strict src.bot.__main__:Dispatcher
 python -m pytest tests_selfrot
 ```
 
@@ -160,7 +160,7 @@ JSON, `.get()`) сужай через `isinstance` / `assert`, прежде че
    `ghoul.get`, `user.upsert`, `media` (скачивание), `stat_upgrade.build_message`, методы
    отправки в `coffee` / `lottery`, `battle_engine/text_generator` (→ selfrot-типы, к роутерам).
 3. ✓ Удалить `aiogram` из `pyproject.toml`, `poetry lock`.
-4. Слить `src/selfrot_bot` в `src/bot` (`git mv` + импорты), прод-мост `BattleService`
+4. ✓ Слить `src/selfrot_bot` в `src/bot` (`git mv` + импорты), прод-мост `BattleService`
    движка переименовать в `BattleEngine`, обновить `test_layout.py`, compose, `selfrot check`.
 5. Тесты прода: нужные (домен, репозитории, гонки) перенести, дубли и ненужные удалить;
    `tests_selfrot/` → `tests/`.

@@ -1,6 +1,6 @@
 """
 Раскладка порта по правилу из CLAUDE.md («Где что лежит»), проверяемая по графу
-импортов src/selfrot_bot. Тесты пользователями не считаются.
+импортов src/bot. Тесты пользователями не считаются.
 
 - Слои по ролям — корень (context.py, bot.py, …), services/, repositories/,
   middlewares/ — не импортируют routers/; собирает всё только __main__.
@@ -15,7 +15,7 @@ from collections import defaultdict
 from pathlib import Path
 
 REPO = Path(__file__).resolve().parent.parent
-PORT = REPO / "src" / "selfrot_bot"
+PORT = REPO / "src" / "bot"
 ROUTERS = PORT / "routers"
 LAYERS = ("services", "repositories", "middlewares")
 
@@ -125,8 +125,8 @@ def test_router_modules_live_where_their_users_meet():
 def test_the_checks_see_the_graph():
     """Страховка от молча пустого графа: известные связи находятся."""
     modules, importers = _importers()
-    assert "src.selfrot_bot.routers.rich" in importers
-    assert "src.selfrot_bot.routers.ghoul_routers.battle_text" in importers[
-        "src.selfrot_bot.routers.rich"
+    assert "src.bot.routers.rich" in importers
+    assert "src.bot.routers.ghoul_routers.battle_text" in importers[
+        "src.bot.routers.rich"
     ]
     assert len(modules) > 100

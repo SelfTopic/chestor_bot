@@ -229,7 +229,7 @@ class UserRepository(Base):
 
     async def get_all_with_private_chat(self) -> list[User]:
         result = await self.session.scalars(
-            select(User).where(User.has_private_chat == True)
+            select(User).where(User.has_private_chat.is_(True))
         )
         return list(result)
 

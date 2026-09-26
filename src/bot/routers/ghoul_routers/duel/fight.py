@@ -16,7 +16,7 @@ from selfrot.exceptions import TelegramAPIError
 
 from src.database.models import DuelSession
 
-from ....repositories.battle import Score
+from ....repositories.fight import Score
 from ....services.battle import DuelOutcome
 from ..battle_text import BattleMessage
 from .keyboards import outcome_keyboard

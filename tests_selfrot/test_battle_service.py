@@ -10,8 +10,8 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from src.bot.repositories import ActiveBattleRepository, BattleRepository, GhoulRepository
 from src.bot.services import BattleRecordService
 from src.bot.utils import utcnow_naive
-from src.selfrot_bot.repositories.battle import FightRepository, RecentBattles, Score
-from src.selfrot_bot.repositories.users import UserNameRepository
+from src.bot.repositories.fight import FightRepository, RecentBattles, Score
+from src.bot.repositories.user_names import UserNameRepository
 
 from .test_common_routers import seed
 from .test_ghoul_routers import seed_ghoul

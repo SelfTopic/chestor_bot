@@ -64,13 +64,10 @@ class LotteryService:
                 telegram_id=user_id, change_balance=bet_amount, log="lottery bet"
             )
 
-        folder_name = COLOR_TO_FOLDER.get(winning_color.value, "red")
-        video_path = await self.media_service.get_random_lottery_video(
-            color_folder=folder_name
-        )
+        # Видео подбирает роутер, в записи file_id пока не бывает (как у прода).
         video_file_id = None
 
-        lottery_record = await self.lottery_repository.insert(
+        await self.lottery_repository.insert(
             telegram_id=user_id,
             bet_amount=bet_amount,
             chosen_color=chosen_color.value,

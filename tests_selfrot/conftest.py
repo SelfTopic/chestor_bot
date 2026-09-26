@@ -44,8 +44,8 @@ from selfrot.types import ChatMemberAdministrator, Update  # noqa: E402
 REPO_ROOT = os.path.dirname(os.path.dirname(__file__))
 
 # Ошибки приложения, которые тесты вызывают намеренно (ответ на них даёт on_error)
-from src.selfrot_bot.__main__ import Dispatcher  # noqa: E402
-from src.selfrot_bot.context import AppContext  # noqa: E402
+from src.bot.__main__ import Dispatcher  # noqa: E402
+from src.bot.context import AppContext  # noqa: E402
 from src.bot.exceptions import (  # noqa: E402
     ChatNotFoundInDatabase,
     RpCommandValidateError,

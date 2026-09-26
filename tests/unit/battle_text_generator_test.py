@@ -20,7 +20,7 @@ from src.bot.services.battle_engine.core import (
     RegenAction,
     RoundResult,
 )
-from src.selfrot_bot.routers.ghoul_routers.battle_text_generator import (
+from src.bot.routers.ghoul_routers.battle_text_generator import (
     MAX_WIDTH_TEXT_RICH_MESSAGE,
     BattleTextGenerator,
     _flatten_to_plain_text,

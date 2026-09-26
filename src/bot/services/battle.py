@@ -32,7 +32,7 @@ from src.bot.services.battle_engine.core import BattleResult, Fighter
 from src.bot.utils import utcnow_naive
 from src.database.models import DuelSession, Ghoul, User
 
-from ..repositories.battle import FightRepository, Score
+from ..repositories.fight import FightRepository, Score
 from .level_up import LevelUpService
 
 logger = logging.getLogger(__name__)

@@ -10,9 +10,9 @@ from src.bot.repositories import ChatRepository, GhoulRepository, UserRepository
 from src.bot.types import KaguneType
 from src.config import settings
 from src.database.models import Cooldown
-from src.selfrot_bot.routers.creator_routers.media import USAGE as ADD_GIF_USAGE
-from src.selfrot_bot.services.broadcast import BroadcastService
-from src.selfrot_bot.services.notify import NotifyError, SelfrotBotNotifier
+from src.bot.routers.creator_routers.media import USAGE as ADD_GIF_USAGE
+from src.bot.services.broadcast import BroadcastService
+from src.bot.services.notify import NotifyError, SelfrotBotNotifier
 
 from .conftest import message_update, owner_dict
 from .test_common_routers import seed
@@ -402,7 +402,7 @@ class TestMedia:
         # см. docstring target_path), поэтому только сама сборка пути
         from src.bot.services.media import CollectionParser
         from src.bot.types import MediaDownloadType
-        from src.selfrot_bot.routers.creator_routers.media import target_path
+        from src.bot.routers.creator_routers.media import target_path
 
         collection = CollectionParser.parse("kagune ukaku")
 
@@ -415,7 +415,7 @@ class TestMedia:
     def test_non_kagune_collection_has_no_subfolder(self):
         from src.bot.services.media import CollectionParser
         from src.bot.types import MediaDownloadType
-        from src.selfrot_bot.routers.creator_routers.media import target_path
+        from src.bot.routers.creator_routers.media import target_path
 
         collection = CollectionParser.parse("snap")
 
@@ -581,7 +581,7 @@ class TestLevelUp:
 
 
 class FakeNotifier:
-    """Notifier без Telegram вообще — для юнит-тестов сервисов из selfrot_bot/services,
+    """Notifier без Telegram вообще — для юнит-тестов сервисов из services/,
     независимых от библиотеки (см. Notifier Protocol)."""
 
     def __init__(self, fail_for: frozenset[int] = frozenset()):

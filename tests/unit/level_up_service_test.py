@@ -13,8 +13,8 @@ from src.bot.services.dialog import DialogService
 from src.bot.services.ghoul import GhoulService
 from src.bot.services.user import UserService
 from src.database.models import User
-from src.selfrot_bot.services.level_up import LevelUpService
-from src.selfrot_bot.services.notify import NotifyError
+from src.bot.services.level_up import LevelUpService
+from src.bot.services.notify import NotifyError
 
 
 class FakeBot:

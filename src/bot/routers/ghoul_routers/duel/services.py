@@ -12,7 +12,7 @@ from src.bot.services import BattleRecordService, DuelService
 from src.bot.services.dialog import DialogService
 
 from ....context import AppContext
-from ....repositories.battle import FightRepository
+from ....repositories.fight import FightRepository
 from ....services.battle import BattleService
 from ....services.level_up import LevelUpService
 from ....services.notify import Notifier

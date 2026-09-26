@@ -5,7 +5,7 @@ import time
 import pytest
 from ghoul_quiz import AuthenticationRequiredError, Question, TokenManager, TokenPair
 
-from src.selfrot_bot.services.quiz import QuizService
+from src.bot.services.quiz import QuizService
 
 from .test_common_routers import seed
 from .test_ghoul_routers import seed_ghoul

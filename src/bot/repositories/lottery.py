@@ -80,10 +80,10 @@ class LotteryRepository(Base):
         result = await self.session.execute(stmt)
         lotteries = result.scalars().all()
 
-        total_bet = sum(l.bet_amount for l in lotteries)
-        total_earned = sum(l.earned for l in lotteries)
-        wins = sum(1 for l in lotteries if l.is_won)
-        loses = sum(1 for l in lotteries if not l.is_won)
+        total_bet = sum(lottery.bet_amount for lottery in lotteries)
+        total_earned = sum(lottery.earned for lottery in lotteries)
+        wins = sum(1 for lottery in lotteries if lottery.is_won)
+        loses = sum(1 for lottery in lotteries if not lottery.is_won)
 
         return {
             "total_bet": total_bet,

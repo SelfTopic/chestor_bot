@@ -1,10 +1,7 @@
 """
-Фоновый тикер под scheduled_notifications: та же логика, что у
-src.bot.services.notification_ticker.NotificationTicker (репозитории и GhoulService не
-завязаны на aiogram и переиспользуются как есть), только отправка — через Notifier, а
-не aiogram Bot, и поиск некролог-видео — через media_paths.random_media вместо
-MediaService/MediaDownloader (тому нужен был aiogram Bot только ради скачивания,
-которое здесь не происходит: видео для некролога только читаются, не качаются).
+Фоновый тикер под scheduled_notifications: та же логика, что у прод-NotificationTicker
+(тег aiogram-final). Отправка — через Notifier, поиск некролог-видео — через
+media_paths.random_media.
 """
 
 import asyncio

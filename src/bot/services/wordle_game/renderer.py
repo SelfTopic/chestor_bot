@@ -38,7 +38,7 @@ _STATE_COLOR = {
 }
 
 
-def _load_font(size: int) -> ImageFont.FreeTypeFont:
+def _load_font(size: int) -> ImageFont.FreeTypeFont | ImageFont.ImageFont:
     path = "src/assets/fonts/Rubik.ttf"
     if path:
         try:

@@ -9,8 +9,8 @@ from sqlalchemy import select
 
 from src.bot.repositories import UserRepository
 from src.database.models import Chat, User
-from src.selfrot_bot.__main__ import Dispatcher
-from src.selfrot_bot.context import AppContext
+from src.bot.__main__ import Dispatcher
+from src.bot.context import AppContext
 
 from .conftest import admin_dict, callback_update, message_update, owner_dict
 

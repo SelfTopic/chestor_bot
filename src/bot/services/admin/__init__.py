@@ -3,7 +3,7 @@ from .player_lookup import PlayerLookupService
 from .reset import ResetService
 from .stats_edit import StatsEditService
 
-_all__ = [
+__all__ = [
     "BanResult",
     "BanService",
     "PlayerLookupService",

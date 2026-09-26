@@ -5,7 +5,7 @@ from src.config import settings
 
 
 def _proxy() -> str | None:
-    # То же условие, что у прода в src/bot/__main__.py (в том числе HTTP_PROXY только
+    # То же условие, что у прода в __main__.py (тег aiogram-final; в том числе HTTP_PROXY только
     # при заданном HTTPS_PROXY); пустая строка значит «без прокси».
     proxy = (
         settings.HTTP_PROXY
