@@ -40,7 +40,11 @@ class SelfrotBotNotifier:
         self._bot = bot
 
     async def send_message(
-        self, chat_id: int, text: str, *, parse_mode: str | None = None
+        self,
+        chat_id: int,
+        text: str,
+        *,
+        parse_mode: str | None = None,
     ) -> None:
         try:
             await self._bot.send_message(
@@ -50,7 +54,11 @@ class SelfrotBotNotifier:
             raise NotifyError(str(e)) from e
 
     async def send_video(
-        self, chat_id: int, video: str | Path, *, caption: str | None = None
+        self,
+        chat_id: int,
+        video: str | Path,
+        *,
+        caption: str | None = None,
     ) -> str:
         source = video if isinstance(video, str) else InputFile.from_path(video)
         try:
