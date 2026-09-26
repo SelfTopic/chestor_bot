@@ -1,14 +1,13 @@
 from selfrot import MessageHandler
-from selfrot.filter import TextStartswith
 
 from ...context import AppContext
 from ...types import TextMessage
-from .set_chat_text import SetChatTextHandler
+from .set_chat_text import SetChatTextHandler, chat_text_command
 
 
 class SetRulesHandler(SetChatTextHandler, MessageHandler[AppContext[TextMessage]]):
-    PREFIX = "новые правила"
-    query = TextStartswith(PREFIX, ignore_case=True)
+    cmd = chat_text_command("новые правила")
+    query = cmd
 
     async def apply(self, telegram_id: int, value: str) -> str:
         chat = await self.ctx.chat_service.set_chat_rules(telegram_id, value)
