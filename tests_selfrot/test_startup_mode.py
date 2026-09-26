@@ -25,6 +25,9 @@ def started(monkeypatch: pytest.MonkeyPatch) -> list[tuple[str, dict[str, Any]]]
         "start_webhook",
         lambda self, **kwargs: calls.append(("webhook", kwargs)),
     )
+    # main() настраивает логи с файлом logs.log в корне репо: тестам режима это не
+    # нужно, а настоящий logs.log разработчика ротировался бы при первом warning.
+    monkeypatch.setattr(entry, "setup_logging", lambda: None)
     monkeypatch.setenv("SELFROT_BOT_TOKEN", "1:TEST")
     monkeypatch.delenv("SELFROT_WEBHOOK_URL", raising=False)
     monkeypatch.delenv("SELFROT_WEBHOOK_SECRET", raising=False)
