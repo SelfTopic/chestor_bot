@@ -13,7 +13,7 @@ url = URL.create(
     password=environ.get("POSTGRES_PASSWORD", default="changeme"),
     host=environ.get("POSTGRES_HOSTNAME", default="localhost"),
     database=environ.get("POSTGRES_DATABASE", default="postgres"),
-    port=5432,
+    port=int(environ.get("POSTGRES_PORT", default="5432")),
 )
 
 engine = create_async_engine(url=url, echo=False, pool_pre_ping=True)

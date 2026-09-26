@@ -1,7 +1,7 @@
 # syntax=docker/dockerfile:1
-# Два этапа: компиляторы и заголовки нужны только для сборки зависимостей
-# (psycopg2, psycopg-c из исходников), в итоговый образ попадают готовое окружение,
-# ffmpeg и libpq. Кэши apt/pip/poetry — BuildKit cache mounts: в слои не попадают,
+# Два этапа: компиляторы нужны только на случай зависимости без готового колеса
+# (psycopg теперь [binary] — со своей libpq), в итоговый образ попадают готовое
+# окружение и ffmpeg. Кэши apt/pip/poetry — BuildKit cache mounts: в слои не попадают,
 # а при изменении poetry.lock пакеты не скачиваются заново.
 
 FROM python:3.11-slim AS base
@@ -27,7 +27,6 @@ RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
     --mount=type=cache,target=/var/lib/apt,sharing=locked \
     apt-get update && apt-get install -y --no-install-recommends \
     build-essential \
-    libpq-dev \
     libffi-dev
 
 COPY pyproject.toml poetry.lock ./
@@ -41,8 +40,7 @@ FROM base AS runtime
 RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
     --mount=type=cache,target=/var/lib/apt,sharing=locked \
     apt-get update && apt-get install -y --no-install-recommends \
-    ffmpeg \
-    libpq5
+    ffmpeg
 
 COPY --from=builder /opt/poetry-venvs /opt/poetry-venvs
 

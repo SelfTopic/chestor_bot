@@ -51,10 +51,10 @@
    service postgresql start
    sudo -u postgres psql -c "CREATE ROLE $POSTGRES_USERNAME LOGIN SUPERUSER PASSWORD '$POSTGRES_PASSWORD'"
    sudo -u postgres psql -c "CREATE DATABASE $POSTGRES_DATABASE OWNER $POSTGRES_USERNAME"
-   sed "s#^sqlalchemy.url = .*#sqlalchemy.url = postgresql://$POSTGRES_USERNAME:$POSTGRES_PASSWORD@localhost/$POSTGRES_DATABASE#" alembic.ini.example > alembic.ini
    poetry run alembic upgrade head
    ```
-   `alembic.ini` не коммить.
+   `alembic.ini` не нужен: настройки alembic — в `[tool.alembic]` `pyproject.toml`, а адрес БД
+   `migrations/env.py` берёт из тех же `POSTGRES_*`, что и бот.
 4. **Бот** (для живых проверок): `poetry run python -m src.selfrot_bot > /tmp/bot.log 2>&1 &`.
    Токен берётся из `SELFROT_BOT_TOKEN`, это тестовый бот `@true_hax0r_bot`. После каждого
    изменения кода перезапускай бота. Ошибка `Conflict: terminated by other getUpdates`
@@ -139,6 +139,8 @@ https://github.com/SelfTopic/userbot-api/blob/main/README.md
    `postgresql://`, то есть драйвер psycopg2, а в окружении стоит только psycopg 3.
    Я заменил схему на `postgresql+psycopg://` в локальном `alembic.ini` (он не
    коммитится). Стоит поправить пример или шаг 3 в этом файле.
+   **Решено:** `psycopg2` убран, alembic берёт адрес из `POSTGRES_*` (`postgresql+psycopg`),
+   `alembic.ini` и пример больше не нужны.
 4. **В тестовой группе сидит прод-бот `@chestor_chat_bot`.** Он отвечает на те же
    команды (например, «Да ты сдох...» на «качаться» от userbot, мёртвого в проде), и
    групповые проверки задевают прод-базу этих тестовых аккаунтов. Я отправлял в

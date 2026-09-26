@@ -1,8 +1,14 @@
+import logging
+import os
 from logging.config import fileConfig
 
 from alembic import context
-from sqlalchemy import engine_from_config, pool
+from sqlalchemy import create_engine, pool
 
+# Адрес БД — тот же, что у бота: src.database собирает его из POSTGRES_*, а не
+# sqlalchemy.url из alembic.ini (ini больше не нужен, настройки alembic — в
+# [tool.alembic] pyproject.toml; старый ini, если лежит рядом, не мешает).
+from src.database import url as database_url
 from src.database.models import (
     Base,
     Chat,
@@ -21,8 +27,14 @@ config = context.config
 
 # Interpret the config file for Python logging.
 # This line sets up loggers basically.
-if config.config_file_name is not None:
+if config.config_file_name is not None and os.path.exists(config.config_file_name):
     fileConfig(config.config_file_name)
+else:
+    # Без alembic.ini — те же настройки, что были в нём.
+    logging.basicConfig(
+        level=logging.WARNING, format="%(levelname)-5.5s [%(name)s] %(message)s"
+    )
+    logging.getLogger("alembic").setLevel(logging.INFO)
 
 # add your model's MetaData object here
 # for 'autogenerate' support
@@ -48,9 +60,8 @@ def run_migrations_offline() -> None:
     script output.
 
     """
-    url = config.get_main_option("sqlalchemy.url")
     context.configure(
-        url=url,
+        url=database_url.render_as_string(hide_password=False),
         target_metadata=target_metadata,
         literal_binds=True,
         dialect_opts={"paramstyle": "named"},
@@ -67,11 +78,7 @@ def run_migrations_online() -> None:
     and associate a connection with the context.
 
     """
-    connectable = engine_from_config(
-        config.get_section(config.config_ini_section, {}),
-        prefix="sqlalchemy.",
-        poolclass=pool.NullPool,
-    )
+    connectable = create_engine(database_url, poolclass=pool.NullPool)
 
     with connectable.connect() as connection:
         context.configure(connection=connection, target_metadata=target_metadata)

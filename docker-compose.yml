@@ -115,6 +115,10 @@ services:
     depends_on:
       postgres:
         condition: service_healthy
+    # Адрес БД миграции собирают из POSTGRES_* (src.database), как бот; .env в образ
+    # не попадает (.dockerignore), поэтому он передаётся сюда явно.
+    env_file:
+      - .env
     environment:
       - POSTGRES_HOSTNAME=postgres
     command: ["poetry", "run", "alembic", "upgrade", "head"]
