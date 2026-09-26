@@ -25,23 +25,18 @@ from .services import (
     BattleRecordService,
     BattleService,
     BattleTextGenerator,
-    BroadcastService,
     ChatService,
     CooldownService,
     DialogService,
     DuelService,
-    GhoulQuizService,
     GhoulService,
-    LevelUpService,
     MediaDownloader,
     MediaService,
     MobService,
-    NotificationTicker,
     PlayerLookupService,
     ResetService,
     RpCommandsService,
     StatsEditService,
-    SyncEntitiesService,
     TransferService,
     UserService,
     WikipediaService,
@@ -123,14 +118,6 @@ class Container(containers.DeclarativeContainer):
         balances_log_repository,
     )
 
-    sync_entities_service = providers.Factory(
-        SyncEntitiesService,
-        user_repository,
-        ghoul_repository,
-        user_cooldown_repository,
-        chat_repository,
-    )
-
     ghoul_service = providers.Factory(
         GhoulService,
         user_repository,
@@ -182,8 +169,6 @@ class Container(containers.DeclarativeContainer):
         dialog_service=dialog_service,
     )
 
-    ghoul_quiz_service = providers.Factory(GhoulQuizService)
-
     player_lookup_service = providers.Factory(
         PlayerLookupService,
         user_repo=user_repository,
@@ -198,12 +183,6 @@ class Container(containers.DeclarativeContainer):
         user_repo=user_repository,
         ghoul_repo=ghoul_repository,
         balances_log_repo=balances_log_repository,
-    )
-    broadcast_service = providers.Factory(
-        BroadcastService,
-        user_repo=user_repository,
-        chat_repo=chat_repository,
-        bot=bot,
     )
 
     reset_service = providers.Factory(
@@ -232,15 +211,3 @@ class Container(containers.DeclarativeContainer):
 
     video_cutter_service = providers.Singleton(VideoCutterService)
     video_worker = providers.Singleton(VideoWorker, video_cutter_service)
-
-    notification_ticker = providers.Singleton(
-        NotificationTicker, bot=bot, dialog_service=dialog_service
-    )
-
-    level_up_service = providers.Factory(
-        LevelUpService,
-        user_service=user_service,
-        ghoul_service=ghoul_service,
-        dialog_service=dialog_service,
-        bot=bot,
-    )

@@ -1,5 +1,6 @@
+from pathlib import Path
+
 import pytest
-from aiogram.exceptions import TelegramForbiddenError
 from sqlalchemy import select
 
 from src.bot.game_configs import LEVEL_UP_CONFIG
@@ -10,26 +11,32 @@ from src.bot.repositories.user import UserRepository
 from src.bot.repositories.user_coldown import UserCooldownRepository
 from src.bot.services.dialog import DialogService
 from src.bot.services.ghoul import GhoulService
-from src.bot.services.level_up import LevelUpService
 from src.bot.services.user import UserService
 from src.database.models import User
+from src.selfrot_bot.services.level_up import LevelUpService
+from src.selfrot_bot.services.notify import NotifyError
 
 
 class FakeBot:
-    """По умолчанию просто копит отправленные сообщения. can_send=False
-    имитирует самый частый в этом проекте случай - юзер играл только в
-    чате, ни разу не открыв бота в личке, Telegram отказывает в отправке."""
+    """Notifier для тестов. По умолчанию просто копит отправленные сообщения.
+    can_send=False имитирует самый частый в этом проекте случай - юзер играл
+    только в чате, ни разу не открыв бота в личке, Telegram отказывает в отправке."""
 
     def __init__(self, can_send: bool = True):
         self.can_send = can_send
         self.sent: list[tuple[int, str]] = []
 
-    async def send_message(self, chat_id: int, text: str):
+    async def send_message(
+        self, chat_id: int, text: str, *, parse_mode: str | None = None
+    ) -> None:
         if not self.can_send:
-            raise TelegramForbiddenError(
-                method=None, message="Forbidden: bot can't initiate conversation"
-            )
+            raise NotifyError("Forbidden: bot can't initiate conversation")
         self.sent.append((chat_id, text))
+
+    async def send_video(
+        self, chat_id: int, video: str | Path, *, caption: str | None = None
+    ) -> str:
+        raise AssertionError("левелап не шлёт видео")
 
 
 def _make_level_up_service(session, bot):
@@ -50,7 +57,7 @@ def _make_level_up_service(session, bot):
         user_service=user_service,
         ghoul_service=ghoul_service,
         dialog_service=DialogService(),
-        bot=bot,
+        notifier=bot,
     )
 
 

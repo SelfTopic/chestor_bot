@@ -153,7 +153,7 @@ JSON, `.get()`) сужай через `isinstance` / `assert`, прежде че
 
 Этапы (отмечай `✓` и коммить вместе с работой):
 
-1. Удалить оболочку прода: `src/bot/{routers,filters,middlewares,__main__.py}`, прод-версии
+1. ✓ Удалить оболочку прода: `src/bot/{routers,filters,middlewares,__main__.py}`, прод-версии
    сервисов, у которых в порте есть замена (`level_up`, `admin/broadcast`,
    `notification_ticker`, `sync_entity`), и их тесты.
 2. Отвязать от aiogram сервисы, которые использует порт: `containers.py` (провайдер `bot`),
