@@ -7,6 +7,7 @@ from typing import Any
 
 import aiohttp
 import pytest
+from pydantic import SecretStr
 
 from src.config import settings
 from src.selfrot_bot import __main__ as entry
@@ -28,9 +29,9 @@ def started(monkeypatch: pytest.MonkeyPatch) -> list[tuple[str, dict[str, Any]]]
     # main() настраивает логи с файлом logs.log в корне репо: тестам режима это не
     # нужно, а настоящий logs.log разработчика ротировался бы при первом warning.
     monkeypatch.setattr(entry, "setup_logging", lambda: None)
-    monkeypatch.setenv("SELFROT_BOT_TOKEN", "1:TEST")
-    monkeypatch.delenv("SELFROT_WEBHOOK_URL", raising=False)
-    monkeypatch.delenv("SELFROT_WEBHOOK_SECRET", raising=False)
+    monkeypatch.setattr(settings, "BOT_TOKEN", SecretStr("1:TEST"))
+    monkeypatch.delenv("WEBHOOK_URL", raising=False)
+    monkeypatch.delenv("WEBHOOK_SECRET", raising=False)
     return calls
 
 
@@ -44,8 +45,8 @@ def test_dev_polls(started, monkeypatch):
 
 def test_not_dev_uses_webhook(started, monkeypatch):
     monkeypatch.setattr(settings, "ENV", "PROD")
-    monkeypatch.setenv("SELFROT_WEBHOOK_URL", "https://chestor.site/webhook/selfrot")
-    monkeypatch.setenv("SELFROT_WEBHOOK_SECRET", "s3cret_-")
+    monkeypatch.setenv("WEBHOOK_URL", "https://chestor.site/webhook/selfrot")
+    monkeypatch.setenv("WEBHOOK_SECRET", "s3cret_-")
 
     entry.main()
 
@@ -62,11 +63,11 @@ def test_not_dev_uses_webhook(started, monkeypatch):
     ]
 
 
-@pytest.mark.parametrize("missing", ["SELFROT_WEBHOOK_URL", "SELFROT_WEBHOOK_SECRET"])
+@pytest.mark.parametrize("missing", ["WEBHOOK_URL", "WEBHOOK_SECRET"])
 def test_webhook_without_settings_stops_before_start(started, monkeypatch, missing):
     monkeypatch.setattr(settings, "ENV", "PROD")
-    monkeypatch.setenv("SELFROT_WEBHOOK_URL", "https://chestor.site/webhook/selfrot")
-    monkeypatch.setenv("SELFROT_WEBHOOK_SECRET", "s3cret")
+    monkeypatch.setenv("WEBHOOK_URL", "https://chestor.site/webhook/selfrot")
+    monkeypatch.setenv("WEBHOOK_SECRET", "s3cret")
     monkeypatch.delenv(missing)
 
     with pytest.raises(SystemExit, match=missing):

@@ -56,7 +56,7 @@
    `alembic.ini` не нужен: настройки alembic — в `[tool.alembic]` `pyproject.toml`, а адрес БД
    `migrations/env.py` берёт из тех же `POSTGRES_*`, что и бот.
 4. **Бот** (для живых проверок): `poetry run python -m src.selfrot_bot > /tmp/bot.log 2>&1 &`.
-   Токен берётся из `SELFROT_BOT_TOKEN`, это тестовый бот `@true_hax0r_bot`. После каждого
+   Токен берётся из `BOT_TOKEN` (в облаке — тестовый бот `@true_hax0r_bot`). После каждого
    изменения кода перезапускай бота. Ошибка `Conflict: terminated by other getUpdates`
    значит, что этот же бот запущен где-то ещё: запиши в вопросы и продолжай без живых проверок.
 

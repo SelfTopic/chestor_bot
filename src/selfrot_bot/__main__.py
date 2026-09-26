@@ -125,11 +125,8 @@ def main() -> None:
     except ValueError as e:
         sys.exit(str(e))
 
-    # Отдельная переменная, а не BOT_TOKEN из .env: порт нельзя случайно запустить
-    # на токене прод-бота.
-    token = os.environ.get("SELFROT_BOT_TOKEN")
-    if not token:
-        sys.exit("Задайте SELFROT_BOT_TOKEN (токен dev-бота, не прод)")
+    # Порт и есть бот: токен — BOT_TOKEN, как у прода (обязателен в src.config).
+    token = settings.BOT_TOKEN.get_secret_value()
 
     # Как у прода: ENV=DEV — polling, иначе вебхук. В отличие от прода секрет не в
     # пути URL (там токен бота попадал в логи nginx), а в заголовке, как требует
@@ -140,12 +137,12 @@ def main() -> None:
         dispatcher.start_polling()
         return
 
-    url = os.environ.get("SELFROT_WEBHOOK_URL")
-    secret = os.environ.get("SELFROT_WEBHOOK_SECRET")
+    url = os.environ.get("WEBHOOK_URL")
+    secret = os.environ.get("WEBHOOK_SECRET")
     if not url or not secret:
         sys.exit(
-            f"ENV={settings.ENV} значит вебхук: задайте SELFROT_WEBHOOK_URL "
-            "и SELFROT_WEBHOOK_SECRET (или ENV=DEV для polling)"
+            f"ENV={settings.ENV} значит вебхук: задайте WEBHOOK_URL "
+            "и WEBHOOK_SECRET (или ENV=DEV для polling)"
         )
     dispatcher.start_webhook(
         url=url, secret_token=secret, host="0.0.0.0", port=WEBHOOK_PORT

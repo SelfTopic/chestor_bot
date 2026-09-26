@@ -46,4 +46,4 @@ COPY --from=builder /opt/poetry-venvs /opt/poetry-venvs
 
 COPY . .
 
-CMD ["poetry", "run", "python", "-m", "src.bot"]
+CMD ["poetry", "run", "python", "-m", "src.selfrot_bot"]

@@ -99,9 +99,10 @@ Telegram. Запросы, которых у прод-репозиториев н
 Проверка `DefinitionError` в selfrot смотрит только на прямые базовые классы, и через
 generic-миксин она молча отключилась бы.
 
-**Токен** порт берёт только из `SELFROT_BOT_TOKEN`, никогда из `BOT_TOKEN`, чтобы не
-запуститься на токене прода. Сервис `selfrot_bot` в `docker-compose.yml` стоит в профиле
-`selfrot`, поэтому обычный `docker compose up` прода его не трогает.
+**Запуск.** Порт — это и есть бот: сервис `bot` в `docker-compose.yml` запускает
+`src.selfrot_bot`, токен — `BOT_TOKEN`. `ENV=DEV` — polling, иначе вебхук на 8999
+(`WEBHOOK_URL`, `WEBHOOK_SECRET`). Тестовый стенд — тот же сервис в отдельном проекте
+(`docker compose -p chestor_test …`) со своим `.env`: токен тестового бота.
 
 ## Проверки
 
