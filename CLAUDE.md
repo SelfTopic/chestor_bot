@@ -139,6 +139,33 @@ JSON, `.get()`) сужай через `isinstance` / `assert`, прежде че
 `DuelTicker` (`ghoul_routers/duel/ticker.py`), задача уровня диспетчера, как
 `NotificationTicker`. Новая работа идёт уже как новые модули порта.
 
+## Текущая задача: удаление aiogram (ветка `feature/drop-aiogram`)
+
+Цель: в репозитории не остаётся кода на aiogram и зависимости от него, весь бот живёт
+в одной папке `src/bot` (слои `services/`, `repositories/` и т. д. — по одному на бота,
+без деления на «прод» и «порт»). Прод-эталон после удаления — тег `aiogram-final`:
+поведение сверяем с ним (`git show aiogram-final:src/bot/...`).
+
+На время задачи правило «прод-код в коммитах не меняется» не действует: `src/bot`
+удаляется и переписывается. Остальные правила (поведение 1:1, проверки перед каждым
+коммитом, раскладка) действуют. `dependency-injector` и `containers.py` остаются —
+это отдельная задача.
+
+Этапы (отмечай `✓` и коммить вместе с работой):
+
+1. Удалить оболочку прода: `src/bot/{routers,filters,middlewares,__main__.py}`, прод-версии
+   сервисов, у которых в порте есть замена (`level_up`, `admin/broadcast`,
+   `notification_ticker`, `sync_entity`), и их тесты.
+2. Отвязать от aiogram сервисы, которые использует порт: `containers.py` (провайдер `bot`),
+   `ghoul.get`, `user.upsert`, `media` (скачивание), `stat_upgrade.build_message`, методы
+   отправки в `coffee` / `lottery`, `battle_engine/text_generator` (→ selfrot-типы, к роутерам).
+3. Удалить `aiogram` из `pyproject.toml`, `poetry lock`.
+4. Слить `src/selfrot_bot` в `src/bot` (`git mv` + импорты), прод-мост `BattleService`
+   движка переименовать в `BattleEngine`, обновить `test_layout.py`, compose, `selfrot check`.
+5. Тесты прода: нужные (домен, репозитории, гонки) перенести, дубли и ненужные удалить;
+   `tests_selfrot/` → `tests/`.
+6. Документация: этот файл, `README.md`, `ARCHITECTURE.md`, `Dockerfile`; удалить `docs/port-plan.md`.
+
 ## Git
 
 Коммить логичными шагами: один роутер или одна область — один коммит, и каждый коммит
