@@ -35,38 +35,6 @@ async def seed_cooldown_type(cooldown_repo):
 # --- clear_cooldown ----------------------------------------------------------
 
 
-async def test_clear_cooldown_removes_active_cooldown(
-    cooldown_service, make_user, seed_cooldown_type
-):
-    await make_user(telegram_id=600_000_001)
-    await seed_cooldown_type("TEST_COOLDOWN")
-    await cooldown_service.set_cooldown(telegram_id=600_000_001, cooldown_type="TEST_COOLDOWN")
-    assert await cooldown_service.is_end_cooldown(600_000_001, "TEST_COOLDOWN") is True
-
-    cleared = await cooldown_service.clear_cooldown(600_000_001, "TEST_COOLDOWN")
-
-    assert cleared is True
-    assert await cooldown_service.is_end_cooldown(600_000_001, "TEST_COOLDOWN") is False
-
-
-async def test_clear_cooldown_returns_false_when_nothing_active(
-    cooldown_service, make_user, seed_cooldown_type
-):
-    await make_user(telegram_id=600_000_002)
-    await seed_cooldown_type("TEST_COOLDOWN")
-
-    cleared = await cooldown_service.clear_cooldown(600_000_002, "TEST_COOLDOWN")
-
-    assert cleared is False
-
-
-async def test_clear_cooldown_unknown_type_raises(cooldown_service, make_user):
-    await make_user(telegram_id=600_000_003)
-
-    with pytest.raises(ValueError):
-        await cooldown_service.clear_cooldown(600_000_003, "NOT_A_REAL_TYPE")
-
-
 # --- clear_all_cooldowns ------------------------------------------------------
 
 

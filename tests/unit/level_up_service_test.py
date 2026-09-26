@@ -3,7 +3,6 @@ from pathlib import Path
 import pytest
 from sqlalchemy import select
 
-from src.bot.game_configs import LEVEL_UP_CONFIG
 from src.bot.repositories.balances_log import BalancesLogRepository
 from src.bot.repositories.chat import ChatRepository
 from src.bot.repositories.ghoul import GhoulRepository
@@ -59,16 +58,6 @@ def _make_level_up_service(session, bot):
         dialog_service=DialogService(),
         notifier=bot,
     )
-
-
-async def test_level_up_increments_level(make_user, make_ghoul, session):
-    await make_user(telegram_id=700_000_001)
-    await make_ghoul(telegram_id=700_000_001, level=1)
-
-    service = _make_level_up_service(session, FakeBot())
-    result = await service.level_up(700_000_001)
-
-    assert result.ghoul.level == 2
 
 
 async def test_level_up_grants_cheston_reward_in_range(make_user, make_ghoul, session):
@@ -173,6 +162,7 @@ async def test_ghoul_repository_increment_fields_is_atomic_across_columns(
     repo = GhoulRepository(session)
     updated = await repo.increment_fields(700_000_008, level=1, rc_money=5)
 
+    assert updated is not None
     assert updated.level == 2
     assert updated.rc_money == 15
 

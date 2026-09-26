@@ -96,12 +96,3 @@ async def test_race_returns_none_for_unknown_bit(user_service):
     assert result is None
 
 
-async def test_get_top_balance(user_service, make_user):
-    await make_user(telegram_id=100_000_300)
-    await make_user(telegram_id=100_000_301, username="rich")
-    await user_service.plus_balance(
-        telegram_id=100_000_301, change_balance=9999, log="test"
-    )
-    top = await user_service.get_top_balance(limit=5)
-    assert len(top) >= 1
-    assert top[0].balance >= top[-1].balance

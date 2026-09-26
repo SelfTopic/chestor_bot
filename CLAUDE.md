@@ -109,10 +109,10 @@ generic-миксин она молча отключилась бы.
 Перед каждым коммитом всё должно быть чисто:
 
 ```bash
-ruff check src/bot tests_selfrot
-pyright src/bot tests_selfrot              # режим standard
+ruff check src/bot tests
+pyright src/bot tests                      # режим standard
 selfrot check --strict src.bot.__main__:Dispatcher
-python -m pytest tests_selfrot
+python -m pytest tests
 ```
 
 - `tests_selfrot/` — тесты порта. Им нужен Docker: поднимается `postgres:16-alpine` на
@@ -162,7 +162,7 @@ JSON, `.get()`) сужай через `isinstance` / `assert`, прежде че
 3. ✓ Удалить `aiogram` из `pyproject.toml`, `poetry lock`.
 4. ✓ Слить `src/selfrot_bot` в `src/bot` (`git mv` + импорты), прод-мост `BattleService`
    движка переименовать в `BattleEngine`, обновить `test_layout.py`, compose, `selfrot check`.
-5. Тесты прода: нужные (домен, репозитории, гонки) перенести, дубли и ненужные удалить;
+5. ✓ Тесты прода: нужные (домен, репозитории, гонки) перенести, дубли и ненужные удалить;
    `tests_selfrot/` → `tests/`.
 6. Документация: этот файл, `README.md`, `ARCHITECTURE.md`, `Dockerfile`; удалить `docs/port-plan.md`.
 

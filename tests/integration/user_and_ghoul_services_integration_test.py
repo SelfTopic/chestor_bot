@@ -198,24 +198,3 @@ async def test_power_calculation_after_register(ghoul_service, make_user):
     assert power == 10
 
 
-async def test_top_balance_ordering(user_service, make_user):
-    """Топ баланса должен быть отсортирован по убыванию."""
-    await make_user(telegram_id=700_000_700, username="poor")
-    await make_user(telegram_id=700_000_701, username="rich")
-    await make_user(telegram_id=700_000_702, username="medium")
-
-    await user_service.plus_balance(
-        telegram_id=700_000_700, change_balance=100, log="test"
-    )
-    await user_service.plus_balance(
-        telegram_id=700_000_701, change_balance=9999, log="test"
-    )
-    await user_service.plus_balance(
-        telegram_id=700_000_702, change_balance=500, log="test"
-    )
-
-    top = await user_service.get_top_balance(limit=3)
-
-    balances = [u.balance for u in top]
-    assert balances == sorted(balances, reverse=True)
-    assert top[0].balance == 9999

@@ -13,19 +13,6 @@ def lookup_service(session):
     )
 
 
-async def test_returns_none_for_unknown(lookup_service):
-    result = await lookup_service.get_profile("999999999")
-    assert result is None
-
-
-async def test_lookup_by_id(lookup_service, make_user):
-    await make_user(telegram_id=500_000_001)
-    result = await lookup_service.get_profile("500000001")
-    assert result is not None
-    assert result.user.telegram_id == 500_000_001
-    assert result.ghoul is None
-
-
 async def test_lookup_by_username(lookup_service, make_user):
     await make_user(telegram_id=500_000_002, username="lookupuser")
     result = await lookup_service.get_profile("@lookupuser")

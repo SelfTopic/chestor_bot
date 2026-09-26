@@ -11,34 +11,6 @@ def ban_service(session):
     return BanService(user_repo=UserRepository(session))
 
 
-async def test_ban_user(ban_service, make_user):
-    await make_user(telegram_id=300_000_001, username="banme")
-    result = await ban_service.ban("banme", reason="читерство")
-    assert result.user.is_banned is True
-    assert result.user.ban_reason == "читерство"
-    assert result.banned_until is None
-
-
-async def test_ban_with_duration(ban_service, make_user):
-    await make_user(telegram_id=300_000_002)
-    result = await ban_service.ban("300000002", duration_str="7d")
-    assert result.banned_until is not None
-    assert result.banned_until > datetime.now(timezone.utc)
-
-
-async def test_unban_user(ban_service, make_user):
-    await make_user(telegram_id=300_000_003, username="unbanme")
-    await ban_service.ban("unbanme")
-    user = await ban_service.unban("unbanme")
-    assert user.is_banned is False
-    assert user.ban_reason is None
-
-
-async def test_ban_unknown_user_raises(ban_service):
-    with pytest.raises(ValueError):
-        await ban_service.ban("nonexistent_user_xyz")
-
-
 async def test_parse_duration_minutes(ban_service):
     result = ban_service.parse_duration("30m")
     assert result is not None
