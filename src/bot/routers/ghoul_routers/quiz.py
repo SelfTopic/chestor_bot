@@ -1,18 +1,3 @@
-"""
-/quiz: вопрос по «Токийскому гулю» из внешнего API (ctx.ghoul_quiz_service —
-services/quiz.py, ghoul_quiz 0.2, https://chestor.site/api) и 4 варианта ответа кнопками.
-
-Исправленный прод-баг: у прода кнопка несёт сам текст варианта
-("quiz_answer_<id>_<вариант>"), поэтому вариант с "_" роняет разбор, а длинный
-вариант (кириллица занимает 2 байта) не влезает в 64 байта callback_data, и
-вопрос вообще не отправляется. Здесь кнопка несёт индекс варианта, а текст
-берётся из самой клавиатуры сообщения под кнопкой. Ответ пользователю тот же.
-
-Как у прода: состояние квиза (FSM) у каждого своё в каждом чате, "Play Again"
-состояние не проверяет, а ответ и перезапуск не закрывают часики на кнопке
-(callback.answer() прод зовёт только для "Quiz is not active.").
-"""
-
 import random
 from typing import Any
 
@@ -41,13 +26,11 @@ class QuizStates(States):
 
 class QuizAnswer(CallbackPayload, prefix="quiz_answer"):
     question_id: int
-    option: int  # индекс варианта в клавиатуре сообщения
+    option: int
 
 
 class QuizRestart(CallbackPayload, prefix="quiz_restart"):
-    """Кнопка "Play Again"."""
-
-
+    pass
 async def new_question(ctx: AppContext[Any]) -> tuple[str, InlineKeyboardMarkup]:
     question = await ctx.ghoul_quiz_service.get_random_quiz()
     options = random.sample(question.answer_options, k=4)
@@ -117,8 +100,6 @@ class QuizAnswerHandler(CallbackQueryHandler[AppContext[DataCallbackQuery]]):
 
 
 class QuizNotActiveHandler(CallbackQueryHandler[AppContext[DataCallbackQuery]]):
-    """Ответ не в состоянии ожидания (уже ответил, или квиз начинал кто-то другой)."""
-
     query = QuizAnswer.filter()
 
     async def handle(self) -> None:

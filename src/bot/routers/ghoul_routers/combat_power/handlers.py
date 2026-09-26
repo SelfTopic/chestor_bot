@@ -1,11 +1,3 @@
-"""
-"боевая мощь" (rich-таблицы, текстом при ошибке rich) и короткий алиас "бм"
-(два числа: мощь вне боя и в бою прямо сейчас).
-
-Ветка "мёртвый гуль" недостижима (GhoulMiddleware не пускает мёртвых), но
-оставлена как у прода.
-"""
-
 from selfrot import BaseRouter, MessageHandler
 from selfrot.filter import HasUser, Text
 

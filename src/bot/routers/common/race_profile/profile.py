@@ -18,7 +18,7 @@ class RaceProfileHandler(MessageHandler[AppContext[UserMessage]]):
     query = (Text("распрофиль", ignore_case=True) | Command("race_profile")) & HasUser()
 
     async def battle_stats(self, telegram_id: int) -> BattleStats:
-        # запросы идут по очереди: у одной AsyncSession параллельные запросы недопустимы
+        # Запросы по очереди: у одной AsyncSession параллельные запросы недопустимы.
         battles = self.ctx.battle_record_service
         return BattleStats(
             wins=await battles.count_wins_vs_players(telegram_id),

@@ -1,8 +1,3 @@
-"""Боевой движок. `core/` - чистый домен без БД (статы, формулы, раунды,
-Battle/Fighter). `BattleEngine`/`MobService` -
-мосты между игровым миром (Ghoul из БД) и движком. Показ боя игроку -
-`routers/ghoul_routers/battle_text_generator.py`."""
-
 from .engine import BattleEngine
 from .core import (
     AttackAction,

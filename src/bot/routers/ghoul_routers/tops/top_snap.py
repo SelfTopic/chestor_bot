@@ -1,10 +1,3 @@
-"""
-"топ щелк [N]": топ по количеству "щелчков". N разбирает GhoulTopHandler (count.py).
-
-Исправленный прод-баг: прод ловил команду по началу текста и падал IndexError на
-"топ щелкает" (split()[2] там нет). Здесь это команда "топ щелк" целиком.
-"""
-
 from selfrot import BaseRouter, MessageHandler
 from selfrot.types import TextMessage
 

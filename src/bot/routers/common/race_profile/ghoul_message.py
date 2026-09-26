@@ -21,8 +21,6 @@ from ...rich import paragraph
 
 @dataclass(frozen=True)
 class BattleStats:
-    """Бои гуля: с игроками (дуэли) и с мобами отдельно, «всего» включает оба вида."""
-
     wins: int
     losses: int
     total: int
@@ -39,10 +37,6 @@ def rich_profile(
     power: int,
     stats: BattleStats,
 ) -> InputRichMessage:
-    """Профиль гуля как rich-сообщение (Bot API 10.1+), см. BATTLE_DESIGN.md
-    ("UX профиля"). "Всего боёв" включает дуэли и мобов, вторая строка честно
-    показывает только мобов."""
-
     tier = get_hunger_tier(ghoul.hunger)
 
     kagune_items = [
@@ -60,7 +54,7 @@ def rich_profile(
     stat_items = [
         InputRichBlockListItem(blocks=[paragraph(f"{label}: {getattr(ghoul, key)}")])
         for label, key, _emoji in STATS
-        if key != "max_health"  # здоровье показываем отдельной строкой ниже
+        if key != "max_health"
     ]
 
     blocks: list[Any] = [
@@ -112,7 +106,6 @@ def plain_profile(
     power: int,
     stats: BattleStats,
 ) -> str:
-    """Тот же профиль обычным текстом: на случай, когда rich-сообщение не принято."""
     return dialog_service.text(
         key="ghoul_profile",
         name=user.full_name,

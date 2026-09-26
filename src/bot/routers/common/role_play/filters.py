@@ -20,22 +20,11 @@ TArgs = TypeVar("TArgs", bound=CommandArgs)
 
 @dataclass(frozen=True)
 class RpMatch(Generic[TArgs]):
-    """Что нашёл фильтр: команда чата и тот же Command, которым она распознана."""
-
     rp: RpCommandDTO
-    command: Command[TArgs]  # аргументы берут им: command.parse(ctx)
+    command: Command[TArgs]
 
 
 class RpCommandFilter(BaseFilter[AppContext[Any]], Generic[TArgs]):
-    """
-    Сообщение начинается с Role-Play команды этого чата. Имена команд лежат в БД, а
-    Command принимает имя при создании, поэтому Command собирается на лету, по одному
-    на команду чата: фильтр и разбор аргументов в хендлере пользуются одним и тем же.
-    args задаёт форму аргументов (она описана рядом с хендлером). Найденное фильтр не
-    хранит (query один на класс, апдейты идут параллельно): хендлер берёт его явно
-    через find(ctx).
-    """
-
     guarantees = TextMessage
 
     def __init__(self, args: type[TArgs]) -> None:
@@ -45,7 +34,6 @@ class RpCommandFilter(BaseFilter[AppContext[Any]], Generic[TArgs]):
         try:
             return Command(rp.command, self.args, prefixes="", ignore_case=True)
         except DefinitionError:
-            # имя, которое Command не принимает (пустое): такую команду не ищем
             logger.warning("Role-Play команда %r не подходит для Command", rp.command)
             return None
 
@@ -68,8 +56,6 @@ class RpCommandFilter(BaseFilter[AppContext[Any]], Generic[TArgs]):
 
 
 class SetRpOnMedia(BaseFilter[AppContext[Any]]):
-    """Фото или гифка с подписью `/set_rp ...`. Слов мало — хендлер подскажет формат."""
-
     guarantees = CaptionMessage
 
     async def check(self, ctx: BaseContext[Any]) -> bool:

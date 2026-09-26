@@ -17,12 +17,9 @@ logger = logging.getLogger(__name__)
 
 
 class WordleGameHandler(MessageHandler[AppContext[TextUserMessage]]):
-    # одно слово из пяти символов от игрока с незавершённой партией: у прода это был
-    # один самописный фильтр, теперь готовый TextRegexp плюс проверка партии
     query = TextRegexp(r"\s*\S{5}\s*", full=True) & HasActiveWordleGame()
 
     async def delete_board(self, message_id: int) -> None:
-        """Удалить старую доску; не вышло, так не вышло: партия от этого не страдает."""
         try:
             await self.ctx.bot.delete_message(
                 chat_id=self.ctx.message.chat.id, message_id=message_id
@@ -31,7 +28,6 @@ class WordleGameHandler(MessageHandler[AppContext[TextUserMessage]]):
             logger.debug("Failed to delete board message %d", message_id)
 
     async def notify_finish(self, result: WordleGuessResult) -> None:
-        """Финальное уведомление о победе или поражении."""
         if not (result.is_won or result.is_lost):
             return
 

@@ -64,7 +64,6 @@ class LotteryService:
                 telegram_id=user_id, change_balance=bet_amount, log="lottery bet"
             )
 
-        # Видео подбирает роутер, в записи file_id пока не бывает (как у прода).
         video_file_id = None
 
         await self.lottery_repository.insert(
@@ -88,7 +87,6 @@ class LotteryService:
         )
 
     def _get_random_color_by_chance(self) -> DepColor:
-        """Выбрать случайный цвет с учётом шансов выпадения"""
         colors = LOTTERY_CONFIG.colors
         if not colors:
             raise ValueError("Список цветов для лотереи не может быть пустым")

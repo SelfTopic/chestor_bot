@@ -26,10 +26,6 @@ class ScheduledNotificationRepository(Base):
         fire_at: datetime,
         threshold: Optional[int] = None,
     ) -> None:
-        """Ставит (или переставляет, если уже есть) один активный пуш для
-        пары (telegram_id, notification_type). Не история - строка одна на
-        пару, целиком перезаписывается при каждом пересчёте расписания."""
-
         await self.session.execute(
             insert(ScheduledNotification)
             .values(

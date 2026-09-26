@@ -50,8 +50,7 @@ class DepnutHandler(MessageHandler[AppContext[TextUserMessage]]):
         )
 
     async def reply_later(self, text: str) -> None:
-        # ошибка отложенного ответа не должна попадать в on_error: результат уже
-        # записан в БД, а пользователь просто не увидит текст (как у прода)
+        # Ошибка отложенного ответа не идёт в on_error: ставка уже записана в БД.
         try:
             await self.ctx.message.reply(text)
         except Exception:
@@ -60,11 +59,6 @@ class DepnutHandler(MessageHandler[AppContext[TextUserMessage]]):
     async def send_answer(
         self, lottery_service: LotteryService, dep_result: DepResult
     ) -> None:
-        """
-        Ответ как у прода (LotteryService.send_answer, тег aiogram-final). Разница
-        одна: результат после гифки приходит через self.defer (транзакция к тому времени закрыта и
-        закоммичена, слот не занят), а не через create_task с sleep в сервисе.
-        """
         message = self.ctx.message
         folder_name = COLOR_TO_FOLDER.get(dep_result.winning_color.value, "red")
         video_path = await lottery_service.media_service.get_random_lottery_video(
@@ -101,7 +95,7 @@ class DepnutHandler(MessageHandler[AppContext[TextUserMessage]]):
             video_message.animation.duration if video_message.animation else 2
         )
 
-        # Пауза ради UX: не спойлерить исход раньше, чем доиграется гифка.
+        # Пауза, чтобы итог не пришёл раньше, чем доиграет гифка.
         self.defer(
             self.reply_later,
             self.result_text(dep_result),
@@ -109,7 +103,7 @@ class DepnutHandler(MessageHandler[AppContext[TextUserMessage]]):
         )
 
     async def handle(self) -> None:
-        args = self.cmd.parse(self.ctx)  # неверный формат: CommandArgsError
+        args = self.cmd.parse(self.ctx)
         lottery_service = self.ctx.lottery_service
 
         chosen_color = lottery_service.parse_color(color_str=args.color)
@@ -123,9 +117,6 @@ class DepnutHandler(MessageHandler[AppContext[TextUserMessage]]):
         await self.send_answer(lottery_service, dep_result)
 
     async def on_error(self, exc: Exception) -> None:
-        # Как у прода: любая ошибка ставки превращается в ответ, бот не молчит. Разница
-        # одна: ошибка теперь доходит до DatabaseMiddleware, и если она случилась после
-        # списания (например, не отправилась гифка), ставка откатывается вместе с ней.
         message = self.ctx.message
 
         if isinstance(exc, CommandArgsError):

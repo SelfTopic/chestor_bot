@@ -53,31 +53,17 @@ logger = logging.getLogger(__name__)
 
 @dataclass(frozen=True)
 class Addressee:
-    """Кому адресована команда."""
-
     telegram_id: int
     first_name: str
 
 
+# Сервисы создаются лениво, один раз на апдейт. Сессию БД кладёт DatabaseMiddleware уже
+# после create_context, поэтому в after_handle и отложенных вызовах сервисы с БД недоступны.
 @dataclass
 class AppContext(BaseContext[TEvent]):
-    """
-    Контекст одного апдейта. Все зависимости хендлера лежат здесь, явно и с типами:
-    хендлер берёт `self.ctx.transfer_service`, а не лезет в контейнер.
-
-    Сервисы создаются лениво и один раз на апдейт (cached_property): контейнер
-    привязывает их к сессии БД из session_context, а её кладёт DatabaseMiddleware,
-    то есть уже ПОСЛЕ create_context. Поэтому обращаться к ним можно в фильтрах,
-    мидлварях после Database и в handle, но не в after_handle и отложенных вызовах:
-    к тому времени сессия закрыта (сервисы без БД, вроде video_worker, безопасны).
-    Новый сервис добавляется сюда одной строкой; контейнер остаётся деталью реализации.
-    """
-
     dialog_service: DialogService
     container: Container
     session_factory: async_sessionmaker[AsyncSession]
-    # Не прод-GhoulQuizService из контейнера: один клиент ghoul_quiz 0.2 на
-    # процесс, его держит Dispatcher (см. services/quiz.py).
     ghoul_quiz_service: QuizService
 
     @cached_property
@@ -106,12 +92,10 @@ class AppContext(BaseContext[TEvent]):
 
     @cached_property
     def battle_engine(self) -> BattleEngine:
-        """Прод-мост к движку боя: гуль → боец, мощь, проверка готовности к бою."""
         return self.container.battle_engine()
 
     @cached_property
     def battle_service(self) -> BattleService:
-        """Бои целиком: участники, бой, последствия, счёт (services/battle.py)."""
         return BattleService(
             engine=self.battle_engine,
             fights=FightRepository(
@@ -178,7 +162,6 @@ class AppContext(BaseContext[TEvent]):
 
     @cached_property
     def media_repository(self) -> MediaRepository:
-        # Не сервис: /add_gif сам сохраняет файл, а до БД добирается репозиторием.
         return self.container.media_repository()
 
     @cached_property
@@ -187,7 +170,7 @@ class AppContext(BaseContext[TEvent]):
 
     @cached_property
     def broadcast_service(self) -> BroadcastService:
-        # Не из Container: ему нужен Notifier, а тот живёт на Bot этого апдейта.
+        # Не из контейнера: Notifier живёт на Bot этого апдейта.
         return BroadcastService(
             self.container.user_repository(),
             self.container.chat_repository(),
@@ -201,10 +184,6 @@ class AppContext(BaseContext[TEvent]):
         )
 
     async def db_user(self) -> User:
-        """
-        Отправитель апдейта как запись БД. Запись создаёт SyncEntitiesMiddleware до
-        хендлера, поэтому её отсутствие это ошибка, а не обычный случай.
-        """
         sender = self.user
         user = await self.user_service.get(sender.id) if sender is not None else None
 
@@ -215,16 +194,11 @@ class AppContext(BaseContext[TEvent]):
         return user
 
     async def first_names(self, telegram_ids: Collection[int]) -> dict[int, str]:
-        """Имена игроков одним запросом (топы: прод брал каждого отдельным get)."""
         return await UserNameRepository(self.container.db_session()).first_names(
             telegram_ids
         )
 
     async def db_ghoul(self) -> Ghoul:
-        """
-        Гуль отправителя апдейта как запись БД. Существование и то, что он жив,
-        гарантирует GhoulMiddleware до хендлера (весь ghoul_routers за ней), поэтому
-        отсутствие здесь это ошибка, а не обычный случай — как и у db_user."""
         sender = self.user
         ghoul = (
             await self.ghoul_service.get(find_by=sender.id)
@@ -239,12 +213,6 @@ class AppContext(BaseContext[TEvent]):
         return ghoul
 
     async def addressee(self, mention: str = "") -> Addressee | None:
-        """
-        Кому адресована команда: автору сообщения, на которое ответили (имя берётся из
-        самого Telegram-сообщения, человека в БД может и не быть), иначе @username из
-        аргументов (он ищется в БД). None, если адресата нет: команда молчит.
-        Неизвестный @username это UserNotFound.
-        """
         event = self.event
         if isinstance(event, Message):
             replied = event.reply_to_message
@@ -265,14 +233,6 @@ class AppContext(BaseContext[TEvent]):
     async def _send_gif(
         self, send: Callable[..., Awaitable[Message]], media: Media, caption: str
     ) -> Message:
-        """
-        Гиф с кэшем telegram_file_id: сперва уже известный id (дёшево, без аплоада),
-        а если он протух (TelegramBadRequest — файл удалили из Telegram и т.п.),
-        перезаливка с диска и новый id в кэш. Тот же приём, что уже есть у
-        NotificationTicker для видео (media_paths.py/notification_ticker.py), включая
-        прод-особенность: id кэшируется только веткой retry, не первой заливкой с
-        диска, когда кэша ещё не было вовсе — сохранено как есть.
-        """
         try:
             return await send(
                 animation=media.telegram_file_id or InputFile.from_path(media.path),
@@ -289,27 +249,14 @@ class AppContext(BaseContext[TEvent]):
             return sent
 
     async def answer_gif(self, media: Media, caption: str = "") -> Message:
-        """Гиф новым сообщением в чат апдейта (как ctx.answer_animation, но с кэшем
-        file_id — см. _send_gif)."""
         return await self._send_gif(self.answer_animation, media, caption)
 
     async def reply_gif(self, media: Media, caption: str = "") -> Message:
-        """Гиф в ответ на сообщение апдейта (как ctx.reply_animation, но с кэшем
-        file_id — см. _send_gif)."""
         return await self._send_gif(self.reply_animation, media, caption)
 
     async def cooldown_remaining(
         self, telegram_id: int, cooldown_name: str
     ) -> TimeComponents | None:
-        """
-        None — telegram_id не на кулдауне cooldown_name. Иначе — сколько осталось
-        (TimeComponents: days/hours_remaining/total_hours/minutes_remaining/
-        seconds_remaining, см. src.bot.utils.parse_time). Только сам факт и остаток
-        времени — текст ответа и ключ dialogs.json остаются на хендлере: у прода
-        они не унифицированы (где-то есть hours, где-то нет, а mob_fight.py вообще
-        отвечает жёстким текстом, не через DialogService), а такое различие — не
-        то, что стоит скрывать хелпером.
-        """
         cooldown = await self.cooldown_service.get_active_cooldown(
             telegram_id, cooldown_name
         )

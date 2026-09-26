@@ -7,8 +7,6 @@ from .callback_data import DuelPress
 def consent_keyboard(
     duel_id: int, initiator_id: int, target_id: int
 ) -> InlineKeyboardMarkup:
-    """Две отдельные кнопки: сама команда "дуэль" ещё не согласие, нужно явное
-    подтверждение обеих сторон."""
     return (
         InlineKeyboard()
         .button(

@@ -1,9 +1,3 @@
-"""
-Сервисы, нужные дуэли целиком, одним набором: в хендлере они берутся из ctx, а в
-DuelTicker (таймауты) собираются из контейнера на собственной сессии тикера. fight.py
-не знает, откуда его вызвали.
-"""
-
 from dataclasses import dataclass
 from typing import Any
 
@@ -39,8 +33,6 @@ class DuelServices:
     def from_container(
         cls, container: Container, dialog_service: DialogService, notifier: Notifier
     ) -> "DuelServices":
-        """Сессию БД контейнер берёт из session_context: вызывающий ставит её сам,
-        как DatabaseMiddleware."""
         user_service = container.user_service()
         ghoul_service = container.ghoul_service()
         battle_record_service = container.battle_record_service()

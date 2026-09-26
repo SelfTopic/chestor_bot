@@ -9,8 +9,6 @@ from ..context import AppContext
 
 
 class DatabaseMiddleware(BaseMiddleware[AppContext]):
-    """Одна сессия на апдейт: открывается здесь, коммитится после хендлера."""
-
     session: AsyncSession
     token: Token[AsyncSession]
 

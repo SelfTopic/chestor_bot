@@ -1,23 +1,3 @@
-"""Персистентность вокруг боя - ДВЕ разные вещи в одном сервисе, у них
-общий жизненный цикл (claim -> бой играется -> release + record, всегда
-вместе, всегда в этом порядке), поэтому не разнесены на 2 крошечных
-сервиса:
-
-1) "Занятость прямо сейчас" (`ActiveBattle`) - эфемерный лок, не даёт
-   гулю оказаться в двух боях одновременно. Найдено как реальный эксплойт
-   (см. чат): пригласить себя с твинка на дуэль и ОДНОВРЕМЕННО затеять бой
-   с мобом - без лока оба боя резолвятся независимо, и в зависимости от
-   того, чья запись урона в БД "победит" последней, можно фактически
-   фармить мобов без потери HP. Защита - на уровне БД (PK-конфликт в
-   `active_battles`, см. `ActiveBattleRepository.try_claim`), а не
-   "проверить-потом-создать" в коде - именно "проверить, а не занято ли"
-   отдельным шагом ДО создания брони и есть тот самый race condition,
-   который эксплойт использует.
-
-2) "История боёв" (`Battle`) - постоянный лог для будущих дневных лимитов
-   (5/пара, 20/всего - BATTLE_ENGINE.md 4.4) и счётчика побед/поражений в
-   профиле (5.2)."""
-
 import logging
 from datetime import timedelta
 from typing import Optional
@@ -39,12 +19,8 @@ class BattleRecordService:
         self.active_battle_repository = active_battle_repository
         self.battle_repository = battle_repository
 
-    # --- Занятость (лок) ----------------------------------------------------
 
     async def try_claim_mob_fight(self, telegram_id: int) -> bool:
-        """True - занято, можно начинать бой. False - этот гуль уже в
-        каком-то бою (pending или active) - начинать нельзя."""
-
         return await self.active_battle_repository.try_claim(
             [
                 {
@@ -59,10 +35,6 @@ class BattleRecordService:
     async def try_claim_duel(
         self, telegram_id_a: int, telegram_id_b: int, status: str = "pending_confirmation"
     ) -> bool:
-        """Занимает ОБЕИХ участников одной атомарной операцией - либо оба
-        успешно заняты, либо НИ ОДИН (см. ActiveBattleRepository.try_claim) -
-        именно это закрывает эксплойт "одновременно два боя"."""
-
         return await self.active_battle_repository.try_claim(
             [
                 {
@@ -81,20 +53,11 @@ class BattleRecordService:
         )
 
     async def release(self, *telegram_ids: int) -> None:
-        """Вызывать, когда бой разрешился (или отклонён/просрочен) -
-        освобождает участников для следующего боя."""
-
         await self.active_battle_repository.release(list(telegram_ids))
 
     async def is_busy(self, telegram_id: int) -> bool:
-        """Готовый источник для `BattleEngine.validate_ghoul(...,
-        has_pending_confirmation=...)`, когда появится реальный роутер
-        дуэлей/боя с мобом - сейчас им никто не пользуется (mob_fight_preview
-        не персистентна и не должна занимать лок)."""
-
         return await self.active_battle_repository.get(telegram_id) is not None
 
-    # --- История --------------------------------------------------------------
 
     async def record_mob_fight(
         self,
@@ -107,15 +70,6 @@ class BattleRecordService:
         reward_rc: Optional[int] = None,
         reward_balance: Optional[int] = None,
     ) -> None:
-        """`winner_choice` не принимается - "ограбить/отпустить/съесть"
-        (см. BATTLE_DESIGN.md "Исход боя") применимо только к дуэли, у
-        моба нет строки `User`, отбирать нечего.
-
-        `reward_balance` здесь - НЕ "отнято у моба" (мобу нечего отнимать)
-        - это CheSton-награда игроку за победу (ECONOMY.md часть 4,
-        `MOB_CONFIG.cheston_reward_for_mob_win`), тот же смысл столбца,
-        что и денежная часть исхода дуэли, просто другой источник."""
-
         await self.battle_repository.insert(
             battle_type="mob",
             participant_a_telegram_id=telegram_id,
@@ -163,16 +117,6 @@ class BattleRecordService:
             telegram_id_a, telegram_id_b, utcnow_naive() - _DAY
         )
 
-    # Счётчики побед/поражений/боёв за всё время - для профиля
-    # (BATTLE_ENGINE.md 5.2), не для дневных лимитов (см.
-    # count_total_last_24h). У каждого - 3 варианта: без суффикса - ЛЮБОЙ
-    # тип боя разом (для общего "Всего боёв" в профиле), "_vs_players" -
-    # только дуэли, "_vs_mobs" - только бои с мобами. НАМЕРЕННО раздельные
-    # методы, а не один с параметром - смешивать дуэли и мобов в одном
-    # счётчике там, где показывается конкретный только что прошедший бой,
-    # нельзя ни в коем случае (см. чат - "смешанные значения счётчиков"):
-    # после дуэли должен показываться счёт именно с игроками, после боя с
-    # мобом - именно с мобами, а не общая цифра, куда намешано и то, и то.
 
     async def count_wins(self, telegram_id: int) -> int:
         return await self.battle_repository.count_wins(telegram_id)

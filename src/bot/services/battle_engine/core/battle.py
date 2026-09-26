@@ -1,6 +1,3 @@
-"""Оркестрация всего боя - класс Battle. См. BATTLE_ENGINE.md часть 0/2.6
-и REGENERATION.md для причин, почему раунд устроен именно так."""
-
 from __future__ import annotations
 
 import random
@@ -20,8 +17,8 @@ _default_rng = random.Random()
 @dataclass(frozen=True)
 class BattleResult:
     rounds: List[RoundResult]
-    winner: Optional[str]  # "a" | "b" | None (истинная ничья, тай-брейк не спас)
-    ended_naturally: bool  # True - кто-то дошёл до 0 HP раньше MAX_ROUNDS
+    winner: Optional[str]
+    ended_naturally: bool
     final_hp_a: float
     final_hp_b: float
     stats_a: EffectiveStats
@@ -29,12 +26,6 @@ class BattleResult:
 
 
 class Battle:
-    """Оба бойца действуют одновременно каждый раунд (2.1). Валидация
-    статов происходит раньше - в конструкторе Fighter, не здесь.
-
-    Поддерживает и пошаговую игру (`play_round()` - для будущей
-    поштучной анимации в Telegram), и разовый прогон (`run()`)."""
-
     def __init__(
         self,
         fighter_a: Fighter,
@@ -42,14 +33,6 @@ class Battle:
         max_rounds: Optional[int] = None,
         compress_hp: bool = True,
     ) -> None:
-        """`compress_hp=False` - сильная сторона дерётся ВСЕРЬЁЗ: HP-пул не
-        сжимается относительно соперника (сжатие остальных статов в
-        формулах - урон/хил/уклонение/гейт/лишний удар - остаётся всегда,
-        оно невидимо игроку). Это осознанный выбор игрока при перевесе 2x+
-        (см. BATTLE_ENGINE.md 1.5) - "драться не в полную силу без согласия
-        игрока нельзя". Безопасный дефолт True: бои с мобами, дуэли при
-        перевесе <2x и таймаут ответа - всегда с форой (сжатым HP)."""
-
         self.fighter_a = fighter_a
         self.fighter_b = fighter_b
         if compress_hp:
@@ -58,35 +41,12 @@ class Battle:
         self.rounds: List[RoundResult] = []
         self._round_number = 0
         self._finished = False
-        # HP ДО последнего сыгранного раунда - нужно для тай-брейка при
-        # одновременном обоюдном нокауте (2.6). ПОСЛЕ _compress_hp_pools -
-        # тай-брейк должен работать со сжатым HP, как и весь остальной бой.
+        # HP до последнего раунда нужно для тай-брейка при обоюдном нокауте; берётся уже
+        # после сжатия пулов.
         self._hp_a_before_last = fighter_a.current_hp
         self._hp_b_before_last = fighter_b.current_hp
 
     def _compress_hp_pools(self) -> None:
-        """"Кривая перевеса силы" (см. чат) - health оказался единственным
-        боевым статом, который не проходит ни через одну формулу с
-        _compress_ratio (dodge/gate/extra_hit/raw_damage сравнивают статы
-        атакующего и защищающегося прямо в момент удара) - он просто задаёт
-        размер HP-пула напрямую. По симуляции это САМЫЙ крутой канал в
-        одиночку (health x1.5 при равенстве всех остальных статов уже давал
-        ~97% побед) - без сжатия здесь весь остальной рефакторинг формул не
-        достаточен, чтобы кривая легла на целевые точки (2x -> 75%).
-
-        Применяется здесь, а не в compute_effective_stats - только Battle
-        знает ОБОИХ бойцов сразу, а сжатие по дизайну "относительно
-        конкретного соперника В ЭТОМ бою" (не от абстрактной константы).
-
-        Слабый остаётся якорем БЕЗ ИЗМЕНЕНИЙ, сильный подтягивается к нему
-        (compress_stat_advantage) - та же схема, что и у raw_damage/
-        apply_heal. Сохраняет ДОЛЮ уже нанесённого урона (current_hp/
-        old_health), а не просто перезаписывает current_hp - иначе Battle,
-        обёрнутый вокруг уже повреждённого Fighter (см.
-        battle_engine_round_test.py, где тесты бьют fighter.take_damage()
-        ДО создания Battle, чтобы подготовить конкретный HP для одного
-        раунда), стирал бы этот урон."""
-
         health_a = self.fighter_a.stats.health
         health_b = self.fighter_b.stats.health
         compressed_a = compress_stat_advantage(health_a, health_b)
@@ -126,9 +86,8 @@ class Battle:
         return self._build_result()
 
     def _play_one_round(self, round_number: int, rng: random.Random) -> RoundResult:
-        # Снимок "гарантия ещё не использована" ДО decide_action - иначе
-        # не отличить, каким проком (гарантированным или вероятностным)
-        # обернулась вернувшаяся RoundActionType.REGEN, см. REGENERATION.md.
+        # Снимок до decide_action: после него не отличить гарантированный прок регенерации
+        # от вероятностного.
         a_guaranteed_available = not self.fighter_a.regen_guaranteed_used
         b_guaranteed_available = not self.fighter_b.regen_guaranteed_used
 
@@ -166,11 +125,6 @@ class Battle:
         extra_hits: int,
         rng: random.Random,
     ) -> "tuple[List[RoundAction], float]":
-        """Основное действие (Attack ИЛИ Regen) + ноль-два бонусных
-        FastAttack от speed - бонусные удары случаются НЕЗАВИСИМО от
-        основного действия (REGENERATION.md: "быстрый гуль после
-        регенерации ещё и может успеть ударить")."""
-
         actions: List[RoundAction] = []
         damage_dealt = 0.0
 
@@ -182,10 +136,8 @@ class Battle:
             actions.append(AttackAction(hit=hit))
             damage_dealt += hit.damage
         else:
-            # DEFENSE/IDLE зарезервированы (actions.py) - decide_action их
-            # пока никогда не возвращает. Громкая ошибка вместо тихого
-            # неверного поведения, если это когда-нибудь изменится без
-            # обновления этой функции.
+            # DEFENSE и IDLE decide_action пока не возвращает; если начнёт, лучше упасть,
+            # чем молча посчитать не то.
             raise NotImplementedError(f"RoundActionType {action_type} ещё не реализован")
 
         for _ in range(extra_hits):
@@ -200,10 +152,8 @@ class Battle:
         ended_naturally = self.fighter_a.is_defeated or self.fighter_b.is_defeated
 
         if self.fighter_a.is_defeated and self.fighter_b.is_defeated:
-            # 2.6 - одновременный обоюдный нокаут, тай-брейк не был решён
-            # явно в доке. Рабочее правило: побеждает тот, у кого HP ДО
-            # последнего обмена было выше; если и тут ничья - настоящая
-            # ничья (None).
+            # Обоюдный нокаут: побеждает тот, у кого HP до последнего раунда было выше, при
+            # равенстве ничья.
             if self._hp_a_before_last > self._hp_b_before_last:
                 winner: Optional[str] = "a"
             elif self._hp_b_before_last > self._hp_a_before_last:
@@ -211,14 +161,8 @@ class Battle:
             else:
                 winner = None
 
-            # UX-находка (см. чат): показывать "0 против 0" при обоюдном
-            # нокауте нечестно выглядит для игрока - реальное правило
-            # тай-брейка (см. выше) невидимо, а голые нули читаются как
-            # необъяснённая монетка. Победитель показывается с 1 HP вместо
-            # 0 - тот же принцип, что и у проигравшего после ВСЕГО боя
-            # (3.1, "не 0, а 1 HP"), просто здесь применяется прямо в
-            # движке для этого конкретного случая. Настоящая ничья (winner
-            # is None) не трогается - бумпить нечего.
+            # Победитель обоюдного нокаута показывается с mutual_ko_winner_hp, а не с 0: «0
+            # против 0» выглядит как монетка.
             if winner == "a":
                 hp_a = BATTLE_CONFIG.mutual_ko_winner_hp
             elif winner == "b":
@@ -228,7 +172,6 @@ class Battle:
         elif self.fighter_b.is_defeated:
             winner = "a"
         else:
-            # MAX_ROUNDS кончились без естественного конца - решает остаток HP.
             if hp_a > hp_b:
                 winner = "a"
             elif hp_b > hp_a:

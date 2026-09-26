@@ -15,12 +15,6 @@ from .stats_edits import StatsEditRouter
 
 
 class CreatorRouter(BaseRouter[AppContext]):
-    """
-    Админ-команды: CreatorMiddleware пропускает дальше только settings.ADMIN_IDS,
-    молча для остальных. broadcast_service/level_up_service шлют через Notifier
-    (см. context.py, services/notify.py).
-    """
-
     middlewares = (CreatorMiddleware,)
     routers = (
         MediaRouter,

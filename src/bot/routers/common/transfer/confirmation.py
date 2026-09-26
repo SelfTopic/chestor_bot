@@ -1,5 +1,3 @@
-"""Два шага подтверждения: нажатия кнопок под вопросом о переводе."""
-
 import logging
 
 from selfrot.filter import HasMessageCallbackQuery, InState

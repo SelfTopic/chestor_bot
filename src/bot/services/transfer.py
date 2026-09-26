@@ -30,22 +30,10 @@ class TransferService:
         self.balances_log_repository = balances_log_repository
 
     async def resolve_user(self, query: str) -> Optional[User]:
-        """
-        Резолвит id/@username в User, как в BanService._resolve_user /
-        StatsEditService.set_stat - для указания получателя без reply.
-        """
         search = int(query) if query.lstrip("-").isdigit() else query.lstrip("@")
         return await self.user_repository.get(search)
 
     async def validate(self, sender_id: int, receiver_id: int, amount: int) -> None:
-        """
-        Все проверки ДО списания денег - чтобы никогда не забирать средства
-        у отправителя только для того, чтобы потом откатить перевод.
-
-        Raises:
-            InvalidTransferAmountError, SelfTransferError, SenderTooNewError,
-            ReceiverLimitExceededError
-        """
         if amount < TRANSFER_CONFIG.min_amount or amount > TRANSFER_CONFIG.max_amount:
             raise InvalidTransferAmountError(
                 f"Сумма перевода должна быть от {TRANSFER_CONFIG.min_amount} "
@@ -68,11 +56,8 @@ class TransferService:
             )
 
         if sender.balance < amount:
-            # Ранняя, "мягкая" проверка - чтобы не заставлять юзера пройти
-            # весь троллинг-квест подтверждения и только потом узнать, что
-            # денег не хватает. Не заменяет атомарный debit_if_sufficient в
-            # transfer() - баланс мог измениться между этим вызовом и самим
-            # списанием, тот чек остаётся единственным источником истины.
+            # Ранняя проверка, чтобы не гонять человека по подтверждениям зря; источник
+            # истины — атомарное списание в transfer().
             raise InsufficientBalanceError()
 
         receiver = await self.user_repository.get(receiver_id)
@@ -86,14 +71,6 @@ class TransferService:
             raise ReceiverLimitExceededError()
 
     async def transfer(self, sender_id: int, receiver_id: int, amount: int) -> Transfer:
-        """
-        Выполняет сам перевод. validate() должен быть вызван заранее -
-        этот метод не переповторяет проверки лимита/возраста, только
-        атомарно двигает деньги и логирует.
-
-        Raises:
-            InsufficientBalanceError: если на момент списания баланса не хватило
-        """
         sender = await self.user_repository.debit_if_sufficient(sender_id, amount)
         if not sender:
             raise InsufficientBalanceError()
@@ -111,9 +88,8 @@ class TransferService:
             receiver_id, delta=amount
         )
         if not receiver:
-            # получателя удалили между validate() и этим моментом - поднимаем
-            # исключение, чтобы DatabaseMiddleware откатила всю транзакцию
-            # целиком (включая уже сделанное списание у отправителя).
+            # Получателя удалили после validate(): исключение откатит всю транзакцию вместе
+            # со списанием.
             raise InsufficientBalanceError("Получатель не найден, перевод отменён")
 
         receiver_before = receiver.balance - amount

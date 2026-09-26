@@ -1,5 +1,3 @@
-# Сервис для парсинга строкового значения времени
-
 import re
 
 from src.bot.exceptions import DurationParseError
@@ -8,18 +6,7 @@ from src.bot.utils import parse_seconds
 
 
 class DurationParser:
-    """Сервис для парсинга строкового значения времени
-
-    Example:
-        parser = DurationParser()
-        result = parser.parse("5 минут")
-        total_seconds = result.total_seconds # 300
-        minutes = result.minutes_remaining # 5
-
-    """
-
     _UNIT_GROUPS: dict[int, list[str]] = {
-        # seconds
         1: [
             "с",
             "сек",
@@ -32,7 +19,6 @@ class DurationParser:
             "second",
             "seconds",
         ],
-        # minutes
         60: [
             "м",
             "мин",
@@ -45,7 +31,6 @@ class DurationParser:
             "minute",
             "minutes",
         ],
-        # hours
         3600: [
             "ч",
             "час",
@@ -57,7 +42,6 @@ class DurationParser:
             "hour",
             "hours",
         ],
-        # days
         86400: [
             "д",
             "дн",
@@ -70,7 +54,6 @@ class DurationParser:
             "day",
             "days",
         ],
-        # weeks
         604800: [
             "н",
             "нед",
@@ -106,25 +89,11 @@ class DurationParser:
 
     @classmethod
     def parse_string(cls, value: str) -> Duration:
-        """Парсит строку в компоненты времени TimeComponents
-
-        Args:
-            value (str): строковое значение времени, например (5 минут)
-
-        Raises:
-            DurationParseError:
-
-        Returns:
-            Duration
-
-        """
-
         if not value or not value.strip():
             raise DurationParseError("Value is empty")
 
         text = value.strip().lower()
 
-        # Проверка на "навсегда"
         if text in cls.FOREVER_KEYWORDS:
             return Duration(
                 components=parse_seconds(total_seconds=0),

@@ -1,9 +1,3 @@
-"""
-/force_levelup и /add_progress: тестовые команды для боевой механики левелапа, см.
-BATTLE_DESIGN.md. Цель — ответ на сообщение или id/@username аргументом, как у
-остальных creator-команд.
-"""
-
 from selfrot import BaseRouter, CommandArgs, MessageHandler, Rest
 from selfrot.filter import Command, HasReplyUser
 from selfrot.types import Message
@@ -30,7 +24,7 @@ async def _perform_level_up(ctx: AppContext[Message], telegram_id: int) -> None:
 
 
 class ForceLevelupRepliedArgs(CommandArgs):
-    note: Rest = ""  # цель всё равно из реплая, что бы ни дописали после команды
+    note: Rest = ""
 
 
 class ForceLevelupRepliedHandler(

@@ -1,15 +1,3 @@
-"""
-"качаться": магазин статов в личке с ботом. Покупку (цена, потолок уровня,
-списание, +health вместе с max_health) делает StatUpgradeService.purchase(), текст
-и кнопки магазина собираются здесь (build_shop).
-
-Данные кнопок — типизированные StatBuy/StatNop вместо ручного разбора
-"stat_buy_<stat>_<count>" у прода. Ответы прода на испорченные данные ("Неверные
-данные кнопки", "Неверное количество", "Неверный стат") так недостижимы: наши кнопки
-таких данных не дают, а чужие данные просто не подходят под фильтр и остаются без
-ответа (как у малформных кнопок топа кагуне).
-"""
-
 from typing import Any, Literal, get_args
 
 from selfrot import BaseRouter, CallbackPayload, InlineKeyboard, MessageHandler, button
@@ -26,7 +14,6 @@ from ..types import DataMessageCallbackQuery, TextUserMessage
 StatKey = Literal["strength", "dexterity", "speed", "max_health", "regeneration"]
 STAT_KEYS: tuple[StatKey, ...] = get_args(StatKey)
 
-# "💪Сила" и т.д.: подпись стата в ответе на покупку, как словарь allowed у прода
 STAT_LABELS = {key: f"{emoji}{label}" for label, key, emoji in STATS}
 
 
@@ -36,11 +23,8 @@ class StatBuy(CallbackPayload, prefix="stat_buy"):
 
 
 class StatNop(CallbackPayload, prefix="stat_nop"):
-    """Кнопка стата, упёршегося в потолок уровня."""
-
-
+    pass
 def build_shop(ghoul: Ghoul, user: User | None) -> tuple[str, InlineKeyboardMarkup]:
-    """Порт StatUpgradeService.build_message: те же строки и те же кнопки."""
     lines = [f"Баланс: {user.balance if user else 0}", ""]
     keyboard = InlineKeyboard()
 
@@ -94,7 +78,6 @@ class UpgradeStatHandler(MessageHandler[AppContext[TextUserMessage]]):
 
 
 async def _private_message(ctx: AppContext[Any]) -> Message | None:
-    """Сообщение под кнопкой, если с ним можно работать; иначе ответ, как у прода."""
     callback = ctx.callback_query
     message = callback.message
 

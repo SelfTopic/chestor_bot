@@ -1,14 +1,3 @@
-"""
-"бить моба": бой с мобом раз в 10 минут (кулдаун MOB_FIGHT). Без согласия, без
-выбора "всерьёз/фора" (с мобами всегда compress_hp) и без выбора победителя:
-бой разрешается и объявляется за один заход. Сам бой общий с засадой в
-"сожрать человека" (mob_battle.py).
-
-ActiveBattle-лок закрывает эксплойт "дуэль и бой с мобом одновременно". Ветка
-"мёртвый гуль" недостижима за GhoulMiddleware, но оставлена как у прода. Текст
-кулдауна прод пишет прямо в коде, не через dialogs.json, — так же и здесь.
-"""
-
 from selfrot import BaseRouter, MessageHandler
 from selfrot.filter import HasUser, Text
 
@@ -83,7 +72,6 @@ class MobFightHandler(MessageHandler[AppContext[TextUserMessage]]):
         else:
             summary = "Ничья - силы примерно равны."
 
-        # Счёт только боёв с мобами: дуэли сюда не смешиваются.
         score = await ctx.battle_service.score(telegram_id, "mob")
         summary += (
             f"\n📊 Боёв с мобами: {score.total} "

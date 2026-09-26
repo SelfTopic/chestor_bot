@@ -1,5 +1,3 @@
-"""Управление Role-Play командами чата: добавить (текстом или с фото/гифкой), список, удалить."""
-
 from typing import Annotated
 
 from pydantic import AfterValidator
@@ -21,8 +19,6 @@ class NewRpOnMediaHandler(MessageHandler[AppContext[CaptionMessage]]):
 
     @staticmethod
     def parse_caption(caption: str) -> tuple[str, str] | None:
-        """`/set_rp команда действие...` -> (команда, действие); None, если слов мало.
-        Command читает только message.text, а у медиа команда лежит в подписи."""
         args = caption.lower().split()
         if len(args) < 3:
             return None
@@ -73,7 +69,7 @@ Action = Annotated[Rest, AfterValidator(_squash_spaces)]
 
 class SetRpArgs(CommandArgs):
     command: str
-    action: Action  # всё остальное; переводы строк и повторы пробелов схлопнуты
+    action: Action
 
 
 class NewRpHandler(MessageHandler[AppContext[TextMessage]]):
@@ -100,7 +96,6 @@ class NewRpHandler(MessageHandler[AppContext[TextMessage]]):
 
     async def on_error(self, exc: Exception) -> None:
         if isinstance(exc, CommandArgsError):
-            # дальше, как у прода: текст ошибки уйдёт пользователем через on_error диспетчера
             raise RpCommandValidateError(self.usage) from exc
 
         raise exc

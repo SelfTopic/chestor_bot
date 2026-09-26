@@ -46,9 +46,6 @@ class Ghoul(Base):
         nullable=True
     )
 
-    # Сила по каждому типу кагуне отдельно - NULL значит тип не открыт.
-    # Типов ровно 4 (лор-константа), отдельная таблица не нужна - см.
-    # BATTLE_DESIGN.md ("Хранение силы по типам кагуне").
     kagune_strength_ukaku: Mapped[Optional[int]] = mapped_column(
         nullable=True
     )
@@ -115,26 +112,16 @@ class Ghoul(Base):
         nullable=False
     )
 
-    # Единственное (вместе с id/created_at), что переживает сброс при
-    # смерти - см. BATTLE_DESIGN.md ("Смерть и сброс"). Сама логика сброса
-    # ещё не реализована, колонка заводится заранее.
     deaths: Mapped[int] = mapped_column(
         default=0,
         nullable=False
     )
 
-    # Флаг "официально мёртв" - см. BATTLE_DESIGN.md ("Смерть и сброс").
-    # Точная семантика (постоянная смерть или временная до возрождения через
-    # "растить кагуне") ещё обсуждается - колонка заводится заранее,
-    # поведение подключим отдельно.
     is_dead: Mapped[bool] = mapped_column(
         default=False,
         nullable=False
     )
 
-    # Накопительный счётчик RC за всю жизнь текущего перерождения - в
-    # отличие от rc_money (текущий баланс, тратится), нужен для итоговой
-    # сводки при смерти ("сколько заработал за жизнь").
     lifetime_rc_earned: Mapped[int] = mapped_column(
         default=0,
         nullable=False

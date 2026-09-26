@@ -2,12 +2,6 @@ from src.bot.types import TimeComponents
 
 
 def format_duration(total_seconds: int) -> str:
-    """Компактная человекочитаемая длительность вида "2д 5ч 30м".
-
-    Секунды не показываются - для таймеров масштаба часов/суток (голод,
-    реген) они не нужны. Для коротких кулдаунов, где важны секунды,
-    используйте parse_seconds напрямую (см. coffee.py)."""
-
     if total_seconds <= 0:
         return "0м"
 
@@ -24,14 +18,6 @@ def format_duration(total_seconds: int) -> str:
 
 
 def parse_seconds(total_seconds: int) -> TimeComponents:
-    """Из общего количества секунд даст количество других измерений времени
-
-    Args:
-        total_seconds: int - общее количество секунд
-
-    Returns:
-        TimeComponents
-    """
     total_minutes = total_seconds // 60
     total_hours = total_seconds // 3600
 

@@ -1,23 +1,3 @@
-"""
-Квиз по «Токийскому гулю» через ghoul_quiz 0.2 — один клиент на процесс.
-
-С 0.2 сервер выдаёт пару access/refresh, и refresh одноразовый. Прод создаёт
-GhoulQuizAPI заново на каждый апдейт с постоянным GHOUL_QUIZ_API_KEY; с 0.2 так
-нельзя: каждый экземпляр сам обновлял бы пару и сжигал бы refresh-токен
-остальных. Поэтому клиент один: его создаёт Dispatcher, закрывает on_shutdown,
-а ctx.ghoul_quiz_service отдаёт его всем апдейтам.
-
-Сессия — из хранилища ghoul_quiz (TokenManager) по GHOUL_QUIZ_EMAIL. Файл
-хранилища — GHOUL_QUIZ_TOKEN_PATH, иначе ./.ghoul_quiz/tokens.json (в корне
-проекта, в git и в образ не попадает). Войти один раз: `ghoul-quiz-register`.
-Refresh-токены библиотека сама пишет обратно в этот файл. Одну сессию нельзя
-держать в двух местах сразу (например, локально и в облаке): первое же
-обновление сожжёт refresh-токен у второго — каждому окружению нужен свой вход.
-
-Сессия загружается при первом вопросе, а не при старте: без неё бот работает,
-а /quiz отвечает global_error, как у прода при любой ошибке API.
-"""
-
 from ghoul_quiz import (
     DEFAULT_BASE_URL,
     Answer,
@@ -33,9 +13,8 @@ class QuizService:
         self._api = GhoulQuizAPI(base_url=base_url)
 
     def _ensure_session(self) -> None:
-        # Проверяется при каждом вызове, а не один раз: если сессия истекла и
-        # библиотека её сбросила, после нового входа через ghoul-quiz-register
-        # бот подхватит её без перезапуска.
+        # Проверяется на каждом вызове: после нового входа через ghoul-quiz-register сессия
+        # подхватится без перезапуска.
         if self._api.tokens is not None:
             return
         if not self._email:

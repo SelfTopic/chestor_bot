@@ -9,12 +9,6 @@ from .user import User
 
 
 class ScheduledNotification(Base):
-    """Один активный запланированный пуш на пару (гуль, тип уведомления).
-
-    Не история - строка переиспользуется (upsert) при каждом пересчёте
-    расписания, см. GhoulService.materialize_passive_stats и
-    BATTLE_DESIGN.md ("Механизм regen/hunger")."""
-
     __tablename__ = "scheduled_notifications"
 
     id: Mapped[int] = mapped_column(
@@ -32,10 +26,6 @@ class ScheduledNotification(Base):
         nullable=False,
     )
 
-    # Только для notification_type=hunger_threshold (75/50/25/0/-1). -1 -
-    # не настоящий процент, а "будильник" на момент потенциальной смерти от
-    # голода (см. next_hunger_threshold). NULL для остальных типов (health_full,
-    # death).
     threshold: Mapped[Optional[int]] = mapped_column(
         nullable=True,
     )

@@ -1,14 +1,3 @@
-"""
-Rich-сообщение "боевой мощи" (BATTLE_ENGINE.md 8.4): две таблицы рядом.
-"Фиктивная" — вакуумные (паспортные) статы, те же числа, что суммирует
-GhoulService.calculate_power. "Боевая" — путь стата: значение → влияние голода →
-влияние кагуне; правый столбец участвует в бою прямо сейчас (EffectiveStats).
-
-Здоровье — особый случай: в "фиктивной" таблице ghoul.max_health (паспортный
-потолок), в "боевой" базой идёт текущее ghoul.health, с которым боец входит в бой.
-Перенесено из прод-combat_power.py почти дословно, на типах selfrot.
-"""
-
 from selfrot.types import (
     InputRichBlockDivider,
     InputRichBlockSectionHeading,
@@ -24,7 +13,6 @@ from src.database.models import Ghoul, User
 
 from ...rich import paragraph, table_cell
 
-# Порядок статов как STATS в game_configs.py; max_health здесь и есть "Здоровье".
 _STAT_LABELS: list[tuple[str, str]] = [
     ("strength", "Сила"),
     ("dexterity", "Ловкость"),
@@ -86,8 +74,6 @@ def combat_power_rich(
         for key, label in _STAT_LABELS
     ]
 
-    # Сила кагуне не идёт через типовой множитель (см. compute_effective_stats):
-    # "влияние голода" и "влияние кагуне" совпадают, если гуль не какудзя.
     tier = get_hunger_tier(ghoul.hunger)
     kagune_after_hunger = vacuum_kagune * tier.rising_multiplier
     combat_rows.append(

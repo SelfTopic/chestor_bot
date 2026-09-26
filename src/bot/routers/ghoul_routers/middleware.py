@@ -7,15 +7,6 @@ _GROW_KAGUNE_BYPASS = "растить кагуне"
 
 
 class GhoulMiddleware(BaseMiddleware[AppContext]):
-    """
-    Гейт всего ghoul_routers: без гуля доступа нет (кроме команды "растить кагуне" —
-    ей и предстоит завести гуля), мёртвому гулю — тоже нет (единственный его выход
-    остаётся та же "растить кагуне", см. BATTLE_DESIGN.md). У прода апдейт проверяется
-    как Message ИЛИ CallbackQuery; для остальных типов (сюда они не должны попадать,
-    у ghoul_routers нет для них хендлеров) прод тихо роняет апдейт — pre_handle делает
-    то же самое, просто не пропуская дальше.
-    """
-
     async def pre_handle(self) -> bool:
         event = self.ctx.event
         if not isinstance(event, (Message, CallbackQuery)):

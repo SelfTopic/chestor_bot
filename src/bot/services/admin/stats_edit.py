@@ -33,10 +33,6 @@ ALLOWED_GHOUL_FIELDS = {
     "level_progress",
 }
 
-# Служебные поля - не настоящие колонки, а сдвиг снапшота голода/регена
-# назад на N часов. Нужны для ручного теста ленивого расчёта (голод/реген
-# без реального ожидания суток), см. BATTLE_DESIGN.md. Значение - целое
-# число часов "в прошлое".
 ALLOWED_GHOUL_TIME_FIELDS = {
     "hunger_hours_ago": "hunger_updated_at",
     "health_hours_ago": "health_updated_at",
@@ -63,7 +59,6 @@ class StatsEditService:
         self.balances_log_repo = balances_log_repo
 
     def resolve_field(self, field: str) -> tuple[bool, bool]:
-        """Возвращает (is_valid, is_ghoul_field)."""
         if field in ALLOWED_USER_FIELDS:
             return True, False
         if field in ALLOWED_GHOUL_FIELDS or field in ALLOWED_GHOUL_TIME_FIELDS:

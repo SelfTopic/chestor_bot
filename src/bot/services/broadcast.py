@@ -1,6 +1,3 @@
-"""Рассылки: та же логика, что у прод-BroadcastService (тег aiogram-final), отправка —
-через Notifier."""
-
 import asyncio
 import logging
 from collections.abc import Awaitable, Callable
@@ -47,21 +44,18 @@ class BroadcastService:
         return await self._send(telegram_id, text, "chat")
 
     async def broadcast_to_private(self, text: str) -> BroadcastResult:
-        """Рассылка всем пользователям у которых есть личка с ботом."""
         users = await self.user_repo.get_all_with_private_chat()
         return await self._broadcast(
             targets=[u.telegram_id for u in users], text=text, sender=self.send_to_user
         )
 
     async def broadcast_to_chats(self, text: str) -> BroadcastResult:
-        """Рассылка во все известные группы."""
         chats = await self.chat_repo.get_all()
         return await self._broadcast(
             targets=[c.telegram_id for c in chats], text=text, sender=self.send_to_chat
         )
 
     async def broadcast_to_all(self, text: str) -> BroadcastResult:
-        """Рассылка и в личку и в группы."""
         private = await self.broadcast_to_private(text)
         chats = await self.broadcast_to_chats(text)
         return BroadcastResult(
@@ -71,7 +65,6 @@ class BroadcastService:
         )
 
     async def send_to_target(self, query: str, text: str) -> bool:
-        """Отправка конкретному получателю — id или @username."""
         if query.lstrip("-").isdigit():
             target_id = int(query)
         else:
@@ -95,5 +88,5 @@ class BroadcastService:
                 success += 1
             else:
                 failed += 1
-            await asyncio.sleep(0.05)  # flood control — 20 msg/s
+            await asyncio.sleep(0.05)
         return BroadcastResult(total=len(targets), success=success, failed=failed)

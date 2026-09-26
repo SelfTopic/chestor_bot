@@ -1,9 +1,3 @@
-"""
-/add_gif: сохранить гиф или видео (в ответ на сообщение) в библиотеку медиа под нужной
-коллекцией. Скачивание — ctx.download() (selfrotgram 0.1.4+); разбор коллекции, путь на
-диск и запись в БД — та же доменная логика, что у прода (CollectionParser, game_config).
-"""
-
 from pathlib import Path
 
 from selfrot import BaseRouter, CommandArgs, MessageHandler, Rest
@@ -28,12 +22,6 @@ def target_path(
     collection: MediaCollection,
     file_id: str,
 ) -> Path:
-    """
-    Полный путь до файла (папка из collection_folder + детерминированное имя).
-    Отдельная функция — её можно проверить без диска и без апдейта (в отличие от
-    самой папки, которую могут не разрешить создать: часть src/assets в этом
-    окружении принадлежит другому пользователю).
-    """
     return (
         collection_folder(type_media, collection)
         / f"{type_media.value}_{file_id}{EXTENSION[type_media]}"
@@ -41,7 +29,7 @@ def target_path(
 
 
 class AddGifArgs(CommandArgs):
-    collection: Rest  # многословные имена коллекций: "kagune ukaku", "welcome gif"
+    collection: Rest
 
 
 class AddGifHandler(MessageHandler[AppContext[TextUserReplyToMessage]]):

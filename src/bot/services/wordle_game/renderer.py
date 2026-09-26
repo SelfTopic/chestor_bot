@@ -1,14 +1,3 @@
-"""
-Wordle — мини-игра внутри бота.
-
-Сервис самодостаточен: хранит сессии in-memory, содержит
-всю игровую логику и рендерит PNG-поле через Pillow.
-
-Не требует БД и репозитория — состояние живёт в словаре
-{telegram_id: _WordleGame} внутри экземпляра сервиса.
-Сервис регистрируется как Singleton в Container.
-"""
-
 from __future__ import annotations
 
 import io
@@ -22,7 +11,6 @@ from src.bot.types.wordle import GuessResult, LetterState, _WordleGame
 
 logger = logging.getLogger(__name__)
 
-# Цвета тёмной темы Wordle
 _CLR_BG = (18, 18, 19)
 _CLR_EMPTY_FILL = (18, 18, 19)
 _CLR_EMPTY_BORDER = (58, 58, 60)
@@ -50,7 +38,6 @@ def _load_font(size: int) -> ImageFont.FreeTypeFont | ImageFont.ImageFont:
 
 
 def _render_board(game: _WordleGame, cell_size: int = 62, gap: int = 6) -> bytes:
-    """Нарисовать сетку 6×5 и вернуть PNG-байты."""
     pad = 16
     radius = 4
     font = _load_font(int(cell_size * 0.55))

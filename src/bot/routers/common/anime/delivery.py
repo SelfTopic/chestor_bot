@@ -15,11 +15,6 @@ logger = logging.getLogger(__name__)
 async def deliver_cut(
     ctx: AppContext[TextMessage], job: VideoCutJob, processing: Message, *, is_gif: bool
 ) -> None:
-    """
-    Отдать нарезку в очередь, дождаться результата (до минуты) и отправить его; любой
-    исход (таймаут, отмена, полная очередь, сбой ffmpeg) превращается в правку сообщения
-    о ходе работы. Временный файл убирается в любом случае.
-    """
     message = ctx.message
 
     try:

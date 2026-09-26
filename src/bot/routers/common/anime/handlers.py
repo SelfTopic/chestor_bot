@@ -27,11 +27,9 @@ TimeCode = Annotated[str, AfterValidator(_check_timecode)]
 
 
 class AnimeArgs(CommandArgs):
-    """/anime 1 12 — серия целиком, /anime 1 12 18:37 18:47 [gif] — отрывок."""
-
     season: int
     episode: int
-    start: TimeCode = ""  # оба таймкода или ни одного; формат проверяет TimeCode
+    start: TimeCode = ""
     end: TimeCode = ""
     gif: Literal["gif"] | None = None
 
@@ -57,10 +55,8 @@ class AnimeHandler(MessageHandler[AppContext[TextMessage]]):
         "/anime 1 12 18:37 18:47"
     )
 
-    # handle только проверяет и готовит; долгое (нарезка до минуты, загрузка видео)
-    # делает after_handle, уже после закрытия хендлера: слот диспетчера свободен, а
-    # сессия БД не висит открытой всё это время (DatabaseMiddleware к тому моменту
-    # закоммитил).
+    # Долгая часть (нарезка, загрузка) — в after_handle: к тому времени слот диспетчера и
+    # сессия БД свободны.
     episode_path: Path | None = None
     job: VideoCutJob | None = None
     processing: Message | None = None
@@ -69,7 +65,7 @@ class AnimeHandler(MessageHandler[AppContext[TextMessage]]):
 
     async def handle(self) -> None:
         message = self.ctx.message
-        args = self.cmd.parse(self.ctx)  # не число, кривой таймкод: CommandArgsError
+        args = self.cmd.parse(self.ctx)
 
         input_path = Path(
             f"src/assets/videos/tokio_ghoul/Season_{args.season}_Episode_{args.episode}.mp4"
@@ -107,8 +103,8 @@ class AnimeHandler(MessageHandler[AppContext[TextMessage]]):
             )
             return
 
-        # занять место сразу, до первого await: иначе два быстрых /anime подряд
-        # оба прошли бы проверку выше
+        # Занять место до первого await: иначе два быстрых /anime подряд пройдут проверку
+        # оба.
         cut_guard.occupy(user_id)
         try:
             job = VideoCutJob(
@@ -157,7 +153,6 @@ class AnimeHandler(MessageHandler[AppContext[TextMessage]]):
         if not isinstance(exc, CommandArgsError):
             raise exc
 
-        # Какое поле не подошло, такой и ответ (тексты те же, что у прода).
         field = exc.problems[0].field if exc.problems else ""
         text = {"start": self.start_error, "end": self.end_error}.get(field, self.usage)
         await self.ctx.message.answer(text)

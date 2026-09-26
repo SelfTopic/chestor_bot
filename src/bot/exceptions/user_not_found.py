@@ -1,6 +1,4 @@
 class UserNotFound(Exception):
-    """Common base class for not found users"""
-
     def __init__(self, message: str = "Пользователь не найден") -> None:
         super().__init__(message)
 

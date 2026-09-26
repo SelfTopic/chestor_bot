@@ -25,7 +25,6 @@ from .services.quiz import QuizService
 
 logger = logging.getLogger(__name__)
 
-# Как у прода: nginx отдаёт https://chestor.site/webhook… на 127.0.0.1:8999.
 WEBHOOK_PORT = 8999
 
 
@@ -33,7 +32,7 @@ class Dispatcher(BaseDispatcher[AppContext]):
     bot = AppBot
     routers = (RootRouter,)
     context = AppContext
-    # Как dp.update.middleware у прода: первая снаружи. Logging → Database → Sync → Ban.
+    # Порядок важен: первая middleware — внешняя.
     middlewares = (
         LoggingMiddleware,
         DatabaseMiddleware,
@@ -79,9 +78,8 @@ class Dispatcher(BaseDispatcher[AppContext]):
         )
 
     async def on_startup(self) -> None:
-        # Как у прода, перед любым режимом: старый вебхук снимается (иначе polling
-        # получает 409), накопившиеся апдейты отбрасываются. В режиме вебхука
-        # библиотека ставит новый уже после on_startup.
+        # Перед любым режимом старый вебхук снимается (иначе polling получит 409),
+        # накопившиеся апдейты отбрасываются.
         await self.api.delete_webhook(drop_pending_updates=True)
         await self.container.video_worker().start()
         await self.notification_ticker.start()
@@ -94,11 +92,6 @@ class Dispatcher(BaseDispatcher[AppContext]):
         await self.quiz_service.close()
 
     async def on_error(self, ctx: AppContext, exc: Exception) -> None:
-        """
-        Замена error_router прода: ошибку в лог, а если апдейт был сообщением, то
-        ответить текстом global_error. Показывать пользователю str(exc) любого
-        исключения небезопасно (уйдут детали БД), но так делает и прод.
-        """
         await super().on_error(ctx, exc)
 
         event = ctx.event
@@ -114,12 +107,9 @@ def main() -> None:
     except ValueError as e:
         sys.exit(str(e))
 
-    # Порт и есть бот: токен — BOT_TOKEN, как у прода (обязателен в src.config).
     token = settings.BOT_TOKEN.get_secret_value()
 
-    # Как у прода: ENV=DEV — polling, иначе вебхук. В отличие от прода секрет не в
-    # пути URL (там токен бота попадал в логи nginx), а в заголовке, как требует
-    # selfrotgram.
+    # Секрет вебхука — в заголовке, а не в пути URL: путь попадает в логи nginx.
     dispatcher = Dispatcher(token=token)
     logger.info("ENV is %s", settings.ENV)
     if settings.ENV == "DEV":

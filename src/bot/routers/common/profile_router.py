@@ -6,7 +6,6 @@ from ..types import UserMessage
 
 
 class ProfileHandler(MessageHandler[AppContext[UserMessage]]):
-    # два триггера у одного хендлера: в aiogram это два декоратора, здесь `|`
     query = (Text("профиль", ignore_case=True) | Command("profile")) & HasUser()
 
     async def handle(self) -> None:

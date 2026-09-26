@@ -18,19 +18,11 @@ WORD_LIST = [
 
 
 class WordleService:
-    """
-    Сервис Wordle-игры.
-
-    Регистрируется как Singleton в Container — хранит все сессии
-    в памяти процесса. При перезапуске бота активные игры сбрасываются.
-    """
-
     def __init__(self) -> None:
         self._sessions: dict[int, _WordleGame] = {}
         logger.info("WordleService initialized")
 
     def start_new_game(self, telegram_id: int) -> bytes:
-        """Начать новую игру. Возвращает PNG пустого поля."""
         word = random.choice(WORD_LIST)
         game = _WordleGame(target=word)
         self._sessions[telegram_id] = game
@@ -42,38 +34,25 @@ class WordleService:
         return game is not None and not game.is_finished
 
     def get_current_board(self, telegram_id: int) -> Optional[bytes]:
-        """PNG текущего поля или None если нет активной игры."""
         game = self._sessions.get(telegram_id)
         if not game:
             return None
         return _render_board(game)
 
     def set_board_message_id(self, telegram_id: int, message_id: int) -> None:
-        """Сохранить message_id отправленной доски для последующего редактирования."""
         game = self._sessions.get(telegram_id)
         if game:
             game.board_message_id = message_id
 
     def get_board_message_id(self, telegram_id: int) -> int | None:
-        """Вернуть message_id доски или None если ещё не отправлена."""
         game = self._sessions.get(telegram_id)
         return game.board_message_id if game else None
 
     def forfeit(self, telegram_id: int) -> Optional[str]:
-        """Сдаться. Возвращает загаданное слово или None если игры нет."""
         game = self._sessions.pop(telegram_id, None)
         return game.target if game else None
 
     def guess(self, telegram_id: int, word: str) -> Optional[WordleGuessResult]:
-        """
-        Сделать попытку.
-
-        Returns:
-            WordleGuessResult если ход принят,
-            None если нет активной игры для этого пользователя.
-        Raises:
-            ValueError: неверная длина слова или некириллические символы.
-        """
         game = self._sessions.get(telegram_id)
         if not game or game.is_finished:
             return None

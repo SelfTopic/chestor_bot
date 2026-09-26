@@ -1,7 +1,3 @@
-"""/kill_ghoul: тестовая команда, мгновенно убивает гуля (apply_death) тем же путём,
-что настоящая смерть — is_dead, запись в death_log, некролог через NotificationTicker.
-Цель — ответ на сообщение или id/@username аргументом."""
-
 from selfrot import BaseRouter, CommandArgs, MessageHandler, Rest
 from selfrot.filter import Command, HasReplyUser
 from selfrot.types import Message

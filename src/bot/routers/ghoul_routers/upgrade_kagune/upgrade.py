@@ -1,9 +1,3 @@
-"""Проверки + сама прокачка кагуне, порт прод-хендлера upgrade_kagune.py::_do_upgrade
-(там это чистая функция без aiogram — перенесена почти дословно). Переиспользуется и
-прямым путём (один тип кагуне) и колбэк-путём (несколько типов) — кулдаун и баланс
-перепроверяются здесь заново, а не только один раз при показе клавиатуры, потому что
-между показом и нажатием могло пройти время."""
-
 import time
 from typing import Any
 
@@ -18,10 +12,11 @@ from ....context import AppContext
 from .callback_data import KaguneUpgradePress
 
 
+# Кулдаун и баланс проверяются заново: между показом клавиатуры и нажатием могло
+# пройти время.
 async def do_upgrade(
     ctx: AppContext[Any], telegram_id: int, first_name: str, kagune_type: KaguneType
 ) -> tuple[bool, str]:
-    """(успех, текст) — текст либо причина отказа, либо готовое сообщение об успехе."""
     ghoul_service = ctx.ghoul_service
 
     ghoul = await ghoul_service.get(find_by=telegram_id)
@@ -72,7 +67,6 @@ async def do_upgrade(
 def build_choice_keyboard(
     ctx: AppContext[Any], ghoul: Ghoul, owned: list[KaguneType], invoker_id: int
 ) -> tuple[str, InlineKeyboardMarkup]:
-    """invoker_id зашивается прямо в callback_data — см. KaguneUpgradePress."""
     ghoul_service = ctx.ghoul_service
     lines = ["Какое кагуне усилить?"]
     keyboard = InlineKeyboard()

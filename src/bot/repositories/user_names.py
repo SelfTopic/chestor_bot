@@ -1,5 +1,3 @@
-"""Пользователи пачкой — там, где прод берёт их по одному в цикле (топы)."""
-
 from collections.abc import Collection
 
 from sqlalchemy import select
@@ -13,7 +11,6 @@ class UserNameRepository:
         self.session = session
 
     async def first_names(self, telegram_ids: Collection[int]) -> dict[int, str]:
-        """Имя каждого из telegram_ids одним запросом; кого нет в users — нет в ответе."""
         if not telegram_ids:
             return {}
         rows = await self.session.execute(

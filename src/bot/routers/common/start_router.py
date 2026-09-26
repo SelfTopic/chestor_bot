@@ -6,7 +6,6 @@ from ..types import UserMessage
 
 
 class StartHandler(MessageHandler[AppContext[UserMessage]]):
-    # CommandStart(deep_link=False) в aiogram принимает и /start, и /start payload
     query = Command("start") & HasUser()
 
     async def handle(self) -> None:

@@ -5,8 +5,6 @@ from src.config import settings
 
 
 def _proxy() -> str | None:
-    # То же условие, что у прода в __main__.py (тег aiogram-final; в том числе HTTP_PROXY только
-    # при заданном HTTPS_PROXY); пустая строка значит «без прокси».
     proxy = (
         settings.HTTP_PROXY
         if settings.HTTPS_PROXY
@@ -18,8 +16,5 @@ def _proxy() -> str | None:
 
 
 class AppBot(Bot):
-    """Настройки бота: диспетчер создаёт его сам (bot = AppBot), поэтому атрибутами."""
-
-    # DefaultBotProperties(link_preview_is_disabled=True) у прода
     defaults = BotDefaults(link_preview_options=LinkPreviewOptions(is_disabled=True))
     proxy = _proxy()

@@ -1,21 +1,3 @@
-"""
-Ленивый расчёт голода и регенерации здоровья, см. BATTLE_DESIGN.md
-("Множители голода", "Модель боя: раунды и лог событий").
-
-Ничего здесь не работает "по тику" - нет фонового процесса. Вместо этого
-каждая функция принимает последний сохранённый снапшот (значение + время) и
-текущее время, и говорит, что должно быть "прямо сейчас".
-
-Важная деталь дисциплины (тот же класс бага, что был с округлением кулдауна
-кофе, см. coffee.py): если материализовать (записывать обратно) при КАЖДОМ
-чтении, продвигая timestamp сразу до "сейчас", дробный остаток времени,
-не набравший целого процента/HP, будет теряться при каждом чтении - и при
-достаточно частых чтениях голод/реген могут вообще перестать течь. Поэтому
-timestamp снапшота продвигается только на то время, которое реально
-"обналичено" в виде целого пункта изменения - остаток всегда переносится
-на будущее.
-"""
-
 from dataclasses import dataclass
 from datetime import datetime, timedelta
 from typing import Optional
@@ -49,18 +31,12 @@ def get_hunger_tier(hunger: int) -> HungerTier:
     for tier in HUNGER_TIERS:
         if tier.min_hunger <= hunger <= tier.max_hunger:
             return tier
-    # hunger < 0 не должен долго существовать (см. триггер смерти), но
-    # на всякий случай не даём упасть - берём худший тир.
     return HUNGER_TIERS[-1]
 
 
 def effective_regeneration(
     regeneration: int, hunger: int, kagune_type_bit: int, is_kakuja: bool
 ) -> float:
-    """regeneration - "падающий" стат: голод бьёт по нему первым, затем тип
-    кагуне (Ринкаку/Бикаку), затем какуджа - см. порядок в "Множители голода"
-    и "Множители типов кагуне"."""
-
     tier = get_hunger_tier(hunger)
     value = regeneration * tier.falling_multiplier
 
@@ -81,35 +57,21 @@ def hunger_decay_per_hour(is_kakuja: bool) -> float:
 
 
 def hours_until_hunger_threshold(hunger: int, is_kakuja: bool, threshold: int) -> float:
-    """Часов до того, как голод дойдёт (сверху вниз) до threshold."""
     return max(0.0, (hunger - threshold) / hunger_decay_per_hour(is_kakuja))
 
 
 def hours_until_starved(hunger: int, is_kakuja: bool) -> float:
-    """Прогноз "через сколько часов голод дойдёт до 0", если ничего не есть.
-    Само по себе смерть не вызывает (см. "Смерть и сброс" в BATTLE_DESIGN.md) -
-    только оценка для отображения игроку."""
     return hours_until_hunger_threshold(hunger, is_kakuja, threshold=0)
 
 
-# Тиры голода дают ровно нужные пороги пуш-уведомлений (75/50/25/0) - те же
-# min_hunger значения, что и в HUNGER_TIERS, порядок убывания важен.
 HUNGER_NOTIFICATION_THRESHOLDS: tuple[int, ...] = tuple(
     tier.min_hunger for tier in HUNGER_TIERS
 )
 
 
+# При hunger <= 0 возвращает -1: будильник на момент смерти, иначе неактивный игрок на 0% не
+# умрёт никогда.
 def next_hunger_threshold(hunger: int) -> int:
-    """Следующий порог (75/50/25/0), который голод пересечёт сверху вниз.
-
-    При hunger <= 0 возвращает -1 - не настоящий процент, а "будильник" на
-    момент, когда СЛЕДУЮЩАЯ убыль голода уйдёт в минус (см. триггер смерти в
-    "Смерть и сброс"). Без этого неактивный игрок, чей голод застрял ровно
-    на 0%, никогда бы не умер - никто не читает его гуля, чтобы пересчитать
-    голод дальше, а следующего порога для планирования не было бы вообще.
-
-    None не возвращается никогда - только явный вызывающий код (например,
-    после реального наступления смерти) должен переставать планировать."""
     for threshold in HUNGER_NOTIFICATION_THRESHOLDS:
         if hunger > threshold:
             return threshold
@@ -119,8 +81,6 @@ def next_hunger_threshold(hunger: int) -> int:
 def hours_until_full_health(
     health: int, max_health: int, hp_per_hour: float
 ) -> Optional[float]:
-    """None значит "никогда не долечится при текущей скорости регена" -
-    например regeneration=0 (обычно достижимо только через /set_stat)."""
     if health >= max_health:
         return 0.0
     if hp_per_hour <= 0:
@@ -128,19 +88,14 @@ def hours_until_full_health(
     return (max_health - health) / hp_per_hour
 
 
+# Метка времени сдвигается только на время, обналиченное целым пунктом: иначе дробный
+# остаток терялся бы при каждом чтении.
 def compute_hunger(
     hunger: int,
     hunger_updated_at: datetime,
     is_kakuja: bool,
     now: datetime,
 ) -> tuple[int, datetime, bool]:
-    """Возвращает (новый_hunger, новый_hunger_updated_at, would_starve).
-
-    would_starve=True значит: непотраченного времени хватило бы, чтобы увести
-    голод ниже нуля - по дизайну это триггер смерти (см. "Смерть и сброс").
-    Здесь только сигнализируется - вызывающий код пока НЕ обязан на это
-    реагировать (смерть/сброс - отдельный, ещё не реализованный шаг)."""
-
     decay_per_hour = hunger_decay_per_hour(is_kakuja)
     elapsed_hours = max(0.0, (now - hunger_updated_at).total_seconds() / 3600)
 
@@ -182,9 +137,6 @@ def compute_health(
 
 
 def apply_hunger_restore(hunger: int, restore_percent: int) -> int:
-    """Голод не может уйти выше 100% - клэмп сверху. Случайную величину
-    восстановления (5-25%, см. EAT_HUMAN_CONFIG) катает вызывающий код -
-    здесь только чистое применение."""
     return min(100, hunger + restore_percent)
 
 

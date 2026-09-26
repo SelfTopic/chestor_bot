@@ -7,10 +7,6 @@ from ....context import AppContext
 
 
 class NeedsRegistrationOrRebirth(BaseFilter[AppContext[Any]]):
-    """Гуля нет или он мёртв: "растить кагуне" тут не прокачка, а рождение/
-    возрождение — решает, какой из двух хендлеров сработает (см. handlers.py),
-    чтобы логика прокачки не была захламлена веткой "гуля ещё нет"/"гуль мёртв"."""
-
     async def check(self, ctx: BaseContext[Any]) -> bool:
         assert isinstance(ctx, AppContext)
 

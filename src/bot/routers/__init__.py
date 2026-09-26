@@ -23,8 +23,7 @@ from .moderator_routers import ModeratorRouter
 
 
 class RootRouter(BaseRouter[AppContext]):
-    # Порядок как в include_routers у прода: апдейт достаётся первому подошедшему.
-    # ErrorRouter стал Dispatcher.on_error.
+    # Порядок важен: апдейт достаётся первому подошедшему роутеру.
     routers = (
         StartRouter,
         BotRouter,

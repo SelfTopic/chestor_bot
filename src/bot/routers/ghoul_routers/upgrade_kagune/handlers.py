@@ -1,10 +1,3 @@
-"""
-"растить кагуне": регистрация/возрождение отделены от прокачки — NeedsRegistrationOrRebirth
-(filters.py) решает, какой из хендлеров сработает, чтобы логика прокачки не была
-захламлена веткой "гуля ещё нет"/"гуль мёртв". Ровно поэтому в UpgradeKaguneHandler
-можно использовать ctx.db_ghoul(): фильтр уже гарантировал, что гуль есть и жив.
-"""
-
 import time
 from typing import Any
 
@@ -119,10 +112,6 @@ class UpgradeKaguneHandler(MessageHandler[AppContext[TextUserMessage]]):
 
 
 class KaguneChoiceHandler(CallbackQueryHandler[AppContext[DataMessageCallbackQuery]]):
-    """Клавиатуру в группе видят все, а нажать имеет право только тот, кто вызвал
-    "растить кагуне" — pressed_by("invoker_id") делает так, что query не совпадает
-    для чужого нажатия: оно просто ни на что не отвечает."""
-
     press = KaguneUpgradePress.filter().pressed_by("invoker_id")
     query = press & HasMessageCallbackQuery()
 

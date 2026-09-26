@@ -1,5 +1,3 @@
-"""/broadcast_private, /broadcast_chats, /broadcast_all, /broadcast_user."""
-
 from selfrot import BaseRouter, CommandArgs, MessageHandler, Rest
 from selfrot.exceptions import CommandArgsError
 from selfrot.filter import Command

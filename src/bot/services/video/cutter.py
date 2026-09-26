@@ -1,4 +1,3 @@
-# src/bot/services/video/cutter.py
 import asyncio
 import logging
 import os
@@ -16,14 +15,11 @@ class VideoCutterService:
 
     def __init__(self) -> None:
         self.PATH_TO_CUTTED.mkdir(exist_ok=True, parents=True)
-        # Always leave at least 1 core free for the bot's event loop,
-        # otherwise ffmpeg's full-core re-encode starves the process
-        # scheduler and the bot stops responding to everyone.
+        # Одно ядро оставляем event loop'у: ffmpeg на всех ядрах вешает бота.
         self._encode_threads = max(1, (os.cpu_count() or 2) - 1)
 
     @staticmethod
     def validate_time_format(time_str: str) -> bool:
-        """Проверяет формат времени MM:SS"""
         pattern = r"^\d{1,2}:\d{2}$"
         if not re.match(pattern, time_str):
             return False
@@ -31,7 +27,6 @@ class VideoCutterService:
         return seconds < 60
 
     def parse_duration(self, start_time: str, end_time: str) -> int:
-        """Вычисляет длительность в секундах"""
         if not self.validate_time_format(start_time):
             raise ValueError("Invalid start time format. Use MM:SS.")
         if not self.validate_time_format(end_time):
@@ -52,7 +47,6 @@ class VideoCutterService:
     def generate_output_path(
         self, input_filename: str | Path, is_gif: bool = False
     ) -> Path:
-        """Генерирует уникальный путь для выходного файла"""
         return self.PATH_TO_CUTTED / (
             Path(input_filename).stem + "_" + str(uuid.uuid4()) + ".gif"
             if is_gif
@@ -66,10 +60,6 @@ class VideoCutterService:
         start_time: str,
         end_time: str,
     ) -> Path:
-        """
-        АСИНХРОННАЯ нарезка видео без блокировки event loop.
-        Использует asyncio.create_subprocess_exec для настоящей асинхронности.
-        """
         logger.info(
             f"Starting async video cut: {input_file_path} -> {output_file_path}"
         )

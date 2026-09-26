@@ -18,8 +18,6 @@ class WikipediaSummary:
 
 
 class WikipediaService:
-    """Короткое описание слова из русской Википедии для карточки завершения игры."""
-
     async def get_summary(self, word: str) -> Optional[WikipediaSummary]:
         title = word.strip().capitalize()
 

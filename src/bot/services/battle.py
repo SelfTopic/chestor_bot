@@ -1,14 +1,3 @@
-"""
-Бои порта: участники → бойцы → бой → последствия → счёт. Без Telegram: роутер
-получает итог одним объектом и сам решает, что и куда отправить.
-
-Движок и мост к нему (гуль → боец, бой, здоровье после боя) — прод-BattleService,
-здесь он называется engine и переиспользуется как есть. Этот сервис собирает то,
-что прод размазал по fight.py и mob_battle.py: загрузку участников, запись
-здоровья, награды, историю, лок ActiveBattle и стадии дуэли. Числа, порядок
-записей и правила — как у прода.
-"""
-
 import logging
 import random
 from dataclasses import dataclass
@@ -53,8 +42,6 @@ class Combatant:
 
 @dataclass(frozen=True)
 class FightReport:
-    """Всё, что нужно, чтобы показать бой (BattleTextGenerator)."""
-
     result: BattleResult
     fighter_a: Fighter
     fighter_b: Fighter
@@ -63,13 +50,10 @@ class FightReport:
 
     @property
     def winner(self) -> str | None:
-        """ "a", "b" или None — ничья."""
         return self.result.winner
 
 
 class DuelRefusal(Enum):
-    """Почему дуэль нельзя начать; проверки идут в этом порядке, как у прода."""
-
     SELF = auto()
     NOT_REGISTERED = auto()
     INITIATOR_NO_PRIVATE_CHAT = auto()
@@ -89,7 +73,6 @@ class DuelRefused(Exception):
     def __init__(self, reason: DuelRefusal, *, health: int = 0, threshold: int = 0) -> None:
         super().__init__(reason.name)
         self.reason = reason
-        # только у NOT_COMBAT_READY: текущее здоровье и нужный минимум
         self.health = health
         self.threshold = threshold
 
@@ -103,8 +86,6 @@ class OpenedDuel:
 
 @dataclass(frozen=True)
 class DuelOdds:
-    """Расклад сил перед дуэлью: нужен ли выбор "всерьёз/фора" и у кого."""
-
     power_ratio: float
     favored_telegram_id: int
 
@@ -123,9 +104,7 @@ class DuelFight:
 
 @dataclass(frozen=True)
 class DuelOutcome:
-    """Итог выбора победителя. Суммы None — наград этого вида не было."""
-
-    action: str  # "outcome_rob" | "outcome_eat" | "outcome_release"
+    action: str
     winner_name: str
     loser_name: str
     reward_balance: int | None
@@ -163,11 +142,8 @@ class BattleService:
         self._records = battle_record_service
         self._duels = duel_service
 
-    # --- Общее --------------------------------------------------------------
 
     async def _combatants(self, *telegram_ids: int) -> list[Combatant] | None:
-        """Участники в порядке telegram_ids с досчитанными пассивными статами, как
-        после GhoulService.get; None, если у кого-то нет пользователя или гуля."""
         found = await self._fights.participants(*telegram_ids)
         combatants = []
         for telegram_id in telegram_ids:
@@ -197,8 +173,8 @@ class BattleService:
         health = BattleEngine.resolve_post_battle_health(
             combatant.ghoul.health, effective_max, final_hp
         )
-        # health_updated_at двигается вместе с health: иначе следующий
-        # materialize_passive_stats досчитает реген от старой метки поверх урона.
+        # health_updated_at двигается вместе с health, иначе materialize_passive_stats
+        # досчитает реген от старой метки поверх урона.
         await self._ghouls.set_fields(
             combatant.telegram_id, health=health, health_updated_at=utcnow_naive()
         )
@@ -206,10 +182,8 @@ class BattleService:
     async def score(self, telegram_id: int, battle_type: str) -> Score:
         return (await self._fights.scores([telegram_id], battle_type))[telegram_id]
 
-    # --- Дуэль --------------------------------------------------------------
 
     async def _abort_duel(self, duel: DuelSession, expected_stage: str) -> None:
-        """Участник исчез между шагами: снять лок и закрыть дуэль."""
         logger.error("duel %s: participant vanished at %s", duel.id, expected_stage)
         await self._records.release(duel.initiator_telegram_id, duel.target_telegram_id)
         await self._duels.atomic_update(duel.id, expected_stage, stage="done")
@@ -217,8 +191,6 @@ class BattleService:
     async def open_duel(
         self, initiator_id: int, target_id: int, *, chat_id: int, private: bool
     ) -> OpenedDuel:
-        """Все проверки приглашения, лок ActiveBattle и DuelSession на стадии согласия.
-        Отказ — DuelRefused с первой не прошедшей проверкой."""
         if target_id == initiator_id:
             raise DuelRefused(DuelRefusal.SELF)
 
@@ -228,7 +200,7 @@ class BattleService:
         initiator_user, initiator_ghoul = found[initiator_id]
         target_user, target_ghoul = found[target_id]
 
-        # Без лички некуда доставить секретный выбор "всерьёз/фора".
+        # Без лички некуда отправить секретный выбор «всерьёз/фора».
         if not initiator_user.has_private_chat:
             raise DuelRefused(DuelRefusal.INITIATOR_NO_PRIVATE_CHAT)
         if not target_user.has_private_chat:
@@ -258,7 +230,6 @@ class BattleService:
         except FighterHasPendingBattleError:
             raise DuelRefused(DuelRefusal.BUSY) from None
 
-        # Дневные лимиты (BATTLE_ENGINE.md 1.2/4.4).
         recent = await self._fights.recent_battles(
             initiator_id, target_id, since=utcnow_naive() - timedelta(days=1)
         )
@@ -281,7 +252,6 @@ class BattleService:
         return OpenedDuel(session, initiator_user.full_name, target_user.full_name)
 
     async def duel_odds(self, duel: DuelSession) -> DuelOdds | None:
-        """Расклад сил после согласия обеих сторон; None — дуэль закрыта, участник исчез."""
         combatants = await self._combatants(duel.initiator_telegram_id, duel.target_telegram_id)
         if combatants is None:
             await self._abort_duel(duel, "awaiting_consent")
@@ -299,8 +269,6 @@ class BattleService:
         )
 
     async def fight_duel(self, duel: DuelSession) -> DuelFight | None:
-        """Бой, здоровье после боя и опыт победителю. None — участник исчез, дуэль
-        закрыта. Историю и стадию записывает finish_duel_fight, когда бой объявлен."""
         combatants = await self._combatants(duel.initiator_telegram_id, duel.target_telegram_id)
         if combatants is None:
             await self._abort_duel(duel, "running")
@@ -321,7 +289,6 @@ class BattleService:
         winner, loser = (initiator, target) if result.winner == "a" else (target, initiator)
         winner_power = self._ghouls.calculate_power(winner.ghoul)
         loser_power = self._ghouls.calculate_power(loser.ghoul)
-        # Формула левел-апа (BATTLE_DESIGN.md): 1% * (сила соперника / своя сила).
         progress = 1.0 * loser_power / winner_power if winner_power > 0 else 0.0
         await self._level_up.add_progress(winner.telegram_id, progress)
         return DuelFight(report, winner.telegram_id, loser.telegram_id, progress)
@@ -329,11 +296,8 @@ class BattleService:
     async def finish_duel_fight(
         self, duel: DuelSession, fight: DuelFight, outcome_message_id: int | None
     ) -> DuelSession | None:
-        """После объявления боя: у ничьей история сразу и дуэль закрыта, иначе ждём
-        выбор победителя (его таймаут ведёт DuelTicker)."""
         result = fight.report.result
         if fight.winner_telegram_id is None or fight.loser_telegram_id is None:
-            # Настоящая ничья (BATTLE_ENGINE.md 2.6): выбирать нечего.
             await self._records.record_duel(
                 duel.initiator_telegram_id,
                 duel.target_telegram_id,
@@ -355,10 +319,9 @@ class BattleService:
             ended_naturally=result.ended_naturally,
         )
 
+    # Вызывать только после того, как atomic_update перевёл дуэль в done с этим выбором: из
+    # гонки нажатия и таймаута сюда попадает кто-то один.
     async def resolve_duel_outcome(self, duel: DuelSession, action: str) -> DuelOutcome:
-        """Исход "ограбить/отпустить/съесть", история, снятие лока и счёт уже с этим
-        боем. Вызывать, только когда atomic_update перевёл дуэль в "done" с этим
-        выбором: из гонки нажатия и таймаута сюда попадает кто-то один."""
         assert duel.winner_telegram_id is not None
         assert duel.loser_telegram_id is not None
         winner_id, loser_id = duel.winner_telegram_id, duel.loser_telegram_id
@@ -413,7 +376,6 @@ class BattleService:
     async def _eat(
         self, winner_id: int, loser_id: int, loser: Ghoul | None
     ) -> tuple[int | None, int | None]:
-        """RC-клетки с тела и восстановленный голод победителя."""
         reward_rc = None
         if loser is not None:
             loser = await self._ghouls.materialize_passive_stats(loser)
@@ -425,20 +387,16 @@ class BattleService:
                 await self._ghouls.increment_fields(winner_id, rc_money=rc)
                 reward_rc = rc
         await self._ghouls.apply_death(loser_id, cause="eaten", killer_telegram_id=winner_id)
-        # apply_death трогает только проигравшего: счётчик съеденных гулей и голод
-        # победителя ведутся отдельно (те же проценты, что у "сожрать человека").
         await self._ghouls.increment_fields(winner_id, eat_ghouls=1)
         _, hunger_restored = await self._ghouls.restore_hunger_from_eating(winner_id)
         return reward_rc, hunger_restored
 
-    # --- Моб ----------------------------------------------------------------
 
+    # Лок берёт вызывающий: у засады «занят» значит «засады не было», а у «бить моба» это
+    # отказ.
     async def fight_mob(
         self, user: User, ghoul: Ghoul, *, is_forced: bool, reward_log: str
     ) -> MobFight:
-        """Бой с мобом ("бить моба" или засада в "сожрать человека"): здоровье,
-        награды за победу, история и снятие лока. Лок берёт вызывающий: у засады
-        "занят" значит "засады не было", а у "бить моба" это отказ."""
         player = Combatant(user, ghoul)
         fighter = self._fighter(player)
         result, mob = self.engine.run_against_mob(fighter)
@@ -448,8 +406,6 @@ class BattleService:
         if result.winner == "a":
             mob_power = self.engine.power_of(mob.snapshot)
             player_power = self._ghouls.calculate_power(ghoul)
-            # BATTLE_DESIGN.md "Формула левел-апа": как у дуэли, но ÷5 — фарм мобов
-            # медленнее PvP.
             reward_level_progress = (
                 (mob_power / player_power) / MOB_CONFIG.level_progress_divisor
                 if player_power > 0
@@ -461,8 +417,6 @@ class BattleService:
                 reward_rc = random.randint(MOB_CONFIG.rc_drop_min, MOB_CONFIG.rc_drop_max)
                 await self._ghouls.increment_fields(player.telegram_id, rc_money=reward_rc)
 
-            # ECONOMY.md часть 4: CheSton за победу привязан к цене прокачки
-            # эталонного стата на текущем уровне.
             reward_cheston = MOB_CONFIG.cheston_reward_for_mob_win(ghoul.level)
             await self._users.plus_balance(
                 player.telegram_id, change_balance=reward_cheston, log=reward_log

@@ -9,10 +9,6 @@ from .base import Base
 
 
 class DeathLog(Base):
-    """Историческая запись о смерти - в отличие от сброса/is_dead на самом
-    Ghoul, эта строка никогда не перезаписывается и не теряется. См.
-    BATTLE_DESIGN.md ("Смерть и сброс")."""
-
     __tablename__ = "death_log"
 
     id: Mapped[int] = mapped_column(
@@ -28,7 +24,6 @@ class DeathLog(Base):
     cause: Mapped[str] = mapped_column(
         nullable=False,
     )
-    """"starvation" | "eaten" - те же два триггера, что в "Смерть и сброс"."""
 
     level: Mapped[int] = mapped_column(
         nullable=False,
@@ -42,7 +37,6 @@ class DeathLog(Base):
         BigInteger,
         nullable=True,
     )
-    """Кто съел - только для cause="eaten", NULL для голодной смерти."""
 
     created_at: Mapped[datetime] = mapped_column(
         nullable=False, server_default=func.now()

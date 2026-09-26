@@ -45,10 +45,6 @@ class DeathLogRepository(Base):
         return death_log
 
     async def get_latest(self, telegram_id: int) -> Optional[DeathLog]:
-        """Последняя смерть этого telegram_id - читается для некролога
-        (снапшот на момент смерти, а не живая строка Ghoul, которая к
-        моменту отправки уведомления могла уже быть сброшена возрождением)."""
-
         stmt = (
             select(DeathLog)
             .where(DeathLog.telegram_id == telegram_id)

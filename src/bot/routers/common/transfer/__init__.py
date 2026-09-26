@@ -6,8 +6,7 @@ from .handlers import TransferToRepliedHandler, TransferToUserHandler
 
 
 class TransferRouter(BaseRouter[AppContext]):
-    # Порядок важен: апдейт достаётся первому подошедшему. Команда с ответом и без
-    # ответа взаимоисключают друг друга, шаги различаются состоянием диалога.
+    # Порядок важен: апдейт достаётся первому подошедшему хендлеру.
     handlers = (
         TransferToRepliedHandler,
         TransferToUserHandler,

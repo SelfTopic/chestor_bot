@@ -36,11 +36,7 @@ class GhoulService(Base):
         super().__init__(
             user_repository, ghoul_repository, user_cooldown_repository, chat_repository
         )
-        # Опционально - без него materialize_passive_stats просто не
-        # планирует пуши (тише для тестов/прочих мест, где это не нужно).
         self.notification_repository = notification_repository
-        # Тоже опционально - без него apply_death отработает (is_dead
-        # выставится), просто без записи в историю смертей.
         self.death_log_repository = death_log_repository
 
     async def get(self, find_by: int) -> Optional[Ghoul]:
@@ -59,12 +55,6 @@ class GhoulService(Base):
         return ghoul
 
     async def materialize_passive_stats(self, ghoul: Ghoul) -> Ghoul:
-        """Досчитывает голод/здоровье на текущий момент (ленивый расчёт,
-        см. BATTLE_DESIGN.md) и, если что-то изменилось, сохраняет.
-
-        Мёртвому гулю (is_dead) голод/хп больше не считаются вообще - до
-        возрождения через "растить кагуне" (reset_for_rebirth)."""
-
         if ghoul.is_dead:
             return ghoul
 
@@ -109,10 +99,8 @@ class GhoulService(Base):
                 health_updated_at=new_health_at,
             )
 
-        # Расписание пересчитывается всегда, а не только когда голод/хп
-        # реально сдвинулись этим вызовом - иначе правка админом через
-        # /set_stat не переставит уже стоящий пуш (см. коммент к
-        # sync_notification_schedule).
+        # Расписание пересчитывается всегда, иначе правка через /set_stat не переставит уже
+        # стоящий пуш.
         if self.notification_repository is not None:
             await self.sync_notification_schedule(result, now=now)
 
@@ -122,10 +110,6 @@ class GhoulService(Base):
     _REBIRTH_TIMESTAMP_COLUMNS = {"health_updated_at", "hunger_updated_at"}
 
     def _rebirth_reset_values(self) -> dict:
-        """Собирает "сброс к дефолту" прямо из определения колонок Ghoul -
-        не дублирует значения по умолчанию руками, чтобы не разъехаться,
-        если кто-то поменяет default в модели и забудет поправить здесь."""
-
         values: dict = {}
         for column in Ghoul.__table__.columns:
             name = column.name
@@ -143,17 +127,8 @@ class GhoulService(Base):
         cause: str,
         killer_telegram_id: Optional[int] = None,
     ) -> Ghoul:
-        """Смерть НЕ сбрасывает статы сразу - только выставляет is_dead и
-        пишет DeathLog (переживает всё, в отличие от самого гуля). Сброс +
-        новый случайный тип кагуне происходят только при возрождении, см.
-        reset_for_rebirth - вызывается из "растить кагуне" мёртвым гулем.
-
-        См. BATTLE_DESIGN.md ("Смерть и сброс")."""
-
-        # ВАЖНО: self.get() здесь нельзя - это снова прогонит
-        # materialize_passive_stats, которая (пока is_dead ещё не выставлен)
-        # опять увидит would_starve и вызовет apply_death же - бесконечная
-        # рекурсия. Нужен просто текущий сырой снимок строки.
+        # Не self.get(): он снова вызовет materialize_passive_stats, а та — apply_death, и
+        # так по кругу.
         ghoul = await self.ghoul_repository.get(telegram_id)
         if not ghoul:
             raise ValueError("Ghoul not found")
@@ -171,17 +146,12 @@ class GhoulService(Base):
         updated = await self.set_fields(telegram_id, is_dead=True)
 
         if self.notification_repository is not None:
-            # Мёртвому больше не нужны пуши про голод/реген - живого
-            # смысла в них нет до возрождения.
             await self.notification_repository.delete(
                 telegram_id, NotificationType.HEALTH_FULL
             )
             await self.notification_repository.delete(
                 telegram_id, NotificationType.HUNGER_THRESHOLD
             )
-            # А вот некролог - да, планируем через ту же инфраструктуру:
-            # у GhoulService нет Bot/DialogService, чтобы отправить ЛС
-            # самому - тикер уже умеет это делать (см. NotificationTicker).
             await self.notification_repository.schedule(
                 telegram_id=telegram_id,
                 notification_type=NotificationType.DEATH,
@@ -191,11 +161,6 @@ class GhoulService(Base):
         return updated
 
     async def reset_for_rebirth(self, telegram_id: int) -> Ghoul:
-        """Возрождение: полный сброс (id/created_at/deaths переживают) +
-        новый случайный тип кагуне сразу же - тот самый "бесплатный побочный
-        эффект", о котором договорились в BATTLE_DESIGN.md. Вызывается из
-        "растить кагуне", когда гуль is_dead."""
-
         ghoul = await self.get(telegram_id)
         if not ghoul:
             raise ValueError("Ghoul not found")
@@ -212,11 +177,6 @@ class GhoulService(Base):
         return await self.set_fields(telegram_id, **values)
 
     async def sync_notification_schedule(self, ghoul: Ghoul, now: datetime) -> None:
-        """Пере-планирует пуши "здоровье полное"/"голод дошёл до порога" по
-        ТЕКУЩЕМУ состоянию гуля. Вызывается при каждом чтении гуля и при
-        каждом осознанном изменении голода/хп - см. BATTLE_DESIGN.md,
-        "Механизм regen/hunger" (дисциплину легко забыть в будущей фиче)."""
-
         if self.notification_repository is None:
             return
 
@@ -228,7 +188,7 @@ class GhoulService(Base):
         )
         hours_to_full = hours_until_full_health(ghoul.health, ghoul.max_health, hp_per_hour)
 
-        if not hours_to_full:  # None (никогда) или 0.0 (уже полное) - не планируем
+        if not hours_to_full:
             await self.notification_repository.delete(
                 ghoul.telegram_id, NotificationType.HEALTH_FULL
             )
@@ -239,9 +199,6 @@ class GhoulService(Base):
                 fire_at=now + timedelta(hours=hours_to_full),
             )
 
-        # next_hunger_threshold больше никогда не возвращает None - при
-        # hunger<=0 это -1, "будильник" на момент потенциальной смерти (см.
-        # docstring next_hunger_threshold). Планируем всегда.
         threshold = next_hunger_threshold(ghoul.hunger)
         hours_to_threshold = hours_until_hunger_threshold(
             ghoul.hunger, ghoul.is_kakuja, threshold
@@ -254,35 +211,14 @@ class GhoulService(Base):
         )
 
     async def increment_fields(self, telegram_id: int, **deltas: int) -> Optional[Ghoul]:
-        """Тонкая обёртка над GhoulRepository.increment_fields - атомарный
-        UPDATE нескольких числовых колонок сразу (level, rc_money, ...),
-        без промежуточного чтения. Используется, например, LevelUpService."""
         return await self.ghoul_repository.increment_fields(telegram_id, **deltas)
 
     async def set_fields(self, telegram_id: int, **values: Any) -> Ghoul:
-        """Тонкая обёртка над GhoulRepository.upsert - записывает уже
-        посчитанное абсолютное значение (в отличие от increment_fields).
-        Используется, например, LevelUpService.add_progress для
-        level_progress, когда новое значение уже вычислено вызывающим
-        кодом (заворот через 100% и т.п.)."""
         return await self.ghoul_repository.upsert(telegram_id, **values)
 
     async def restore_hunger_from_eating(
         self, telegram_id: int, **extra_upsert_fields: Any
     ) -> Tuple[Ghoul, int]:
-        """Общая часть "поесть" - откатывает голод на случайные
-        EAT_HUMAN_CONFIG.min/max_hunger_restore% (то же восстановление,
-        что даёт обычное "сожрать человека"). Используется и там
-        (`eat_human` ниже, добавляет `eat_humans+1` в тот же upsert через
-        `extra_upsert_fields`), и в исходе дуэли "съесть" (`finalize_outcome`
-        в `duel/fight.py`, без доп. полей - `eat_ghouls` там инкрементится
-        отдельным атомарным `increment_fields`) - раньше "съесть" в дуэли
-        давал только RC, голод победителя не трогался вообще, хотя по
-        лору поедание есть поедание независимо от того, кого едят
-        (человека или гуля) - найдено как баг задним числом (см. чат).
-
-        Возвращает (обновлённый_гуль, сколько_голода_восстановлено)."""
-
         logger.debug(
             f"Called method restore_hunger_from_eating. Params: telegram_id={telegram_id}"
         )
@@ -303,8 +239,6 @@ class GhoulService(Base):
             **extra_upsert_fields,
         )
 
-        # Голод только что осознанно изменился - расписание пуша по голоду
-        # обязано пересчитаться сейчас же, а не ждать следующего чтения.
         await self.sync_notification_schedule(updated_ghoul, now=utcnow_naive())
 
         logger.debug(
@@ -314,13 +248,6 @@ class GhoulService(Base):
         return updated_ghoul, restore
 
     async def eat_human(self, telegram_id: int) -> Tuple[Ghoul, int]:
-        """Фазы 3a/3b ("Поесть человека" в BATTLE_DESIGN.md) - 3b (засада
-        моба) реализована во внешнем слое (`eat_human.py`), здесь только
-        честное восстановление голода. Кулдаун проверяется в роутере
-        через CooldownService, не здесь.
-
-        Возвращает (обновлённый_гуль, сколько_голода_восстановлено)."""
-
         logger.debug(f"Called method eat_human. Params: telegram_id={telegram_id}")
 
         ghoul = await self.get(telegram_id)
@@ -416,7 +343,6 @@ class GhoulService(Base):
         ]
 
     def get_kagune_strength(self, ghoul: Ghoul, kagune_type: KaguneType) -> Optional[int]:
-        """None значит этот тип кагуне не открыт у гуля."""
         return getattr(ghoul, kagune_type.value["strength_column"])
 
     def total_kagune_strength(self, ghoul: Ghoul) -> int:
@@ -428,12 +354,6 @@ class GhoulService(Base):
     async def grant_kagune_type(
         self, telegram_id: int, kagune_type: KaguneType, initial_strength: int = 1
     ) -> Ghoul:
-        """Админская выдача нового типа кагуне (creator-команда). Держит
-        kagune_type_bit и kagune_strength_<тип> в согласии - это две
-        стороны одного факта "тип открыт", и расхождение между ними было бы
-        реальным источником багов (calculate_kagune по биту используется
-        для отображения в нескольких роутерах)."""
-
         ghoul = await self.get(telegram_id)
         if not ghoul:
             raise ValueError("Ghoul not found")
@@ -452,9 +372,6 @@ class GhoulService(Base):
     async def grant_all_kagune_types(
         self, telegram_id: int, initial_strength: int = 1
     ) -> Ghoul:
-        """Выдаёт все ещё не открытые типы разом. Уже открытые типы не
-        трогает (не сбрасывает их силу обратно к initial_strength)."""
-
         ghoul = await self.get(telegram_id)
         if not ghoul:
             raise ValueError("Ghoul not found")
@@ -469,10 +386,6 @@ class GhoulService(Base):
         return await self.set_fields(telegram_id, kagune_type_bit=all_bits, **updates)
 
     async def revoke_kagune_type(self, telegram_id: int, kagune_type: KaguneType) -> Ghoul:
-        """Убирает тип кагуне у гуля. Нельзя убрать последний оставшийся -
-        весь проект (профиль, приветствие при регистрации, сам upgrade_kagune)
-        предполагает, что у гуля всегда есть хотя бы один тип."""
-
         ghoul = await self.get(telegram_id)
         if not ghoul:
             raise ValueError("Ghoul not found")

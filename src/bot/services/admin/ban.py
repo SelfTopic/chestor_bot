@@ -21,7 +21,6 @@ class BanService:
         self.user_repo = user_repo
 
     def parse_duration(self, s: str) -> Optional[datetime]:
-        """'7d', '24h', '30m' -> datetime. Всё остальное -> None (перманентно)."""
         units = {"m": "minutes", "h": "hours", "d": "days"}
         if len(s) >= 2 and s[-1] in units and s[:-1].isdigit():
             return datetime.now(timezone.utc) + timedelta(**{units[s[-1]]: int(s[:-1])})

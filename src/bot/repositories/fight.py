@@ -1,8 +1,3 @@
-"""
-Запросы боёв, которых нет у прод-репозиториев: участники боя, счёт игроков и
-дневные лимиты дуэли — каждое одним запросом (у прода — по запросу на каждое число).
-"""
-
 from collections.abc import Sequence
 from dataclasses import dataclass
 from datetime import datetime
@@ -16,8 +11,6 @@ from src.database.models import Battle, Ghoul, User
 
 @dataclass(frozen=True)
 class Score:
-    """Счёт игрока по одному виду боёв (дуэли или мобы), ничьи входят в total."""
-
     wins: int
     losses: int
     total: int
@@ -25,11 +18,9 @@ class Score:
 
 @dataclass(frozen=True)
 class RecentBattles:
-    """Бои за период — для дневных лимитов дуэли (BATTLE_ENGINE.md 4.4)."""
-
-    pair: int  # между этими двумя, в любом порядке сторон
-    initiator: int  # всего у инициатора, любых типов
-    target: int  # всего у соперника, любых типов
+    pair: int
+    initiator: int
+    target: int
 
 
 class FightRepository:
@@ -38,11 +29,6 @@ class FightRepository:
         self._ghouls = ghoul_repository
 
     async def participants(self, *telegram_ids: int) -> dict[int, tuple[User, Ghoul | None]]:
-        """Пользователь и гуль каждого из telegram_ids; кого нет в users — нет в ответе.
-
-        Гуль приходит как из GhoulRepository.get — сырым: пассивные статы
-        (GhoulService.materialize_passive_stats) досчитывает вызывающий.
-        """
         rows = await self.session.execute(
             select(User, Ghoul)
             .outerjoin(Ghoul, Ghoul.telegram_id == User.telegram_id)
@@ -51,7 +37,6 @@ class FightRepository:
         found: dict[int, tuple[User, Ghoul | None]] = {}
         for user, ghoul in rows.tuples():
             if ghoul is not None:
-                # То же, что делает GhoulRepository.get при чтении.
                 ghoul.kagune_type_bit = self._ghouls._validate_kagune_bit(
                     ghoul.kagune_type_bit
                 )
@@ -59,11 +44,6 @@ class FightRepository:
         return found
 
     async def scores(self, telegram_ids: Sequence[int], battle_type: str) -> dict[int, Score]:
-        """Счёт каждого игрока за всё время по battle_type ("duel" или "mob").
-
-        Те же условия, что у BattleRepository.count_wins/count_losses/count_total,
-        но все числа всех игроков — одним запросом.
-        """
         a = Battle.participant_a_telegram_id
         b = Battle.participant_b_telegram_id
         winner = Battle.winner
@@ -93,8 +73,6 @@ class FightRepository:
         }
 
     async def recent_battles(self, initiator: int, target: int, since: datetime) -> RecentBattles:
-        """Те же условия, что у BattleRepository.count_pair_since/count_total_since,
-        но все три числа одним запросом."""
         a = Battle.participant_a_telegram_id
         b = Battle.participant_b_telegram_id
         pair = or_(and_(a == initiator, b == target), and_(a == target, b == initiator))

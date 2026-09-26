@@ -16,12 +16,6 @@ class UserCooldownRepository(Base):
     session: AsyncSession
 
     def __init__(self, session: AsyncSession) -> None:
-        """
-        Initialize the repository with an async database session.
-        
-        Args:
-            session (AsyncSession): Async database session
-        """
         self.session = session
         logger.debug("UserCooldownRepository initialized")
 
@@ -30,7 +24,6 @@ class UserCooldownRepository(Base):
         telegram_id: int,
         cooldown_name: str 
     ) -> Optional[UserCooldown]:
-        
         cooldown = await self.get_cooldown(
             search_parameter=cooldown_name
         )
@@ -55,13 +48,6 @@ class UserCooldownRepository(Base):
         user_id: int, 
         cooldown_type: str
     ) -> UserCooldown:
-        """
-        Set or update cooldown for user
-        
-        Args:
-            user_id: ID of user
-            cooldown_type: Type of cooldown (e.g. 'snap', 'raise_kagune')
-        """
         cooldown = await self.session.execute(
             select(Cooldown)
             .filter(
@@ -108,16 +94,6 @@ class UserCooldownRepository(Base):
         user_id: int, 
         cooldown_type: str
     ):
-        """
-        Check if cooldown is active for user
-        
-        Args:
-            user_id: ID of user
-            cooldown_type: Type of cooldown
-            
-        Returns:
-            bool: True if cooldown is active
-        """
         stmt = select(UserCooldown).join(
             Cooldown, 
             onclause=UserCooldown.cooldown_id == Cooldown.id 
@@ -136,16 +112,6 @@ class UserCooldownRepository(Base):
         user_id: int, 
         cooldown_type: str
     ) -> int | None:
-        """
-        Get cooldown end time if active
-        
-        Args:
-            user_id: ID of user
-            cooldown_type: Type of cooldown
-            
-        Returns:
-            datetime | None: End time if active, else None
-        """
         stmt = select(UserCooldown.end_at).join(Cooldown).where(
             and_(
                 UserCooldown.user_id == user_id,
@@ -174,18 +140,12 @@ class UserCooldownRepository(Base):
 
         return cooldown
 
+    # Вопреки имени продлевает кулдаун на полную длительность.
     async def reset_cooldown(
         self, 
         user_id: int, 
         cooldown_type: str
     ):
-        """
-        Reset cooldown for user
-        
-        Args:
-            user_id: ID of user
-            cooldown_type: Type of cooldown
-        """
         cooldown = await self.session.scalar(
             select(Cooldown).filter(Cooldown.name == cooldown_type)
         )
@@ -209,9 +169,6 @@ class UserCooldownRepository(Base):
         return await self.session.scalar(stmt)
 
     async def get_active_cooldown(self, telegram_id: int, cooldown_name: str):
-        """
-        Get active cooldown for specific type
-        """
         stmt = select(UserCooldown).join(
             Cooldown, 
             UserCooldown.cooldown_id == Cooldown.id
@@ -226,12 +183,6 @@ class UserCooldownRepository(Base):
         return result
 
     async def cleanup_expired_cooldowns(self) -> int:
-        """
-        Delete all expired cooldown records
-        
-        Returns:
-            int: Number of deleted records
-        """
         stmt = delete(UserCooldown)\
             .where(UserCooldown.end_at <= func.now())
         
@@ -242,19 +193,6 @@ class UserCooldownRepository(Base):
         return deleted
 
     async def delete_user_cooldown(self, user_id: int, cooldown_type: str) -> bool:
-        """
-        Полностью убирает кулдаун конкретного типа у пользователя (для
-        creator-команды сброса кулдаунов при эмпирическом тестировании -
-        см. чат: нельзя ждать по 10 минут между попытками, когда проверяешь
-        случайный шанс). В отличие от reset_cooldown (который на самом деле
-        ПРОДЛЕВАЕТ кулдаун на полную длительность - неверно названный,
-        неиспользуемый метод) - здесь строка реально удаляется, и
-        set_cooldown на пустом месте создаёт новую при следующем действии.
-
-        Returns:
-            bool: True, если запись реально была (и её удалили), False -
-            кулдауна и так не было активно.
-        """
         cooldown = await self.get_cooldown(search_parameter=cooldown_type)
 
         if not cooldown:
@@ -273,8 +211,6 @@ class UserCooldownRepository(Base):
         return result.rowcount > 0
 
     async def delete_all_user_cooldowns(self, user_id: int) -> int:
-        """Убирает ВСЕ кулдауны пользователя разом ("all" в creator-команде)."""
-
         result = await self.session.execute(
             delete(UserCooldown).where(UserCooldown.user_id == user_id)
         )
@@ -282,10 +218,6 @@ class UserCooldownRepository(Base):
         return result.rowcount
 
     async def list_cooldown_types(self) -> list[str]:
-        """Все существующие типы кулдаунов (имена из таблицы `cooldowns`) -
-        для usage-подсказки в creator-команде, вместо хардкода списка,
-        который иначе неизбежно разъедется с реально засеянными типами."""
-
         result = await self.session.scalars(select(Cooldown.name).order_by(Cooldown.name))
         return list(result)
 
@@ -294,17 +226,6 @@ class UserCooldownRepository(Base):
         cooldown_type: str, 
         duration: int
     ) -> Cooldown:
-        """
-        Add new cooldown type to the system
-        
-        Args:
-            cooldown_type: Unique cooldown type name
-            duration: Cooldown duration
-            
-        Returns:
-            Cooldown: Created cooldown object
-        """
-
         cooldown = await self.session.scalar(
             insert(Cooldown)
             .values(
@@ -315,7 +236,6 @@ class UserCooldownRepository(Base):
         )
 
         if not cooldown:
-
             raise
         logger.info(f"Added new cooldown type: {cooldown_type} ({duration})")
         return cooldown

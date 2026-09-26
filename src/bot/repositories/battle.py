@@ -14,10 +14,6 @@ logger = logging.getLogger(__name__)
 
 
 class BattleRepository(Base):
-    """Постоянная история (BATTLE_ENGINE.md 5.1) - append-only, строки
-    никогда не обновляются/не удаляются (та же дисциплина, что у
-    DeathLogRepository)."""
-
     session: AsyncSession
 
     def __init__(self, session: AsyncSession) -> None:
@@ -62,9 +58,6 @@ class BattleRepository(Base):
         return battle
 
     async def count_total_since(self, telegram_id: int, since: datetime) -> int:
-        """Для дневного лимита "20 боёв/сутки всего" (4.4) - гуль мог быть
-        любой из двух сторон дуэли, отсюда `or_`."""
-
         stmt = (
             select(func.count())
             .select_from(Battle)
@@ -81,11 +74,6 @@ class BattleRepository(Base):
     async def count_pair_since(
         self, telegram_id_a: int, telegram_id_b: int, since: datetime
     ) -> int:
-        """Для дневного лимита "5 боёв/сутки на пару" (4.4) - порядок a/b
-        в конкретной записи не гарантирован (кто на чьей стороне был при
-        записи - деталь одного конкретного боя), поэтому проверяем оба
-        варианта пары."""
-
         stmt = (
             select(func.count())
             .select_from(Battle)
@@ -102,17 +90,6 @@ class BattleRepository(Base):
         return (await self.session.scalar(stmt)) or 0
 
     async def count_wins(self, telegram_id: int, battle_type: Optional[str] = None) -> int:
-        """Побед за всё время (BATTLE_ENGINE.md 5.2) - НЕ по 24ч окну, в
-        отличие от count_total_since/count_pair_since (те - под дневные
-        лимиты). Работает и для боёв с мобами (participant_b - NULL,
-        winner="a"/"b" относительно самого игрока, см. BattleRecordService.
-        record_mob_fight).
-
-        `battle_type=None` - ЛЮБОЙ тип боя разом (дуэли и мобы вперемешку -
-        ВАЖНО: не использовать это значение там, где счёт должен быть
-        честным по одному виду соперника, см. чат про "смешанные значения
-        счётчиков"). "duel"/"mob" - строго один тип."""
-
         conditions = [
             or_(
                 (Battle.participant_a_telegram_id == telegram_id) & (Battle.winner == "a"),
@@ -139,8 +116,6 @@ class BattleRepository(Base):
         return (await self.session.scalar(stmt)) or 0
 
     async def count_total(self, telegram_id: int, battle_type: Optional[str] = None) -> int:
-        """Все бои за всё время (включая ничьи) - победы+поражения+ничьи."""
-
         conditions = [
             or_(
                 Battle.participant_a_telegram_id == telegram_id,

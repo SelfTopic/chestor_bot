@@ -20,7 +20,6 @@ class ResetService:
         self.ghoul_repo = ghoul_repo
 
     async def reset_ghoul(self, query: str) -> ResetResult:
-        """Удаляет только профиль гуля."""
         user = await self._resolve_user(query)
         ghoul_deleted = await self.ghoul_repo.delete(user.telegram_id)
         return ResetResult(
@@ -30,10 +29,9 @@ class ResetService:
         )
 
     async def reset_user(self, query: str) -> ResetResult:
-        """Удаляет пользователя полностью (каскадно удалит гуля если есть FK)."""
         user = await self._resolve_user(query)
 
-        # Сначала гуль — на случай если нет CASCADE в БД
+        # Сначала гуль: в БД может не быть CASCADE.
         ghoul_deleted = await self.ghoul_repo.delete(user.telegram_id)
         user_deleted = await self.user_repo.delete(user.telegram_id)
 

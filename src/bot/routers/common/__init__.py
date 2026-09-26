@@ -1,10 +1,3 @@
-"""
-Общие роутеры. В отличие от остальных областей, у common нет одного
-собирающего роутера: RootRouter ставит их вперемешку с другими областями, в порядке
-include_routers прода. Поэтому пакет выставляет каждый роутер, а корень берёт их
-отсюда, не заглядывая в модули пакета.
-"""
-
 from .anime import AnimeRouter
 from .bot_router import BotRouter
 from .check_balance import BalanceRouter

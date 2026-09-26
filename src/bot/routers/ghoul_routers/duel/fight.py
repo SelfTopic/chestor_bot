@@ -1,14 +1,3 @@
-"""
-Дуэль на стороне Telegram: объявить бой и объявить исход. Всё, что считается и
-пишется в БД, делает BattleService (services/battle.py); здесь только что и в
-какие чаты отправить. Общее для нажатий (callbacks.py) и таймаутов (ticker.py),
-поэтому получает только Bot и DuelServices.
-
-Как у прода, у дуэли из лички (is_private_origin) бой и исход дублируются в оба
-личных чата, а id сообщения с кнопками исхода не запоминается: там клавиатуру
-после выбора не убираем.
-"""
-
 import logging
 
 from selfrot import Bot
@@ -28,8 +17,6 @@ logger = logging.getLogger(__name__)
 async def run_and_announce_fight(
     bot: Bot, duel: DuelSession, services: DuelServices
 ) -> DuelSession | None:
-    """Состояние дуэли после боя; None — участник исчез, дуэль закрыта. Стадия
-    "awaiting_winner_choice" значит, что ждём выбор победителя (таймаут — DuelTicker)."""
     fight = await services.battle.fight_duel(duel)
     if fight is None:
         return None
@@ -61,8 +48,6 @@ async def run_and_announce_fight(
 async def finalize_outcome(
     bot: Bot, duel: DuelSession, action: str, services: DuelServices
 ) -> None:
-    """Исход "ограбить/отпустить/съесть". Вызывать только после того, как
-    atomic_update реально перевёл дуэль в "done" с этим выбором."""
     outcome = await services.battle.resolve_duel_outcome(duel, action)
 
     if duel.outcome_message_id:
@@ -73,8 +58,6 @@ async def finalize_outcome(
         except TelegramAPIError:
             pass
 
-    # Итог всегда дублируется в личку обоим, чтобы бой можно было найти в
-    # переписке; у дуэли из лички это и есть единственная доставка.
     chat_ids = {duel.initiator_telegram_id, duel.target_telegram_id}
     if not duel.is_private_origin:
         chat_ids.add(duel.chat_id)
@@ -90,7 +73,6 @@ async def finalize_outcome(
 def outcome_text(outcome: DuelOutcome) -> str:
     winner, loser = outcome.winner_name, outcome.loser_name
 
-    # Опечатки ("у тот", "у нечего") как у прода.
     if outcome.action == "outcome_rob":
         text = (
             f"💰 {winner} ограбил {loser} и забрал {outcome.reward_balance} CheSton's!"
@@ -117,7 +99,6 @@ def outcome_text(outcome: DuelOutcome) -> str:
             f"{outcome.reward_level_progress:.2f}% опыта за победу."
         )
 
-    # Счёт только дуэлей (BATTLE_ENGINE.md 5.2), уже с этим боем.
     text += "\n\n" + _score_line(winner, outcome.winner_score)
     text += "\n" + _score_line(loser, outcome.loser_score)
     return text

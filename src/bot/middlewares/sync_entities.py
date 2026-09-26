@@ -7,14 +7,9 @@ from src.bot.types.insert import ChatInsert
 from ..context import AppContext
 
 
+# Своя сразу коммитящаяся сессия, а не сессия хендлера: иначе INSERT ... ON CONFLICT держал
+# бы строку User залоченной до конца хендлера.
 class SyncEntitiesMiddleware(BaseMiddleware[AppContext]):
-    """
-    Апсертит User/Chat на каждое сообщение, намеренно в СВОЕЙ сразу коммитящейся
-    сессии, а не в сессии хендлера: иначе INSERT ... ON CONFLICT держал бы строку
-    User залоченной до конца хендлера (как у прода: sync_entity_middleware.py, тег
-    aiogram-final).
-    """
-
     async def pre_handle(self) -> bool:
         event = self.ctx.event
 

@@ -1,6 +1,3 @@
-"""Левелапы: та же логика, что у прод-LevelUpService (тег aiogram-final), уведомление
-игроку — через Notifier."""
-
 import logging
 from dataclasses import dataclass, field
 
@@ -19,7 +16,7 @@ class LevelUpResult:
     ghoul: Ghoul
     cheston_reward: int
     rc_reward: int
-    notified: bool  # удалось ли отправить ЛС - награда выдаётся в любом случае
+    notified: bool
 
 
 @dataclass
@@ -59,9 +56,8 @@ class LevelUpService:
         cheston_reward = LEVEL_UP_CONFIG.cheston_reward(new_level)
         rc_reward = LEVEL_UP_CONFIG.rc_reward(new_level)
 
-        # Сначала ВСЕ изменения состояния - и только потом попытка уведомить.
-        # Если ЛС не отправится, награда и уровень уже применены, откатывать
-        # их не нужно и нельзя.
+        # Сначала все изменения, потом уведомление: если ЛС не дойдёт, уровень и награда уже
+        # выданы.
         await self.user_service.plus_balance(
             telegram_id=telegram_id,
             change_balance=cheston_reward,
@@ -85,11 +81,6 @@ class LevelUpService:
         )
 
     async def add_progress(self, telegram_id: int, delta: float) -> ProgressResult:
-        """Начисляет (или снимает - delta может быть отрицательной) level_progress и,
-        если пройден 100% порог, вызывает level_up() РОВНО один раз, независимо от
-        размера delta (уровень никогда не перепрыгивает больше чем на 1 за одно
-        событие - излишек выше 100% отбрасывается, см. apply_level_progress)."""
-
         ghoul = await self.ghoul_service.get(telegram_id)
         if not ghoul:
             raise ValueError("Ghoul not found")
@@ -137,9 +128,6 @@ class LevelUpService:
             await self._notifier.send_message(telegram_id, text)
             return True
         except NotifyError:
-            # Самый частый случай - игрок ни разу не писал боту в личку (только в
-            # чате), Telegram не разрешает инициировать диалог. Награда уже выдана
-            # выше - это не повод её откатывать.
             logger.warning(
                 f"Could not DM level-up notification to {telegram_id} - "
                 f"reward still granted (level {new_level})",

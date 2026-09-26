@@ -11,8 +11,6 @@ from .config import config
 
 logger = logging.getLogger(__name__)
 
-# Регулярка для парсинга капшена
-# Пример: "Токийский гуль 1 сезон 1. Вкус"
 CAPTION_PATTERN = re.compile(r"Токийский гуль\s+(\d+)\s+сезон\s+(\d+)\.\s+(.+)")
 
 
@@ -31,7 +29,6 @@ class TelegramParser:
         self.download_path.mkdir(parents=True, exist_ok=True)
 
     def get_missing_series(self) -> set[tuple[int, int]]:
-        """Возвращает множество (season, episode) которых нет в папке"""
         missing = set()
 
         for season in range(1, config.SEASONS_COUNT + 1):
@@ -43,7 +40,6 @@ class TelegramParser:
         return missing
 
     def parse_caption(self, caption: str) -> Optional[tuple[int, int, str]]:
-        """Парсит капшен, возвращает (season, episode, episode_name) или None"""
         match = CAPTION_PATTERN.search(caption)
         if not match:
             return None
@@ -52,7 +48,6 @@ class TelegramParser:
     async def get_channel_messages(
         self, channel_id: int, limit: int = 1000
     ) -> list[Message]:
-        """Получает все сообщения из канала"""
         result_messages = []
         try:
             messages = self.app.get_chat_history(channel_id, limit=limit)
@@ -62,7 +57,7 @@ class TelegramParser:
                 return []
 
             async for message in messages:
-                if message.media:  # Только сообщения с медиа
+                if message.media:
                     result_messages.append(message)
 
         except Exception as e:
@@ -74,7 +69,6 @@ class TelegramParser:
     async def download_series(
         self, message: Message, season: int, episode: int
     ) -> bool:
-        """Скачивает одну серию. Возвращает True если успешно"""
         file_path = self.download_path / f"Season_{season}_Episode_{episode}.mp4"
 
         try:
@@ -83,14 +77,11 @@ class TelegramParser:
             return True
         except Exception as e:
             logger.error(f"Ошибка скачивания {season}x{episode}: {e}")
-            # Удаляем частично скачанный файл
             if file_path.exists():
                 file_path.unlink()
             return False
 
     async def parse_channel(self) -> ParseResult:
-        """Основной метод парсинга"""
-        # 1. Проверяем, что уже скачано
         missing_series = self.get_missing_series()
         if not missing_series:
             logger.info("Все серии уже скачаны")
@@ -98,7 +89,6 @@ class TelegramParser:
 
         logger.info(f"Недостающие серии: {len(missing_series)} шт.")
 
-        # 2. Получаем сообщения из канала
         channel_id = config.CHANNEL_ID
         messages = await self.get_channel_messages(channel_id)
 
@@ -106,7 +96,6 @@ class TelegramParser:
             logger.warning("В канале нет сообщений")
             return ParseResult.NO_MESSAGES
 
-        # 3. Обрабатываем сообщения
         downloaded_count = 0
 
         for message in messages:
@@ -119,21 +108,17 @@ class TelegramParser:
 
             season, episode, episode_name = parsed
 
-            # Проверяем, нужно ли скачивать
             if (season, episode) not in missing_series:
                 continue
 
-            # Скачиваем
             success = await self.download_series(message, season, episode)
             if success:
                 missing_series.remove((season, episode))
                 downloaded_count += 1
 
-            # Если всё скачали — выходим
             if not missing_series:
                 break
 
-        # 4. Результат
         if downloaded_count == 0:
             return ParseResult.FAILED
         elif missing_series:

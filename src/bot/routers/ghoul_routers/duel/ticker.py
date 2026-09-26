@@ -1,25 +1,3 @@
-"""
-Таймауты дуэли: задача уровня диспетчера, как NotificationTicker. Создаётся в
-Dispatcher.__init__, запускается в on_startup, останавливается в on_shutdown.
-
-У прода таймауты — asyncio-задачи, которые хендлер заводит на каждую дуэль
-(background.py). Здесь хендлеры ничего не заводят: тикер раз в interval секунд
-читает из БД дуэли, ждущие согласия, выбора "всерьёз/фора" или выбора победителя,
-и если дуэль стоит на одной стадии дольше её таймаута (DUEL_CONFIG), делает то же,
-что прод по таймауту: отменяет приглашение, начинает бой с форой или отпускает
-проигравшего.
-
-Отсчёт идёт с момента, когда тикер впервые увидел дуэль на этой стадии (у
-DuelSession нет времени смены стадии), поэтому таймаут может сработать позже на
-interval секунд. Зато после перезапуска бота дуэль не зависает навсегда с занятым
-ActiveBattle-локом, как у прода, где таймеры жили только в памяти: тикер находит её
-заново, и таймаут отсчитывается с запуска.
-
-Гонку "нажатие против таймаута" по-прежнему закрывает atomic_update (UPDATE ...
-WHERE stage=ожидаемая): выигрывает кто-то один. Сессию БД тикер открывает сам,
-как NotificationTicker: у хендлеров она своя и к этому времени уже закрыта.
-"""
-
 import asyncio
 import logging
 import time
@@ -44,8 +22,6 @@ logger = logging.getLogger(__name__)
 
 
 def stage_timeouts() -> dict[str, float]:
-    """Стадии, у которых есть таймаут, и сам таймаут в секундах. Читается на
-    каждом тике, а не один раз: так конфиг можно поменять (в тестах — подменить)."""
     return {
         "awaiting_consent": DUEL_CONFIG.invite_timeout_seconds,
         "awaiting_serious_or_handicap": DUEL_CONFIG.serious_or_handicap_timeout_seconds,
@@ -53,6 +29,8 @@ def stage_timeouts() -> dict[str, float]:
     }
 
 
+# Отсчёт идёт с момента, когда тикер впервые увидел дуэль на стадии, поэтому таймаут может
+# сработать на interval позже. Гонку «нажатие против таймаута» закрывает atomic_update.
 class DuelTicker:
     def __init__(
         self,
@@ -69,7 +47,6 @@ class DuelTicker:
         self._dialog_service = dialog_service
         self._interval = interval_seconds
         self.clock = clock
-        # (id дуэли, стадия) -> когда тикер впервые увидел её на этой стадии
         self._seen: dict[tuple[int, str], float] = {}
         self._task: asyncio.Task[None] | None = None
 
@@ -121,8 +98,8 @@ class DuelTicker:
             if now - since < timeouts[stage]:
                 continue
 
-            # Упавший таймаут не повторяется на каждом тике: дуэль увидится заново
-            # и получит ещё один полный срок.
+            # Упавший таймаут не повторяется на каждом тике: дуэль увидится заново и получит
+            # новый срок.
             del self._seen[key]
             try:
                 await self._expire(duel_id, stage)
@@ -131,7 +108,6 @@ class DuelTicker:
 
     @asynccontextmanager
     async def _services(self) -> AsyncIterator[DuelServices]:
-        """Свежая сессия на одно действие, закоммиченная, если оно не упало."""
         async with self._session_factory() as session:
             token = session_context.set(session)
             try:
@@ -163,8 +139,6 @@ class DuelTicker:
                 updated.initiator_telegram_id, updated.target_telegram_id
             )
 
-        # Кнопки согласия больше не актуальны: сообщение удаляется, а о таймауте
-        # сообщается отдельно.
         if updated.consent_message_id:
             try:
                 await self._bot.delete_message(
@@ -184,7 +158,6 @@ class DuelTicker:
                 pass
 
     async def _expire_fora(self, duel_id: int) -> None:
-        """Сильная сторона не выбрала: бой с форой (BATTLE_ENGINE.md 1.5)."""
         async with self._services() as services:
             updated = await services.duel_service.atomic_update(
                 duel_id,
@@ -196,7 +169,6 @@ class DuelTicker:
                 await run_and_announce_fight(self._bot, updated, services)
 
     async def _expire_outcome(self, duel_id: int) -> None:
-        """Победитель не выбрал: проигравшего отпускают."""
         async with self._services() as services:
             updated = await services.duel_service.atomic_update(
                 duel_id,

@@ -1,14 +1,3 @@
-"""
-"пить кофе": маленькая cooldown-команда, отдельная от "щёлк"/"голода", не даёт
-обходить их лимит бесконечным кликаньем (COFFEE_CONFIG.snap_limit). Переиспользует
-CoffeeService.execute()/execute_cooldown() как есть — чистая логика с БД, включая
-day-cap рефанд при повторном клике во время кулдауна (execute_cooldown сам и
-проверяет, и ставит кулдаун). Лимит щелчков и ответ с гифкой — здесь, через
-ctx.db_ghoul() и ctx.reply_gif (context.py). Кулдаун — не через ctx.cooldown_remaining (тот
-только читает по имени кулдауна, а execute_cooldown сам решает COFFEE это или
-COFFEE_DAY и сразу отдаёт нужную запись).
-"""
-
 import time
 
 from selfrot import BaseRouter, MessageHandler
@@ -30,8 +19,6 @@ class CoffeeHandler(MessageHandler[AppContext[TextUserMessage]]):
         ctx = self.ctx
         telegram_id = ctx.message.user.id
 
-        # GhoulMiddleware уже гарантировал, что гуль есть и жив — db_ghoul() здесь
-        # не «проверка на всякий случай», а то же утверждение, что у db_user().
         ghoul = await ctx.db_ghoul()
 
         if ghoul.snap_count < COFFEE_CONFIG.snap_limit:

@@ -2,7 +2,6 @@ from enum import Enum
 
 
 class Race(Enum):
-
     HUMAN = {
         "bit": 0,
         "name": "Человек"    

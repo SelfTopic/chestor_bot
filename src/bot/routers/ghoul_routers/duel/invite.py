@@ -1,22 +1,3 @@
-"""
-Шаг 1, "дуэль": приглашение с двумя кнопками (для инициатора и для соперника: сама
-команда ещё не согласие). Таймаут согласия ведёт DuelTicker.
-
-Проверки перед приглашением (оба живы, боеспособны, не заняты, дневные лимиты, у
-обоих открыта личка с ботом) делает BattleService.open_duel; здесь только тексты
-отказов и доставка приглашения. Дуэль из лички инициатора (соперник через
-@username): сопернику эта личка не видна, поэтому приглашение уходит в обе лички
-(is_private_origin у DuelSession).
-
-Цель — ответом или @username/id: по CLAUDE.md это два хендлера на миксинах
-targeting.py. Как у прода, цель — весь остаток текста после команды, а ошибки
-приходят реплаем.
-
-Исправленный прод-баг: прод ловил команду по началу текста, поэтому на "дуэльный
-вызов" в чате бот отвечал "Пользователь не найден: вызов". Здесь это команда
-"дуэль" целым словом (Command с prefixes="").
-"""
-
 import logging
 from typing import Any
 
@@ -41,9 +22,6 @@ _NO_PRIVATE_CHAT = (
 
 
 class DuelInvite:
-    """Общая часть обоих хендлеров: соперник уже известен. Как и миксины
-    targeting.py, не наследует MessageHandler: его каждый хендлер пишет сам."""
-
     ctx: AppContext[Any]
 
     refusals = {
@@ -88,7 +66,6 @@ class DuelInvite:
             return
 
         session = duel.session
-        # full_name БД-пользователя без фамилии кончается пробелом: как у прода.
         text = (
             f"⚔️ {duel.initiator_name} вызывает {duel.target_name} на дуэль!\n"
             f"Бой начнётся только после подтверждения ОБЕИХ сторон."
@@ -104,8 +81,6 @@ class DuelInvite:
             )
             return
 
-        # Лички инициатора и соперника друг другу не видны: приглашение в обе.
-        # id сообщений не запоминаются, дальше их не редактируем.
         for chat_id in (session.initiator_telegram_id, session.target_telegram_id):
             try:
                 await ctx.bot.send_message(chat_id=chat_id, text=text, reply_markup=keyboard)
@@ -114,7 +89,7 @@ class DuelInvite:
 
 
 class DuelRepliedArgs(CommandArgs):
-    note: Rest = ""  # текст после "дуэль" в ответе на сообщение не нужен, как у прода
+    note: Rest = ""
 
 
 class DuelRepliedHandler(
@@ -127,7 +102,7 @@ class DuelRepliedHandler(
 
 
 class DuelArgs(TargetArgs):
-    target: Rest  # весь остаток: "дуэль @a b" ищет "@a b", как у прода
+    target: Rest
 
 
 class DuelHandler(

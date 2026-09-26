@@ -9,9 +9,6 @@ from ...types import UserMessage
 
 
 class HasActiveWordleGame(BaseFilter[AppContext[Any]]):
-    """У отправителя есть незавершённая партия wordle. О самом слове фильтр не судит:
-    его форму проверяет TextRegexp, поэтому фильтры складываются через &."""
-
     guarantees = UserMessage
 
     async def check(self, ctx: BaseContext[Any]) -> bool:

@@ -5,8 +5,6 @@ from ....context import AppContext
 
 
 class RpCommandsMiddleware(BaseMiddleware[AppContext]):
-    """Прогревает кеш Role-Play команд чата перед хендлерами RolePlayRouter."""
-
     async def pre_handle(self) -> bool:
         event = self.ctx.event
         if isinstance(event, Message):

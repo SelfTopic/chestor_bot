@@ -134,16 +134,6 @@ class UserRepository(Base):
         return user
 
     async def change_balance_atomic(self, telegram_id: int, delta: int) -> Optional[User]:
-        """
-        Атомарно меняет баланс на delta одним SQL-запросом
-        (UPDATE ... SET balance = balance + delta), без промежуточного
-        чтения. Это защищает от гонки при конкурентных изменениях баланса
-        одного и того же пользователя — Postgres сам сериализует
-        конкурентные UPDATE одной строки.
-
-        Returns:
-            User с уже обновлённым балансом, или None если пользователь не найден.
-        """
         logger.debug(
             f"Called method change_balance_atomic. Params: telegram_id={telegram_id}, delta={delta}"
         )
@@ -158,18 +148,8 @@ class UserRepository(Base):
         user = await self.session.scalar(stmt)
         return user
 
+    # Проверка баланса в WHERE того же UPDATE: между проверкой и списанием нет гонки.
     async def debit_if_sufficient(self, telegram_id: int, amount: int) -> Optional[User]:
-        """
-        Атомарно списывает amount с баланса, но только если баланса хватает -
-        проверка "balance >= amount" встроена прямо в WHERE того же UPDATE,
-        так что не может произойти гонки между "проверили, что хватает" и
-        "списали" (в отличие от change_balance_atomic, эта операция никогда
-        не уводит баланс в минус).
-
-        Returns:
-            User с уже списанным балансом, или None если пользователя нет
-            или баланса не хватает.
-        """
         logger.debug(
             f"Called method debit_if_sufficient. Params: telegram_id={telegram_id}, amount={amount}"
         )
@@ -210,7 +190,6 @@ class UserRepository(Base):
         )
 
     async def get_ban_info(self, telegram_id: int) -> Optional[User]:
-        """Возвращает пользователя только если он забанен, иначе None"""
         user = await self.get(telegram_id)
         if user and user.is_banned:
             return user

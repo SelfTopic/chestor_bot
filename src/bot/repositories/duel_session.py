@@ -36,16 +36,10 @@ class DuelSessionRepository(Base):
             raise ValueError("Не удалось создать DuelSession")
         return session
 
+    # None — гонка проиграна (стадию уже увело нажатие или таймаут), это не ошибка.
     async def atomic_update(
         self, duel_id: int, expected_stage: str, **fields: Any
     ) -> Optional[DuelSession]:
-        """UPDATE ... WHERE id=duel_id AND stage=expected_stage RETURNING -
-        единственный примитив для ЛЮБОГО перехода состояния дуэли (см.
-        докстринг `DuelSession`). `None` - гонка проиграна: сессия уже не
-        в `expected_stage` (либо нажатие кнопки, либо таймаут её успели
-        увести раньше) - вызывающий код в этом случае просто ничего не
-        делает, это НЕ ошибка."""
-
         stmt = (
             update(DuelSession)
             .where(DuelSession.id == duel_id, DuelSession.stage == expected_stage)

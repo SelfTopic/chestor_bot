@@ -1,5 +1,3 @@
-"""Использование Role-Play команды: «погладить» в ответ на сообщение или «погладить @user»."""
-
 from selfrot import CommandArgs, MessageHandler, Rest
 from selfrot.filter import HasUser
 
@@ -10,10 +8,8 @@ from .sending import send_rp
 
 
 class RpArgs(CommandArgs):
-    """«погладить @username». В ответ на сообщение адресат известен и аргументы не нужны."""
-
-    target: str = ""  # «@username», если команда без ответа на сообщение
-    note: Rest = ""  # «погладить @user нежно»: остаток игнорируется
+    target: str = ""
+    note: Rest = ""
 
 
 class RolePlayHandler(MessageHandler[AppContext[TextUserMessage]]):
@@ -28,7 +24,7 @@ class RolePlayHandler(MessageHandler[AppContext[TextUserMessage]]):
 
         addressee = await self.ctx.addressee(found.command.parse(self.ctx).target)
         if addressee is None:
-            return  # некому: без ответа и @username команда молчит
+            return
 
         rp_command = found.rp
         answer_text = (

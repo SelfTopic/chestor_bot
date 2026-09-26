@@ -23,7 +23,6 @@ from ...rich import answer_rich_or_text, paragraph, table_cell
 class KaguneInfoHandler(MessageHandler[AppContext[TextMessage]]):
     query = Text("кагуне", ignore_case=True) | Command("kagune")
 
-    # Порядок и подписи статов в таблице влияния кагуне: тот же, что в "боевая мощь".
     stat_labels: list[tuple[str, str]] = [
         ("strength", "Сила"),
         ("dexterity", "Ловкость"),
@@ -33,9 +32,6 @@ class KaguneInfoHandler(MessageHandler[AppContext[TextMessage]]):
     ]
 
     def build_message(self) -> InputRichMessage:
-        """Справочная таблица "какой тип кагуне на какой стат и с каким множителем
-        влияет" (BATTLE_DESIGN.md "Множители типов кагуне"); не привязана к гулю."""
-
         header_row = [table_cell("Тип", header=True)] + [
             table_cell(label, header=True) for _, label in self.stat_labels
         ]

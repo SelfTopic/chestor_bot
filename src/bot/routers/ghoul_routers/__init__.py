@@ -16,9 +16,6 @@ from .upgrade_stat import UpgradeStatRouter
 
 
 class GhoulRouter(BaseRouter[AppContext]):
-    """Игровые команды за GhoulMiddleware: без гуля (кроме "растить кагуне") и
-    мёртвым гулям доступ закрыт. Порядок — как в прод-include_ghoul_routers."""
-
     middlewares = (GhoulMiddleware,)
     routers = (
         UpgradeKaguneRouter,

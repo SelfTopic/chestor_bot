@@ -1,5 +1,3 @@
-"""Тексты wordle: подпись к доске после хода и итог партии."""
-
 import html
 
 from src.bot.game_configs import WORDLE_CONFIG
@@ -8,7 +6,6 @@ from src.bot.types.wordle import WordleGuessResult
 
 
 def attempts_word(n: int) -> str:
-    """Склонение слова 'попытка'."""
     if 11 <= n % 100 <= 14:
         return "попыток"
     match n % 10:
@@ -21,7 +18,6 @@ def attempts_word(n: int) -> str:
 
 
 def guess_caption(result: WordleGuessResult, word: str) -> str:
-    """Подпись к доске после хода."""
     if result.is_won:
         return (
             f"🎉 Вы угадали слово <b>{result.target}</b> "
@@ -41,7 +37,6 @@ def guess_caption(result: WordleGuessResult, word: str) -> str:
 
 
 def _word_html(word: str, summary: WikipediaSummary | None) -> str:
-    """Загаданное слово: гиперссылка на статью в Википедии, а если статьи нет, жирным."""
     escaped = html.escape(word)
     if summary is None:
         return f"<b>{escaped}</b>"

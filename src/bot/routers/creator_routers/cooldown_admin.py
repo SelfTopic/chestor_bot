@@ -1,7 +1,3 @@
-"""/clear_cooldown: снять кулдаун (конкретный или "all") у любого игрока — нужно для
-эмпирической проверки случайных шансов, где ждать по 10 минут между попытками
-нереально. Цель — ответ на сообщение или id/@username аргументом."""
-
 from selfrot import BaseRouter, CommandArgs, MessageHandler
 from selfrot.filter import Command, HasReplyUser
 from selfrot.types import Message

@@ -13,7 +13,6 @@ from .play import RolePlayHandler
 
 class RolePlayRouter(BaseRouter[AppContext]):
     middlewares = (RpCommandsMiddleware,)
-    # порядок как у прода: сначала управление командами, потом сами команды
     handlers = (
         NewRpOnMediaHandler,
         NewRpHandler,

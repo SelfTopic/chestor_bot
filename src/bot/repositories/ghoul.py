@@ -52,13 +52,6 @@ class GhoulRepository(Base):
         return ghoul
 
     async def increment_fields(self, telegram_id: int, **deltas: int) -> Optional[Ghoul]:
-        """Атомарно увеличивает (или уменьшает, при отрицательной delta)
-        сразу несколько числовых колонок ОДНИМ UPDATE - без промежуточного
-        чтения, без гонки между отдельными изменениями одной строки (тот же
-        принцип, что и UserRepository.change_balance_atomic).
-
-        Пример: increment_fields(tid, level=1, rc_money=250).
-        """
         if not deltas:
             raise ValueError("No fields to increment")
 
@@ -145,8 +138,6 @@ class GhoulRepository(Base):
         self, count: int, kagune_type: Optional[KaguneType] = None
     ) -> List[Ghoul]:
         if kagune_type is None:
-            # Сила кагуне теперь по 4 отдельным (nullable) колонкам -
-            # сортируем по сумме (NULL = тип не открыт = 0), см. BATTLE_DESIGN.md.
             total_strength = (
                 func.coalesce(Ghoul.kagune_strength_ukaku, 0)
                 + func.coalesce(Ghoul.kagune_strength_koukaku, 0)
@@ -160,10 +151,8 @@ class GhoulRepository(Base):
                 .limit(count)
             )
         else:
-            # Топ по конкретному типу - только те, у кого он реально открыт
-            # (NULL исключаем, а не считаем нулём - иначе топ по типу
-            # заполнился бы теми, у кого его вообще нет). Мёртвые - тоже мимо
-            # топов, см. BATTLE_DESIGN.md ("Смерть и сброс").
+            # В топ по типу попадают только те, у кого тип открыт (NULL не считается нулём),
+            # мёртвые не попадают.
             column = getattr(Ghoul, kagune_type.value["strength_column"])
             stmt = (
                 select(Ghoul)

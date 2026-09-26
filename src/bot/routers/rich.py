@@ -29,11 +29,6 @@ async def answer_rich_or_text(
     *,
     what: str,
 ) -> None:
-    """
-    Rich-сообщение (Bot API 10.1+). Свежая фича: на клиенте или в чате, который её не
-    поддерживает, Telegram отвечает ошибкой, и тогда уходит обычный текст. Текст
-    строится только если он нужен (fallback вызывается по требованию).
-    """
     try:
         await message.answer_rich_message(rich_message=rich_message)
     except TelegramAPIError:

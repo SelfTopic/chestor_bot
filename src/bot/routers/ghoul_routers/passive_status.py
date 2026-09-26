@@ -1,8 +1,3 @@
-"""
-"реген" и "голод": пассивные показатели гуля, только чтение. Формулы (регенерация,
-тиры голода, эффективные статы через Fighter) берутся из прод-кода как есть.
-"""
-
 from selfrot import BaseRouter, MessageHandler
 from selfrot.filter import HasUser, Text
 
@@ -73,9 +68,6 @@ class HungerStatusHandler(MessageHandler[AppContext[TextUserMessage]]):
         else:
             time_left = f"До истощения: {format_duration(int(hours_left * 3600))}"
 
-        # Не только тир, но и его активные множители и итоговые эффективные статы
-        # (BATTLE_ENGINE.md 8.3). Fighter собирается только ради compute_effective_stats,
-        # боя тут нет.
         fighter = ctx.battle_engine.ghoul_to_fighter(
             ghoul, full_name(ctx.message.user), ctx.ghoul_service
         )

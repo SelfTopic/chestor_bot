@@ -40,7 +40,6 @@ class ChatService(Base):
         return chat
 
     async def set_chat_rules(self, telegram_id: int, rules: str) -> Chat:
-        # Максимальная длинна сообщения в Telegram - 4096
         if len(rules) < 1 or len(rules) > 4000:
             raise ChatRulesError(
                 "Кол-во символов в правилах не может быть меньше 1 и больше 4000 символов."
@@ -68,7 +67,6 @@ class ChatService(Base):
     async def set_chat_welcome_message(
         self, telegram_id: int, welcome_message: str
     ) -> Chat:
-        # Максимальная длинна сообщения в Telegram - 4096
         if len(welcome_message) < 0 or len(welcome_message) > 4000:
             raise ChatMemberUpdateMessageError(
                 "Кол-во символов в приветственном сообщении не может быть меньше 1 и больше 4000 символов."
@@ -100,7 +98,6 @@ class ChatService(Base):
     async def set_chat_goodbye_message(
         self, telegram_id: int, goodbye_message: str
     ) -> Chat:
-        # Максимальная длинна сообщения в Telegram - 4096
         if len(goodbye_message) < 0 or len(goodbye_message) > 4000:
             raise ChatMemberUpdateMessageError(
                 "Кол-во символов в прощальном сообщении не может быть меньше 1 и больше 4000 символов."

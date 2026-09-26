@@ -30,8 +30,6 @@ class GuessResult:
 
 @dataclass
 class WordleGuessResult:
-    """То, что роутер получает от сервиса после каждого хода"""
-
     png: bytes
     guess: GuessResult
     attempts_used: int
@@ -44,8 +42,6 @@ class WordleGuessResult:
 
 @dataclass
 class _WordleGame:
-    """Внутреннее состояние одной игровой сессии."""
-
     target: str
     guesses: list[GuessResult] = field(default_factory=list)
     board_message_id: int | None = None

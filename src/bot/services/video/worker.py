@@ -1,4 +1,3 @@
-# src/bot/services/video/worker.py
 import asyncio
 import logging
 
@@ -15,14 +14,6 @@ class VideoWorker:
         workers_count: int = 2,
         max_queue_size: int = 100,
     ):
-        """
-        Инициализация воркера с асинхронной обработкой видео.
-
-        Args:
-            cutter: Сервис нарезки видео
-            workers_count: Количество параллельных воркеров
-            max_queue_size: Максимальный размер очереди
-        """
         logger.info(f"Initializing VideoWorker with {workers_count} workers")
         self.cutter = cutter
         self.queue: asyncio.Queue[VideoCutJob] = asyncio.Queue(maxsize=max_queue_size)
@@ -32,7 +23,6 @@ class VideoWorker:
         self._shutdown_event = asyncio.Event()
 
     async def start(self) -> None:
-        """Запускает воркеров"""
         if self._is_running:
             logger.warning("VideoWorker is already running")
             return
@@ -46,12 +36,6 @@ class VideoWorker:
         ]
 
     async def enqueue(self, job: VideoCutJob) -> None:
-        """
-        Добавляет задачу в очередь.
-
-        Raises:
-            asyncio.QueueFull: Если очередь переполнена
-        """
         if not self._is_running:
             raise RuntimeError("VideoWorker is not running")
 
@@ -63,9 +47,6 @@ class VideoWorker:
             raise
 
     async def _worker(self, worker_id: int) -> None:
-        """
-        Основной цикл воркера.
-        """
         logger.info(f"Worker {worker_id} started")
 
         while self._is_running:
@@ -106,12 +87,6 @@ class VideoWorker:
         logger.info(f"Worker {worker_id} stopped")
 
     async def stop(self, timeout: float = 30.0) -> None:
-        """
-        Останавливает всех воркеров с graceful shutdown.
-
-        Args:
-            timeout: Максимальное время ожидания завершения текущих задач
-        """
         if not self._is_running:
             logger.warning("VideoWorker is not running")
             return
@@ -141,10 +116,8 @@ class VideoWorker:
 
     @property
     def queue_size(self) -> int:
-        """Текущий размер очереди"""
         return self.queue.qsize()
 
     @property
     def is_running(self) -> bool:
-        """Статус воркера"""
         return self._is_running

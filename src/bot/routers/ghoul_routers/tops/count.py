@@ -1,9 +1,3 @@
-"""
-"топ щелк [N]" и "топ кагуне [N]": общий разбор N и ответы на ошибки. Как у прода,
-у этих топов два разных текста: не число (и отрицательное — прод проверял isdigit)
-и число вне 1-50. Поэтому в модели только ge=0, а диапазон — отдельной проверкой.
-"""
-
 from typing import Any
 
 from pydantic import Field
@@ -16,7 +10,7 @@ from ....context import AppContext
 
 class GhoulTopArgs(CommandArgs):
     count: int = Field(20, ge=0)
-    extra: Rest = ""  # всё после числа игнорируется, как у прода
+    extra: Rest = ""
 
 
 def top_command(name: str) -> Command[GhoulTopArgs]:
@@ -24,9 +18,6 @@ def top_command(name: str) -> Command[GhoulTopArgs]:
 
 
 class GhoulTopHandler:
-    """Наследник: второе основание MessageHandler[AppContext[TextMessage]],
-    cmd = top_command(...), query = cmd, show(count)."""
-
     cmd: Command[GhoulTopArgs]
     ctx: AppContext[Any]
     not_a_number = "Топ нужно указывать положительной цифрой"

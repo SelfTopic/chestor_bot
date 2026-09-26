@@ -9,7 +9,7 @@ from ..types import TextMessage
 
 class TopArgs(CommandArgs):
     count: int = Field(20, ge=1, le=50)
-    extra: Rest = ""  # всё после числа игнорируется, как у прода
+    extra: Rest = ""
 
 
 class TopBalanceHandler(MessageHandler[AppContext[TextMessage]]):
@@ -20,7 +20,7 @@ class TopBalanceHandler(MessageHandler[AppContext[TextMessage]]):
     async def handle(self) -> None:
         count = self.cmd.parse(
             self.ctx
-        ).count  # не число или вне 1-50: CommandArgsError
+        ).count
 
         top = await self.ctx.user_service.get_top_balance(count)
 

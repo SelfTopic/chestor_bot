@@ -6,10 +6,6 @@ ADMIN_STATUSES = ("administrator", "creator")
 
 
 class ModeratorMiddleware(BaseMiddleware[AppContext]):
-    """Как у прода: команды настройки чата — только для админа/создателя супергруппы,
-    проверяется живым Bot API (get_chat_member), не по БД. Для остальных типов чата
-    молчит (апдейт до хендлера не доходит)."""
-
     async def pre_handle(self) -> bool:
         chat = self.ctx.chat
         user = self.ctx.user

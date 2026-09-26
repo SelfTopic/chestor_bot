@@ -1,6 +1,4 @@
 class ChatNotFound(Exception):
-    """Common base class for not found chats"""
-
     def __init__(self, message: str = "Чат не найден") -> None:
         super().__init__(message)
 

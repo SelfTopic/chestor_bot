@@ -1,9 +1,3 @@
-"""
-"топ кагуне [N]": сумма + 4 переключаемых кнопками топа по типам. Кнопка на месте
-текущего вида не нужна (бессмысленно жать "то, что и так открыто") — вместо неё на
-месте вида, с которого только что переключились, показывается кнопка "назад".
-"""
-
 from typing import Any, get_args
 
 from selfrot import BaseRouter, InlineKeyboard, MessageHandler
@@ -114,8 +108,6 @@ class TopKaguneViewHandler(CallbackQueryHandler[AppContext[DataCallbackQuery]]):
 
 
 class TopKaguneBadDataHandler(CallbackQueryHandler[AppContext[DataCallbackQuery]]):
-    """Кнопка топа, данные которой не разобрались, как у прода."""
-
     query = CallbackDataStartswith("topkagune")
 
     async def handle(self) -> None:

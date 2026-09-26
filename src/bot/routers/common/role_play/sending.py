@@ -11,11 +11,6 @@ async def send_rp(
     *,
     quote: bool = False,
 ) -> None:
-    """
-    Отправить текст RP-команды тем способом, который задан её типом (текст, фото или
-    гифка). quote=True отвечает на сообщение, иначе пишет в чат. Медиа-команда без
-    file_id ничего не отправляет: как у прода.
-    """
     match type_command:
         case TypeRpCommandEnum.TEXT:
             await (message.reply if quote else message.answer)(text)

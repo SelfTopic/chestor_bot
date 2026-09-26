@@ -9,8 +9,6 @@ from ...context import AppContext
 
 
 class BotAddedHandler(MyChatMemberHandler[AppContext[ChatMemberUpdated]]):
-    """Бота добавили в чат."""
-
     query = MemberJoined()
 
     async def handle(self) -> None:
@@ -20,12 +18,6 @@ class BotAddedHandler(MyChatMemberHandler[AppContext[ChatMemberUpdated]]):
 
 
 class NewChatMemberHandler(ChatMemberHandler[AppContext[ChatMemberUpdated]]):
-    """Реальный участник вошёл в чат. Приветствие только если задано для чата;
-    сам чат может ещё не существовать в БД, если это первый апдейт о нём вообще
-    (SyncEntitiesMiddleware заводит запись на Message/CallbackQuery, не на
-    ChatMemberUpdated) — как у прода, тогда ChatNotFoundInDatabase падает в
-    Dispatcher.on_error, а не гасится тут."""
-
     query = MemberJoined()
 
     async def handle(self) -> None:

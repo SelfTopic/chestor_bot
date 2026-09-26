@@ -20,10 +20,8 @@ class BanMiddleware(BaseMiddleware[AppContext]):
         if db_user is None or not db_user.is_banned:
             return True
 
-        # Колонка без часового пояса (sa.DateTime()): из БД приходит наивное время, а
-        # пишется оно как aware UTC (BanService.parse_duration). Сравнивать наивное с
-        # aware нельзя (TypeError), поэтому наивное считаем UTC. У прода это сравнение
-        # в BanMiddleware без такой поправки и падает на каждом временном бане.
+        # Колонка без часового пояса: из БД приходит наивное время, считаем его UTC, иначе
+        # сравнение с aware падает с TypeError.
         banned_until = db_user.banned_until
         if banned_until is not None and banned_until.tzinfo is None:
             banned_until = banned_until.replace(tzinfo=timezone.utc)
@@ -39,9 +37,6 @@ class BanMiddleware(BaseMiddleware[AppContext]):
             else "навсегда"
         )
 
-        # У прода этот ответ мёртвый код: там проверяется isinstance(event,
-        # CallbackQuery), где event это Update, и заблокированный человек не
-        # получает ответа на кнопку. Здесь ответ работает.
         if isinstance(event, CallbackQuery):
             await event.answer(
                 f"🚫 Вы заблокированы ({until}). Причина: {reason}", show_alert=True

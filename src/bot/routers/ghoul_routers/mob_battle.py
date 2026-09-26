@@ -1,9 +1,3 @@
-"""
-Бой с мобом на стороне Telegram: общий для "бить моба" (mob_fight.py) и засады в
-"сожрать человека" (eat_human.py). Сам бой, награды и история —
-BattleService.fight_mob; здесь только как их показать.
-"""
-
 from typing import Any
 
 from selfrot.types import Message
@@ -22,7 +16,6 @@ async def answer_mob_battle(
 
 
 def rewards_text(fight: MobFight) -> str:
-    """Строки наград за победу, одинаковые у обоих видов боя."""
     text = f"📈 Получено опыта: {fight.reward_level_progress:.2f}%"
     text += f"\n💰 Получено CheSton: {fight.reward_cheston}"
     if fight.reward_rc:

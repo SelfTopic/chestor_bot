@@ -1,16 +1,3 @@
-"""
-"сожрать человека" (BATTLE_DESIGN.md, фазы 3a+3b):
-- 3a: восстановление голода раз в кулдаун (EAT_HUMAN), гифка из "eat human";
-- 3b: перед едой с шансом EAT_HUMAN_CONFIG.ambush_chance_percent нападает
-  моб-гуль, тоже претендующий на человека. Бой принудительный (is_forced в
-  истории), общий с "бить моба" (mob_battle.py). Победа: человек доедается как в
-  3a; поражение или ничья: голод не восстанавливается, но кулдаун расходуется.
-
-Если ActiveBattle-лок уже занят (идёт дуэль), засады просто не случается, а не
-отказ в еде. Как у прода, засада не проверяет боеготовность: нападают и на гуля
-с 1 HP.
-"""
-
 import random
 
 from selfrot import BaseRouter, MessageHandler
@@ -36,7 +23,6 @@ class EatHumanHandler(MessageHandler[AppContext[TextUserMessage]]):
     )
 
     async def survive_ambush(self) -> bool:
-        """Бой за человека (лок уже взят). True — победа, можно доедать."""
         ctx = self.ctx
         message = ctx.message
 
@@ -89,7 +75,7 @@ class EatHumanHandler(MessageHandler[AppContext[TextUserMessage]]):
 
         if ambushed:
             survived = await self.survive_ambush()
-            # Кулдаун расходуется при любом исходе: попытка поесть уже была.
+            # Кулдаун расходуется при любом исходе.
             await ctx.cooldown_service.set_cooldown(telegram_id, COOLDOWN_NAME)
             if not survived:
                 return

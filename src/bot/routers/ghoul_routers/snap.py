@@ -1,9 +1,3 @@
-"""
-"щелк"/"щёлк": простая cooldown-команда — награда + гиф, два разных слова (не
-регистр — "ё" не сводится к "е" через ignore_case). Использует оба общих ctx-хелпера
-(cooldown_remaining/reply_gif, context.py) — никакой своей логики кулдауна/гифки.
-"""
-
 from selfrot import BaseRouter, MessageHandler
 from selfrot.filter import HasUser, Text
 

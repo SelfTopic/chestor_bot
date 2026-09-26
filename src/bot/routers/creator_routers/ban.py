@@ -1,12 +1,3 @@
-"""/ban_bot и /unban: цель — ответ на сообщение или id/@username явным аргументом.
-
-У прода это была одна функция на обе формы с позиционными args по фиксированным
-индексам; при бане реплаем с длительностью И причиной вместе индексы сдвигались, и
-причина дублировала длительность, а сама длительность терялась (проверено: /ban_bot
-7d читерство реплаем давало перманентный бан с причиной "читерство читерство"). Порт
-разводит форму по двум хендлерам с CommandArgs каждый, поэтому сдвигаться нечему.
-"""
-
 from selfrot import BaseRouter, CommandArgs, MessageHandler, Rest
 from selfrot.filter import Command, HasReplyUser
 from selfrot.types import Message
@@ -31,7 +22,7 @@ async def _perform_ban(
     ban_service = ctx.ban_service
 
     try:
-        user = await ban_service._resolve_user(target)  # noqa: SLF001 (как у прода)
+        user = await ban_service._resolve_user(target)  # noqa: SLF001
     except ValueError as e:
         await ctx.message.reply(f"❌ {e}")
         return
@@ -45,8 +36,6 @@ async def _perform_ban(
 
 
 class BanRepliedArgs(CommandArgs):
-    """/ban_bot [длительность] [причина...] — цель берётся из ответа на сообщение."""
-
     duration: str = ""
     reason: Rest = ""
 
@@ -62,8 +51,6 @@ class BanRepliedHandler(
 
 
 class BanArgs(TargetArgs):
-    """/ban_bot <id или @username> [длительность] [причина...]"""
-
     duration: str = ""
     reason: Rest = ""
 
@@ -83,7 +70,7 @@ async def _perform_unban(ctx: AppContext[Message], target: str) -> None:
     ban_service = ctx.ban_service
 
     try:
-        user = await ban_service._resolve_user(target)  # noqa: SLF001 (как у прода)
+        user = await ban_service._resolve_user(target)  # noqa: SLF001
     except ValueError as e:
         await ctx.message.reply(f"❌ {e}")
         return
@@ -100,7 +87,7 @@ async def _perform_unban(ctx: AppContext[Message], target: str) -> None:
 
 
 class UnbanRepliedArgs(CommandArgs):
-    note: Rest = ""  # что бы ни дописали после команды — цель всё равно из реплая
+    note: Rest = ""
 
 
 class UnbanRepliedHandler(

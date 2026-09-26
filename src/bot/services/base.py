@@ -9,9 +9,6 @@ from ..repositories import (
 
 
 class Base(ABC): 
-    """Base service for managing data"""
-
-    # Any service must have access to repositories
 
     user_repository: UserRepository
     ghoul_repository: GhoulRepository

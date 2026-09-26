@@ -6,9 +6,6 @@ from ..types import UserMessage
 
 
 class BalanceHandler(MessageHandler[AppContext[UserMessage]]):
-    """Processes the 'бал' command"""
-
-    # HasUser гарантирует отправителя: проверки `if not message.from_user` не нужно
     query = Text("бал", ignore_case=True) & HasUser()
 
     async def handle(self) -> None:

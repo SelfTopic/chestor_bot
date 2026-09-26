@@ -1,5 +1,3 @@
-"""/reset_ghoul и /reset_user: цель — ответ на сообщение или id/@username аргументом."""
-
 from selfrot import BaseRouter, CommandArgs, MessageHandler, Rest
 from selfrot.filter import Command, HasReplyUser
 from selfrot.types import Message
@@ -10,7 +8,7 @@ from ..types import ReplyUserMessage, TextMessage
 
 
 class ResetRepliedArgs(CommandArgs):
-    note: Rest = ""  # цель всё равно из реплая, что бы ни дописали после команды
+    note: Rest = ""
 
 
 async def _perform_reset_ghoul(ctx: AppContext[Message], target: str) -> None:

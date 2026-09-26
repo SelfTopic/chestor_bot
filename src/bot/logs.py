@@ -1,10 +1,3 @@
-"""
-Логи порта: в консоль — всё от уровня LOG_LEVEL (по умолчанию INFO; DEBUG — всё,
-что пишут бот и библиотеки, кроме SQLAlchemy: у неё только WARNING и выше), в файл —
-только WARNING и выше, с ротацией. Прод писал в logs.log всё с DEBUG и растил его на
-мегабайты.
-"""
-
 import logging
 import os
 import sys
@@ -55,7 +48,6 @@ def setup_logging() -> None:
     file.setFormatter(logging.Formatter(FORMAT))
 
     root = logging.getLogger()
-    # Сбросить всё, что успели навесить до нас (basicConfig при импорте и т. п.).
     for handler in root.handlers[:]:
         root.removeHandler(handler)
         handler.close()
@@ -63,6 +55,6 @@ def setup_logging() -> None:
     root.addHandler(console)
     root.addHandler(file)
 
-    # SQLAlchemy — только WARNING и выше при любом LOG_LEVEL: в DEBUG её SQL, пул и
-    # строки результатов (DuelTicker опрашивает базу раз в секунду) забивали весь лог.
+    # SQLAlchemy — только WARNING и выше при любом LOG_LEVEL: в DEBUG её SQL забивал весь
+    # лог (DuelTicker опрашивает базу раз в секунду).
     logging.getLogger("sqlalchemy").setLevel(logging.WARNING)

@@ -1,5 +1,3 @@
-"""Начало перевода: команда с суммой в ответ на сообщение или с адресатом."""
-
 from selfrot import CommandArgs, MessageHandler, Rest
 from selfrot.exceptions import CommandArgsError
 from selfrot.filter import HasReplyUser, HasUser
@@ -12,10 +10,8 @@ from .flow import ask_confirmation
 
 
 class AmountArgs(CommandArgs):
-    """/transfer 500 в ответ на сообщение получателя."""
-
     amount: int
-    note: Rest = ""  # «перевести 500 за пиццу»: остаток игнорируется, как у прода
+    note: Rest = ""
 
 
 class TransferToRepliedHandler(MessageHandler[AppContext[TextUserReplyMessage]]):
@@ -29,7 +25,7 @@ class TransferToRepliedHandler(MessageHandler[AppContext[TextUserReplyMessage]])
     async def handle(self) -> None:
         args = self.command.parse(self.ctx)
 
-        receiver = self.ctx.message.reply_to_message.user  # User: гарантия HasReplyUser
+        receiver = self.ctx.message.reply_to_message.user
 
         await ask_confirmation(self.ctx, receiver.id, full_name(receiver), args.amount)
 
@@ -42,8 +38,6 @@ class TransferToRepliedHandler(MessageHandler[AppContext[TextUserReplyMessage]])
 
 
 class ReceiverArgs(CommandArgs):
-    """/transfer @username 500 без ответа на сообщение."""
-
     receiver: str
     amount: int
     note: Rest = ""

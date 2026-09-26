@@ -1,9 +1,3 @@
-"""
-Фоновый тикер под scheduled_notifications: та же логика, что у прод-NotificationTicker
-(тег aiogram-final). Отправка — через Notifier, поиск некролог-видео — через
-media_paths.random_media.
-"""
-
 import asyncio
 import logging
 from typing import Any
@@ -38,10 +32,6 @@ _DEATH_CAUSE_TEXT = {
 
 
 class NotificationTicker:
-    """Лёгкий фоновый тикер под scheduled_notifications, см. BATTLE_DESIGN.md
-    ("Механизм regen/hunger"). Читает только эту таблицу (не сканирует всех гулей),
-    поэтому может себе позволить редкий интервал."""
-
     def __init__(
         self,
         session_factory: async_sessionmaker[AsyncSession],
@@ -140,8 +130,7 @@ class NotificationTicker:
         death_log_repository: DeathLogRepository,
         media_repository: MediaRepository,
     ) -> None:
-        # Запоминаем, о чём была эта конкретная запись, ДО того как ghoul_service.get()
-        # пересчитает и переставит расписание дальше.
+        # Запоминаем до ghoul_service.get(): он пересчитает и переставит расписание.
         notification_type = row.notification_type
         threshold = row.threshold
         telegram_id = row.telegram_id
@@ -177,13 +166,13 @@ class NotificationTicker:
                     f"(hunger={ghoul.hunger}, is_dead={ghoul.is_dead}) - no text, "
                     f"materialize already handled it above if it was time"
                 )
-                return  # "будильник" смерти - не текстовое уведомление, см. выше
+                return
             if ghoul.hunger > threshold:
                 logger.info(
                     f"NotificationTicker: hunger_threshold={threshold} for {telegram_id} "
                     f"stale (hunger={ghoul.hunger}), skipping"
                 )
-                return  # состояние уже успело измениться - расписание само поправилось
+                return
             await self._send(
                 telegram_id, key="notify_hunger_threshold", threshold=threshold
             )
@@ -197,7 +186,7 @@ class NotificationTicker:
                     f"NotificationTicker: {telegram_id} already reborn before DEATH "
                     f"row was handled, skipping obituary"
                 )
-                return  # успел возродиться раньше, чем дошла очередь - некролог не нужен
+                return
 
             death = await death_log_repository.get_latest(telegram_id)
             if not death:
@@ -232,9 +221,6 @@ class NotificationTicker:
     async def _send_death(
         self, telegram_id: int, death: DeathLog, media_repository: MediaRepository
     ) -> None:
-        """Некролог - опенинг (если уже загружен через /add_gif death) + сводка по
-        снапшоту DeathLog, не по живому (уже мёртвому/возможно сброшенному) гулю."""
-
         text = self._dialog_text(
             "notify_death",
             cause=_DEATH_CAUSE_TEXT.get(death.cause, death.cause),
@@ -260,16 +246,11 @@ class NotificationTicker:
             return
 
         try:
-            # Как у прода: если file_id ещё нет, первая отправка идёт файлом с диска, а
-            # её собственный новый file_id не кешируется — кеш заполняется только через
-            # ветку ниже (устаревший id). Сохранено как есть, не улучшение с моей стороны.
             try:
                 await self._notifier.send_video(
                     telegram_id, media.telegram_file_id or media.path, caption=text
                 )
             except NotifyError:
-                # Кешированный file_id устарел (например, файл удалили из Telegram) -
-                # перезаливаем с диска и запоминаем новый id на следующий раз.
                 logger.info(
                     f"NotificationTicker: cached file_id for death video stale, "
                     f"re-uploading for {telegram_id}"

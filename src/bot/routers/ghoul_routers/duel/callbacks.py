@@ -1,15 +1,3 @@
-"""
-Шаги 2, 3 и 5: нажатия кнопок уже отправленной дуэли. Согласие обеих сторон, затем
-(при перевесе >= DUEL_CONFIG.power_ratio_threshold) секретный выбор "всерьёз/фора"
-в личке сильной стороны, затем бой (fight.run_and_announce_fight) и выбор победителя
-"ограбить/отпустить/съесть" (fight.finalize_outcome). Таймауты шагов — DuelTicker.
-
-Нажать можно только свою кнопку: у прода это проверка expected_id в хендлере, здесь
-pressed_by("expected_id"), а чужое нажатие ловит следующий хендлер ("Это не твоя
-кнопка."). Кнопка "duel:..." с испорченными данными, как у прода, получает пустой
-ответ.
-"""
-
 import logging
 
 from selfrot.exceptions import TelegramAPIError
@@ -78,7 +66,6 @@ class DuelPressHandler(CallbackQueryHandler[AppContext[DataCallbackQuery]]):
 
         await callback.answer("Оба подтвердили!")
 
-        # Кнопки согласия больше не нужны: сообщение удаляется, а не правится.
         if updated.consent_message_id:
             try:
                 await bot.delete_message(

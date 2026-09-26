@@ -1,10 +1,3 @@
-"""
-Отправка сообщений, без привязки к конкретной библиотеке Telegram. BroadcastService,
-LevelUpService и NotificationTicker принимают Notifier, а не Bot: их бизнес-логика
-(кому писать и что) от библиотеки не зависит и не должна зависеть — единственное место
-во всех трёх, которое знает про selfrotgram, это SelfrotBotNotifier ниже.
-"""
-
 from pathlib import Path
 from typing import Protocol
 
@@ -14,11 +7,7 @@ from selfrot.types import InputFile
 
 
 class NotifyError(Exception):
-    """Сообщение не отправилось: собеседник недоступен, устаревший file_id и т.п.
-    Не разделяется на подтипы — ни один вызывающий код в этих трёх сервисах не ведёт
-    себя по-разному в зависимости от причины, только логирует и продолжает."""
-
-
+    pass
 class Notifier(Protocol):
     async def send_message(
         self, chat_id: int, text: str, *, parse_mode: str | None = None
@@ -27,15 +16,10 @@ class Notifier(Protocol):
     async def send_video(
         self, chat_id: int, video: str | Path, *, caption: str | None = None
     ) -> str:
-        """video — file_id (str) или локальный путь. Возвращает file_id отправленного
-        видео (Telegram всегда назначает его, даже при повторной загрузке того же
-        файла) — по нему вызывающий код обновляет кеш, если прислал путь, а не id."""
         ...
 
 
 class SelfrotBotNotifier:
-    """Notifier поверх selfrot.Bot."""
-
     def __init__(self, bot: Bot) -> None:
         self._bot = bot
 
