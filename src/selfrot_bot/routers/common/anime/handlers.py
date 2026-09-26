@@ -11,7 +11,7 @@ from src.bot.services import VideoCutterService
 from src.bot.types import VideoCutJob
 
 from ....context import AppContext
-from ....types import TextMessage
+from ...types import TextMessage
 from .delivery import deliver_cut
 from .guard import cut_guard
 

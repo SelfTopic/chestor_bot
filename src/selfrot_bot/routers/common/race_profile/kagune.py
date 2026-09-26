@@ -16,8 +16,8 @@ from src.bot.services.battle_engine.core import (
 from src.bot.types import KaguneType
 
 from ....context import AppContext
-from ....types import TextMessage
-from .rich import answer_rich_or_text, paragraph, table_cell
+from ...types import TextMessage
+from ...rich import answer_rich_or_text, paragraph, table_cell
 
 
 class KaguneInfoHandler(MessageHandler[AppContext[TextMessage]]):

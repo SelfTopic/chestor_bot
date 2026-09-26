@@ -21,7 +21,7 @@ from src.bot.utils import parse_seconds
 
 from ...context import AppContext
 from ...services.media_paths import random_media
-from ...types import TextUserMessage
+from ..types import TextUserMessage
 
 
 class CoffeeHandler(MessageHandler[AppContext[TextUserMessage]]):

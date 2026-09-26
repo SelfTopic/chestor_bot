@@ -5,8 +5,8 @@ from selfrot.exceptions import CommandArgsError
 from selfrot.filter import HasReplyUser, HasUser
 
 from ....context import AppContext
-from ....types import TextUserMessage, TextUserReplyMessage
-from ....utils import full_name
+from ...types import TextUserMessage, TextUserReplyMessage
+from ...utils import full_name
 from .commands import transfer_command
 from .flow import ask_confirmation
 

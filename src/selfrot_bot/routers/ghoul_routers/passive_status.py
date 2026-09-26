@@ -15,8 +15,8 @@ from src.bot.utils import (
 )
 
 from ...context import AppContext
-from ...types import TextUserMessage
-from ...utils import full_name
+from ..types import TextUserMessage
+from ..utils import full_name
 
 
 class RegenStatusHandler(MessageHandler[AppContext[TextUserMessage]]):

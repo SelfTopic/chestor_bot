@@ -5,8 +5,8 @@ from selfrot.filter import Command, HasReplyUser
 from selfrot.types import Message
 
 from ...context import AppContext
-from ...targeting import ExplicitTargetHandler, RepliedTargetHandler, TargetArgs
-from ...types import ReplyUserMessage, TextMessage
+from ..targeting import ExplicitTargetHandler, RepliedTargetHandler, TargetArgs
+from ..types import ReplyUserMessage, TextMessage
 
 
 class ResetRepliedArgs(CommandArgs):

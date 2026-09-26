@@ -22,7 +22,7 @@ from src.bot.services.battle_engine.core import StatBreakdown, compute_stat_brea
 from src.bot.utils import get_hunger_tier
 from src.database.models import Ghoul, User
 
-from ...common.race_profile.rich import paragraph, table_cell
+from ...rich import paragraph, table_cell
 
 # Порядок статов как STATS в game_configs.py; max_health здесь и есть "Здоровье".
 _STAT_LABELS: list[tuple[str, str]] = [

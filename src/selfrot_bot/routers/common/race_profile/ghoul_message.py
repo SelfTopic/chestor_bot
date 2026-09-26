@@ -16,7 +16,7 @@ from src.bot.services.dialog import DialogService
 from src.bot.utils import calculate_kagune, get_hunger_tier, level_progress_bar
 from src.database.models import Ghoul, User
 
-from .rich import paragraph
+from ...rich import paragraph
 
 
 @dataclass(frozen=True)

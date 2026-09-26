@@ -10,7 +10,7 @@ from selfrot.types import InlineKeyboardMarkup
 from src.bot.exceptions import TransferError
 
 from ....context import AppContext
-from ....types import TextUserMessage
+from ...types import TextUserMessage
 
 CONFIRM_LABEL = "подтвердить"
 _CANCEL_LABELS = [

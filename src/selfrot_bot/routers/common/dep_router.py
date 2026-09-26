@@ -11,7 +11,7 @@ from src.bot.services.ghoul_game.lottery import COLOR_TO_FOLDER
 from src.bot.types.dep import DepResult
 
 from ...context import AppContext
-from ...types import TextUserMessage
+from ..types import TextUserMessage
 
 logger = logging.getLogger(__name__)
 

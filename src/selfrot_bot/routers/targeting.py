@@ -16,8 +16,8 @@ from selfrot import CommandArgs
 from selfrot.exceptions import CommandArgsError
 from selfrot.filter import Command
 
-from .context import AppContext
-from .services.lookup import find_user
+from ..context import AppContext
+from ..services.lookup import find_user
 
 TArgs = TypeVar("TArgs", bound=CommandArgs)
 

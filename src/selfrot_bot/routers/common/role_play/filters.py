@@ -10,7 +10,7 @@ from selfrot.types import Message
 from src.bot.types.rp_commands import RpCommandDTO
 
 from ....context import AppContext
-from ....types import CaptionMessage, TextMessage
+from ...types import CaptionMessage, TextMessage
 
 logger = logging.getLogger(__name__)
 

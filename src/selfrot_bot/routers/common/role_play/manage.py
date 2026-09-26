@@ -11,7 +11,7 @@ from src.bot.exceptions import RpCommandValidateError
 from src.bot.types.rp_commands import TypeRpCommandEnum
 
 from ....context import AppContext
-from ....types import CaptionMessage, TextMessage
+from ...types import CaptionMessage, TextMessage
 from .filters import SetRpOnMedia
 from .sending import send_rp
 

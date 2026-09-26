@@ -12,8 +12,8 @@ from selfrot.filter import HasUser, Text
 from src.database.models import Ghoul, User
 
 from ....context import AppContext
-from ....types import TextUserMessage
-from ...common.race_profile.rich import answer_rich_or_text
+from ...types import TextUserMessage
+from ...rich import answer_rich_or_text
 from .tables import combat_power_rich
 
 

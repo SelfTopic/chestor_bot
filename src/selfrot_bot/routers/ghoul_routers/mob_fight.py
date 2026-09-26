@@ -19,7 +19,7 @@ from src.bot.exceptions import (
 )
 
 from ...context import AppContext
-from ...types import TextUserMessage
+from ..types import TextUserMessage
 from .mob_battle import answer_mob_battle, rewards_text
 
 COOLDOWN_NAME = "MOB_FIGHT"

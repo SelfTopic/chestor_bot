@@ -21,7 +21,7 @@ from src.bot.types import MediaDownloadType
 
 from ...context import AppContext
 from ...services.media_paths import random_media
-from ...types import TextUserMessage
+from ..types import TextUserMessage
 from .mob_battle import answer_mob_battle, rewards_text
 
 COOLDOWN_NAME = "EAT_HUMAN"

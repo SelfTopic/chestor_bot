@@ -31,7 +31,7 @@ from selfrot.types import DataCallbackQuery, InlineKeyboardMarkup, Message
 from src.bot.game_configs import QUIZ_CONFIG
 
 from ...context import AppContext
-from ...types import TextMessage
+from ..types import TextMessage
 
 
 class QuizStates(States):

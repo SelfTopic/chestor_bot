@@ -18,8 +18,8 @@ from src.bot.services.admin.stats_edit import (
 )
 
 from ...context import AppContext
-from ...targeting import ExplicitTargetHandler, RepliedTargetHandler, TargetArgs
-from ...types import TextUserMessage, TextUserReplyMessage
+from ..targeting import ExplicitTargetHandler, RepliedTargetHandler, TargetArgs
+from ..types import TextUserMessage, TextUserReplyMessage
 
 # format_fields_help() не трогает БД (только эти три множества-константы), но
 # ctx.stats_edit_service — сервис из контейнера, а его нельзя строить в on_error:

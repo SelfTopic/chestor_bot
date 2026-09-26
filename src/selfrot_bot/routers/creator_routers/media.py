@@ -20,7 +20,7 @@ from src.bot.types.insert import MediaInsert
 
 from ...context import AppContext
 from ...services.media_paths import EXTENSION, collection_folder
-from ...types import TextUserReplyToMessage
+from ..types import TextUserReplyToMessage
 
 USAGE = "Эта команда используется в ответ на гиф или видео: /add_gif <коллекция>"
 

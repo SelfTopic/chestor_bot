@@ -9,7 +9,7 @@ from src.bot.game_configs import WORDLE_CONFIG
 from src.bot.types.wordle import WordleGuessResult
 
 from ....context import AppContext
-from ....types import TextUserMessage
+from ...types import TextUserMessage
 from .captions import guess_caption, lose_text, win_text
 from .filters import HasActiveWordleGame
 

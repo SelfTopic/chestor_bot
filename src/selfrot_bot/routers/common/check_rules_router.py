@@ -4,7 +4,7 @@ from selfrot.filter import Text
 from src.bot.exceptions import ChatNotFoundInDatabase
 
 from ...context import AppContext
-from ...types import TextMessage
+from ..types import TextMessage
 
 
 class CheckRulesHandler(MessageHandler[AppContext[TextMessage]]):

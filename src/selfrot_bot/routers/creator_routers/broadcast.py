@@ -5,7 +5,7 @@ from selfrot.exceptions import CommandArgsError
 from selfrot.filter import Command
 
 from ...context import AppContext
-from ...types import TextMessage
+from ..types import TextMessage
 
 
 class BroadcastTextArgs(CommandArgs):

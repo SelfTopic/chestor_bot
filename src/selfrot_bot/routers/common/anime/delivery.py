@@ -7,7 +7,7 @@ from selfrot.types import InputFile, Message
 from src.bot.types import VideoCutJob
 
 from ....context import AppContext
-from ....types import TextMessage
+from ...types import TextMessage
 
 logger = logging.getLogger(__name__)
 

@@ -11,7 +11,7 @@ from src.bot.repositories.user_coldown import UserCooldownRepository
 from src.database.models import Cooldown
 from src.selfrot_bot.__main__ import Dispatcher
 from src.selfrot_bot.context import AppContext
-from src.selfrot_bot.types import TextUserMessage
+from src.selfrot_bot.routers.types import TextUserMessage
 
 from .conftest import message_update
 from .test_common_routers import seed

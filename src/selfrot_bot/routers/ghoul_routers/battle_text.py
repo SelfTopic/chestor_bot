@@ -18,7 +18,7 @@ from selfrot.types import InlineKeyboardMarkup, InputRichMessage, Message
 from src.bot.services import BattleTextGenerator
 
 from ...services.battle import FightReport
-from ..common.race_profile.rich import answer_rich_or_text
+from ..rich import answer_rich_or_text
 
 
 @dataclass

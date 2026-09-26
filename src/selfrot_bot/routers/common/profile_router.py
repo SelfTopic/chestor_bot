@@ -2,7 +2,7 @@ from selfrot import BaseRouter, MessageHandler
 from selfrot.filter import Command, HasUser, Text
 
 from ...context import AppContext
-from ...types import UserMessage
+from ..types import UserMessage
 
 
 class ProfileHandler(MessageHandler[AppContext[UserMessage]]):

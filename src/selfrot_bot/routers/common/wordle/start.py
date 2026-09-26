@@ -3,7 +3,7 @@ from selfrot.filter import Command, HasUser, Text
 from selfrot.types import InputFile
 
 from ....context import AppContext
-from ....types import UserMessage
+from ...types import UserMessage
 
 
 class WordleStartHandler(MessageHandler[AppContext[UserMessage]]):

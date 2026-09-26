@@ -5,7 +5,7 @@ from selfrot.filter import BaseFilter
 from selfrot.types import Message
 
 from ....context import AppContext
-from ....types import UserMessage
+from ...types import UserMessage
 
 
 class HasActiveWordleGame(BaseFilter[AppContext[Any]]):

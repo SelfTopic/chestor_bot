@@ -22,7 +22,7 @@ from src.bot.game_configs import STAT_UPGRADE_CONFIG, STATS, stat_cap_for_level
 from src.database.models import Ghoul, User
 
 from ...context import AppContext
-from ...types import DataMessageCallbackQuery, TextUserMessage
+from ..types import DataMessageCallbackQuery, TextUserMessage
 
 StatKey = Literal["strength", "dexterity", "speed", "max_health", "regeneration"]
 STAT_KEYS: tuple[StatKey, ...] = get_args(StatKey)

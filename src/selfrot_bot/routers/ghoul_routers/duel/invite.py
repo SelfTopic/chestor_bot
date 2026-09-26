@@ -28,8 +28,8 @@ from src.bot.game_configs import DUEL_CONFIG
 
 from ....context import AppContext
 from ....services.battle import DuelRefusal, DuelRefused
-from ....targeting import ExplicitTargetHandler, RepliedTargetHandler, TargetArgs
-from ....types import TextUserMessage, TextUserReplyMessage
+from ...targeting import ExplicitTargetHandler, RepliedTargetHandler, TargetArgs
+from ...types import TextUserMessage, TextUserReplyMessage
 from .keyboards import consent_keyboard
 
 logger = logging.getLogger(__name__)

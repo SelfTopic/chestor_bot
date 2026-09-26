@@ -7,9 +7,9 @@ from src.bot.types import Race
 from src.database.models import Ghoul, User
 
 from ....context import AppContext
-from ....types import UserMessage
+from ...types import UserMessage
 from .ghoul_message import BattleStats, plain_profile, rich_profile
-from .rich import answer_rich_or_text
+from ...rich import answer_rich_or_text
 
 logger = logging.getLogger(__name__)
 

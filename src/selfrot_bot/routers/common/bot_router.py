@@ -2,7 +2,7 @@ from selfrot import BaseRouter, MessageHandler
 from selfrot.filter import Text
 
 from ...context import AppContext
-from ...types import TextMessage
+from ..types import TextMessage
 
 
 class BotHandler(MessageHandler[AppContext[TextMessage]]):

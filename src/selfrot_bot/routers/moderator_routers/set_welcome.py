@@ -1,7 +1,7 @@
 from selfrot import MessageHandler
 
 from ...context import AppContext
-from ...types import TextMessage
+from ..types import TextMessage
 from .set_chat_text import SetChatTextHandler, chat_text_command
 
 

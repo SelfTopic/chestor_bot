@@ -9,7 +9,7 @@ from selfrot.types import Message
 from src.bot.exceptions import TransferError
 
 from ....context import AppContext
-from ....types import DataMessageCallbackQuery
+from ...types import DataMessageCallbackQuery
 from .flow import (
     CONFIRM_LABEL,
     TransferPress,

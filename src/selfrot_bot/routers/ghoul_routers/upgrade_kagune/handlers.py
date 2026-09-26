@@ -18,7 +18,7 @@ from src.bot.utils import calculate_kagune, parse_seconds
 
 from ....context import AppContext
 from ....services.media_paths import random_media
-from ....types import DataMessageCallbackQuery, TextUserMessage
+from ...types import DataMessageCallbackQuery, TextUserMessage
 from .callback_data import KaguneUpgradePress
 from .filters import NeedsRegistrationOrRebirth
 from .upgrade import build_choice_keyboard, do_upgrade
