@@ -13,9 +13,10 @@
 ## Стек
 
 - Python 3.11-3.14, [Poetry](https://python-poetry.org/) для зависимостей
-- [aiogram 3](https://docs.aiogram.dev/) - Telegram Bot API
+- [selfrotgram](https://github.com/SelfTopic/selfrotgram) (`selfrot`) - Telegram Bot API
 - SQLAlchemy 2 (async) + PostgreSQL, миграции - Alembic
-- `dependency-injector` - DI-контейнер (`src/bot/containers.py`)
+- `dependency-injector` - DI-контейнер (`src/bot/containers.py`), хендлеры берут
+  зависимости из `AppContext` (`src/bot/context.py`)
 - Docker/Docker Compose - для запуска Postgres/бота/бэкапов
 
 ## Быстрый старт (Docker)
@@ -41,12 +42,14 @@ poetry run python -m src.bot
 ## Тесты и линт
 
 Тесты поднимают одноразовый Postgres в Docker сами (`tests/conftest.py`) -
-Docker должен быть доступен, отдельно поднимать БД не нужно.
+Docker должен быть доступен, отдельно поднимать БД не нужно. Telegram в тестах
+подменён фейковым HTTP-сервером.
 
 ```bash
-poetry run pytest tests/unit -q
-poetry run ruff check src/ tests/
-npx pyright src/
+poetry run ruff check src/bot tests
+poetry run pyright src/bot tests
+poetry run selfrot check --strict src.bot.__main__:Dispatcher
+poetry run pytest tests -q
 ```
 
 ## Документация
