@@ -3,6 +3,8 @@ import logging
 from selfrot import Bot
 from selfrot.exceptions import TelegramAPIError
 
+from src.bot.dialogs import Dialogs
+from src.bot.services.dialog import DialogService
 from src.database.models import DuelSession
 
 from ....repositories.fight import Score
@@ -23,7 +25,7 @@ async def run_and_announce_fight(
 
     message = BattleMessage(services.battle_text_generator, fight.report)
     keyboard = (
-        outcome_keyboard(duel.id, fight.winner_telegram_id)
+        outcome_keyboard(services.dialogs, duel.id, fight.winner_telegram_id)
         if fight.winner_telegram_id
         else None
     )
@@ -62,7 +64,7 @@ async def finalize_outcome(
     if not duel.is_private_origin:
         chat_ids.add(duel.chat_id)
 
-    text = outcome_text(outcome)
+    text = outcome_text(services.dialogs, outcome)
     for chat_id in chat_ids:
         try:
             await bot.send_message(chat_id=chat_id, text=text)
@@ -70,39 +72,43 @@ async def finalize_outcome(
             pass
 
 
-def outcome_text(outcome: DuelOutcome) -> str:
+def outcome_text(dialogs: DialogService, outcome: DuelOutcome) -> str:
+    phrases = Dialogs.duel.outcome
     winner, loser = outcome.winner_name, outcome.loser_name
 
     if outcome.action == "outcome_rob":
-        text = (
-            f"💰 {winner} ограбил {loser} и забрал {outcome.reward_balance} CheSton's!"
+        line = (
+            phrases.robbed(winner=winner, loser=loser, amount=outcome.reward_balance)
             if outcome.reward_balance
-            else f"💰 {winner} попытался ограбить {loser}, но у тот оказался "
-            "ебаный бомж и у нечего взять."
+            else phrases.robbed_nothing(winner=winner, loser=loser)
         )
     elif outcome.action == "outcome_eat":
-        text = (
-            f"🍖 {winner} нещадно добил и сожрал {loser}, "
-            f"получив {outcome.reward_rc} RC-клеток"
+        line = (
+            phrases.eaten(winner=winner, loser=loser, rc=outcome.reward_rc)
             if outcome.reward_rc
-            else f"🍖 {winner} нещадно добил и сожрал {loser}, но в его "
-            "теле не оказалось пригодных для переваривания RC клеток"
+            else phrases.eaten_nothing(winner=winner, loser=loser)
         )
-        if outcome.hunger_restored is not None:
-            text += f"\n🍖 Голод {winner} восстановлен на {outcome.hunger_restored}%."
     else:
-        text = f"🕊️ {winner} решил отпустить {loser}."
+        line = phrases.released(winner=winner, loser=loser)
+    text = dialogs.text(line)
+
+    if outcome.action == "outcome_eat" and outcome.hunger_restored is not None:
+        restored = phrases.hunger(winner=winner, restored=outcome.hunger_restored)
+        text += "\n" + dialogs.text(restored)
 
     if outcome.reward_level_progress is not None:
-        text += (
-            f"\n\n📈 {winner} получил "
-            f"{outcome.reward_level_progress:.2f}% опыта за победу."
-        )
+        progress = f"{outcome.reward_level_progress:.2f}"
+        experience = phrases.experience(winner=winner, progress=progress)
+        text += "\n\n" + dialogs.text(experience)
 
-    text += "\n\n" + _score_line(winner, outcome.winner_score)
-    text += "\n" + _score_line(loser, outcome.loser_score)
+    text += "\n\n" + _score_line(dialogs, winner, outcome.winner_score)
+    text += "\n" + _score_line(dialogs, loser, outcome.loser_score)
     return text
 
 
-def _score_line(name: str, score: Score) -> str:
-    return f"📊 {name}: {score.total} боёв ({score.wins}П/{score.losses})"
+def _score_line(dialogs: DialogService, name: str, score: Score) -> str:
+    return dialogs.text(
+        Dialogs.duel.outcome.score(
+            name=name, total=score.total, wins=score.wins, losses=score.losses
+        )
+    )

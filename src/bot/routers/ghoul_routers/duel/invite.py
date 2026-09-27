@@ -16,42 +16,45 @@ from .keyboards import consent_keyboard
 
 logger = logging.getLogger(__name__)
 
-_NO_PRIVATE_CHAT = (
-    "{who} нужно один раз написать боту в ЛС (подойдёт /start) - иначе "
-    "часть сообщений о бое некуда будет доставить."
-)
-
 
 class DuelInvite:
     ctx: AppContext[Any]
 
-    refusals = {
-        DuelRefusal.SELF: "Нельзя вызвать на дуэль самого себя.",
-        DuelRefusal.NOT_REGISTERED: "Один из участников не зарегистрирован.",
-        DuelRefusal.INITIATOR_NO_PRIVATE_CHAT: _NO_PRIVATE_CHAT.format(who="Тебе"),
-        DuelRefusal.TARGET_NO_PRIVATE_CHAT: _NO_PRIVATE_CHAT.format(who="Сопернику"),
-        DuelRefusal.INITIATOR_NO_GHOUL: "У тебя ещё нет гуля.",
-        DuelRefusal.TARGET_NO_GHOUL: "У соперника ещё нет гуля.",
-        DuelRefusal.DEAD: "Один из участников мёртв.",
-        DuelRefusal.NOT_COMBAT_READY: (
-            "Один из участников небоеспособен: {health} HP (нужно минимум {threshold})."
-        ),
-        DuelRefusal.BUSY: "Один из участников уже занят другим боем.",
-        DuelRefusal.PAIR_LIMIT: (
-            "Лимит боёв с этим соперником на сегодня исчерпан ({per_pair}/сутки)."
-        ),
-        DuelRefusal.INITIATOR_DAY_LIMIT: "Твой дневной лимит боёв исчерпан ({per_day}/сутки).",
-        DuelRefusal.TARGET_DAY_LIMIT: "У соперника исчерпан дневной лимит боёв на сегодня.",
-        DuelRefusal.CLAIM_FAILED: "Не удалось начать дуэль - один из участников уже занят.",
-    }
-
-    def refusal_text(self, refused: DuelRefused) -> str:
-        return self.refusals[refused.reason].format(
-            health=refused.health,
-            threshold=refused.threshold,
-            per_pair=DUEL_CONFIG.max_battles_per_day_pair,
-            per_day=DUEL_CONFIG.max_battles_per_day_total,
-        )
+    def refusal(self, refused: DuelRefused) -> Line:
+        refusals = Dialogs.duel.refusals
+        match refused.reason:
+            case DuelRefusal.SELF:
+                return refusals.self_duel()
+            case DuelRefusal.NOT_REGISTERED:
+                return refusals.not_registered()
+            case DuelRefusal.INITIATOR_NO_PRIVATE_CHAT:
+                return refusals.initiator_no_private_chat()
+            case DuelRefusal.TARGET_NO_PRIVATE_CHAT:
+                return refusals.target_no_private_chat()
+            case DuelRefusal.INITIATOR_NO_GHOUL:
+                return refusals.initiator_no_ghoul()
+            case DuelRefusal.TARGET_NO_GHOUL:
+                return refusals.target_no_ghoul()
+            case DuelRefusal.DEAD:
+                return refusals.dead()
+            case DuelRefusal.NOT_COMBAT_READY:
+                return refusals.not_combat_ready(
+                    health=refused.health, threshold=refused.threshold
+                )
+            case DuelRefusal.BUSY:
+                return refusals.busy()
+            case DuelRefusal.PAIR_LIMIT:
+                return refusals.pair_limit(
+                    per_pair=DUEL_CONFIG.max_battles_per_day_pair
+                )
+            case DuelRefusal.INITIATOR_DAY_LIMIT:
+                return refusals.initiator_day_limit(
+                    per_day=DUEL_CONFIG.max_battles_per_day_total
+                )
+            case DuelRefusal.TARGET_DAY_LIMIT:
+                return refusals.target_day_limit()
+            case DuelRefusal.CLAIM_FAILED:
+                return refusals.claim_failed()
 
     async def perform(self, telegram_id: int, args: Any) -> None:
         ctx = self.ctx
@@ -63,16 +66,18 @@ class DuelInvite:
                 message.user.id, telegram_id, chat_id=message.chat.id, private=private
             )
         except DuelRefused as refused:
-            await message.reply(self.refusal_text(refused))
+            await message.reply(ctx.text(self.refusal(refused)))
             return
 
         session = duel.session
-        text = (
-            f"⚔️ {duel.initiator_name} вызывает {duel.target_name} на дуэль!\n"
-            f"Бой начнётся только после подтверждения ОБЕИХ сторон."
+        text = ctx.text(
+            Dialogs.duel.invite(initiator=duel.initiator_name, target=duel.target_name)
         )
         keyboard = consent_keyboard(
-            session.id, session.initiator_telegram_id, session.target_telegram_id
+            ctx.dialog_service,
+            session.id,
+            session.initiator_telegram_id,
+            session.target_telegram_id,
         )
 
         if not private:

@@ -10,6 +10,7 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 
 from src.bot.containers import Container, session_context
+from src.bot.dialogs import Dialogs
 from src.bot.game_configs import DUEL_CONFIG
 from src.bot.services.dialog import DialogService
 from src.database.models import DuelSession
@@ -147,7 +148,7 @@ class DuelTicker:
             except TelegramAPIError:
                 pass
 
-        timeout_text = "⌛ Время на согласие вышло - дуэль отменена."
+        timeout_text = self._dialog_service.text(Dialogs.duel.consent.timeout())
         target_chat_ids = {updated.initiator_telegram_id, updated.target_telegram_id}
         if not updated.is_private_origin:
             target_chat_ids.add(updated.chat_id)

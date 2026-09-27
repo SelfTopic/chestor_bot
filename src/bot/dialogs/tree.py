@@ -533,7 +533,171 @@ class _CombatPowerDialogs:
         )
 
 
+class _DuelButtonsDialogs:
+    def consent_initiator(self) -> Line:
+        return Line("duel.buttons.consent_initiator", {})
+
+    def consent_target(self) -> Line:
+        return Line("duel.buttons.consent_target", {})
+
+    def eat(self) -> Line:
+        return Line("duel.buttons.eat", {})
+
+    def handicap(self) -> Line:
+        return Line("duel.buttons.handicap", {})
+
+    def release(self) -> Line:
+        return Line("duel.buttons.release", {})
+
+    def rob(self) -> Line:
+        return Line("duel.buttons.rob", {})
+
+    def serious(self) -> Line:
+        return Line("duel.buttons.serious", {})
+
+
+class _DuelConsentDialogs:
+    def accepted(self) -> Line:
+        return Line("duel.consent.accepted", {})
+
+    def both_confirmed(self) -> Line:
+        return Line("duel.consent.both_confirmed", {})
+
+    def one_confirmed(self) -> Line:
+        return Line("duel.consent.one_confirmed", {})
+
+    def stale(self) -> Line:
+        return Line("duel.consent.stale", {})
+
+    def timeout(self) -> Line:
+        return Line("duel.consent.timeout", {})
+
+    def waiting_favored(self) -> Line:
+        return Line("duel.consent.waiting_favored", {})
+
+
+class _DuelForaDialogs:
+    def question(self) -> Line:
+        return Line("duel.fora.question", {})
+
+    def starting(self) -> Line:
+        return Line("duel.fora.starting", {})
+
+
+class _DuelOutcomeDialogs:
+    def eaten(self, *, loser: object, rc: object, winner: object) -> Line:
+        return Line("duel.outcome.eaten", {"loser": loser, "rc": rc, "winner": winner})
+
+    def eaten_nothing(self, *, loser: object, winner: object) -> Line:
+        return Line("duel.outcome.eaten_nothing", {"loser": loser, "winner": winner})
+
+    def experience(self, *, progress: object, winner: object) -> Line:
+        return Line("duel.outcome.experience", {"progress": progress, "winner": winner})
+
+    def hunger(self, *, restored: object, winner: object) -> Line:
+        return Line("duel.outcome.hunger", {"restored": restored, "winner": winner})
+
+    def released(self, *, loser: object, winner: object) -> Line:
+        return Line("duel.outcome.released", {"loser": loser, "winner": winner})
+
+    def robbed(self, *, amount: object, loser: object, winner: object) -> Line:
+        return Line(
+            "duel.outcome.robbed",
+            {
+                "amount": amount,
+                "loser": loser,
+                "winner": winner,
+            },
+        )
+
+    def robbed_nothing(self, *, loser: object, winner: object) -> Line:
+        return Line("duel.outcome.robbed_nothing", {"loser": loser, "winner": winner})
+
+    def score(
+        self,
+        *,
+        losses: object,
+        name: object,
+        total: object,
+        wins: object,
+    ) -> Line:
+        return Line(
+            "duel.outcome.score",
+            {
+                "losses": losses,
+                "name": name,
+                "total": total,
+                "wins": wins,
+            },
+        )
+
+
+class _DuelRefusalsDialogs:
+    def busy(self) -> Line:
+        return Line("duel.refusals.busy", {})
+
+    def claim_failed(self) -> Line:
+        return Line("duel.refusals.claim_failed", {})
+
+    def dead(self) -> Line:
+        return Line("duel.refusals.dead", {})
+
+    def initiator_day_limit(self, *, per_day: object) -> Line:
+        return Line("duel.refusals.initiator_day_limit", {"per_day": per_day})
+
+    def initiator_no_ghoul(self) -> Line:
+        return Line("duel.refusals.initiator_no_ghoul", {})
+
+    def initiator_no_private_chat(self) -> Line:
+        return Line("duel.refusals.initiator_no_private_chat", {})
+
+    def not_combat_ready(self, *, health: object, threshold: object) -> Line:
+        return Line(
+            "duel.refusals.not_combat_ready",
+            {
+                "health": health,
+                "threshold": threshold,
+            },
+        )
+
+    def not_registered(self) -> Line:
+        return Line("duel.refusals.not_registered", {})
+
+    def pair_limit(self, *, per_pair: object) -> Line:
+        return Line("duel.refusals.pair_limit", {"per_pair": per_pair})
+
+    def self_duel(self) -> Line:
+        return Line("duel.refusals.self_duel", {})
+
+    def target_day_limit(self) -> Line:
+        return Line("duel.refusals.target_day_limit", {})
+
+    def target_no_ghoul(self) -> Line:
+        return Line("duel.refusals.target_no_ghoul", {})
+
+    def target_no_private_chat(self) -> Line:
+        return Line("duel.refusals.target_no_private_chat", {})
+
+
 class _DuelDialogs:
+    buttons = _DuelButtonsDialogs()
+    consent = _DuelConsentDialogs()
+    fora = _DuelForaDialogs()
+    outcome = _DuelOutcomeDialogs()
+    refusals = _DuelRefusalsDialogs()
+
+    def accepted(self) -> Line:
+        return Line("duel.accepted", {})
+
+    def invite(self, *, initiator: object, target: object) -> Line:
+        return Line("duel.invite", {"initiator": initiator, "target": target})
+
+    def not_your_button(self) -> Line:
+        return Line("duel.not_your_button", {})
+
+    def stale(self) -> Line:
+        return Line("duel.stale", {})
+
     def usage(self) -> Line:
         return Line("duel.usage", {})
 
@@ -1574,6 +1738,46 @@ PLACEHOLDERS: dict[str, frozenset[str]] = {
         }
     ),
     "combat_power.short": frozenset({"effective_power", "vacuum_power"}),
+    "duel.accepted": frozenset(),
+    "duel.buttons.consent_initiator": frozenset(),
+    "duel.buttons.consent_target": frozenset(),
+    "duel.buttons.eat": frozenset(),
+    "duel.buttons.handicap": frozenset(),
+    "duel.buttons.release": frozenset(),
+    "duel.buttons.rob": frozenset(),
+    "duel.buttons.serious": frozenset(),
+    "duel.consent.accepted": frozenset(),
+    "duel.consent.both_confirmed": frozenset(),
+    "duel.consent.one_confirmed": frozenset(),
+    "duel.consent.stale": frozenset(),
+    "duel.consent.timeout": frozenset(),
+    "duel.consent.waiting_favored": frozenset(),
+    "duel.fora.question": frozenset(),
+    "duel.fora.starting": frozenset(),
+    "duel.invite": frozenset({"initiator", "target"}),
+    "duel.not_your_button": frozenset(),
+    "duel.outcome.eaten": frozenset({"loser", "rc", "winner"}),
+    "duel.outcome.eaten_nothing": frozenset({"loser", "winner"}),
+    "duel.outcome.experience": frozenset({"progress", "winner"}),
+    "duel.outcome.hunger": frozenset({"restored", "winner"}),
+    "duel.outcome.released": frozenset({"loser", "winner"}),
+    "duel.outcome.robbed": frozenset({"amount", "loser", "winner"}),
+    "duel.outcome.robbed_nothing": frozenset({"loser", "winner"}),
+    "duel.outcome.score": frozenset({"losses", "name", "total", "wins"}),
+    "duel.refusals.busy": frozenset(),
+    "duel.refusals.claim_failed": frozenset(),
+    "duel.refusals.dead": frozenset(),
+    "duel.refusals.initiator_day_limit": frozenset({"per_day"}),
+    "duel.refusals.initiator_no_ghoul": frozenset(),
+    "duel.refusals.initiator_no_private_chat": frozenset(),
+    "duel.refusals.not_combat_ready": frozenset({"health", "threshold"}),
+    "duel.refusals.not_registered": frozenset(),
+    "duel.refusals.pair_limit": frozenset({"per_pair"}),
+    "duel.refusals.self_duel": frozenset(),
+    "duel.refusals.target_day_limit": frozenset(),
+    "duel.refusals.target_no_ghoul": frozenset(),
+    "duel.refusals.target_no_private_chat": frozenset(),
+    "duel.stale": frozenset(),
     "duel.usage": frozenset(),
     "duel.user_not_found": frozenset({"target"}),
     "eat_human.ambush.draw": frozenset(),

@@ -5,6 +5,8 @@ from selfrot.filter import CallbackDataStartswith
 from selfrot.handlers import CallbackQueryHandler
 from selfrot.types import DataCallbackQuery, Message
 
+from src.bot.dialogs import Dialogs
+
 from ....context import AppContext
 from .callback_data import DuelPress
 from .fight import finalize_outcome, run_and_announce_fight
@@ -43,18 +45,21 @@ class DuelPressHandler(CallbackQueryHandler[AppContext[DataCallbackQuery]]):
             duel_id, "awaiting_consent", **{field: True}
         )
         if not updated:
-            await callback.answer("Приглашение уже неактуально.", show_alert=True)
+            await callback.answer(
+                self.ctx.text(Dialogs.duel.consent.stale()), show_alert=True
+            )
             return
 
         if not (updated.initiator_consented and updated.target_consented):
-            await callback.answer("Принято, ждём второго участника.")
+            await callback.answer(self.ctx.text(Dialogs.duel.consent.accepted()))
             if updated.consent_message_id:
                 try:
                     await bot.edit_message_text(
                         chat_id=updated.chat_id,
                         message_id=updated.consent_message_id,
-                        text="✅ Один из участников подтвердил, ждём второго.",
+                        text=self.ctx.text(Dialogs.duel.consent.one_confirmed()),
                         reply_markup=consent_keyboard(
+                            services.dialogs,
                             duel_id,
                             updated.initiator_telegram_id,
                             updated.target_telegram_id,
@@ -64,7 +69,7 @@ class DuelPressHandler(CallbackQueryHandler[AppContext[DataCallbackQuery]]):
                     pass
             return
 
-        await callback.answer("Оба подтвердили!")
+        await callback.answer(self.ctx.text(Dialogs.duel.consent.both_confirmed()))
 
         if updated.consent_message_id:
             try:
@@ -100,7 +105,7 @@ class DuelPressHandler(CallbackQueryHandler[AppContext[DataCallbackQuery]]):
             try:
                 await bot.send_message(
                     chat_id=updated.chat_id,
-                    text="⚔️ Оба согласились! Ждём решения сильнейшей стороны.",
+                    text=self.ctx.text(Dialogs.duel.consent.waiting_favored()),
                 )
             except TelegramAPIError:
                 pass
@@ -108,8 +113,8 @@ class DuelPressHandler(CallbackQueryHandler[AppContext[DataCallbackQuery]]):
         try:
             await bot.send_message(
                 chat_id=favored_id,
-                text="Ты значительно сильнее соперника. Драться всерьёз или дать фору?",
-                reply_markup=fora_keyboard(duel_id, favored_id),
+                text=self.ctx.text(Dialogs.duel.fora.question()),
+                reply_markup=fora_keyboard(services.dialogs, duel_id, favored_id),
             )
         except TelegramAPIError:
             logger.warning("duel %s: failed to DM fora choice", duel_id)
@@ -124,13 +129,15 @@ class DuelPressHandler(CallbackQueryHandler[AppContext[DataCallbackQuery]]):
             compress_hp=payload.action == "fora_handicap",
         )
         if not session:
-            await callback.answer("Уже неактуально.", show_alert=True)
+            await callback.answer(self.ctx.text(Dialogs.duel.stale()), show_alert=True)
             return
 
-        await callback.answer("Принято!")
+        await callback.answer(self.ctx.text(Dialogs.duel.accepted()))
         if isinstance(callback.message, Message):
             try:
-                await callback.message.edit_text("Решение принято, бой начинается.")
+                await callback.message.edit_text(
+                    self.ctx.text(Dialogs.duel.fora.starting())
+                )
             except TelegramAPIError:
                 pass
 
@@ -146,10 +153,10 @@ class DuelPressHandler(CallbackQueryHandler[AppContext[DataCallbackQuery]]):
             winner_choice=payload.action,
         )
         if not session:
-            await callback.answer("Уже неактуально.", show_alert=True)
+            await callback.answer(self.ctx.text(Dialogs.duel.stale()), show_alert=True)
             return
 
-        await callback.answer("Принято!")
+        await callback.answer(self.ctx.text(Dialogs.duel.accepted()))
         await finalize_outcome(self.ctx.bot, session, payload.action, services)
 
 
@@ -157,7 +164,9 @@ class NotYourDuelButtonHandler(CallbackQueryHandler[AppContext[DataCallbackQuery
     query = DuelPress.filter()
 
     async def handle(self) -> None:
-        await self.ctx.callback_query.answer("Это не твоя кнопка.", show_alert=True)
+        await self.ctx.callback_query.answer(
+            self.ctx.text(Dialogs.duel.not_your_button()), show_alert=True
+        )
 
 
 class MalformedDuelButtonHandler(CallbackQueryHandler[AppContext[DataCallbackQuery]]):

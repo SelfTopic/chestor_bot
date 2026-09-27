@@ -19,6 +19,7 @@ class DuelServices:
     battle_text_generator: BattleTextGenerator
     battle_record_service: BattleRecordService
     duel_service: DuelService
+    dialogs: DialogService
 
     @classmethod
     def from_ctx(cls, ctx: AppContext[Any]) -> "DuelServices":
@@ -27,6 +28,7 @@ class DuelServices:
             battle_text_generator=BattleTextGenerator(dialog_service=ctx.dialog_service),
             battle_record_service=ctx.battle_record_service,
             duel_service=ctx.duel_service,
+            dialogs=ctx.dialog_service,
         )
 
     @classmethod
@@ -53,4 +55,5 @@ class DuelServices:
             battle_text_generator=BattleTextGenerator(dialog_service=dialog_service),
             battle_record_service=battle_record_service,
             duel_service=duel_service,
+            dialogs=dialog_service,
         )
