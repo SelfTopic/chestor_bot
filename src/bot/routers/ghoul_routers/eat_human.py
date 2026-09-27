@@ -60,7 +60,7 @@ class EatHumanHandler(MessageHandler[AppContext[TextUserMessage]]):
         remaining = await ctx.cooldown_remaining(telegram_id, COOLDOWN_NAME)
         if remaining is not None:
             await message.reply(
-                ctx.dialog_service.text(
+                ctx.text(
                     Dialogs.eat_human.cooldown(
                         hours=remaining.total_hours,
                         minutes=remaining.minutes_remaining,
@@ -87,7 +87,7 @@ class EatHumanHandler(MessageHandler[AppContext[TextUserMessage]]):
         if not ambushed:
             await ctx.cooldown_service.set_cooldown(telegram_id, COOLDOWN_NAME)
 
-        caption = ctx.dialog_service.text(
+        caption = ctx.text(
             Dialogs.eat_human.done(
                 restored=restored, hunger=ghoul.hunger, count=ghoul.eat_humans
             )

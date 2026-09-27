@@ -5,8 +5,7 @@ from .battle import (
     FighterNotCombatReadyError,
 )
 from .chat import ChatError, ChatMemberUpdateMessageError, ChatRulesError
-from .chat_not_found import ChatNotFound, ChatNotFoundInDatabase, ChatNotFoundInMessage
-from .ghoul_not_found import GhoulNotFound, GhoulNotFoundInDatabase
+from .chat_not_found import ChatNotFound, ChatNotFoundInDatabase
 from .media_download import (
     CollectionNotFoundError,
     InvalidMediaRequestError,
@@ -25,12 +24,7 @@ from .transfer import (
     SenderTooNewError,
     TransferError,
 )
-from .user_not_found import (
-    UserNotFound,
-    UserNotFoundInChat,
-    UserNotFoundInDatabase,
-    UserNotFoundInMessage,
-)
+from .user_not_found import UserNotFound
 
 __all__ = [
     "BattleError",
@@ -42,20 +36,14 @@ __all__ = [
     "ChatRulesError",
     "ChatNotFound",
     "ChatNotFoundInDatabase",
-    "ChatNotFoundInMessage",
     "MediaError",
     "MediaNotFoundError",
     "InvalidMediaRequestError",
     "UserNotFound",
-    "UserNotFoundInChat",
-    "UserNotFoundInDatabase",
-    "UserNotFoundInMessage",
     "CollectionNotFoundError",
     "ValidationMediaError",
     "MediaNotFoundInDatabase",
     "MediaNotFound",
-    "GhoulNotFoundInDatabase",
-    "GhoulNotFound",
     "RpCommandValidateError",
     "RpCommandNotFound",
     "RpCommandError",

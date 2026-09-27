@@ -13,7 +13,6 @@ from dependency_injector import providers
 from sqlalchemy import update
 
 from src.bot.dialogs import Dialogs
-from src.bot.exceptions import ChatNotFoundInDatabase
 from src.bot.repositories import GhoulRepository, UserRepository
 from src.bot.services.wikipedia import WikipediaSummary
 from src.database.models import Chat
@@ -42,10 +41,6 @@ async def seed(session_factory, telegram_id: int, first_name: str = "Вася", 
         if data:
             await repo.change_data(telegram_id, **data)
         await session.commit()
-
-
-def global_error(dp, exc: Exception) -> str:
-    return dp.dialog_service.text(Dialogs.errors.unexpected(error=str(exc)))
 
 
 class TestStartAndHelp:
@@ -121,7 +116,9 @@ class TestCheckRules:
         # в личке чата в БД нет: ChatNotFoundInDatabase, ответ даёт Dispatcher.on_error
         (reply,) = await send("правила", uid=42)
 
-        assert reply == global_error(send.dispatcher, ChatNotFoundInDatabase())
+        assert reply == send.dispatcher.dialog_service.text(
+            Dialogs.errors.chat_not_found()
+        )
 
     async def test_group_rules(self, send, telegram, session_factory):
         telegram.results["getChatAdministrators"] = [owner_dict(99)]

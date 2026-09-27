@@ -44,7 +44,7 @@ class RegenStatusHandler(MessageHandler[AppContext[TextUserMessage]]):
             )
 
         await ctx.message.answer(
-            ctx.dialog_service.text(
+            ctx.text(
                 Dialogs.status.regen(
                     health=ghoul.health,
                     max_health=ghoul.max_health,
@@ -76,7 +76,7 @@ class HungerStatusHandler(MessageHandler[AppContext[TextUserMessage]]):
         stats = fighter.stats
 
         await ctx.message.answer(
-            ctx.dialog_service.text(
+            ctx.text(
                 Dialogs.status.hunger(
                     hunger=ghoul.hunger,
                     tier=tier.name,

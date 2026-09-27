@@ -20,7 +20,7 @@ class ProfileHandler(MessageHandler[AppContext[UserMessage]]):
         )
 
         await self.ctx.answer_message(
-            self.ctx.dialog_service.text(
+            self.ctx.text(
                 Dialogs.profile(
                     name=user.full_name, race=race_name, balance=str(user.balance)
                 )

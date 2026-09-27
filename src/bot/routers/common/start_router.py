@@ -14,7 +14,7 @@ class StartHandler(MessageHandler[AppContext[UserMessage]]):
         user = await self.ctx.db_user()
 
         await self.ctx.message.answer(
-            self.ctx.dialog_service.text(Dialogs.start(name=user.first_name or "User"))
+            self.ctx.text(Dialogs.start(name=user.first_name or "User"))
         )
 
 

@@ -33,7 +33,7 @@ async def do_upgrade(
     )
     if user_cooldown is not None:
         remaining = parse_seconds(int(user_cooldown.end_at - time.time()))
-        return False, ctx.dialog_service.text(
+        return False, ctx.text(
             Dialogs.kagune.upgrade.cooldown(
                 minutes=str(remaining.minutes_remaining),
                 seconds=str(remaining.seconds_remaining),
@@ -46,7 +46,7 @@ async def do_upgrade(
         return False, "Пользователь не найден."
 
     if user.balance < price:
-        return False, ctx.dialog_service.text(
+        return False, ctx.text(
             Dialogs.errors.not_enough_money(money=int(price - user.balance) + 1)
         )
 
@@ -57,7 +57,7 @@ async def do_upgrade(
     await ctx.cooldown_service.set_cooldown(telegram_id, "KAGUNE_UPGRADE")
 
     new_strength = ghoul_service.get_kagune_strength(new_ghoul, kagune_type)
-    text = ctx.dialog_service.text(
+    text = ctx.text(
         Dialogs.kagune.upgrade.done(kagune_strength=str(new_strength), money=str(price))
     )
     return True, text

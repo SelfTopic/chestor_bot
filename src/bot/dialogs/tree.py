@@ -97,11 +97,20 @@ class _EatHumanDialogs:
 
 
 class _ErrorsDialogs:
+    def chat_not_found(self) -> Line:
+        return Line("errors.chat_not_found", {})
+
+    def media_not_found(self) -> Line:
+        return Line("errors.media_not_found", {})
+
     def not_enough_money(self, *, money: object) -> Line:
         return Line("errors.not_enough_money", {"money": money})
 
     def unexpected(self, *, error: object) -> Line:
         return Line("errors.unexpected", {"error": error})
+
+    def username_not_found(self, *, username: object) -> Line:
+        return Line("errors.username_not_found", {"username": username})
 
 
 class _FightDialogs:
@@ -430,8 +439,11 @@ PLACEHOLDERS: dict[str, frozenset[str]] = {
     "combat_power.short": frozenset({"effective_power", "vacuum_power"}),
     "eat_human.cooldown": frozenset({"hours", "minutes", "seconds"}),
     "eat_human.done": frozenset({"count", "hunger", "restored"}),
+    "errors.chat_not_found": frozenset(),
+    "errors.media_not_found": frozenset(),
     "errors.not_enough_money": frozenset({"money"}),
     "errors.unexpected": frozenset({"error"}),
+    "errors.username_not_found": frozenset({"username"}),
     "fight.not_ready": frozenset({"health", "threshold"}),
     "fight.summary": frozenset(
         {

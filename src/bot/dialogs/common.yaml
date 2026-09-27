@@ -14,6 +14,9 @@ profile: |-
   Для открытия расового профиля используйте команду /race_profile или 'распрофиль'
 errors:
   unexpected: 'Ошибка: {error}'
+  username_not_found: 'Ошибка: Пользователь с username {username} не найден'
+  chat_not_found: 'Ошибка: Чат не найден в базе данных'
+  media_not_found: 'Ошибка: Медиа не найдено в базе данных'
   not_enough_money: Ты успокойся нахуй. Ты ебаная бомжиха. На твоем балансе не хватает {money} CheSton для покупки.
 lottery:
   win: |-

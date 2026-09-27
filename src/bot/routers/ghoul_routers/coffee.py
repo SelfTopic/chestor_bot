@@ -23,16 +23,14 @@ class CoffeeHandler(MessageHandler[AppContext[TextUserMessage]]):
         ghoul = await ctx.db_ghoul()
 
         if ghoul.snap_count < COFFEE_CONFIG.snap_limit:
-            await ctx.message.reply(
-                text=ctx.dialog_service.text(Dialogs.coffee.snap_limit())
-            )
+            await ctx.message.reply(text=ctx.text(Dialogs.coffee.snap_limit()))
             return
 
         cooldown = await ctx.coffee_service.execute_cooldown(telegram_id)
         if cooldown is not None:
             remaining = parse_seconds(int(cooldown.end_at - time.time()))
             await ctx.message.reply(
-                text=ctx.dialog_service.text(
+                text=ctx.text(
                     Dialogs.coffee.cooldown(
                         hours=remaining.total_hours,
                         minutes=remaining.minutes_remaining,
@@ -43,7 +41,7 @@ class CoffeeHandler(MessageHandler[AppContext[TextUserMessage]]):
             return
 
         result = await ctx.coffee_service.execute(telegram_id)
-        text = ctx.dialog_service.text(
+        text = ctx.text(
             Dialogs.coffee.done(count=result.ghoul.coffee_count, money=result.award)
         )
 

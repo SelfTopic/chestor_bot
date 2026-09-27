@@ -22,7 +22,7 @@ class SnapHandler(MessageHandler[AppContext[TextUserMessage]]):
         remaining = await ctx.cooldown_remaining(telegram_id, "SNAP")
         if remaining is not None:
             await ctx.message.reply(
-                text=ctx.dialog_service.text(
+                text=ctx.text(
                     Dialogs.snap.cooldown(
                         minutes=str(remaining.minutes_remaining),
                         seconds=str(remaining.seconds_remaining),
@@ -39,7 +39,7 @@ class SnapHandler(MessageHandler[AppContext[TextUserMessage]]):
         )
         await ctx.cooldown_service.set_cooldown(telegram_id, "SNAP")
 
-        caption = ctx.dialog_service.text(
+        caption = ctx.text(
             Dialogs.snap.done(count=str(new_ghoul.snap_count), money=str(award))
         )
 

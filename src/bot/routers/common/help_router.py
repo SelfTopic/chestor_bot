@@ -12,7 +12,7 @@ class HelpHandler(MessageHandler[AppContext[TextMessage]]):
 
     async def handle(self) -> None:
         await self.ctx.message.answer(
-            self.ctx.dialog_service.text(
+            self.ctx.text(
                 Dialogs.help(
                     commands_link="https://t.me/CheStorCommands",
                     lore_link="Временно отсутствует",

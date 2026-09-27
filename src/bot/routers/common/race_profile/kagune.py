@@ -123,6 +123,6 @@ class KaguneInfoHandler(MessageHandler[AppContext[TextMessage]]):
         await answer_rich_or_text(
             self.ctx.message,
             self.build_message(),
-            lambda: self.ctx.dialog_service.text(Dialogs.kagune.info()),
+            lambda: self.ctx.text(Dialogs.kagune.info()),
             what="kagune info",
         )

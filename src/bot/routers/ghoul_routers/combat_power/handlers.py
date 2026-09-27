@@ -20,7 +20,7 @@ class CombatPowerHandler(MessageHandler[AppContext[TextUserMessage]]):
 
         fighter = engine.ghoul_to_fighter(ghoul, user.full_name, ghoul_service)
         stats = fighter.stats
-        return ctx.dialog_service.text(
+        return ctx.text(
             Dialogs.combat_power.full(
                 name=user.full_name,
                 danger_rank=danger_rank,
@@ -48,7 +48,7 @@ class CombatPowerHandler(MessageHandler[AppContext[TextUserMessage]]):
 
         if ghoul.is_dead:
             await ctx.message.answer(
-                ctx.dialog_service.text(Dialogs.ghoul.dead_profile(name=user.full_name))
+                ctx.text(Dialogs.ghoul.dead_profile(name=user.full_name))
             )
             return
 
@@ -77,7 +77,7 @@ class CombatPowerShortHandler(MessageHandler[AppContext[TextUserMessage]]):
 
         if ghoul.is_dead:
             await ctx.message.answer(
-                ctx.dialog_service.text(Dialogs.ghoul.dead_profile(name=user.full_name))
+                ctx.text(Dialogs.ghoul.dead_profile(name=user.full_name))
             )
             return
 
@@ -85,7 +85,7 @@ class CombatPowerShortHandler(MessageHandler[AppContext[TextUserMessage]]):
             ghoul, user.full_name, ctx.ghoul_service
         )
         await ctx.message.answer(
-            ctx.dialog_service.text(
+            ctx.text(
                 Dialogs.combat_power.short(
                     vacuum_power=ctx.ghoul_service.calculate_power(ghoul),
                     effective_power=round(

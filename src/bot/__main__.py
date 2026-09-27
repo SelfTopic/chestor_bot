@@ -9,7 +9,8 @@ from selfrot.types import Message, Update
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 
 from src.bot.containers import Container
-from src.bot.dialogs import Dialogs
+from src.bot.dialogs import Dialogs, Line
+from src.bot.exceptions import ChatNotFound, MediaNotFound, UserNotFound
 from src.bot.services.dialog import DialogService
 from src.config import settings
 from src.database import session_factory as default_session_factory
@@ -27,6 +28,18 @@ from .services.quiz import QuizService
 logger = logging.getLogger(__name__)
 
 WEBHOOK_PORT = 8999
+
+
+def error_line(exc: Exception) -> Line:
+    match exc:
+        case UserNotFound(username=username):
+            return Dialogs.errors.username_not_found(username=username)
+        case ChatNotFound():
+            return Dialogs.errors.chat_not_found()
+        case MediaNotFound():
+            return Dialogs.errors.media_not_found()
+        case _:
+            return Dialogs.errors.unexpected(error=str(exc))
 
 
 class Dispatcher(BaseDispatcher[AppContext]):
@@ -97,9 +110,7 @@ class Dispatcher(BaseDispatcher[AppContext]):
 
         event = ctx.event
         if isinstance(event, Message):
-            await event.answer(
-                self.dialog_service.text(Dialogs.errors.unexpected(error=str(exc)))
-            )
+            await event.answer(self.dialog_service.text(error_line(exc)))
 
 
 def main() -> None:

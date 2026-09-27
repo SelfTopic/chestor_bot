@@ -14,7 +14,7 @@ class BalanceHandler(MessageHandler[AppContext[UserMessage]]):
         user = await self.ctx.db_user()
 
         await self.ctx.answer_message(
-            self.ctx.dialog_service.text(
+            self.ctx.text(
                 Dialogs.balance(balance=str(user.balance), name=user.first_name)
             )
         )

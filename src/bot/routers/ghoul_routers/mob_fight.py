@@ -34,11 +34,11 @@ class MobFightHandler(MessageHandler[AppContext[TextUserMessage]]):
                 ghoul, has_pending_confirmation=lambda g: battles.is_busy(g.telegram_id)
             )
         except FighterIsDeadError:
-            await message.reply(ctx.dialog_service.text(Dialogs.ghoul.dead()))
+            await message.reply(ctx.text(Dialogs.ghoul.dead()))
             return
         except FighterNotCombatReadyError as exc:
             await message.reply(
-                ctx.dialog_service.text(
+                ctx.text(
                     Dialogs.fight.not_ready(health=exc.health, threshold=exc.threshold)
                 )
             )

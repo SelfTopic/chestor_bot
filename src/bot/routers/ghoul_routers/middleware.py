@@ -33,7 +33,7 @@ class GhoulMiddleware(BaseMiddleware[AppContext]):
             return False
 
         if ghoul.is_dead:
-            await event.answer(self.ctx.dialog_service.text(Dialogs.ghoul.dead()))
+            await event.answer(self.ctx.text(Dialogs.ghoul.dead()))
             return False
 
         return True

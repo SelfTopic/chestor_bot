@@ -10,6 +10,7 @@ from selfrot.types import InputFile, Message
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 
 from src.bot.containers import Container
+from src.bot.dialogs import Line
 from src.bot.exceptions import UserNotFound
 from src.bot.services import (
     BanService,
@@ -183,6 +184,9 @@ class AppContext(BaseContext[TEvent]):
             self.user_service, self.ghoul_service, self.dialog_service, self.notifier
         )
 
+    def text(self, line: Line) -> str:
+        return self.dialog_service.text(line)
+
     async def db_user(self) -> User:
         sender = self.user
         user = await self.user_service.get(sender.id) if sender is not None else None
@@ -224,9 +228,7 @@ class AppContext(BaseContext[TEvent]):
 
         user = await find_user(self.user_service, mention)
         if user is None:
-            raise UserNotFound(
-                f"Пользователь с username {mention.lstrip('@')} не найден"
-            )
+            raise UserNotFound(mention.lstrip("@"))
 
         return Addressee(user.telegram_id, user.first_name)
 
