@@ -112,7 +112,8 @@ class TestNumber:
 
 class TestCalculator:
     @pytest.mark.parametrize(
-        ("text", "result"), [("2+2*2", "6"), ("7 / 2", "3.5"), ("6/3", "2"), ("-(2**3)", "-8")]
+        ("text", "result"),
+        [("2+2*2", "6"), ("7 / 2", "3.5"), ("6/3", "2"), ("-(2**3)", "-8"), ("-2-2", "-4"), ("1/2", "0.5")],
     )
     async def test_replies_with_bare_result(self, send, text, result):
         assert await send(text) == [result]
@@ -122,10 +123,12 @@ class TestCalculator:
         [
             "5",
             "-5",
+            "+7999",
             "привет",
             "1/0",
             "10.0 ** 400",  # OverflowError у float
-            "9**1000 * 9**1000 * 9**1000 * 9**1000 * 9**1000",  # больше 4300 цифр для str()
+            "9**1000 * 9**1000 * 9**1000 * 9**1000 * 9**1000",  # в сообщение не влезет
+            "((9**1000)**1000)**1000",  # без проверки размера бот висел бы минутами
         ],
     )
     async def test_everything_else_is_silent(self, send, text):

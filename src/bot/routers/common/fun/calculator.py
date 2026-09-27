@@ -1,4 +1,5 @@
 import ast
+import math
 import operator
 from typing import Union
 
@@ -19,8 +20,10 @@ _UNARY_OPS = {
     ast.USub: operator.neg,
 }
 
-# Без предела `2 ** 10_000_000` одним сообщением занимает процесс на секунды.
-MAX_POWER_EXPONENT = 1000
+# Ответ должен уместиться в сообщение (4096 символов). Размер проверяется до вычисления:
+# предел на один показатель не спасает от ((9**1000)**1000)**1000 — это минуты в event loop.
+MAX_RESULT_DIGITS = 4000
+MAX_RESULT_BITS = int(MAX_RESULT_DIGITS * math.log2(10))
 
 
 class CalculatorError(ValueError):
@@ -61,12 +64,15 @@ def _eval_node(node: ast.AST) -> Number:
         left = _eval_node(node.left)
         right = _eval_node(node.right)
 
-        if isinstance(node.op, ast.Pow) and abs(right) > MAX_POWER_EXPONENT:
-            raise CalculatorError(
-                f"Показатель степени слишком большой (максимум {MAX_POWER_EXPONENT})."
-            )
+        if (
+            isinstance(node.op, ast.Pow)
+            and isinstance(left, int)
+            and isinstance(right, int)
+            and left.bit_length() * right > MAX_RESULT_BITS
+        ):
+            raise CalculatorError("Результат слишком большой.")
 
-        return op_func(left, right)
+        return _checked(op_func(left, right))
 
     if isinstance(node, ast.UnaryOp):
         op_func = _UNARY_OPS.get(type(node.op))
@@ -75,6 +81,14 @@ def _eval_node(node: ast.AST) -> Number:
         return op_func(_eval_node(node.operand))
 
     raise CalculatorError("Разрешены только числа, +, -, *, /, //, %, ** и скобки.")
+
+
+def _checked(value: Number) -> Number:
+    if isinstance(value, int) and value.bit_length() > MAX_RESULT_BITS:
+        raise CalculatorError("Результат слишком большой.")
+    if isinstance(value, float) and not math.isfinite(value):
+        raise CalculatorError("Результат слишком большой.")
+    return value
 
 
 def _has_binary_operator(node: ast.AST) -> bool:

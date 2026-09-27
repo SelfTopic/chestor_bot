@@ -1,3 +1,5 @@
+import time
+
 import pytest
 
 from src.bot.routers.common.fun.calculator import CalculatorError, evaluate
@@ -58,10 +60,31 @@ def test_evaluate_rejects_huge_power_exponent():
         evaluate("2 ** 10000000")
 
 
+@pytest.mark.parametrize(
+    "expression",
+    [
+        "(9**1000)**1000",  # 3 млн бит: в сообщение не влезет
+        "((9**1000)**1000)**1000",  # без проверки размера — минуты в event loop
+        "9**1000 * 9**1000 * 9**1000 * 9**1000 * 9**1000",
+        "1e308 * 10",  # float уходит в inf, а не в OverflowError
+    ],
+)
+def test_evaluate_rejects_results_too_big_for_a_message(expression):
+    started = time.monotonic()
+    with pytest.raises(CalculatorError):
+        evaluate(expression)
+    assert time.monotonic() - started < 1, "размер должен проверяться до вычисления"
+
+
+def test_evaluate_allows_big_results_that_fit_a_message():
+    assert evaluate("2**1000") == 2**1000
+
+
 # --- require_operator (пассивный триггер в чате, fun_router.py) --------------
 
 
-@pytest.mark.parametrize("expression", ["5", "-5", "+5", " 42 "])
+# Правило владельца: считать, только если есть оператор между хотя бы двумя числами.
+@pytest.mark.parametrize("expression", ["5", "-5", "+5", " 42 ", "-2", "+7999", "--2"])
 def test_require_operator_rejects_bare_numbers(expression):
     with pytest.raises(CalculatorError):
         evaluate(expression, require_operator=True)
@@ -69,7 +92,7 @@ def test_require_operator_rejects_bare_numbers(expression):
 
 @pytest.mark.parametrize(
     "expression,expected",
-    [("2+2", 4), ("-(2+3)", -5), ("(2+2)*10", 40), ("2**10", 1024)],
+    [("2+2", 4), ("-(2+3)", -5), ("(2+2)*10", 40), ("2**10", 1024), ("-2-2", -4), ("1/2", 0.5)],
 )
 def test_require_operator_allows_real_expressions(expression, expected):
     assert evaluate(expression, require_operator=True) == expected
