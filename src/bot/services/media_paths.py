@@ -14,12 +14,35 @@ EXTENSION = {MediaDownloadType.ANIMATION: ".mp4", MediaDownloadType.VIDEO: ".mp4
 def collection_folder(
     type_media: MediaDownloadType, collection: MediaCollection
 ) -> Path:
-    subfolder = collection.sub_type if "kagune" in collection.value else ""
-    return (
-        Path(game_config.path_to_assets)
-        / type_media.value
-        / collection.category
-        / subfolder
+    return Path(game_config.path_to_assets) / type_media.value / collection.category
+
+
+def random_file(folder: Path) -> Path | None:
+    if not folder.is_dir():
+        return None
+    files = [f for f in folder.iterdir() if f.is_file()]
+    return random.choice(files) if files else None
+
+
+async def media_for(
+    media_repository: MediaRepository,
+    path: Path,
+    type_media: MediaDownloadType,
+    collection: str,
+    registered_by: int,
+) -> Media:
+    media = await media_repository.get_by_path(str(path))
+    if media is not None:
+        return media
+
+    return await media_repository.insert(
+        MediaInsert(
+            media_type=type_media.value,
+            telegram_file_id=None,
+            collection=collection,
+            path=str(path),
+            uploaded_by=registered_by,
+        )
     )
 
 
@@ -30,24 +53,10 @@ async def random_media(
     registered_by: int,
 ) -> Media | None:
     collection = CollectionParser.parse(collection_string)
-    folder = collection_folder(type_media, collection)
-    folder.mkdir(parents=True, exist_ok=True)
-
-    files = [f for f in folder.iterdir() if f.is_file()]
-    if not files:
+    path = random_file(collection_folder(type_media, collection))
+    if path is None:
         return None
 
-    file_path = random.choice(files)
-    media = await media_repository.get_by_path(str(file_path))
-    if media is not None:
-        return media
-
-    return await media_repository.insert(
-        MediaInsert(
-            media_type=type_media.value,
-            telegram_file_id=None,
-            collection=collection.value,
-            path=str(file_path),
-            uploaded_by=registered_by,
-        )
+    return await media_for(
+        media_repository, path, type_media, collection.value, registered_by
     )

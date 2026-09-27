@@ -32,7 +32,7 @@
   (`NotificationTicker`, `DuelTicker`, `VideoWorker`), polling (`ENV=DEV`) или вебхук.
 - **`context.py`** — `AppContext`, контекст одного апдейта. Все зависимости хендлера —
   его типизированные ленивые свойства (`ctx.ghoul_service`, `ctx.transfer_service`, …),
-  плюс общие хелперы (`ctx.db_user()`, `ctx.addressee()`, `ctx.reply_gif()`, …).
+  плюс общие хелперы (`ctx.say()`, `ctx.text()`, `ctx.db_user()`, `ctx.addressee()`, …).
 - **`containers.py`** — DI-контейнер (`dependency-injector`): репозитории и сервисы,
   привязанные к сессии БД из `session_context`. Хендлеры его не видят, только `AppContext`.
 - **`bot.py`**, **`logs.py`** — класс бота (прокси) и настройка логов.

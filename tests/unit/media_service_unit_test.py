@@ -6,27 +6,13 @@ from src.bot.types import MediaCollection
 
 
 def test_parse_known_collection():
-    result = CollectionParser.parse("coffee")
-    assert result == MediaCollection.COFFEE
-
-
-def test_parse_snap():
-    result = CollectionParser.parse("snap")
-    assert result == MediaCollection.SNAP_FINGER
-
-
-def test_parse_snap_finger_alias():
-    result = CollectionParser.parse("snap finger")
-    assert result == MediaCollection.SNAP_FINGER
+    result = CollectionParser.parse("death")
+    assert result == MediaCollection.DEATH
 
 
 @pytest.mark.parametrize(
     "key",
     [
-        "kagune ukaku",
-        "kagune koukaku",
-        "kagune rinkaku",
-        "kagune bikaku",
         "welcome gif",
         "welcome photo",
         "welcome video",

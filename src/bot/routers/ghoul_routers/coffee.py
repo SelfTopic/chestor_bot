@@ -5,11 +5,9 @@ from selfrot.filter import HasUser, Text
 
 from src.bot.dialogs import Dialogs
 from src.bot.game_configs import COFFEE_CONFIG
-from src.bot.types import MediaDownloadType
 from src.bot.utils import parse_seconds
 
 from ...context import AppContext
-from ...services.media_paths import random_media
 from ..types import TextUserMessage
 
 
@@ -41,18 +39,8 @@ class CoffeeHandler(MessageHandler[AppContext[TextUserMessage]]):
             return
 
         result = await ctx.coffee_service.execute(telegram_id)
-        text = ctx.text(
-            Dialogs.coffee.done(count=result.ghoul.coffee_count, money=result.award)
-        )
-
-        media = await random_media(
-            ctx.media_repository, MediaDownloadType.ANIMATION, "coffee", telegram_id
-        )
-        if media is None:
-            await ctx.message.reply(text=text)
-            return
-
-        await ctx.reply_gif(media, caption=text)
+        done = Dialogs.coffee.done(count=result.ghoul.coffee_count, money=result.award)
+        await ctx.say(done, reply=True)
 
 
 class CoffeeRouter(BaseRouter[AppContext]):

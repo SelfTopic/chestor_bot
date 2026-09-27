@@ -36,6 +36,10 @@ def test_tree_matches_yaml():
         ("coffee:\n  cooldown: '{minutes}'\nbot: Чо\nstart: Привет\n", "start: нет в коде"),
         ("coffee:\n  cooldown: Жди {minutes\nbot: Чо\n", "фигурные скобки"),
         ("coffee: [1, 2]\nbot: Чо\n", "нужен текст"),
+        ("coffee:\n  cooldown:\n    text: '{minutes}'\n    gifz: x\nbot: Чо\n", "непонятные"),
+        ("coffee:\n  cooldown:\n    text: '{minutes}'\n    gif_chance: 2\nbot: Чо\n", "gif_chance"),
+        ("coffee:\n  cooldown:\n    text: '{minutes}'\n    gifs: ../x\nbot: Чо\n", "внутри"),
+        ("coffee:\n  text: '{minutes}'\nbot: Чо\n", "coffee.cooldown: нет текста"),
     ],
 )
 def test_startup_rejects_texts_that_do_not_match_code(tmp_path, yaml_text, problem):

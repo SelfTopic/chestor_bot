@@ -33,7 +33,7 @@ class TopBalanceHandler(MessageHandler[AppContext[TextMessage]]):
             for place, user in enumerate(top, start=1)
         )
         await self.ctx.message.answer(
-            self.ctx.text(Dialogs.tops.balance.text(count=count, rows=rows))
+            self.ctx.text(Dialogs.tops.balance.message(count=count, rows=rows))
         )
 
     async def on_error(self, exc: Exception) -> None:

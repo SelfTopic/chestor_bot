@@ -6,6 +6,7 @@ from pathlib import Path
 
 import pytest
 
+from src.bot.dialogs import Line
 from src.bot.repositories import ChatRepository, GhoulRepository, UserRepository
 from src.bot.types import KaguneType
 from src.config import settings
@@ -372,7 +373,7 @@ class TestMedia:
 
         await feed(
             message_update(
-                "/add_gif snap",
+                "/add_gif snap.done",
                 uid=ADMIN,
                 reply_to_uid=42,
                 reply_extra=self.animation_reply(),
@@ -386,7 +387,7 @@ class TestMedia:
         row = await self.get_media_row(session_factory, str(path))
         assert row is not None
         assert row.telegram_file_id == self.FILE_ID
-        assert row.collection == "snap_finger:animation"
+        assert row.collection == "snap.done"
         assert row.uploaded_by == ADMIN
 
     async def test_saves_video(self, feed, telegram):
@@ -406,33 +407,24 @@ class TestMedia:
         assert path.exists()
         assert telegram.bodies("sendVideo")
 
-    def test_kagune_collection_gets_a_subfolder(self):
-        # ветка на диск не пишет (часть src/assets в этом окружении принадлежит root,
-        # см. docstring target_path), поэтому только сама сборка пути
-        from src.bot.services.media import CollectionParser
-        from src.bot.types import MediaDownloadType
-        from src.bot.routers.creator_routers.media import target_path
-
-        collection = CollectionParser.parse("kagune ukaku")
-
-        path = target_path(MediaDownloadType.ANIMATION, collection, self.FILE_ID)
-
-        assert path == Path(
-            f"src/assets/animation/upgrade_kagune/ukaku/animation_{self.FILE_ID}.mp4"
+    def test_phrase_gif_folder_takes_its_placeholder(self, dispatcher):
+        # на диск не пишем: часть src/assets в этом окружении принадлежит root
+        gifs = dispatcher.dialog_service.gifs(
+            Line("kagune.upgrade.done", {"kagune": "ukaku"})
         )
 
-    def test_non_kagune_collection_has_no_subfolder(self):
-        from src.bot.services.media import CollectionParser
-        from src.bot.types import MediaDownloadType
-        from src.bot.routers.creator_routers.media import target_path
+        assert gifs.folder == Path("src/assets/animation/upgrade_kagune/ukaku")
 
-        collection = CollectionParser.parse("snap")
-
-        path = target_path(MediaDownloadType.ANIMATION, collection, self.FILE_ID)
-
-        assert path == Path(
-            f"src/assets/animation/snap_finger/animation_{self.FILE_ID}.mp4"
+    async def test_phrase_folder_placeholder_is_required(self, send, telegram):
+        (reply,) = await send(
+            "/add_gif kagune.upgrade.done",
+            uid=ADMIN,
+            reply_to_uid=42,
+            reply_extra=self.animation_reply(),
         )
+
+        assert reply.startswith("Для папки гифок фразы kagune.upgrade.done нужна")
+        assert telegram.downloads == []
 
     async def test_unknown_collection(self, feed, telegram):
         telegram_response = await feed(
@@ -468,7 +460,7 @@ class TestMedia:
         self.created.append(path)
 
         raw = message_update(
-            "/add_gif snap",
+            "/add_gif snap.done",
             uid=ADMIN,
             reply_to_uid=42,
             reply_extra=self.animation_reply(),

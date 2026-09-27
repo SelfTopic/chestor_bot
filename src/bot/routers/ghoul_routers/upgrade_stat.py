@@ -65,7 +65,7 @@ def build_shop(
         )
         keyboard.row(*buttons)
 
-    text = Dialogs.stats.shop.text(
+    text = Dialogs.stats.shop.message(
         balance=user.balance if user else 0, rows="\n".join(rows)
     )
     return ctx.text(text), keyboard.markup()

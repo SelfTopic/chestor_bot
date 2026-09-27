@@ -39,7 +39,7 @@ errors:
   not_enough_money: Ты успокойся нахуй. Ты ебаная бомжиха. На твоем балансе не хватает {money} CheSton для покупки.
 tops:
   balance:
-    text: |-
+    message: |-
       Топ {count} самых богатих гулий:
 
       {rows}

@@ -139,6 +139,9 @@ class _AdminMediaDialogs:
     def exists(self) -> Line:
         return Line("admin.media.exists", {})
 
+    def missing_param(self, *, key: object, name: object) -> Line:
+        return Line("admin.media.missing_param", {"key": key, "name": name})
+
     def no_media(self) -> Line:
         return Line("admin.media.no_media", {})
 
@@ -1073,6 +1076,9 @@ class _KaguneUpgradeChoiceDialogs:
     def button(self, *, kagune: object, price: object) -> Line:
         return Line("kagune.upgrade.choice.button", {"kagune": kagune, "price": price})
 
+    def message(self, *, rows: object) -> Line:
+        return Line("kagune.upgrade.choice.message", {"rows": rows})
+
     def row(self, *, kagune: object, price: object, strength: object) -> Line:
         return Line(
             "kagune.upgrade.choice.row",
@@ -1083,9 +1089,6 @@ class _KaguneUpgradeChoiceDialogs:
             },
         )
 
-    def text(self, *, rows: object) -> Line:
-        return Line("kagune.upgrade.choice.text", {"rows": rows})
-
 
 class _KaguneUpgradeDialogs:
     choice = _KaguneUpgradeChoiceDialogs()
@@ -1093,10 +1096,11 @@ class _KaguneUpgradeDialogs:
     def cooldown(self, *, minutes: object, seconds: object) -> Line:
         return Line("kagune.upgrade.cooldown", {"minutes": minutes, "seconds": seconds})
 
-    def done(self, *, kagune_strength: object, money: object) -> Line:
+    def done(self, *, kagune: object, kagune_strength: object, money: object) -> Line:
         return Line(
             "kagune.upgrade.done",
             {
+                "kagune": kagune,
                 "kagune_strength": kagune_strength,
                 "money": money,
             },
@@ -1382,6 +1386,9 @@ class _SnapDialogs:
 
 
 class _StatsShopDialogs:
+    def message(self, *, balance: object, rows: object) -> Line:
+        return Line("stats.shop.message", {"balance": balance, "rows": rows})
+
     def row(self, *, current: object, stat: object, x10: object, x5: object) -> Line:
         return Line(
             "stats.shop.row",
@@ -1392,9 +1399,6 @@ class _StatsShopDialogs:
                 "x5": x5,
             },
         )
-
-    def text(self, *, balance: object, rows: object) -> Line:
-        return Line("stats.shop.text", {"balance": balance, "rows": rows})
 
 
 class _StatsDialogs:
@@ -1487,6 +1491,9 @@ class _TopsBalanceDialogs:
     def bad_count(self) -> Line:
         return Line("tops.balance.bad_count", {})
 
+    def message(self, *, count: object, rows: object) -> Line:
+        return Line("tops.balance.message", {"count": count, "rows": rows})
+
     def row(self, *, balance: object, name: object, place: object) -> Line:
         return Line(
             "tops.balance.row",
@@ -1496,9 +1503,6 @@ class _TopsBalanceDialogs:
                 "place": place,
             },
         )
-
-    def text(self, *, count: object, rows: object) -> Line:
-        return Line("tops.balance.text", {"count": count, "rows": rows})
 
 
 class _TopsKaguneDialogs:
@@ -1789,6 +1793,7 @@ PLACEHOLDERS: dict[str, frozenset[str]] = {
     "admin.level_up.done": frozenset({"cheston", "level", "notified", "rc"}),
     "admin.level_up.usage": frozenset(),
     "admin.media.exists": frozenset(),
+    "admin.media.missing_param": frozenset({"key", "name"}),
     "admin.media.no_media": frozenset(),
     "admin.media.saved": frozenset({"path"}),
     "admin.media.unknown_collection": frozenset({"collection", "supported"}),
@@ -2043,10 +2048,10 @@ PLACEHOLDERS: dict[str, frozenset[str]] = {
     "kagune.guide.table_title": frozenset(),
     "kagune.info": frozenset(),
     "kagune.upgrade.choice.button": frozenset({"kagune", "price"}),
+    "kagune.upgrade.choice.message": frozenset({"rows"}),
     "kagune.upgrade.choice.row": frozenset({"kagune", "price", "strength"}),
-    "kagune.upgrade.choice.text": frozenset({"rows"}),
     "kagune.upgrade.cooldown": frozenset({"minutes", "seconds"}),
-    "kagune.upgrade.done": frozenset({"kagune_strength", "money"}),
+    "kagune.upgrade.done": frozenset({"kagune", "kagune_strength", "money"}),
     "kagune.upgrade.no_ghoul": frozenset(),
     "kagune.upgrade.no_user": frozenset(),
     "kagune.upgrade.not_owned": frozenset(),
@@ -2112,8 +2117,8 @@ PLACEHOLDERS: dict[str, frozenset[str]] = {
     "stats.no_money": frozenset(),
     "stats.private_only": frozenset(),
     "stats.private_only_action": frozenset(),
+    "stats.shop.message": frozenset({"balance", "rows"}),
     "stats.shop.row": frozenset({"current", "stat", "x10", "x5"}),
-    "stats.shop.text": frozenset({"balance", "rows"}),
     "status.healthy": frozenset(),
     "status.hunger": frozenset(
         {
@@ -2136,8 +2141,8 @@ PLACEHOLDERS: dict[str, frozenset[str]] = {
     "status.until_healthy": frozenset({"duration"}),
     "status.until_starved": frozenset({"duration"}),
     "tops.balance.bad_count": frozenset(),
+    "tops.balance.message": frozenset({"count", "rows"}),
     "tops.balance.row": frozenset({"balance", "name", "place"}),
-    "tops.balance.text": frozenset({"count", "rows"}),
     "tops.empty": frozenset(),
     "tops.kagune.bad_button": frozenset(),
     "tops.kagune.sum_button": frozenset(),

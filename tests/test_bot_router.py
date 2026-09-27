@@ -2,7 +2,7 @@ import pytest
 
 from src.bot.dialogs import load_texts
 
-BOT_REPLIES = load_texts()["bot"]
+BOT_REPLIES = load_texts()["bot"].variants
 
 
 @pytest.mark.parametrize("text", ["бот", "Бот", "БОТ"])

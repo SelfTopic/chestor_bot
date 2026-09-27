@@ -6,13 +6,6 @@ from typing import Optional
 
 
 class MediaCollection(str, Enum):
-    UPGRADE_KAGUNE_UKAKU = "upgrade_kagune:ukaku"
-    UPGRADE_KAGUNE_KOUKAKU = "upgrade_kagune:koukaku"
-    UPGRADE_KAGUNE_RINKAKU = "upgrade_kagune:rinkaku"
-    UPGRADE_KAGUNE_BIKAKU = "upgrade_kagune:bikaku"
-    SNAP_FINGER = "snap_finger:animation"
-    COFFEE = "coffee:animation"
-    EAT_HUMAN = "eat:humans"
     DEATH = "death:video"
     FIGHT = "fight:animation"
     WELCOME_GIF = "welcome:animation"
@@ -25,10 +18,6 @@ class MediaCollection(str, Enum):
     @property
     def category(self) -> str:
         return self.value.split(":")[0]
-
-    @property
-    def sub_type(self) -> str:
-        return self.value.split(":")[-1]
 
 
 class MediaDownloadType(str, Enum):

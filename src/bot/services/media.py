@@ -12,14 +12,6 @@ logger = logging.getLogger(name=__name__)
 
 class CollectionParser:
     MAP = {
-        "snap": MediaCollection.SNAP_FINGER,
-        "snap finger": MediaCollection.SNAP_FINGER,
-        "kagune ukaku": MediaCollection.UPGRADE_KAGUNE_UKAKU,
-        "kagune koukaku": MediaCollection.UPGRADE_KAGUNE_KOUKAKU,
-        "kagune rinkaku": MediaCollection.UPGRADE_KAGUNE_RINKAKU,
-        "kagune bikaku": MediaCollection.UPGRADE_KAGUNE_BIKAKU,
-        "coffee": MediaCollection.COFFEE,
-        "eat human": MediaCollection.EAT_HUMAN,
         "death": MediaCollection.DEATH,
         "welcome gif": MediaCollection.WELCOME_GIF,
         "welcome photo": MediaCollection.WELCOME_PHOTO,

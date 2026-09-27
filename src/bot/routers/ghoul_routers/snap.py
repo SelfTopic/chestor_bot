@@ -3,10 +3,8 @@ from selfrot.filter import HasUser, Text
 
 from src.bot.dialogs import Dialogs
 from src.bot.game_configs import SNAP_CONFIG
-from src.bot.types import MediaDownloadType
 
 from ...context import AppContext
-from ...services.media_paths import random_media
 from ..types import TextUserMessage
 
 
@@ -39,21 +37,8 @@ class SnapHandler(MessageHandler[AppContext[TextUserMessage]]):
         )
         await ctx.cooldown_service.set_cooldown(telegram_id, "SNAP")
 
-        caption = ctx.text(
-            Dialogs.snap.done(count=str(new_ghoul.snap_count), money=str(award))
-        )
-
-        media = await random_media(
-            ctx.media_repository,
-            MediaDownloadType.ANIMATION,
-            "snap finger",
-            telegram_id,
-        )
-        if media is None:
-            await ctx.message.reply(text=caption)
-            return
-
-        await ctx.reply_gif(media, caption=caption)
+        done = Dialogs.snap.done(count=str(new_ghoul.snap_count), money=str(award))
+        await ctx.say(done, reply=True)
 
 
 class SnapRouter(BaseRouter[AppContext]):

@@ -1,5 +1,4 @@
 import time
-from typing import Any
 
 from selfrot import BaseRouter, MessageHandler
 from selfrot.filter import HasMessageCallbackQuery, HasUser, Text
@@ -7,33 +6,16 @@ from selfrot.handlers import CallbackQueryHandler
 from selfrot.types import Message
 
 from src.bot.dialogs import Dialogs
-from src.bot.types import KaguneType, MediaDownloadType
+from src.bot.types import KaguneType
 from src.bot.utils import calculate_kagune, parse_seconds
 
 from ....context import AppContext
-from ....services.media_paths import random_media
 from ...types import DataMessageCallbackQuery, TextUserMessage
 from .callback_data import KaguneUpgradePress
 from .filters import NeedsRegistrationOrRebirth
 from .upgrade import build_choice_keyboard, do_upgrade
 
 _COMMAND = Text("растить кагуне", ignore_case=True) & HasUser()
-
-
-async def _send_upgrade_result(
-    ctx: AppContext[Any], telegram_id: int, kagune_type: KaguneType, text: str
-) -> None:
-    media = await random_media(
-        ctx.media_repository,
-        MediaDownloadType.ANIMATION,
-        f"kagune {kagune_type.value['name_english']}",
-        telegram_id,
-    )
-    if media is None:
-        await ctx.answer_message(text)
-        return
-
-    await ctx.answer_gif(media, caption=text)
 
 
 class RegisterOrRebirthHandler(MessageHandler[AppContext[TextUserMessage]]):
@@ -103,12 +85,12 @@ class UpgradeKaguneHandler(MessageHandler[AppContext[TextUserMessage]]):
             await message.reply(text=text, reply_markup=keyboard)
             return
 
-        ok, text = await do_upgrade(ctx, telegram_id, owned[0])
+        ok, line = await do_upgrade(ctx, telegram_id, owned[0])
         if not ok:
-            await message.reply(text=text)
+            await message.reply(text=ctx.text(line))
             return
 
-        await _send_upgrade_result(ctx, telegram_id, owned[0], text)
+        await ctx.say(line)
 
 
 class KaguneChoiceHandler(CallbackQueryHandler[AppContext[DataMessageCallbackQuery]]):
@@ -138,14 +120,14 @@ class KaguneChoiceHandler(CallbackQueryHandler[AppContext[DataMessageCallbackQue
 
         telegram_id = callback.user.id
 
-        ok, text = await do_upgrade(ctx, telegram_id, kagune_type)
+        ok, line = await do_upgrade(ctx, telegram_id, kagune_type)
         if not ok:
-            await callback.answer(text, show_alert=True)
+            await callback.answer(ctx.text(line), show_alert=True)
             return
 
         await callback.answer()
         await message.delete()
-        await _send_upgrade_result(ctx, telegram_id, kagune_type, text)
+        await ctx.say(line)
 
 
 class UpgradeKaguneRouter(BaseRouter[AppContext]):

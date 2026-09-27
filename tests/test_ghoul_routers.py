@@ -1,6 +1,6 @@
 """routers/ghoul_routers: GhoulMiddleware гейтит весь роутер (без гуля — молчание с
 подсказкой, кроме "растить кагуне"; мёртвому гулю тоже отказ). coffee.py: использует
-оба новых ctx-хелпера (reply_gif через media_paths.random_media; кулдаун — не через
+ctx.say (гифка фразы coffee.done из папки coffee; кулдаун — не через
 ctx.cooldown_remaining, а CoffeeService.execute_cooldown, который сам решает COFFEE
 это или COFFEE_DAY, см. coffee.py). upgrade_kagune/: единственная команда, доступная
 и без гуля (регистрация), и мёртвому гулю (возрождение) — bypass в GhoulMiddleware;

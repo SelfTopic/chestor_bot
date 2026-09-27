@@ -9,10 +9,12 @@
 
 import pytest
 from selfrot import MessageHandler
-from selfrot.filter import Text
+from selfrot.filter import HasText, Text
 from selfrot.types import TextMessage
 
+from src.bot.dialogs import Line
 from src.bot.repositories import MediaRepository
+from src.bot.services.dialog import DialogService
 from src.database.models import Media
 from src.bot.__main__ import Dispatcher
 from src.bot.context import AppContext
@@ -84,20 +86,24 @@ class TestAnswerAndReplyGif:
         (body,) = telegram.bodies("sendAnimation")
         assert body["animation"] == "CACHED_ID"
 
-    async def test_first_upload_without_cache_is_not_cached(
+    async def test_first_upload_fills_the_cache(
         self, feed, telegram, gif_file, session_factory
     ):
-        # прод-особенность (сохранена как есть, см. context.py/_send_gif): если
-        # кэша ещё не было, первая заливка с диска не попадает в media_repository —
-        # кэш заполняется только веткой retry ниже.
+        # у прода первая заливка с диска в кэш не попадала: гифка каждый раз
+        # грузилась заново, пока Telegram не отвергнет устаревший id
         global _GIF
-        _GIF = Media(
-            media_type="animation",
-            telegram_file_id=None,
-            collection="test",
-            path=str(gif_file),
-            uploaded_by=1,
-        )
+        async with session_factory() as session:
+            session.add(
+                Media(
+                    media_type="animation",
+                    telegram_file_id=None,
+                    collection="test",
+                    path=str(gif_file),
+                    uploaded_by=1,
+                )
+            )
+            await session.commit()
+            _GIF = await MediaRepository(session).get_by_path(str(gif_file))
         telegram.results["sendAnimation"] = animation_result(42, "FRESH_ID")
         dp = GifDispatcher(token="1:TEST", session_factory=session_factory)
 
@@ -109,7 +115,7 @@ class TestAnswerAndReplyGif:
 
         async with session_factory() as session:
             media = await MediaRepository(session).get_by_path(str(gif_file))
-        assert media is None
+        assert media is not None and media.telegram_file_id == "FRESH_ID"
 
     async def test_stale_file_id_reuploads_and_updates_cache(
         self, feed, telegram, gif_file, session_factory
@@ -162,3 +168,62 @@ class TestAnswerAndReplyGif:
 
         (body,) = telegram.bodies("sendAnimation")
         assert body["reply_parameters"]["message_id"] == 1
+
+
+class SayHandler(MessageHandler[AppContext[TextMessage]]):
+    query = HasText()
+
+    async def handle(self) -> None:
+        await self.ctx.say(Line(self.ctx.message.text, {}), reply=True)
+
+
+class SayDispatcher(Dispatcher):
+    handlers = (SayHandler,)
+
+
+class TestSay:
+    PHRASES = {"hello": frozenset(), "rare": frozenset(), "long": frozenset()}
+
+    @pytest.fixture
+    def dispatcher_with_gifs(self, tmp_path, session_factory):
+        (tmp_path / "texts.yaml").write_text(
+            "hello:\n  gifs: shared\n  text: Привет\n"
+            "rare:\n  gifs: shared\n  gif_chance: 0\n  text: Редко\n"
+            f"long:\n  gifs: shared\n  text: {'а' * 1100}\n",
+            "utf-8",
+        )
+        folder = tmp_path / "animation" / "shared"
+        folder.mkdir(parents=True)
+        (folder / "hello.mp4").write_bytes(b"gif-bytes")
+
+        dp = SayDispatcher(token="1:TEST", session_factory=session_factory)
+        dp.dialog_service = DialogService(
+            tmp_path, self.PHRASES, animation_root=tmp_path / "animation"
+        )
+        return dp
+
+    async def test_phrase_with_gifs_is_a_captioned_animation(
+        self, feed, telegram, dispatcher_with_gifs
+    ):
+        telegram.results["sendAnimation"] = animation_result(42, "NEW_ID")
+
+        await feed(message_update("hello", uid=42), dispatcher_with_gifs)
+        (first,) = telegram.bodies("sendAnimation")
+        await feed(message_update("hello", uid=42), dispatcher_with_gifs)
+        (second,) = telegram.bodies("sendAnimation")
+        await dispatcher_with_gifs.api.close_session()
+
+        assert first["caption"] == "Привет" and first["reply_parameters"]
+        assert first["animation"] == "<file:hello.mp4>"
+        assert second["animation"] == "NEW_ID"
+        assert telegram.sent == []
+
+    @pytest.mark.parametrize("phrase", ["rare", "long"])
+    async def test_zero_chance_or_caption_too_long_is_plain_text(
+        self, feed, telegram, dispatcher_with_gifs, phrase
+    ):
+        await feed(message_update(phrase, uid=42), dispatcher_with_gifs)
+        await dispatcher_with_gifs.api.close_session()
+
+        assert telegram.bodies("sendAnimation") == []
+        assert len(telegram.sent) == 1

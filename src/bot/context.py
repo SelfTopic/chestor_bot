@@ -1,4 +1,5 @@
 import logging
+import random
 import time
 from collections.abc import Awaitable, Callable, Collection
 from dataclasses import dataclass
@@ -6,7 +7,7 @@ from functools import cached_property
 
 from selfrot import BaseContext, TEvent
 from selfrot.exceptions import TelegramBadRequest
-from selfrot.types import InputFile, Message
+from selfrot.types import InlineKeyboardMarkup, InputFile, Message
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 
 from src.bot.containers import Container
@@ -36,7 +37,7 @@ from src.bot.repositories import MediaRepository
 from src.bot.services.dialog import DialogService
 from src.bot.services.ghoul_game import LotteryService
 from src.bot.services.stat_upgrade import StatUpgradeService
-from src.bot.types import TimeComponents
+from src.bot.types import MediaDownloadType, TimeComponents
 from src.bot.utils import parse_seconds
 from src.database.models import Ghoul, Media, User
 
@@ -46,10 +47,15 @@ from .services.battle import BattleService
 from .services.broadcast import BroadcastService
 from .services.level_up import LevelUpService
 from .services.lookup import find_user
+from .services.media_paths import media_for, random_file
 from .services.notify import Notifier, SelfrotBotNotifier
 from .services.quiz import QuizService
 
 logger = logging.getLogger(__name__)
+
+# Лимит Telegram на подпись к медиа; длинный текст уходит без гифки.
+CAPTION_LIMIT = 1024
+_GIF_RANDOM = random.Random()
 
 
 @dataclass(frozen=True)
@@ -232,23 +238,79 @@ class AppContext(BaseContext[TEvent]):
 
         return Addressee(user.telegram_id, user.first_name)
 
-    async def _send_gif(
-        self, send: Callable[..., Awaitable[Message]], media: Media, caption: str
+    async def say(
+        self,
+        line: Line,
+        *,
+        reply: bool = False,
+        parse_mode: str | None = None,
+        reply_markup: InlineKeyboardMarkup | None = None,
     ) -> Message:
+        text = self.text(line)
+        media = await self._phrase_gif(line) if len(text) <= CAPTION_LIMIT else None
+        if media is not None:
+            send_gif = self.reply_animation if reply else self.answer_animation
+            return await self._send_gif(
+                send_gif, media, text, parse_mode=parse_mode, reply_markup=reply_markup
+            )
+
+        send = self.reply_message if reply else self.answer_message
+        return await send(text, parse_mode=parse_mode, reply_markup=reply_markup)
+
+    # Своя сессия: say() зовут и из on_error / defer, где сессии апдейта уже нет.
+    async def _phrase_gif(self, line: Line) -> Media | None:
+        gifs = self.dialog_service.gifs(line)
+        if gifs.chance < 1 and _GIF_RANDOM.random() >= gifs.chance:
+            return None
+
+        path = random_file(gifs.folder)
+        if path is None:
+            return None
+
+        registered_by = self.user.id if self.user is not None else 0
+        async with self.session_factory() as session:
+            media = await media_for(
+                MediaRepository(session),
+                path,
+                MediaDownloadType.ANIMATION,
+                line.key,
+                registered_by,
+            )
+            await session.commit()
+        return media
+
+    async def _send_gif(
+        self,
+        send: Callable[..., Awaitable[Message]],
+        media: Media,
+        caption: str,
+        *,
+        parse_mode: str | None = None,
+        reply_markup: InlineKeyboardMarkup | None = None,
+    ) -> Message:
+        options = {
+            "caption": caption,
+            "parse_mode": parse_mode,
+            "reply_markup": reply_markup,
+        }
         try:
-            return await send(
+            sent = await send(
                 animation=media.telegram_file_id or InputFile.from_path(media.path),
-                caption=caption,
+                **options,
             )
         except TelegramBadRequest:
-            sent = await send(
-                animation=InputFile.from_path(media.path), caption=caption
-            )
-            if sent.animation is not None:
-                await self.media_repository.update_file_id(
+            sent = await send(animation=InputFile.from_path(media.path), **options)
+        else:
+            if media.telegram_file_id:
+                return sent
+
+        if sent.animation is not None:
+            async with self.session_factory() as session:
+                await MediaRepository(session).update_file_id(
                     path=media.path, new_file_id=sent.animation.file_id
                 )
-            return sent
+                await session.commit()
+        return sent
 
     async def answer_gif(self, media: Media, caption: str = "") -> Message:
         return await self._send_gif(self.answer_animation, media, caption)

@@ -5,10 +5,8 @@ from selfrot.filter import HasUser, Text
 
 from src.bot.dialogs import Dialogs
 from src.bot.game_configs import EAT_HUMAN_CONFIG
-from src.bot.types import MediaDownloadType
 
 from ...context import AppContext
-from ...services.media_paths import random_media
 from ..types import TextUserMessage
 from .mob_battle import answer_mob_battle, rewards_text
 
@@ -80,20 +78,10 @@ class EatHumanHandler(MessageHandler[AppContext[TextUserMessage]]):
         if not ambushed:
             await ctx.cooldown_service.set_cooldown(telegram_id, COOLDOWN_NAME)
 
-        caption = ctx.text(
-            Dialogs.eat_human.done(
-                restored=restored, hunger=ghoul.hunger, count=ghoul.eat_humans
-            )
+        done = Dialogs.eat_human.done(
+            restored=restored, hunger=ghoul.hunger, count=ghoul.eat_humans
         )
-
-        media = await random_media(
-            ctx.media_repository, MediaDownloadType.ANIMATION, "eat human", telegram_id
-        )
-        if media is None:
-            await message.reply(caption)
-            return
-
-        await ctx.reply_gif(media, caption=caption)
+        await ctx.say(done, reply=True)
 
 
 class EatHumanRouter(BaseRouter[AppContext]):
