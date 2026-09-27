@@ -7,6 +7,7 @@ from selfrot.exceptions import CommandArgsError
 from selfrot.filter import Command
 from selfrot.types import InputFile, Message
 
+from src.bot.dialogs import Dialogs
 from src.bot.services import VideoCutterService
 from src.bot.types import VideoCutJob
 
@@ -37,23 +38,10 @@ class AnimeArgs(CommandArgs):
 class AnimeHandler(MessageHandler[AppContext[TextMessage]]):
     cmd = Command("anime", AnimeArgs)
     query = cmd
-    end_error = "❌ Неверный конечный таймкод.\n\nПример: 18:47"
-    start_error = "❌ Неверный начальный таймкод.\n\nПример: 18:37"
-    format_error = (
-        "❌ Неверный формат команды.\n\n"
-        "Пример для отрывка:\n"
-        "/anime 1 12 18:37 18:47\n"
-        "или\n"
-        "/anime  12 18:37 18:47 gif\n"
-        "чтобы получить отрывок сразу гифкой"
-    )
-    usage = (
-        "Укажи сезон и серию.\n\n"
-        "Пример:\n"
-        "/anime 1 1\n\n"
-        "Также могу дать отрывок:\n"
-        "/anime 1 12 18:37 18:47"
-    )
+    end_error = Dialogs.anime.bad_end()
+    start_error = Dialogs.anime.bad_start()
+    format_error = Dialogs.anime.bad_format()
+    usage = Dialogs.anime.usage()
 
     # Долгая часть (нарезка, загрузка) — в after_handle: к тому времени слот диспетчера и
     # сессия БД свободны.
@@ -73,7 +61,9 @@ class AnimeHandler(MessageHandler[AppContext[TextMessage]]):
 
         if not input_path.exists():
             await message.answer(
-                f"❌ Видео сезона {args.season} серии {args.episode} не найдено."
+                self.ctx.text(
+                    Dialogs.anime.not_found(season=args.season, episode=args.episode)
+                )
             )
             return
 
@@ -82,7 +72,7 @@ class AnimeHandler(MessageHandler[AppContext[TextMessage]]):
             return
 
         if not args.start or not args.end:
-            await message.answer(self.format_error)
+            await message.answer(self.ctx.text(self.format_error))
             return
 
         video_cutter = self.ctx.video_cutter_service
@@ -92,15 +82,13 @@ class AnimeHandler(MessageHandler[AppContext[TextMessage]]):
                 raise ValueError
 
         except ValueError:
-            await message.answer("❌ Конечный таймкод должен быть больше начального.")
+            await message.answer(self.ctx.text(Dialogs.anime.end_before_start()))
             return
 
         user_id = message.user.id if message.user else message.chat.id
 
         if cut_guard.is_busy(user_id):
-            await message.answer(
-                "⏳ У тебя уже есть нарезка в процессе. Дождись её завершения."
-            )
+            await message.answer(self.ctx.text(Dialogs.anime.busy()))
             return
 
         # Занять место до первого await: иначе два быстрых /anime подряд пройдут проверку
@@ -115,14 +103,25 @@ class AnimeHandler(MessageHandler[AppContext[TextMessage]]):
                 start_time=args.start,
                 end_time=args.end,
                 chat_id=message.chat.id,
-                caption=f"🎬 Сезон {args.season}. Серия {args.episode}. Отрывок с {args.start} до {args.end}",
+                caption=self.ctx.text(
+                    Dialogs.anime.cut_caption(
+                        season=args.season,
+                        episode=args.episode,
+                        start=args.start,
+                        end=args.end,
+                    )
+                ),
             )
 
             self.processing = await message.reply(
-                "⏳ Начинаю нарезку видео...\n"
-                f"Сезон {args.season}, серия {args.episode}\n"
-                f"Отрывок: {args.start} - {args.end}\n\n"
-                "Это может занять несколько секунд."
+                self.ctx.text(
+                    Dialogs.anime.cutting(
+                        season=args.season,
+                        episode=args.episode,
+                        start=args.start,
+                        end=args.end,
+                    )
+                )
             )
         except BaseException:
             cut_guard.release(user_id)
@@ -137,7 +136,11 @@ class AnimeHandler(MessageHandler[AppContext[TextMessage]]):
             args = self.cmd.parse(self.ctx)
             await self.ctx.message.reply_video(
                 video=InputFile.from_path(self.episode_path),
-                caption=f"🎬 Сезон {args.season}. Серия {args.episode}",
+                caption=self.ctx.text(
+                    Dialogs.anime.episode_caption(
+                        season=args.season, episode=args.episode
+                    )
+                ),
             )
             return
 
@@ -154,5 +157,5 @@ class AnimeHandler(MessageHandler[AppContext[TextMessage]]):
             raise exc
 
         field = exc.problems[0].field if exc.problems else ""
-        text = {"start": self.start_error, "end": self.end_error}.get(field, self.usage)
-        await self.ctx.message.answer(text)
+        line = {"start": self.start_error, "end": self.end_error}.get(field, self.usage)
+        await self.ctx.message.answer(self.ctx.text(line))

@@ -3,6 +3,86 @@
 from .line import Line
 
 
+class _AnimeDialogs:
+    def bad_end(self) -> Line:
+        return Line("anime.bad_end", {})
+
+    def bad_format(self) -> Line:
+        return Line("anime.bad_format", {})
+
+    def bad_start(self) -> Line:
+        return Line("anime.bad_start", {})
+
+    def busy(self) -> Line:
+        return Line("anime.busy", {})
+
+    def cancelled(self) -> Line:
+        return Line("anime.cancelled", {})
+
+    def cut_caption(
+        self,
+        *,
+        end: object,
+        episode: object,
+        season: object,
+        start: object,
+    ) -> Line:
+        return Line(
+            "anime.cut_caption",
+            {
+                "end": end,
+                "episode": episode,
+                "season": season,
+                "start": start,
+            },
+        )
+
+    def cutting(
+        self,
+        *,
+        end: object,
+        episode: object,
+        season: object,
+        start: object,
+    ) -> Line:
+        return Line(
+            "anime.cutting",
+            {
+                "end": end,
+                "episode": episode,
+                "season": season,
+                "start": start,
+            },
+        )
+
+    def end_before_start(self) -> Line:
+        return Line("anime.end_before_start", {})
+
+    def episode_caption(self, *, episode: object, season: object) -> Line:
+        return Line("anime.episode_caption", {"episode": episode, "season": season})
+
+    def failed(self, *, error: object) -> Line:
+        return Line("anime.failed", {"error": error})
+
+    def gif(self, *, caption: object) -> Line:
+        return Line("anime.gif", {"caption": caption})
+
+    def not_found(self, *, episode: object, season: object) -> Line:
+        return Line("anime.not_found", {"episode": episode, "season": season})
+
+    def queue_full(self) -> Line:
+        return Line("anime.queue_full", {})
+
+    def timeout(self) -> Line:
+        return Line("anime.timeout", {})
+
+    def usage(self) -> Line:
+        return Line("anime.usage", {})
+
+    def video(self, *, caption: object) -> Line:
+        return Line("anime.video", {"caption": caption})
+
+
 class _CoffeeDialogs:
     def cooldown(self, *, hours: object, minutes: object, seconds: object) -> Line:
         return Line(
@@ -592,6 +672,7 @@ class _TransferDialogs:
 
 
 class _Dialogs:
+    anime = _AnimeDialogs()
     coffee = _CoffeeDialogs()
     combat_power = _CombatPowerDialogs()
     eat_human = _EatHumanDialogs()
@@ -626,6 +707,22 @@ class _Dialogs:
 Dialogs = _Dialogs()
 
 PLACEHOLDERS: dict[str, frozenset[str]] = {
+    "anime.bad_end": frozenset(),
+    "anime.bad_format": frozenset(),
+    "anime.bad_start": frozenset(),
+    "anime.busy": frozenset(),
+    "anime.cancelled": frozenset(),
+    "anime.cut_caption": frozenset({"end", "episode", "season", "start"}),
+    "anime.cutting": frozenset({"end", "episode", "season", "start"}),
+    "anime.end_before_start": frozenset(),
+    "anime.episode_caption": frozenset({"episode", "season"}),
+    "anime.failed": frozenset({"error"}),
+    "anime.gif": frozenset({"caption"}),
+    "anime.not_found": frozenset({"episode", "season"}),
+    "anime.queue_full": frozenset(),
+    "anime.timeout": frozenset(),
+    "anime.usage": frozenset(),
+    "anime.video": frozenset({"caption"}),
     "balance": frozenset({"balance", "name"}),
     "bot": frozenset(),
     "coffee.cooldown": frozenset({"hours", "minutes", "seconds"}),

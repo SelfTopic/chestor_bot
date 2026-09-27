@@ -4,6 +4,7 @@ from pathlib import Path
 
 from selfrot.types import InputFile, Message
 
+from src.bot.dialogs import Dialogs
 from src.bot.types import VideoCutJob
 
 from ....context import AppContext
@@ -27,32 +28,31 @@ async def deliver_cut(
         if not is_gif:
             await message.reply_video(
                 video=InputFile.from_path(result_path),
-                caption="Video\n" + job.caption if job.caption else "",
+                caption=ctx.text(Dialogs.anime.video(caption=job.caption))
+                if job.caption
+                else "",
             )
         else:
             await message.reply_animation(
                 animation=InputFile.from_path(result_path),
-                caption="Gif\n" + job.caption if job.caption else "",
+                caption=ctx.text(Dialogs.anime.gif(caption=job.caption))
+                if job.caption
+                else "",
             )
 
     except asyncio.TimeoutError:
-        await processing.edit_text(
-            "❌ Превышено время ожидания нарезки видео.\n"
-            "Попробуйте выбрать меньший фрагмент или повторите позже."
-        )
+        await processing.edit_text(ctx.text(Dialogs.anime.timeout()))
         job.cancel()
 
     except asyncio.CancelledError:
-        await processing.edit_text("❌ Нарезка видео была отменена.")
+        await processing.edit_text(ctx.text(Dialogs.anime.cancelled()))
 
     except asyncio.QueueFull:
-        await processing.edit_text(
-            "❌ Сейчас слишком много запросов на нарезку. Попробуй чуть позже."
-        )
+        await processing.edit_text(ctx.text(Dialogs.anime.queue_full()))
 
     except Exception as e:
         logger.error(f"Error processing video: {e}", exc_info=True)
-        await processing.edit_text(f"❌ Произошла ошибка при нарезке видео: {str(e)}")
+        await processing.edit_text(ctx.text(Dialogs.anime.failed(error=str(e))))
 
     finally:
         if Path(job.output_file_path).exists():
