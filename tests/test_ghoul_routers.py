@@ -28,6 +28,7 @@ from .conftest import (
     button_data,
     callback_update,
     chat_dict,
+    matches_phrase,
     message_update,
     owner_dict,
 )
@@ -97,10 +98,8 @@ class TestGhoulMiddleware:
 
         # snap_count=0 < COFFEE_CONFIG.snap_limit: до хендлера дошло, просто отказ
         # по другой причине (не хинт "ты не гуль")
-        assert await send("пить кофе", uid=UID) == [
-            "Бесплатное кофе не дают бездарям. У тебя еще нет сотни сломанных "
-            "пальцев, чтобы пить кофе."
-        ]
+        (reply,) = await send("пить кофе", uid=UID)
+        assert matches_phrase(reply, "coffee.snap_limit")
 
 
 class TestCoffee:
@@ -108,10 +107,8 @@ class TestCoffee:
         await seed(session_factory, UID, "Вася")
         await seed_ghoul(session_factory, UID, snap_count=0)
 
-        assert await send("пить кофе", uid=UID) == [
-            "Бесплатное кофе не дают бездарям. У тебя еще нет сотни сломанных "
-            "пальцев, чтобы пить кофе."
-        ]
+        (reply,) = await send("пить кофе", uid=UID)
+        assert matches_phrase(reply, "coffee.snap_limit")
 
     async def test_accepts_without_gif_when_folder_is_empty(
         self, send, session_factory, monkeypatch, tmp_path
@@ -123,8 +120,8 @@ class TestCoffee:
 
         (reply,) = await send("пить кофе", uid=UID)
 
-        assert reply.startswith("☕️ Ты выпил чашечку кофе.")
-        assert "Всего выпито кофе: 1" in reply
+        assert matches_phrase(reply, "coffee.done")
+        assert "Всего выпито: 1" in reply
 
         user = await get_user(session_factory, UID)
         assert user is not None and user.balance > 0
@@ -155,7 +152,7 @@ class TestCoffee:
         await feed(message_update("пить кофе", uid=UID))
 
         (body,) = telegram.bodies("sendAnimation")
-        assert body["caption"].startswith("☕️ Ты выпил чашечку кофе.")
+        assert matches_phrase(body["caption"], "coffee.done")
         assert body["animation"] == "<file:coffee.mp4>"
 
     async def test_cooldown_reply_then_day_cap_refund_without_double_charge(
@@ -173,13 +170,13 @@ class TestCoffee:
 
         # повторный клик во время кулдауна COFFEE: рефанд + переход на COFFEE_DAY
         (second,) = await send("пить кофе", uid=UID)
-        assert "передозировку кофе" in second
+        assert matches_phrase(second, "coffee.cooldown")
         balance_after_second = await balance_of(session_factory, UID)
         assert balance_after_second < balance_after_first
 
         # третий клик — уже под COFFEE_DAY: тот же ответ, но без повторного рефанда
         (third,) = await send("пить кофе", uid=UID)
-        assert "передозировку кофе" in third
+        assert matches_phrase(third, "coffee.cooldown")
         balance_after_third = await balance_of(session_factory, UID)
         assert balance_after_third == balance_after_second
 
@@ -226,7 +223,7 @@ class TestUpgradeKagune:
 
         (reply,) = await send("растить кагуне", uid=UID)
 
-        assert "Вышел нахуй отсюда" in reply
+        assert matches_phrase(reply, "kagune.upgrade.cooldown")
 
     async def test_single_type_upgrade_succeeds(
         self, send, session_factory, monkeypatch, tmp_path
@@ -343,7 +340,7 @@ class TestKaguneChoice:
         telegram = await feed(callback_update(f"kagune_upgrade:{UID}:ukaku", uid=UID))
 
         (answer,) = telegram.bodies("answerCallbackQuery")
-        assert "Вышел нахуй отсюда" in answer["text"]
+        assert matches_phrase(answer["text"], "kagune.upgrade.cooldown")
         assert answer["show_alert"] is True
         assert telegram.methods_called("deleteMessage") == 0
 
@@ -360,8 +357,8 @@ class TestSnap:
 
         (reply,) = await send(text, uid=UID)
 
-        assert reply.startswith("☑️ Пальчик успешно сломан")
-        assert "Всего сломано пальцев: 1" in reply
+        assert matches_phrase(reply, "snap.done")
+        assert "Сломано пальцев: 1" in reply
         ghoul = await get_ghoul(session_factory, UID)
         assert ghoul is not None and ghoul.snap_count == 1
         user = await get_user(session_factory, UID)
@@ -404,7 +401,7 @@ class TestSnap:
 
         (reply,) = await send("щелк", uid=UID)
 
-        assert "Пальцы еще не перезарядились" in reply
+        assert matches_phrase(reply, "snap.cooldown")
         ghoul = await get_ghoul(session_factory, UID)
         assert ghoul is not None and ghoul.snap_count == 0
 

@@ -13,7 +13,7 @@ from src.bot.repositories import ActiveBattleRepository, BattleRepository
 from src.bot.services.battle_engine.core import FighterSnapshot
 from src.bot.services.battle_record import BattleRecordService
 
-from .conftest import message_update
+from .conftest import matches_phrase, message_update
 from .test_common_routers import seed
 from .test_ghoul_routers import (
     UID,
@@ -186,7 +186,7 @@ class TestMobFight:
 
         (reply,) = await send("бить моба", uid=UID)
 
-        assert reply.startswith("Рано - ты недавно уже дрался с мобом. Попробуй через ")
+        assert matches_phrase(reply, "mob.cooldown")
         assert await mob_battles(session_factory, UID) == (1, 1, 0)
 
     async def test_not_combat_ready(self, send, session_factory, mob):
@@ -260,9 +260,7 @@ class TestEatHuman:
         (reply,) = await send("сожрать человека", uid=UID)
 
         # 14 или ровно 15 часов: остаток округляется до секунд
-        assert reply.startswith(
-            "А не дохуя ли ты у нас жрать собрался? Попробуй через 1"
-        )
+        assert matches_phrase(reply, "eat_human.cooldown") and "⏳ 1" in reply
         ghoul = await get_ghoul(session_factory, UID)
         assert ghoul is not None and ghoul.eat_humans == 1
 
@@ -314,7 +312,7 @@ class TestEatHuman:
         ghoul = await get_ghoul(session_factory, UID)
         assert ghoul is not None and ghoul.eat_humans == 0 and ghoul.hunger == 10
         (again,) = await send("сожрать человека", uid=UID)
-        assert again.startswith("А не дохуя ли ты у нас жрать собрался?")
+        assert matches_phrase(again, "eat_human.cooldown")
 
     async def test_ambush_draw(self, send, session_factory, ambush, mob):
         ambush(100)
