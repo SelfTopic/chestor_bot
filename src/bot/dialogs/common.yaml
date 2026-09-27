@@ -36,7 +36,11 @@ errors:
     rules: 'Ошибка: Кол-во символов в правилах не может быть меньше 1 и больше 4000 символов.'
     welcome: 'Ошибка: Кол-во символов в приветственном сообщении не может быть меньше 1 и больше 4000 символов.'
     goodbye: 'Ошибка: Кол-во символов в прощальном сообщении не может быть меньше 1 и больше 4000 символов.'
-  not_enough_money: Ты успокойся нахуй. Ты ебаная бомжиха. На твоем балансе не хватает {money} CheSton для покупки.
+  not_enough_money:
+    - '💸 Ты успокойся нахуй. Ты ебаная бомжиха. Не хватает {money} CheSton.'
+    - '💸 Бомжара, тебе не хватает {money} CheSton. Иди щёлкай пальцами.'
+    - '💸 Денег нет, но ты держись. Не хватает {money} CheSton.'
+    - '💸 Нищеброд, не хватает {money} CheSton.'
 tops:
   balance:
     message: |-
@@ -105,24 +109,57 @@ transfer:
     receiver_vanished: ❌ Получатель не найден, перевод отменён
     receiver_limit: ❌ Этот аккаунт уже получил слишком много переводов за последние сутки
 lottery:
-  usage: '❌ Неверный формат команды. Используйте: депнуть <цвет> <ставка>'
-  failed: ❌ Произошла ошибка при обработке вашей ставки
-  bet_out_of_range: Сумма ставки должна быть от {min_bet} до {max_bet}
-  not_enough_money: Недостаточно денег для такой ставки
+  usage: '🎰 Пиши так: депнуть <цвет> <ставка>. Например: депнуть красный 500'
+  failed: '❌ Ставка сломалась. Попробуй ещё раз.'
+  bet_out_of_range:
+    - '🎰 Ставка — от {min_bet} до {max_bet} CheSton. Не больше, не меньше.'
+    - '🎰 Ставь от {min_bet} до {max_bet}, умник.'
+  not_enough_money:
+    - '💸 На такую ставку у тебя денег нет, бомжара.'
+    - '💸 Ставишь больше, чем есть? Казино так не работает.'
+    - '💸 Сначала заработай, потом депай, лудик.'
   player_missing: Пользователь не найден
-  unknown_color: 'Неизвестный цвет ''{color}''. Используйте: {colors}'
-  win: |-
-    🎰 Депнул на {chosen_color}!
+  unknown_color:
+    - '🎰 Какой нахуй «{color}»? Цвета: {colors}.'
+    - '🎰 Цвета «{color}» нет. Выбирай: {colors}.'
+  win:
+    - |-
+      🎰 Депнул на {chosen_color}!
 
-    🎯 Выиграл! Победный цвет был {winning_color}!
-    💰 Выигрыш: {earned} CheSton (ставка {bet} × {multiplier})
-    💵 Баланс: {balance} CheSton
-  lose: |-
-    🎰 Депнул на {chosen_color}!
+      🎯 Выиграл! Выпал {winning_color}!
+      💸 Выигрыш: +{earned} CheSton (ставка {bet} × {multiplier})
+      💵 Баланс: {balance} CheSton
+    - |-
+      🎰 Депнул на {chosen_color}!
 
-    ❌ Проиграл! Победный цвет был {winning_color}!
-    💸 Проигрыш: {bet} CheSton
-    💵 Баланс: {balance} CheSton
+      🎯 Повезло, сука! Выпал {winning_color}!
+      💸 Выигрыш: +{earned} CheSton (ставка {bet} × {multiplier})
+      💵 Баланс: {balance} CheSton
+    - |-
+      🎰 Депнул на {chosen_color}!
+
+      🎯 Казино в минусе, ты в плюсе. Выпал {winning_color}!
+      💸 Выигрыш: +{earned} CheSton (ставка {bet} × {multiplier})
+      💵 Баланс: {balance} CheSton
+  lose:
+    - |-
+      🎰 Депнул на {chosen_color}!
+
+      ❌ Проиграл! Выпал {winning_color}.
+      💸 Проигрыш: {bet} CheSton
+      💵 Баланс: {balance} CheSton
+    - |-
+      🎰 Депнул на {chosen_color}!
+
+      ❌ Казино всегда в плюсе. Выпал {winning_color}.
+      💸 Проигрыш: {bet} CheSton
+      💵 Баланс: {balance} CheSton
+    - |-
+      🎰 Депнул на {chosen_color}!
+
+      ❌ Лудоман, выпал {winning_color}. Минус деньги, плюс опыт.
+      💸 Проигрыш: {bet} CheSton
+      💵 Баланс: {balance} CheSton
 bot:
 - Ты шото хотел?
 - Чо надо?

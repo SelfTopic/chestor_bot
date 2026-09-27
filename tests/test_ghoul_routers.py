@@ -74,9 +74,8 @@ async def balance_of(session_factory, telegram_id: int) -> int:
 
 class TestGhoulMiddleware:
     async def test_no_ghoul_is_blocked_with_hint(self, send):
-        assert await send("пить кофе", uid=UID) == [
-            "Ты не гуль. Используй команду 'Растить кагуне' чтобы стать гулем."
-        ]
+        (reply,) = await send("пить кофе", uid=UID)
+        assert matches_phrase(reply, "ghoul.not_a_ghoul")
 
     async def test_grow_kagune_bypasses_even_without_a_ghoul(self, send):
         # миддлварь не блокирует апдейт хинтом "ты не гуль" — доходит до хендлера
@@ -88,9 +87,8 @@ class TestGhoulMiddleware:
         await seed(session_factory, UID, "Вася")
         await seed_ghoul(session_factory, UID, is_dead=True)
 
-        assert await send("пить кофе", uid=UID) == [
-            "Да ты сдох, что ты собираешься использовать?."
-        ]
+        (reply,) = await send("пить кофе", uid=UID)
+        assert matches_phrase(reply, "ghoul.dead")
 
     async def test_alive_ghoul_reaches_the_handler(self, send, session_factory):
         await seed(session_factory, UID, "Вася")
@@ -257,7 +255,7 @@ class TestUpgradeKagune:
 
         (reply,) = await send("растить кагуне", uid=UID)
 
-        assert "не хватает" in reply
+        assert matches_phrase(reply, "errors.not_enough_money")
         ghoul = await get_ghoul(session_factory, UID)
         assert ghoul is not None and ghoul.kagune_strength_ukaku == 1
 

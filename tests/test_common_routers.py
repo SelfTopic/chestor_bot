@@ -22,6 +22,7 @@ from src.bot.routers.common.transfer.flow import TransferPress
 from .conftest import (
     button_data,
     callback_update,
+    matches_phrase,
     message_update,
     owner_dict,
 )
@@ -135,24 +136,22 @@ class TestCheckRules:
 
 class TestDep:
     async def test_bad_format(self, send):
-        assert await send("депнуть красный") == [
-            "❌ Неверный формат команды. Используйте: депнуть <цвет> <ставка>"
-        ]
+        (reply,) = await send("депнуть красный")
+        assert matches_phrase(reply, "lottery.usage")
 
     async def test_unknown_color(self, send):
         (reply,) = await send("депнуть фиолетовый 100")
 
-        assert reply.startswith("Неизвестный цвет 'фиолетовый'")
+        assert matches_phrase(reply, "lottery.unknown_color") and "фиолетовый" in reply
 
     async def test_bet_out_of_range(self, send):
-        assert await send("депнуть красный 99") == [
-            "Сумма ставки должна быть от 100 до 100000"
-        ]
+        (reply,) = await send("депнуть красный 99")
+        assert matches_phrase(reply, "lottery.bet_out_of_range")
+        assert "100" in reply and "100000" in reply
 
     async def test_not_enough_money(self, send):
-        assert await send("депнуть красный 100") == [
-            "Недостаточно денег для такой ставки"
-        ]
+        (reply,) = await send("депнуть красный 100")
+        assert matches_phrase(reply, "lottery.not_enough_money")
 
     async def test_bet_changes_balance_and_result_arrives_later(
         self, feed, telegram, session_factory
