@@ -35,6 +35,7 @@ for name, value in {
 }.items():
     os.environ.setdefault(name, value)
 
+from sqlalchemy import text  # noqa: E402
 from sqlalchemy.ext.asyncio import (  # noqa: E402
     AsyncEngine,
     AsyncSession,
@@ -206,6 +207,15 @@ def postgres_url() -> Iterator[str]:
     client = docker.from_env()
     container = client.containers.run(
         "postgres:16-alpine",
+        # База одноразовая: долговечность не нужна, а fsync на каждый коммит и
+        # TRUNCATE — основное время подготовки тестов.
+        command=[
+            "postgres",
+            "-c", "fsync=off",
+            "-c", "synchronous_commit=off",
+            "-c", "full_page_writes=off",
+        ],
+        tmpfs={"/var/lib/postgresql/data": "rw"},
         ports={"5432/tcp": None},  # случайный порт: не мешает другим Postgres
         environment={
             "POSTGRES_USER": "test",
@@ -235,34 +245,50 @@ def postgres_url() -> Iterator[str]:
 
         yield f"postgresql+psycopg://test:test@127.0.0.1:{port}/test_db"
     finally:
-        container.stop()
+        # Вежливая остановка ждёт финального checkpoint за весь прогон (~5 с), а данные
+        # всё равно выбрасываются вместе с контейнером.
+        container.kill()
+
+
+@pytest.fixture(scope="session")
+def database_url(postgres_url: str) -> str:
+    """Схема создаётся один раз на прогон. Пересоздавать её перед каждым тестом —
+    260 мс на тест (почти 2,5 минуты на весь набор); очистка таблиц — 50 мс."""
+    from sqlalchemy import create_engine
+
+    from src.database.models import Base
+
+    engine = create_engine(postgres_url)
+    Base.metadata.create_all(engine)
+    engine.dispose()
+    return postgres_url
+
+
+async def _empty_database(url: str) -> AsyncEngine:
+    """Движок на базу, где все таблицы пусты, а id снова начинаются с 1."""
+    from src.database.models import Base
+
+    engine = create_async_engine(url)
+    async with engine.begin() as conn:
+        quote = conn.dialect.identifier_preparer.format_table
+        tables = ", ".join(quote(table) for table in Base.metadata.sorted_tables)
+        await conn.execute(text(f"TRUNCATE {tables} RESTART IDENTITY CASCADE"))
+    return engine
 
 
 @pytest.fixture
 async def session_factory(
-    postgres_url: str,
+    database_url: str,
 ) -> AsyncIterator[async_sessionmaker[AsyncSession]]:
-    from src.database.models import Base
-
-    engine = create_async_engine(postgres_url)
-    async with engine.begin() as conn:
-        await conn.run_sync(Base.metadata.drop_all)
-        await conn.run_sync(Base.metadata.create_all)
-
+    engine = await _empty_database(database_url)
     yield async_sessionmaker(engine, expire_on_commit=False)
     await engine.dispose()
 
 
 @pytest.fixture
-async def engine(postgres_url: str) -> AsyncIterator[AsyncEngine]:
-    """Для tests/unit и tests/integration: чистая схема, сессии тест открывает сам."""
-    from src.database.models import Base
-
-    engine = create_async_engine(postgres_url)
-    async with engine.begin() as conn:
-        await conn.run_sync(Base.metadata.drop_all)
-        await conn.run_sync(Base.metadata.create_all)
-
+async def engine(database_url: str) -> AsyncIterator[AsyncEngine]:
+    """Для tests/unit и tests/integration: пустые таблицы, сессии тест открывает сам."""
+    engine = await _empty_database(database_url)
     yield engine
     await engine.dispose()
 
