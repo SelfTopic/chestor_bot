@@ -30,22 +30,39 @@ class CalculatorError(ValueError):
     pass
 
 
+class NotArithmetic(CalculatorError):
+    pass
+
+
+class DivisionByZero(CalculatorError):
+    pass
+
+
+class ResultTooBig(CalculatorError):
+    pass
+
+
 def evaluate(expression: str, *, require_operator: bool = False) -> Number:
     try:
         tree = ast.parse(expression.strip(), mode="eval")
-    except SyntaxError as exc:
-        raise CalculatorError("Не удалось разобрать выражение.") from exc
+    # RecursionError — очень глубокая вложенность, ValueError — нулевой байт в тексте.
+    except (SyntaxError, RecursionError, ValueError) as exc:
+        raise NotArithmetic("Не удалось разобрать выражение.") from exc
 
     if require_operator and not _has_binary_operator(tree.body):
-        raise CalculatorError("Нет ни одного оператора.")
+        raise NotArithmetic("Нет ни одного оператора.")
 
     try:
         result = _eval_node(tree.body)
     except ZeroDivisionError as exc:
-        raise CalculatorError("Деление на ноль.") from exc
+        raise DivisionByZero("Деление на ноль.") from exc
+    except OverflowError as exc:
+        raise ResultTooBig("Результат слишком большой.") from exc
+    except RecursionError as exc:
+        raise NotArithmetic("Слишком глубокое выражение.") from exc
 
     if isinstance(result, complex):
-        raise CalculatorError("Результат не является действительным числом.")
+        raise NotArithmetic("Результат не является действительным числом.")
 
     return result
 
@@ -53,13 +70,13 @@ def evaluate(expression: str, *, require_operator: bool = False) -> Number:
 def _eval_node(node: ast.AST) -> Number:
     if isinstance(node, ast.Constant):
         if isinstance(node.value, bool) or not isinstance(node.value, (int, float)):
-            raise CalculatorError("Разрешены только числа.")
+            raise NotArithmetic("Разрешены только числа.")
         return node.value
 
     if isinstance(node, ast.BinOp):
         op_func = _BIN_OPS.get(type(node.op))
         if op_func is None:
-            raise CalculatorError("Эта операция не поддерживается.")
+            raise NotArithmetic("Эта операция не поддерживается.")
 
         left = _eval_node(node.left)
         right = _eval_node(node.right)
@@ -70,24 +87,24 @@ def _eval_node(node: ast.AST) -> Number:
             and isinstance(right, int)
             and left.bit_length() * right > MAX_RESULT_BITS
         ):
-            raise CalculatorError("Результат слишком большой.")
+            raise ResultTooBig("Результат слишком большой.")
 
         return _checked(op_func(left, right))
 
     if isinstance(node, ast.UnaryOp):
         op_func = _UNARY_OPS.get(type(node.op))
         if op_func is None:
-            raise CalculatorError("Эта операция не поддерживается.")
+            raise NotArithmetic("Эта операция не поддерживается.")
         return op_func(_eval_node(node.operand))
 
-    raise CalculatorError("Разрешены только числа, +, -, *, /, //, %, ** и скобки.")
+    raise NotArithmetic("Разрешены только числа, +, -, *, /, //, %, ** и скобки.")
 
 
 def _checked(value: Number) -> Number:
     if isinstance(value, int) and value.bit_length() > MAX_RESULT_BITS:
-        raise CalculatorError("Результат слишком большой.")
+        raise ResultTooBig("Результат слишком большой.")
     if isinstance(value, float) and not math.isfinite(value):
-        raise CalculatorError("Результат слишком большой.")
+        raise ResultTooBig("Результат слишком большой.")
     return value
 
 

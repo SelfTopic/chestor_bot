@@ -6,26 +6,26 @@ from selfrot.types import Message
 
 from ....context import AppContext
 from ...types import TextMessage
-from .calculator import CalculatorError, evaluate
+from .calculator import DivisionByZero, NotArithmetic, Number, ResultTooBig, evaluate
+
+Outcome = Number | DivisionByZero | ResultTooBig
 
 
 class Arithmetic(BaseFilter[AppContext[Any]]):
     guarantees = TextMessage
 
-    def result(self, ctx: BaseContext[Any]) -> str | None:
+    def outcome(self, ctx: BaseContext[Any]) -> Outcome | None:
         message = ctx.event
         if not isinstance(message, Message) or not message.text:
             return None
 
         try:
-            value = evaluate(message.text, require_operator=True)
-            if isinstance(value, float) and value.is_integer():
-                value = int(value)
-            return str(value)
-        # OverflowError у float, ValueError у str() слишком длинного int, RecursionError
-        # у очень длинной цепочки унарных минусов: для пассивного фильтра это «не арифметика».
-        except (CalculatorError, ArithmeticError, ValueError, RecursionError):
+            return evaluate(message.text, require_operator=True)
+        # Арифметика, которую нельзя посчитать, тоже заслуживает ответа — пасхалкой.
+        except (DivisionByZero, ResultTooBig) as failure:
+            return failure
+        except NotArithmetic:
             return None
 
     async def check(self, ctx: BaseContext[Any]) -> bool:
-        return self.result(ctx) is not None
+        return self.outcome(ctx) is not None

@@ -9,6 +9,7 @@ from selfrot.filter import AnyCommand, Command
 
 from ....context import AppContext
 from ...types import TextMessage
+from .calculator import DivisionByZero, ResultTooBig
 from .filters import Arithmetic
 
 TArgs = TypeVar("TArgs", bound=CommandArgs)
@@ -122,8 +123,27 @@ class RandomNumberHandler(MessageHandler[AppContext[TextMessage]]):
 class CalculatorHandler(MessageHandler[AppContext[TextMessage]]):
     arithmetic = Arithmetic()
     query = arithmetic
+    division_by_zero = (
+        "Лучше себя на ноль подели.",
+        "На ноль не делят. Даже гули.",
+        "Делить на ноль? Сначала переживи это.",
+    )
+    too_big = (
+        "Получилось необычайно много.",
+        "Столько RC-клеток нет даже у Одноглазого короля.",
+        "Число не влезло ни в сообщение, ни в мою голову.",
+    )
 
     async def handle(self) -> None:
-        result = self.arithmetic.result(self.ctx)
-        assert result is not None
-        await self.ctx.message.reply(result)
+        outcome = self.arithmetic.outcome(self.ctx)
+        assert outcome is not None
+
+        if isinstance(outcome, DivisionByZero):
+            text = random.choice(self.division_by_zero)
+        elif isinstance(outcome, ResultTooBig):
+            text = random.choice(self.too_big)
+        elif isinstance(outcome, float) and outcome.is_integer():
+            text = str(int(outcome))
+        else:
+            text = str(outcome)
+        await self.ctx.message.reply(text)

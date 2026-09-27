@@ -118,18 +118,23 @@ class TestCalculator:
     async def test_replies_with_bare_result(self, send, text, result):
         assert await send(text) == [result]
 
+    @pytest.mark.parametrize("text", ["5", "-5", "+7999", "привет", "2 + + +"])
+    async def test_everything_else_is_silent(self, send, text):
+        assert await send(text) == []
+
+    @pytest.mark.parametrize("text", ["1/0", "5 % 0"])
+    async def test_division_by_zero_gets_an_easter_egg(self, send, text):
+        (reply,) = await send(text)
+        assert reply in handlers.CalculatorHandler.division_by_zero
+
     @pytest.mark.parametrize(
         "text",
         [
-            "5",
-            "-5",
-            "+7999",
-            "привет",
-            "1/0",
-            "10.0 ** 400",  # OverflowError у float
+            "10.0 ** 400",
             "9**1000 * 9**1000 * 9**1000 * 9**1000 * 9**1000",  # в сообщение не влезет
             "((9**1000)**1000)**1000",  # без проверки размера бот висел бы минутами
         ],
     )
-    async def test_everything_else_is_silent(self, send, text):
-        assert await send(text) == []
+    async def test_too_big_gets_an_easter_egg(self, send, text):
+        (reply,) = await send(text)
+        assert reply in handlers.CalculatorHandler.too_big
