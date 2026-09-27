@@ -1,6 +1,8 @@
 from selfrot import BaseRouter, MessageHandler
 from selfrot.filter import HasUser, Text
 
+from src.bot.dialogs import Dialogs
+
 from ...context import AppContext
 from ..types import UserMessage
 
@@ -13,9 +15,7 @@ class BalanceHandler(MessageHandler[AppContext[UserMessage]]):
 
         await self.ctx.answer_message(
             self.ctx.dialog_service.text(
-                key="check_balance",
-                balance=str(user.balance),
-                name=user.first_name,
+                Dialogs.balance(balance=str(user.balance), name=user.first_name)
             )
         )
 

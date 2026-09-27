@@ -1,6 +1,7 @@
 from selfrot import BaseRouter, MessageHandler
 from selfrot.filter import HasUser, Text
 
+from src.bot.dialogs import Dialogs
 from src.database.models import Ghoul, User
 
 from ....context import AppContext
@@ -20,23 +21,24 @@ class CombatPowerHandler(MessageHandler[AppContext[TextUserMessage]]):
         fighter = engine.ghoul_to_fighter(ghoul, user.full_name, ghoul_service)
         stats = fighter.stats
         return ctx.dialog_service.text(
-            key="combat_power",
-            name=user.full_name,
-            danger_rank=danger_rank,
-            vacuum_strength=ghoul.strength,
-            effective_strength=round(stats.strength, 1),
-            vacuum_dexterity=ghoul.dexterity,
-            effective_dexterity=round(stats.dexterity, 1),
-            vacuum_speed=ghoul.speed,
-            effective_speed=round(stats.speed, 1),
-            vacuum_health=ghoul.max_health,
-            effective_health=round(stats.health, 1),
-            vacuum_regeneration=ghoul.regeneration,
-            effective_regeneration=round(stats.regeneration, 1),
-            vacuum_kagune=ghoul_service.total_kagune_strength(ghoul),
-            effective_kagune=round(stats.kagune_strength, 1),
-            vacuum_power=ghoul_service.calculate_power(ghoul),
-            effective_power=round(engine.effective_power_of(stats), 1),
+            Dialogs.combat_power.full(
+                name=user.full_name,
+                danger_rank=danger_rank,
+                vacuum_strength=ghoul.strength,
+                effective_strength=round(stats.strength, 1),
+                vacuum_dexterity=ghoul.dexterity,
+                effective_dexterity=round(stats.dexterity, 1),
+                vacuum_speed=ghoul.speed,
+                effective_speed=round(stats.speed, 1),
+                vacuum_health=ghoul.max_health,
+                effective_health=round(stats.health, 1),
+                vacuum_regeneration=ghoul.regeneration,
+                effective_regeneration=round(stats.regeneration, 1),
+                vacuum_kagune=ghoul_service.total_kagune_strength(ghoul),
+                effective_kagune=round(stats.kagune_strength, 1),
+                vacuum_power=ghoul_service.calculate_power(ghoul),
+                effective_power=round(engine.effective_power_of(stats), 1),
+            )
         )
 
     async def handle(self) -> None:
@@ -46,7 +48,7 @@ class CombatPowerHandler(MessageHandler[AppContext[TextUserMessage]]):
 
         if ghoul.is_dead:
             await ctx.message.answer(
-                ctx.dialog_service.text(key="dead_ghoul_profile", name=user.full_name)
+                ctx.dialog_service.text(Dialogs.ghoul.dead_profile(name=user.full_name))
             )
             return
 
@@ -75,7 +77,7 @@ class CombatPowerShortHandler(MessageHandler[AppContext[TextUserMessage]]):
 
         if ghoul.is_dead:
             await ctx.message.answer(
-                ctx.dialog_service.text(key="dead_ghoul_profile", name=user.full_name)
+                ctx.dialog_service.text(Dialogs.ghoul.dead_profile(name=user.full_name))
             )
             return
 
@@ -84,11 +86,12 @@ class CombatPowerShortHandler(MessageHandler[AppContext[TextUserMessage]]):
         )
         await ctx.message.answer(
             ctx.dialog_service.text(
-                key="combat_power_short",
-                vacuum_power=ctx.ghoul_service.calculate_power(ghoul),
-                effective_power=round(
-                    ctx.battle_engine.effective_power_of(fighter.stats), 1
-                ),
+                Dialogs.combat_power.short(
+                    vacuum_power=ctx.ghoul_service.calculate_power(ghoul),
+                    effective_power=round(
+                        ctx.battle_engine.effective_power_of(fighter.stats), 1
+                    ),
+                )
             )
         )
 

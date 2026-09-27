@@ -1,9 +1,9 @@
 import asyncio
 import logging
-from typing import Any
 
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 
+from src.bot.dialogs import Dialogs, Line
 from src.bot.repositories import (
     ChatRepository,
     DeathLogRepository,
@@ -151,7 +151,7 @@ class NotificationTicker:
 
         if notification_type == NotificationType.HEALTH_FULL:
             if ghoul.health >= ghoul.max_health:
-                await self._send(telegram_id, key="notify_health_full")
+                await self._send(telegram_id, Dialogs.notify.health_full())
             else:
                 logger.info(
                     f"NotificationTicker: health_full for {telegram_id} stale "
@@ -173,9 +173,7 @@ class NotificationTicker:
                     f"stale (hunger={ghoul.hunger}), skipping"
                 )
                 return
-            await self._send(
-                telegram_id, key="notify_hunger_threshold", threshold=threshold
-            )
+            await self._send(telegram_id, Dialogs.notify.hunger(threshold=threshold))
             return
 
         if notification_type == NotificationType.DEATH:
@@ -204,25 +202,22 @@ class NotificationTicker:
 
         logger.warning(f"Unknown notification_type: {notification_type}")
 
-    async def _send(self, telegram_id: int, key: str, **kwargs: Any) -> None:
+    async def _send(self, telegram_id: int, line: Line) -> None:
         try:
             await self._notifier.send_message(
-                telegram_id, self._dialog_text(key, **kwargs)
+                telegram_id, self._dialog_service.text(line)
             )
-            logger.info(f"NotificationTicker: sent '{key}' to {telegram_id}")
+            logger.info(f"NotificationTicker: sent '{line.key}' to {telegram_id}")
         except NotifyError:
             logger.warning(
-                f"Failed to send notification '{key}' to {telegram_id}", exc_info=True
+                f"Failed to send notification '{line.key}' to {telegram_id}",
+                exc_info=True,
             )
-
-    def _dialog_text(self, key: str, **kwargs: Any) -> str:
-        return self._dialog_service.text(key=key, **kwargs)
 
     async def _send_death(
         self, telegram_id: int, death: DeathLog, media_repository: MediaRepository
     ) -> None:
-        text = self._dialog_text(
-            "notify_death",
+        obituary = Dialogs.notify.death(
             cause=_DEATH_CAUSE_TEXT.get(death.cause, death.cause),
             level=death.level,
             lifetime_rc_earned=death.lifetime_rc_earned,
@@ -242,8 +237,10 @@ class NotificationTicker:
         )
 
         if not media:
-            await self._send(telegram_id, "notify_death")
+            await self._send(telegram_id, obituary)
             return
+
+        text = self._dialog_service.text(obituary)
 
         try:
             try:

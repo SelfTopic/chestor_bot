@@ -1,6 +1,8 @@
 from selfrot import BaseRouter, MessageHandler
 from selfrot.filter import Command
 
+from src.bot.dialogs import Dialogs
+
 from ...context import AppContext
 from ..types import TextMessage
 
@@ -11,9 +13,10 @@ class HelpHandler(MessageHandler[AppContext[TextMessage]]):
     async def handle(self) -> None:
         await self.ctx.message.answer(
             self.ctx.dialog_service.text(
-                key="help",
-                commands_link="https://t.me/CheStorCommands",
-                lore_link="Временно отсутствует",
+                Dialogs.help(
+                    commands_link="https://t.me/CheStorCommands",
+                    lore_link="Временно отсутствует",
+                )
             )
         )
 

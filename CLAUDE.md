@@ -82,7 +82,7 @@ Postgres + SQLAlchemy (async), миграции Alembic, запуск в Docker 
 
 - **Слои по ролям** — корень `src/bot` (`context.py`, `bot.py`, `containers.py`, `config.py`,
   `game_configs.py`, `logs.py`), `services/`, `repositories/`, `middlewares/`, `types/`,
-  `exceptions/`, `utils/`. Сервис глобален, потому что он сервис, сколько бы роутеров им ни
+  `exceptions/`, `utils/`, `dialogs/`. Сервис глобален, потому что он сервис, сколько бы роутеров им ни
   пользовалось. Слои не импортируют `routers/`; собирает всё только `__main__.py`.
 - **Всё, что нужно только хендлерам** (миксины, фильтры, типы сообщений, хелперы отправки),
   лежит в самой глубокой общей папке тех, кто это импортирует: нужен одному пакету — в пакете
@@ -99,7 +99,7 @@ Postgres + SQLAlchemy (async), миграции Alembic, запуск в Docker 
 
 - Роутер длиннее ~150 строк становится пакетом (`flow.py`, `commands.py`, `handlers.py`, …).
 - Фильтр или middleware, нужный одному роутеру, живёт в его пакете.
-- Тексты usage и ошибок — атрибуты хендлера; тексты игры — `dialogs.json` через `dialog_service`.
+- Тексты usage и ошибок — атрибуты хендлера; тексты игры — фразы `Dialogs` через `dialog_service`.
 - Хелпер, нужный один раз, — метод хендлера. Отправка, общая для пакета, — модуль вроде `sending.py`.
 - Класс `CommandArgs` стоит прямо над своим хендлером.
 
@@ -113,6 +113,15 @@ Postgres + SQLAlchemy (async), миграции Alembic, запуск в Docker 
 `class KillGhoulHandler(ExplicitTargetHandler[KillGhoulArgs], MessageHandler[AppContext[TextMessage]])`.
 Проверка `DefinitionError` в selfrot смотрит только на прямые базовые классы, и через
 generic-миксин она молча отключилась бы.
+
+**Тексты — `src/bot/dialogs/`.** Фразы лежат в `*.yaml` (раздел → фраза → текст или список
+вариантов, `{имя}` — подстановка). Код обращается к ним только через сгенерированное дерево:
+`ctx.dialog_service.text(Dialogs.coffee.cooldown(hours=…, minutes=…, seconds=…))`, строковых
+ключей в коде нет. Добавил, переименовал фразу или поменял её подстановки — перегенерируй
+`tree.py`: `python -m src.bot.dialogs.generate` (руками его не правь, тест сверяет с YAML).
+Сам текст правится в YAML без кода, бот перечитывает файлы на ходу. Если YAML разошёлся
+с деревом, бот не запускается, а сломанная правка на ходу оставляет прежние тексты (WARNING
+в логе). Текст, который начинается с `{`, в YAML бери в кавычки.
 
 **Запуск.** Сервис `bot` в `docker-compose.yml` запускает `python -m src.bot`, токен —
 `BOT_TOKEN`. `ENV=DEV` — polling, иначе вебхук на 8999 (`WEBHOOK_URL`, `WEBHOOK_SECRET`).

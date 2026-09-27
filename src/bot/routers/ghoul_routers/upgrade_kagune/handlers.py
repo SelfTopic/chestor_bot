@@ -6,6 +6,7 @@ from selfrot.filter import HasMessageCallbackQuery, HasUser, Text
 from selfrot.handlers import CallbackQueryHandler
 from selfrot.types import Message
 
+from src.bot.dialogs import Dialogs
 from src.bot.types import KaguneType, MediaDownloadType
 from src.bot.utils import calculate_kagune, parse_seconds
 
@@ -53,9 +54,10 @@ class RegisterOrRebirthHandler(MessageHandler[AppContext[TextUserMessage]]):
             kagune_type = calculate_kagune(new_ghoul.ghoul.kagune_type_bit)[0]
             await message.reply(
                 text=ctx.dialog_service.text(
-                    key="new_ghoul",
-                    name=message.user.first_name,
-                    kagune_type=kagune_type.value["name"],
+                    Dialogs.ghoul.new(
+                        name=message.user.first_name,
+                        kagune_type=kagune_type.value["name"],
+                    )
                 )
             )
             return
@@ -64,7 +66,7 @@ class RegisterOrRebirthHandler(MessageHandler[AppContext[TextUserMessage]]):
         new_type = calculate_kagune(reborn.kagune_type_bit)[0]
         await message.reply(
             text=ctx.dialog_service.text(
-                key="rebirth_accept", kagune_type=new_type.value["name"]
+                Dialogs.ghoul.reborn(kagune_type=new_type.value["name"])
             )
         )
 
@@ -76,7 +78,6 @@ class UpgradeKaguneHandler(MessageHandler[AppContext[TextUserMessage]]):
         ctx = self.ctx
         message = ctx.message
         telegram_id = message.user.id
-        first_name = message.user.first_name
 
         ghoul = await ctx.db_ghoul()
 
@@ -87,9 +88,10 @@ class UpgradeKaguneHandler(MessageHandler[AppContext[TextUserMessage]]):
             remaining = parse_seconds(int(cooldown.end_at - time.time()))
             await message.reply(
                 text=ctx.dialog_service.text(
-                    key="upgrade_kagune_cooldown_error",
-                    minutes=str(remaining.minutes_remaining),
-                    seconds=str(remaining.seconds_remaining),
+                    Dialogs.kagune.upgrade.cooldown(
+                        minutes=str(remaining.minutes_remaining),
+                        seconds=str(remaining.seconds_remaining),
+                    )
                 )
             )
             return
@@ -103,7 +105,7 @@ class UpgradeKaguneHandler(MessageHandler[AppContext[TextUserMessage]]):
             await message.reply(text=text, reply_markup=keyboard)
             return
 
-        ok, text = await do_upgrade(ctx, telegram_id, first_name, owned[0])
+        ok, text = await do_upgrade(ctx, telegram_id, owned[0])
         if not ok:
             await message.reply(text=text)
             return
@@ -137,9 +139,8 @@ class KaguneChoiceHandler(CallbackQueryHandler[AppContext[DataMessageCallbackQue
             return
 
         telegram_id = callback.user.id
-        first_name = callback.user.first_name
 
-        ok, text = await do_upgrade(ctx, telegram_id, first_name, kagune_type)
+        ok, text = await do_upgrade(ctx, telegram_id, kagune_type)
         if not ok:
             await callback.answer(text, show_alert=True)
             return

@@ -1,7 +1,7 @@
 from typing import Tuple
 
 from ..game_configs import STAT_UPGRADE_CONFIG, stat_cap_for_level
-from ..services import DialogService, GhoulService, UserService
+from ..services import GhoulService, UserService
 
 
 class StatUpgradeService:
@@ -9,11 +9,9 @@ class StatUpgradeService:
         self,
         ghoul_service: GhoulService,
         user_service: UserService,
-        dialog_service: DialogService,
     ):
         self.ghoul_service = ghoul_service
         self.user_service = user_service
-        self.dialog_service = dialog_service
 
     def _cap(self, ghoul, stat_key: str) -> int:
         return stat_cap_for_level(ghoul.level, stat_key)

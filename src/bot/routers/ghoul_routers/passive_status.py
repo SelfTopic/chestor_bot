@@ -1,6 +1,7 @@
 from selfrot import BaseRouter, MessageHandler
 from selfrot.filter import HasUser, Text
 
+from src.bot.dialogs import Dialogs
 from src.bot.utils import (
     format_duration,
     get_hunger_tier,
@@ -44,11 +45,12 @@ class RegenStatusHandler(MessageHandler[AppContext[TextUserMessage]]):
 
         await ctx.message.answer(
             ctx.dialog_service.text(
-                key="regen_status",
-                health=ghoul.health,
-                max_health=ghoul.max_health,
-                hp_per_hour=round(hp_per_hour, 2),
-                time_left=time_left,
+                Dialogs.status.regen(
+                    health=ghoul.health,
+                    max_health=ghoul.max_health,
+                    hp_per_hour=round(hp_per_hour, 2),
+                    time_left=time_left,
+                )
             )
         )
 
@@ -75,18 +77,19 @@ class HungerStatusHandler(MessageHandler[AppContext[TextUserMessage]]):
 
         await ctx.message.answer(
             ctx.dialog_service.text(
-                key="hunger_status",
-                hunger=ghoul.hunger,
-                tier=tier.name,
-                time_left=time_left,
-                falling_multiplier=tier.falling_multiplier,
-                rising_multiplier=tier.rising_multiplier,
-                effective_strength=round(stats.strength, 1),
-                effective_dexterity=round(stats.dexterity, 1),
-                effective_speed=round(stats.speed, 1),
-                effective_health=round(stats.health, 1),
-                effective_regeneration=round(stats.regeneration, 1),
-                effective_kagune_strength=round(stats.kagune_strength, 1),
+                Dialogs.status.hunger(
+                    hunger=ghoul.hunger,
+                    tier=tier.name,
+                    time_left=time_left,
+                    falling_multiplier=tier.falling_multiplier,
+                    rising_multiplier=tier.rising_multiplier,
+                    effective_strength=round(stats.strength, 1),
+                    effective_dexterity=round(stats.dexterity, 1),
+                    effective_speed=round(stats.speed, 1),
+                    effective_health=round(stats.health, 1),
+                    effective_regeneration=round(stats.regeneration, 1),
+                    effective_kagune_strength=round(stats.kagune_strength, 1),
+                )
             )
         )
 

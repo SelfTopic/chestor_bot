@@ -1,6 +1,8 @@
 from selfrot import BaseMiddleware
 from selfrot.types import CallbackQuery, Message
 
+from src.bot.dialogs import Dialogs
+
 from ...context import AppContext
 
 _GROW_KAGUNE_BYPASS = "растить кагуне"
@@ -31,7 +33,7 @@ class GhoulMiddleware(BaseMiddleware[AppContext]):
             return False
 
         if ghoul.is_dead:
-            await event.answer(self.ctx.dialog_service.text(key="dead_ghoul_reply"))
+            await event.answer(self.ctx.dialog_service.text(Dialogs.ghoul.dead()))
             return False
 
         return True

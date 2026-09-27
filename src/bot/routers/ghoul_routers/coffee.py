@@ -3,6 +3,7 @@ import time
 from selfrot import BaseRouter, MessageHandler
 from selfrot.filter import HasUser, Text
 
+from src.bot.dialogs import Dialogs
 from src.bot.game_configs import COFFEE_CONFIG
 from src.bot.types import MediaDownloadType
 from src.bot.utils import parse_seconds
@@ -23,7 +24,7 @@ class CoffeeHandler(MessageHandler[AppContext[TextUserMessage]]):
 
         if ghoul.snap_count < COFFEE_CONFIG.snap_limit:
             await ctx.message.reply(
-                text=ctx.dialog_service.text(key="coffee_snap_limit")
+                text=ctx.dialog_service.text(Dialogs.coffee.snap_limit())
             )
             return
 
@@ -32,17 +33,18 @@ class CoffeeHandler(MessageHandler[AppContext[TextUserMessage]]):
             remaining = parse_seconds(int(cooldown.end_at - time.time()))
             await ctx.message.reply(
                 text=ctx.dialog_service.text(
-                    key="coffee_cooldown_error",
-                    hours=remaining.total_hours,
-                    minutes=remaining.minutes_remaining,
-                    seconds=remaining.seconds_remaining,
+                    Dialogs.coffee.cooldown(
+                        hours=remaining.total_hours,
+                        minutes=remaining.minutes_remaining,
+                        seconds=remaining.seconds_remaining,
+                    )
                 )
             )
             return
 
         result = await ctx.coffee_service.execute(telegram_id)
         text = ctx.dialog_service.text(
-            key="coffee_accept", count=result.ghoul.coffee_count, money=result.award
+            Dialogs.coffee.done(count=result.ghoul.coffee_count, money=result.award)
         )
 
         media = await random_media(

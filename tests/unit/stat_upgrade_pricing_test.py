@@ -9,7 +9,6 @@ from src.bot.repositories.chat import ChatRepository
 from src.bot.repositories.ghoul import GhoulRepository
 from src.bot.repositories.user import UserRepository
 from src.bot.repositories.user_coldown import UserCooldownRepository
-from src.bot.services.dialog import DialogService
 from src.bot.services.ghoul import GhoulService
 from src.bot.services.stat_upgrade import StatUpgradeService
 from src.bot.services.user import UserService
@@ -50,7 +49,6 @@ def _make_stat_service(session) -> StatUpgradeService:
     return StatUpgradeService(
         ghoul_service=ghoul_service,
         user_service=user_service,
-        dialog_service=DialogService(),
     )
 
 

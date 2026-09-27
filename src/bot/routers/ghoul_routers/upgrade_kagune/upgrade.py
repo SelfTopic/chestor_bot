@@ -4,6 +4,7 @@ from typing import Any
 from selfrot import InlineKeyboard
 from selfrot.types import InlineKeyboardMarkup
 
+from src.bot.dialogs import Dialogs
 from src.bot.types import KaguneType
 from src.bot.utils import parse_seconds
 from src.database.models import Ghoul
@@ -15,7 +16,7 @@ from .callback_data import KaguneUpgradePress
 # Кулдаун и баланс проверяются заново: между показом клавиатуры и нажатием могло
 # пройти время.
 async def do_upgrade(
-    ctx: AppContext[Any], telegram_id: int, first_name: str, kagune_type: KaguneType
+    ctx: AppContext[Any], telegram_id: int, kagune_type: KaguneType
 ) -> tuple[bool, str]:
     ghoul_service = ctx.ghoul_service
 
@@ -33,9 +34,10 @@ async def do_upgrade(
     if user_cooldown is not None:
         remaining = parse_seconds(int(user_cooldown.end_at - time.time()))
         return False, ctx.dialog_service.text(
-            key="upgrade_kagune_cooldown_error",
-            minutes=str(remaining.minutes_remaining),
-            seconds=str(remaining.seconds_remaining),
+            Dialogs.kagune.upgrade.cooldown(
+                minutes=str(remaining.minutes_remaining),
+                seconds=str(remaining.seconds_remaining),
+            )
         )
 
     price = ghoul_service.calculate_price_upgrade_kagune(current_strength)
@@ -45,7 +47,7 @@ async def do_upgrade(
 
     if user.balance < price:
         return False, ctx.dialog_service.text(
-            key="not_enough_money", money=int(price - user.balance) + 1
+            Dialogs.errors.not_enough_money(money=int(price - user.balance) + 1)
         )
 
     await ctx.user_service.minus_balance(
@@ -56,10 +58,7 @@ async def do_upgrade(
 
     new_strength = ghoul_service.get_kagune_strength(new_ghoul, kagune_type)
     text = ctx.dialog_service.text(
-        key="upgrade_kagune_accept",
-        name=first_name,
-        kagune_strength=str(new_strength),
-        money=str(price),
+        Dialogs.kagune.upgrade.done(kagune_strength=str(new_strength), money=str(price))
     )
     return True, text
 

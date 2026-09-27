@@ -12,6 +12,7 @@ import pytest
 from dependency_injector import providers
 from sqlalchemy import update
 
+from src.bot.dialogs import Dialogs
 from src.bot.exceptions import ChatNotFoundInDatabase
 from src.bot.repositories import GhoulRepository, UserRepository
 from src.bot.services.wikipedia import WikipediaSummary
@@ -44,7 +45,7 @@ async def seed(session_factory, telegram_id: int, first_name: str = "Вася", 
 
 
 def global_error(dp, exc: Exception) -> str:
-    return dp.dialog_service.text(key="global_error", error=str(exc))
+    return dp.dialog_service.text(Dialogs.errors.unexpected(error=str(exc)))
 
 
 class TestStartAndHelp:
@@ -53,15 +54,16 @@ class TestStartAndHelp:
         (reply,) = await send(text, uid=42, first_name="Вася")
 
         dp = send.dispatcher
-        assert reply == dp.dialog_service.text(key="start", name="Вася")
+        assert reply == dp.dialog_service.text(Dialogs.start(name="Вася"))
 
     async def test_help(self, send):
         (reply,) = await send("/help")
 
         assert reply == send.dispatcher.dialog_service.text(
-            key="help",
-            commands_link="https://t.me/CheStorCommands",
-            lore_link="Временно отсутствует",
+            Dialogs.help(
+                commands_link="https://t.me/CheStorCommands",
+                lore_link="Временно отсутствует",
+            )
         )
 
     @pytest.mark.parametrize("text", ["старт", "/starts", "/helper"])
@@ -376,7 +378,7 @@ class TestRolePlay:
         (reply,) = await send(text, uid=42)
 
         assert reply.startswith(
-            send.dispatcher.dialog_service.text("global_error", error="")[:5]
+            send.dispatcher.dialog_service.text(Dialogs.errors.unexpected(error=""))[:5]
         )
 
     async def test_new_command_on_photo(self, feed, telegram, monkeypatch):
@@ -458,7 +460,7 @@ class TestRaceProfile:
 
         (reply,) = await send("кагуне")
 
-        assert reply == send.dispatcher.dialog_service.text(key="kagune_info")
+        assert reply == send.dispatcher.dialog_service.text(Dialogs.kagune.info())
 
     @pytest.mark.parametrize("text", ["распрофиль", "/race_profile"])
     async def test_human_gets_plain_profile(self, send, session_factory, text):

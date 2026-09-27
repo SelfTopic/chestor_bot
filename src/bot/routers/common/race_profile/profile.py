@@ -3,6 +3,7 @@ import logging
 from selfrot import MessageHandler
 from selfrot.filter import Command, HasUser, Text
 
+from src.bot.dialogs import Dialogs
 from src.bot.types import Race
 from src.database.models import Ghoul, User
 
@@ -35,7 +36,7 @@ class RaceProfileHandler(MessageHandler[AppContext[UserMessage]]):
 
         if ghoul.is_dead:
             await self.ctx.message.answer(
-                dialog_service.text(key="dead_ghoul_profile", name=user.full_name)
+                dialog_service.text(Dialogs.ghoul.dead_profile(name=user.full_name))
             )
             return
 
@@ -70,9 +71,8 @@ class RaceProfileHandler(MessageHandler[AppContext[UserMessage]]):
 
         await self.ctx.message.answer(
             self.ctx.dialog_service.text(
-                key="profile",
-                name=user.full_name,
-                race=race.value["name"],
-                balance=user.balance,
+                Dialogs.profile(
+                    name=user.full_name, race=race.value["name"], balance=user.balance
+                )
             )
         )

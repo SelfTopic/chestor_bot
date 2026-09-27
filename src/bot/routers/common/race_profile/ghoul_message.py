@@ -10,6 +10,7 @@ from selfrot.types import (
     InputRichMessage,
 )
 
+from src.bot.dialogs import Dialogs
 from src.bot.game_configs import STATS
 from src.bot.services import GhoulService
 from src.bot.services.dialog import DialogService
@@ -107,29 +108,30 @@ def plain_profile(
     stats: BattleStats,
 ) -> str:
     return dialog_service.text(
-        key="ghoul_profile",
-        name=user.full_name,
-        strength=ghoul.strength,
-        snap_count=ghoul.snap_count,
-        kagune_type=calculate_kagune(ghoul.kagune_type_bit)[0].value["name"],
-        health=ghoul.health,
-        max_health=ghoul.max_health,
-        coffee_count=ghoul.coffee_count,
-        strength_kagune=ghoul_service.total_kagune_strength(ghoul),
-        rc_count=ghoul.rc_money,
-        regeneration=ghoul.regeneration,
-        eat_ghouls=ghoul.eat_ghouls,
-        eat_humans=ghoul.eat_humans,
-        dexterity=ghoul.dexterity,
-        speed=ghoul.speed,
-        is_kakuja="Есть" if ghoul.is_kakuja else "Нет",
-        level=ghoul.level,
-        power=power,
-        danger_rank=danger_rank,
-        wins=stats.wins,
-        losses=stats.losses,
-        total_battles=stats.total,
-        mob_wins=stats.mob_wins,
-        mob_losses=stats.mob_losses,
-        mob_battles=stats.mob_total,
+        Dialogs.ghoul.profile(
+            name=user.full_name,
+            strength=ghoul.strength,
+            snap_count=ghoul.snap_count,
+            kagune_type=calculate_kagune(ghoul.kagune_type_bit)[0].value["name"],
+            health=ghoul.health,
+            max_health=ghoul.max_health,
+            coffee_count=ghoul.coffee_count,
+            strength_kagune=ghoul_service.total_kagune_strength(ghoul),
+            rc_count=ghoul.rc_money,
+            regeneration=ghoul.regeneration,
+            eat_ghouls=ghoul.eat_ghouls,
+            eat_humans=ghoul.eat_humans,
+            dexterity=ghoul.dexterity,
+            speed=ghoul.speed,
+            is_kakuja="Есть" if ghoul.is_kakuja else "Нет",
+            level=ghoul.level,
+            power=power,
+            danger_rank=danger_rank,
+            wins=stats.wins,
+            losses=stats.losses,
+            total_battles=stats.total,
+            mob_wins=stats.mob_wins,
+            mob_losses=stats.mob_losses,
+            mob_battles=stats.mob_total,
+        )
     )

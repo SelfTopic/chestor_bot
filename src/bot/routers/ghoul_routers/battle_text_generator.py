@@ -16,6 +16,7 @@ from selfrot.types import (
     RichTextBold,
 )
 
+from src.bot.dialogs import Dialogs
 from src.bot.services.battle_engine.core import (
     AttackAction,
     AttackType,
@@ -237,14 +238,15 @@ class BattleTextGenerator:
         hp_line_a, hp_line_b = self._hp_lines(result, fighter_a, fighter_b)
 
         return self._dialog_service.text(
-            key="battle_result_summary",
-            rank_line_a=_flatten_to_plain_text(rank_line_a),
-            rank_line_b=_flatten_to_plain_text(rank_line_b),
-            winner_line=_flatten_to_plain_text(winner_line),
-            loser_line=_flatten_to_plain_text(loser_line),
-            hp_line_a=_flatten_to_plain_text(hp_line_a),
-            hp_line_b=_flatten_to_plain_text(hp_line_b),
-            rounds=len(result.rounds),
+            Dialogs.fight.summary(
+                rank_line_a=_flatten_to_plain_text(rank_line_a),
+                rank_line_b=_flatten_to_plain_text(rank_line_b),
+                winner_line=_flatten_to_plain_text(winner_line),
+                loser_line=_flatten_to_plain_text(loser_line),
+                hp_line_a=_flatten_to_plain_text(hp_line_a),
+                hp_line_b=_flatten_to_plain_text(hp_line_b),
+                rounds=len(result.rounds),
+            )
         )
 
     def _winner_lines(

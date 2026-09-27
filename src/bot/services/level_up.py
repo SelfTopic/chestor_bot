@@ -1,6 +1,7 @@
 import logging
 from dataclasses import dataclass, field
 
+from src.bot.dialogs import Dialogs
 from src.bot.game_configs import LEVEL_UP_CONFIG, STATS, stat_cap_for_level
 from src.bot.services import DialogService, GhoulService, UserService
 from src.bot.utils import apply_level_progress
@@ -117,11 +118,12 @@ class LevelUpService:
         )
 
         text = self.dialog_service.text(
-            key="level_up_notify",
-            level=new_level,
-            cheston=cheston_reward,
-            rc=rc_reward,
-            stat_changes=stat_lines,
+            Dialogs.notify.level_up(
+                level=new_level,
+                cheston=cheston_reward,
+                rc=rc_reward,
+                stat_changes=stat_lines,
+            )
         )
 
         try:

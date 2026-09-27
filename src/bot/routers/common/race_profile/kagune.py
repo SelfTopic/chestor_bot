@@ -9,6 +9,7 @@ from selfrot.types import (
     InputRichMessage,
 )
 
+from src.bot.dialogs import Dialogs
 from src.bot.services.battle_engine.core import (
     KAGUNE_TYPE_MULTIPLIERS,
     KAGUNE_TYPE_PRIORITY_STAT,
@@ -122,6 +123,6 @@ class KaguneInfoHandler(MessageHandler[AppContext[TextMessage]]):
         await answer_rich_or_text(
             self.ctx.message,
             self.build_message(),
-            lambda: self.ctx.dialog_service.text(key="kagune_info"),
+            lambda: self.ctx.dialog_service.text(Dialogs.kagune.info()),
             what="kagune info",
         )

@@ -462,7 +462,7 @@ class RecordingDispatcher(Dispatcher):
 async def dispatcher(
     telegram: FakeTelegram, session_factory, monkeypatch: pytest.MonkeyPatch
 ) -> AsyncIterator[RecordingDispatcher]:
-    # DialogService читает dialogs.json из текущей папки
+    # пути к ассетам (src/bot/config.py и др.) относительные — от корня репозитория
     monkeypatch.chdir(REPO_ROOT)
 
     dp = RecordingDispatcher(token="1:TEST", session_factory=session_factory)

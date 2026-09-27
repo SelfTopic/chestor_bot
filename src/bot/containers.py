@@ -26,7 +26,6 @@ from .services import (
     BattleEngine,
     ChatService,
     CooldownService,
-    DialogService,
     DuelService,
     GhoulService,
     MediaService,
@@ -82,8 +81,6 @@ class Container(containers.DeclarativeContainer):
     active_battle_repository = providers.Factory(ActiveBattleRepository, session=db_session)
     battle_repository = providers.Factory(BattleRepository, session=db_session)
     duel_session_repository = providers.Factory(DuelSessionRepository, session=db_session)
-
-    dialog_service = providers.Factory(DialogService)
 
     mob_service = providers.Factory(MobService)
 
@@ -158,7 +155,6 @@ class Container(containers.DeclarativeContainer):
         StatUpgradeService,
         ghoul_service=ghoul_service,
         user_service=user_service,
-        dialog_service=dialog_service,
     )
 
     player_lookup_service = providers.Factory(

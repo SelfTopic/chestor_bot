@@ -1,9 +1,8 @@
-import json
-from pathlib import Path
-
 import pytest
 
-DIALOGS = json.loads((Path(__file__).parents[1] / "dialogs.json").read_text("utf-8"))
+from src.bot.dialogs import load_texts
+
+BOT_REPLIES = load_texts()["bot"]
 
 
 @pytest.mark.parametrize("text", ["бот", "Бот", "БОТ"])
@@ -11,7 +10,7 @@ async def test_answers_to_bot_in_any_case(send, text):
     replies = await send(text)
 
     assert len(replies) == 1
-    assert replies[0] in DIALOGS["bot"]
+    assert replies[0] in BOT_REPLIES
 
 
 @pytest.mark.parametrize("text", ["привет", "бот привет", "Бот ", "бота"])

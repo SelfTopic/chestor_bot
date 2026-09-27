@@ -3,6 +3,7 @@ import random
 from selfrot import BaseRouter, MessageHandler
 from selfrot.filter import HasUser, Text
 
+from src.bot.dialogs import Dialogs
 from src.bot.game_configs import EAT_HUMAN_CONFIG
 from src.bot.types import MediaDownloadType
 
@@ -60,10 +61,11 @@ class EatHumanHandler(MessageHandler[AppContext[TextUserMessage]]):
         if remaining is not None:
             await message.reply(
                 ctx.dialog_service.text(
-                    key="eat_human_cooldown_error",
-                    hours=remaining.total_hours,
-                    minutes=remaining.minutes_remaining,
-                    seconds=remaining.seconds_remaining,
+                    Dialogs.eat_human.cooldown(
+                        hours=remaining.total_hours,
+                        minutes=remaining.minutes_remaining,
+                        seconds=remaining.seconds_remaining,
+                    )
                 )
             )
             return
@@ -86,10 +88,9 @@ class EatHumanHandler(MessageHandler[AppContext[TextUserMessage]]):
             await ctx.cooldown_service.set_cooldown(telegram_id, COOLDOWN_NAME)
 
         caption = ctx.dialog_service.text(
-            key="eat_human_accept",
-            restored=restored,
-            hunger=ghoul.hunger,
-            count=ghoul.eat_humans,
+            Dialogs.eat_human.done(
+                restored=restored, hunger=ghoul.hunger, count=ghoul.eat_humans
+            )
         )
 
         media = await random_media(

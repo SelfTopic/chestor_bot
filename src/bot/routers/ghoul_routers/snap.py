@@ -1,6 +1,7 @@
 from selfrot import BaseRouter, MessageHandler
 from selfrot.filter import HasUser, Text
 
+from src.bot.dialogs import Dialogs
 from src.bot.game_configs import SNAP_CONFIG
 from src.bot.types import MediaDownloadType
 
@@ -22,9 +23,10 @@ class SnapHandler(MessageHandler[AppContext[TextUserMessage]]):
         if remaining is not None:
             await ctx.message.reply(
                 text=ctx.dialog_service.text(
-                    key="snap_finger_cooldown_error",
-                    minutes=str(remaining.minutes_remaining),
-                    seconds=str(remaining.seconds_remaining),
+                    Dialogs.snap.cooldown(
+                        minutes=str(remaining.minutes_remaining),
+                        seconds=str(remaining.seconds_remaining),
+                    )
                 )
             )
             return
@@ -38,9 +40,7 @@ class SnapHandler(MessageHandler[AppContext[TextUserMessage]]):
         await ctx.cooldown_service.set_cooldown(telegram_id, "SNAP")
 
         caption = ctx.dialog_service.text(
-            key="snap_finger_accept",
-            count=str(new_ghoul.snap_count),
-            money=str(award),
+            Dialogs.snap.done(count=str(new_ghoul.snap_count), money=str(award))
         )
 
         media = await random_media(

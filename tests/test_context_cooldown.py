@@ -1,7 +1,7 @@
 """AppContext.cooldown_remaining: общий хелпер для проверки кулдауна, рассчитанный
 на переиспользование в любом будущем роутере (не только ghoul_routers). Снимает
 только идентичную у всех пяти прод-мест часть (get_active_cooldown + parse_seconds
-от end_at - time.time()) — текст ответа и ключ dialogs.json остаются на хендлере,
+от end_at - time.time()) — текст ответа (фраза из src/bot/dialogs) остаётся на хендлере,
 потому что у прода они не унифицированы (см. context.py)."""
 
 from selfrot import MessageHandler

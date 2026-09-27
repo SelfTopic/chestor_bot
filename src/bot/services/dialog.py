@@ -1,124 +1,56 @@
-import json
 import logging
-import os
 import random
-from typing import Any, Dict, List, Union
+from pathlib import Path
+
+from src.bot.dialogs import (
+    DIALOGS_DIR,
+    PLACEHOLDERS,
+    DialogFileError,
+    Line,
+    Placeholders,
+    check_against,
+    load_texts,
+)
 
 logger = logging.getLogger(__name__)
 
 
 class DialogService:
-    filename: str = "dialogs.json"
-    cache: Dict[str, Union[str, List[str]]]
-    last_mtime: float
+    def __init__(
+        self, folder: Path = DIALOGS_DIR, expected: Placeholders = PLACEHOLDERS
+    ) -> None:
+        self._folder = folder
+        self._expected = expected
+        self._stamp = self._files_stamp()
+        self._texts = self._load()
 
-    def __init__(self, filename: str = "dialogs.json") -> None:
-        logger.debug(f"Called DialogService constructor. Params: filename={filename}")
+    def text(self, line: Line) -> str:
+        self._reload_if_changed()
+        return random.choice(self._texts[line.key]).format_map(line.params)
 
-        self.filename = filename
-        self.cache: Dict[str, Union[str, List[str]]] = {}
-        self.last_mtime: float = 0
-        self._load_data()
-
-        logger.debug("DialogService initialized successfully")
-
-    def _load_data(self) -> None:
-        logger.debug(f"Called _load_data. File: {self.filename}")
-
-        try:
-            current_mtime = os.path.getmtime(self.filename)
-            if current_mtime > self.last_mtime:
-                logger.debug("File modified, loading new data")
-
-                with open(self.filename, "r", encoding="utf-8") as json_data:
-                    self.cache = json.load(json_data)
-
-                self.last_mtime = current_mtime
-                logger.info(
-                    f"Dialog data reloaded from {self.filename}. Keys loaded: {len(self.cache)}"
-                )
-
-        except (FileNotFoundError, json.JSONDecodeError) as e:
-            logger.error(f"Error loading dialog data: {str(e)}")
-
-            if not self.cache:
-                logger.critical("Initial data load failed and no cache available")
-                raise RuntimeError(f"Initial data load failed: {str(e)}")
-
-    def _reload_if_needed(self) -> None:
-        logger.debug("Called _reload_if_needed")
-
-        try:
-            current_mtime = os.path.getmtime(self.filename)
-            if current_mtime > self.last_mtime:
-                logger.debug("File changed detected, reloading data")
-                self._load_data()
-            else:
-                logger.debug("No file changes detected")
-
-        except FileNotFoundError:
-            logger.error(f"Dialog file not found: {self.filename}")
-
-    def text(self, key: str, **kwargs: Any) -> str:
-        logger.debug(f"Called text method. Params: key={key}, kwargs={kwargs}")
-
-        self._reload_if_needed()
-
-        if key not in self.cache:
-            logger.error(f"Key '{key}' not found in dialog data")
-            raise KeyError(f"Key '{key}' not found in dialog data")
-
-        value = self.cache[key]
-
-        if not isinstance(value, str):
-            logger.error(f"Value for key '{key}' is not a string")
-            raise TypeError(f"Value for key '{key}' is not a string")
-
-        class SafeDict(dict):
-            def __missing__(self, key):
-                return "{" + str(key) + "}"
-
-        result = value.format_map(SafeDict(kwargs))
-        logger.debug(f"Text formatted successfully. Result length: {len(result)}")
-
-        return result
-
-    def random(self, key: str, **kwargs: str) -> str:
-        logger.debug(f"Called random method. Params: key={key}, kwargs={kwargs}")
-
-        self._reload_if_needed()
-
-        if key not in self.cache:
-            logger.error(f"Key '{key}' not found in dialog data")
-            raise KeyError(f"Key '{key}' not found in dialog data")
-
-        value = self.cache[key]
-
-        if not isinstance(value, list):
-            logger.error(f"Value for key '{key}' is not a list")
-            raise TypeError(f"Value for key '{key}' is not a list")
-
-        if not value:
-            logger.error(f"List for key '{key}' is empty")
-            raise ValueError(f"List for key '{key}' is empty")
-
-        if not all(isinstance(item, str) for item in value):
-            logger.error(f"List for key '{key}' contains non-string items")
-            raise TypeError(f"List for key '{key}' contains non-string items")
-
-        selected = random.choice(value)
-        logger.debug(f"Random item selected from list of {len(value)} items")
-
-        class SafeDict(dict):
-            def __missing__(self, key):
-                return "{" + key + "}"
-
-        result = selected.format_map(SafeDict(kwargs))
-        logger.debug(
-            f"Random text formatted successfully. Result length: {len(result)}"
+    def _files_stamp(self) -> tuple[tuple[str, float], ...]:
+        return tuple(
+            (path.name, path.stat().st_mtime)
+            for path in sorted(self._folder.glob("*.yaml"))
         )
 
-        return result
+    def _load(self) -> dict[str, tuple[str, ...]]:
+        texts = load_texts(self._folder)
+        check_against(texts, self._expected)
+        return texts
+
+    def _reload_if_changed(self) -> None:
+        stamp = self._files_stamp()
+        if stamp == self._stamp:
+            return
+        # Новый снимок запоминается и при ошибке: иначе предупреждение шло бы на каждый ответ.
+        self._stamp = stamp
+        try:
+            self._texts = self._load()
+        except (DialogFileError, OSError):
+            logger.warning("Тексты не перечитаны, бот отвечает прежними", exc_info=True)
+            return
+        logger.info(f"Тексты перечитаны из {self._folder}: {len(self._texts)} фраз")
 
 
 __all__ = ["DialogService"]

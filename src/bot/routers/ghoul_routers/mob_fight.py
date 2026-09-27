@@ -1,6 +1,7 @@
 from selfrot import BaseRouter, MessageHandler
 from selfrot.filter import HasUser, Text
 
+from src.bot.dialogs import Dialogs
 from src.bot.exceptions import (
     FighterHasPendingBattleError,
     FighterIsDeadError,
@@ -33,12 +34,12 @@ class MobFightHandler(MessageHandler[AppContext[TextUserMessage]]):
                 ghoul, has_pending_confirmation=lambda g: battles.is_busy(g.telegram_id)
             )
         except FighterIsDeadError:
-            await message.reply(ctx.dialog_service.text(key="dead_ghoul_reply"))
+            await message.reply(ctx.dialog_service.text(Dialogs.ghoul.dead()))
             return
         except FighterNotCombatReadyError as exc:
             await message.reply(
                 ctx.dialog_service.text(
-                    key="not_combat_ready", health=exc.health, threshold=exc.threshold
+                    Dialogs.fight.not_ready(health=exc.health, threshold=exc.threshold)
                 )
             )
             return

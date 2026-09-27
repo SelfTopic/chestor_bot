@@ -9,6 +9,7 @@ from selfrot.types import Message, Update
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 
 from src.bot.containers import Container
+from src.bot.dialogs import Dialogs
 from src.bot.services.dialog import DialogService
 from src.config import settings
 from src.database import session_factory as default_session_factory
@@ -97,7 +98,7 @@ class Dispatcher(BaseDispatcher[AppContext]):
         event = ctx.event
         if isinstance(event, Message):
             await event.answer(
-                self.dialog_service.text(key="global_error", error=str(exc))
+                self.dialog_service.text(Dialogs.errors.unexpected(error=str(exc)))
             )
 
 

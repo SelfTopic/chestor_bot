@@ -12,6 +12,7 @@ from pathlib import Path
 import pytest
 from sqlalchemy import select
 
+from src.bot.dialogs import Dialogs
 from src.bot.repositories import GhoulRepository, MediaRepository
 from src.bot.services.dialog import DialogService
 from src.bot.types import NotificationType
@@ -195,7 +196,9 @@ class TestDeath:
 
         assert notifier.messages == [] and notifier.videos == []
 
-    async def test_text_only_without_media(self, session_factory, ticker):
+    async def test_text_only_without_media(
+        self, session_factory, ticker, dialog_service
+    ):
         notification_ticker, notifier = ticker
         await seed_ghoul(session_factory, UID, is_dead=True)
         await self.seed_death(session_factory, UID)
@@ -203,7 +206,11 @@ class TestDeath:
 
         await notification_ticker._tick()
 
-        assert len(notifier.messages) == 1
+        # у прода без видео уходил текст с сырыми {cause}, {level}: подстановки терялись
+        obituary = Dialogs.notify.death(
+            cause="умер от голода", level=5, lifetime_rc_earned=100
+        )
+        assert notifier.messages == [(UID, dialog_service.text(obituary))]
         assert notifier.videos == []
 
     async def test_sends_video_with_cached_file_id(

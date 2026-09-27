@@ -5,6 +5,7 @@ from selfrot.exceptions import CommandArgsError, TelegramBadRequest
 from selfrot.filter import Command, HasUser
 from selfrot.types import InputFile
 
+from src.bot.dialogs import Dialogs
 from src.bot.game_configs import LOTTERY_CONFIG
 from src.bot.services.ghoul_game import LotteryService
 from src.bot.services.ghoul_game.lottery import COLOR_TO_FOLDER
@@ -32,21 +33,23 @@ class DepnutHandler(MessageHandler[AppContext[TextUserMessage]]):
         if dep_result.is_won:
             multiplier = LOTTERY_CONFIG.get_multiplier(dep_result.winning_color.value)
             return dialog.text(
-                key="lottery_win",
-                chosen_color=dep_result.chosen_color.value,
-                winning_color=dep_result.winning_color.value,
-                bet=dep_result.bet_amount,
-                earned=dep_result.earned,
-                balance=dep_result.user.balance,
-                multiplier=f"{multiplier}x",
+                Dialogs.lottery.win(
+                    chosen_color=dep_result.chosen_color.value,
+                    winning_color=dep_result.winning_color.value,
+                    bet=dep_result.bet_amount,
+                    earned=dep_result.earned,
+                    balance=dep_result.user.balance,
+                    multiplier=f"{multiplier}x",
+                )
             )
 
         return dialog.text(
-            key="lottery_lose",
-            chosen_color=dep_result.chosen_color.value,
-            winning_color=dep_result.winning_color.value,
-            bet=dep_result.bet_amount,
-            balance=dep_result.user.balance,
+            Dialogs.lottery.lose(
+                chosen_color=dep_result.chosen_color.value,
+                winning_color=dep_result.winning_color.value,
+                bet=dep_result.bet_amount,
+                balance=dep_result.user.balance,
+            )
         )
 
     async def reply_later(self, text: str) -> None:

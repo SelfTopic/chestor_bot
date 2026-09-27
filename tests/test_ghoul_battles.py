@@ -247,7 +247,7 @@ class TestEatHuman:
         assert ghoul is not None and ghoul.eat_humans == 3
         restored = ghoul.hunger - 10
         assert reply == (
-            f"🍽 Ты сожрал человека. \n\n🍖 Голод восстановлен на {restored}%, "
+            f"🍽 Ты сожрал человека.\n\n🍖 Голод восстановлен на {restored}%, "
             f"теперь: {ghoul.hunger}%\n🥩 Всего съедено людей: 3"
         )
         assert await mob_battles(session_factory, UID) == (0, 0, 0)
