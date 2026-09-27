@@ -21,12 +21,13 @@ class DialogService:
     ) -> None:
         self._folder = folder
         self._expected = expected
+        self._random = random.Random()
         self._stamp = self._files_stamp()
         self._texts = self._load()
 
     def text(self, line: Line) -> str:
         self._reload_if_changed()
-        return random.choice(self._texts[line.key]).format_map(line.params)
+        return self._random.choice(self._texts[line.key]).format_map(line.params)
 
     def _files_stamp(self) -> tuple[tuple[str, float], ...]:
         return tuple(

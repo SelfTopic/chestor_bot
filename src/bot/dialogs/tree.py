@@ -145,6 +145,45 @@ class _FightDialogs:
         )
 
 
+class _FunCalculatorDialogs:
+    def division_by_zero(self) -> Line:
+        return Line("fun.calculator.division_by_zero", {})
+
+    def too_big(self) -> Line:
+        return Line("fun.calculator.too_big", {})
+
+
+class _FunPickDialogs:
+    def result(self, *, choice: object) -> Line:
+        return Line("fun.pick.result", {"choice": choice})
+
+    def too_few(self) -> Line:
+        return Line("fun.pick.too_few", {})
+
+    def too_long(self) -> Line:
+        return Line("fun.pick.too_long", {})
+
+    def too_many(self, *, max_items: object) -> Line:
+        return Line("fun.pick.too_many", {"max_items": max_items})
+
+
+class _FunDialogs:
+    calculator = _FunCalculatorDialogs()
+    pick = _FunPickDialogs()
+
+    def nobody(self) -> Line:
+        return Line("fun.nobody", {})
+
+    def number(self, *, number: object) -> Line:
+        return Line("fun.number", {"number": number})
+
+    def random_participant(self, *, mention: object) -> Line:
+        return Line("fun.random_participant", {"mention": mention})
+
+    def who(self, *, mention: object, question: object) -> Line:
+        return Line("fun.who", {"mention": mention, "question": question})
+
+
 class _GhoulDialogs:
     def dead(self) -> Line:
         return Line("ghoul.dead", {})
@@ -558,6 +597,7 @@ class _Dialogs:
     eat_human = _EatHumanDialogs()
     errors = _ErrorsDialogs()
     fight = _FightDialogs()
+    fun = _FunDialogs()
     ghoul = _GhoulDialogs()
     kagune = _KaguneDialogs()
     lottery = _LotteryDialogs()
@@ -632,6 +672,16 @@ PLACEHOLDERS: dict[str, frozenset[str]] = {
             "winner_line",
         }
     ),
+    "fun.calculator.division_by_zero": frozenset(),
+    "fun.calculator.too_big": frozenset(),
+    "fun.nobody": frozenset(),
+    "fun.number": frozenset({"number"}),
+    "fun.pick.result": frozenset({"choice"}),
+    "fun.pick.too_few": frozenset(),
+    "fun.pick.too_long": frozenset(),
+    "fun.pick.too_many": frozenset({"max_items"}),
+    "fun.random_participant": frozenset({"mention"}),
+    "fun.who": frozenset({"mention", "question"}),
     "ghoul.dead": frozenset(),
     "ghoul.dead_profile": frozenset({"name"}),
     "ghoul.new": frozenset({"kagune_type", "name"}),

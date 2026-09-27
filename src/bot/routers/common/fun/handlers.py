@@ -7,6 +7,8 @@ from pydantic import Field
 from selfrot import CommandArgs, MessageHandler, Rest
 from selfrot.filter import AnyCommand, Command
 
+from src.bot.dialogs import Dialogs
+
 from ....context import AppContext
 from ...types import TextMessage
 from .calculator import DivisionByZero, ResultTooBig
@@ -17,13 +19,15 @@ TArgs = TypeVar("TArgs", bound=CommandArgs)
 ITEM_SEPARATOR = re.compile(r"\s*(?:,|\bили\b)\s*", re.IGNORECASE)
 MAX_PICK_ITEMS = 50
 MAX_ITEM_LENGTH = 200
-NOBODY = "Пока некого выбирать - в этом чате ещё никто не написал боту."
+NOBODY = Dialogs.fun.nobody()
 
 
 def bot_command(action: str, args: type[TArgs]) -> AnyCommand[TArgs]:
     return AnyCommand(
         *(
-            Command(f"{name} {action}", args, prefixes="", ignore_case=True, strict=True)
+            Command(
+                f"{name} {action}", args, prefixes="", ignore_case=True, strict=True
+            )
             for name in ("бот", "честор")
         )
     )
@@ -33,7 +37,9 @@ async def random_mention(ctx: AppContext[TextMessage]) -> str | None:
     user = await ctx.chat_service.random_participant(ctx.message.chat.id)
     if user is None:
         return None
-    return f'<a href="tg://user?id={user.telegram_id}">{html.escape(user.full_name)}</a>'
+    return (
+        f'<a href="tg://user?id={user.telegram_id}">{html.escape(user.full_name)}</a>'
+    )
 
 
 class PickArgs(CommandArgs):
@@ -43,9 +49,9 @@ class PickArgs(CommandArgs):
 class PickHandler(MessageHandler[AppContext[TextMessage]]):
     cmd = bot_command("выбери", PickArgs)
     query = cmd
-    too_few = "Нужно минимум 2 варианта: бот выбери пицца или суши или бургер"
-    too_many = f"Слишком много вариантов (максимум {MAX_PICK_ITEMS})."
-    too_long = "Один из вариантов слишком длинный."
+    too_few = Dialogs.fun.pick.too_few()
+    too_many = Dialogs.fun.pick.too_many(max_items=MAX_PICK_ITEMS)
+    too_long = Dialogs.fun.pick.too_long()
 
     async def handle(self) -> None:
         text = self.cmd.parse(self.ctx).items
@@ -53,13 +59,14 @@ class PickHandler(MessageHandler[AppContext[TextMessage]]):
         message = self.ctx.message
 
         if len(items) < 2:
-            await message.reply(self.too_few)
+            line = self.too_few
         elif len(items) > MAX_PICK_ITEMS:
-            await message.reply(self.too_many)
+            line = self.too_many
         elif any(len(item) > MAX_ITEM_LENGTH for item in items):
-            await message.reply(self.too_long)
+            line = self.too_long
         else:
-            await message.reply(f"🎲 Выбор пал на: {random.choice(items)}")
+            line = Dialogs.fun.pick.result(choice=random.choice(items))
+        await message.reply(self.ctx.text(line))
 
 
 class WhoArgs(CommandArgs):
@@ -76,18 +83,26 @@ class WhoHandler(MessageHandler[AppContext[TextMessage]]):
 
         mention = await random_mention(self.ctx)
         if mention is None:
-            await message.reply(NOBODY)
+            await message.reply(self.ctx.text(NOBODY))
             return
 
         await message.reply(
-            f"По моим расчётам {html.escape(question)} {mention}", parse_mode="HTML"
+            self.ctx.text(
+                Dialogs.fun.who(question=html.escape(question), mention=mention)
+            ),
+            parse_mode="HTML",
         )
 
 
 class RandomParticipantHandler(MessageHandler[AppContext[TextMessage]]):
     cmd = AnyCommand(
         *(
-            Command(f"{name} случайный участник", prefixes="", ignore_case=True, args_count=0)
+            Command(
+                f"{name} случайный участник",
+                prefixes="",
+                ignore_case=True,
+                args_count=0,
+            )
             for name in ("бот", "честор")
         )
     )
@@ -96,10 +111,13 @@ class RandomParticipantHandler(MessageHandler[AppContext[TextMessage]]):
     async def handle(self) -> None:
         mention = await random_mention(self.ctx)
         if mention is None:
-            await self.ctx.message.reply(NOBODY)
+            await self.ctx.message.reply(self.ctx.text(NOBODY))
             return
 
-        await self.ctx.message.reply(f"🎲 Выбор пал на {mention}!", parse_mode="HTML")
+        await self.ctx.message.reply(
+            self.ctx.text(Dialogs.fun.random_participant(mention=mention)),
+            parse_mode="HTML",
+        )
 
 
 Integer = Annotated[str, Field(pattern=r"^-?\d+$")]
@@ -117,31 +135,22 @@ class RandomNumberHandler(MessageHandler[AppContext[TextMessage]]):
     async def handle(self) -> None:
         args = self.cmd.parse(self.ctx)
         low, high = sorted((int(args.low), int(args.high)))
-        await self.ctx.message.reply(f"🎲 {random.randint(low, high)}")
+        number = random.randint(low, high)
+        await self.ctx.message.reply(self.ctx.text(Dialogs.fun.number(number=number)))
 
 
 class CalculatorHandler(MessageHandler[AppContext[TextMessage]]):
     arithmetic = Arithmetic()
     query = arithmetic
-    division_by_zero = (
-        "Лучше себя на ноль подели.",
-        "На ноль не делят. Даже гули.",
-        "Делить на ноль? Сначала переживи это.",
-    )
-    too_big = (
-        "Получилось необычайно много.",
-        "Столько RC-клеток нет даже у Одноглазого короля.",
-        "Число не влезло ни в сообщение, ни в мою голову.",
-    )
 
     async def handle(self) -> None:
         outcome = self.arithmetic.outcome(self.ctx)
         assert outcome is not None
 
         if isinstance(outcome, DivisionByZero):
-            text = random.choice(self.division_by_zero)
+            text = self.ctx.text(Dialogs.fun.calculator.division_by_zero())
         elif isinstance(outcome, ResultTooBig):
-            text = random.choice(self.too_big)
+            text = self.ctx.text(Dialogs.fun.calculator.too_big())
         elif isinstance(outcome, float) and outcome.is_integer():
             text = str(int(outcome))
         else:

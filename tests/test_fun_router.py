@@ -2,12 +2,15 @@
 калькулятор."""
 
 import pytest
+
+from src.bot.dialogs import load_texts
 from src.bot.routers.common.fun import handlers
 
 from .conftest import message_update, owner_dict
 
 GROUP = -100555
 NOBODY = "Пока некого выбирать - в этом чате ещё никто не написал боту."
+TEXTS = load_texts()
 
 
 async def seed_group(feed, telegram, uid: int = 42, first_name: str = "Вася") -> None:
@@ -125,7 +128,7 @@ class TestCalculator:
     @pytest.mark.parametrize("text", ["1/0", "5 % 0"])
     async def test_division_by_zero_gets_an_easter_egg(self, send, text):
         (reply,) = await send(text)
-        assert reply in handlers.CalculatorHandler.division_by_zero
+        assert reply in TEXTS["fun.calculator.division_by_zero"]
 
     @pytest.mark.parametrize(
         "text",
@@ -137,4 +140,4 @@ class TestCalculator:
     )
     async def test_too_big_gets_an_easter_egg(self, send, text):
         (reply,) = await send(text)
-        assert reply in handlers.CalculatorHandler.too_big
+        assert reply in TEXTS["fun.calculator.too_big"]
