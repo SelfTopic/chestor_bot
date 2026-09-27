@@ -165,6 +165,14 @@ status:
     ❣️ Регенерация: {effective_regeneration}
     ♦️ Кагуне: {effective_kagune_strength}
 combat_power:
+  rich:
+    title: ⚡ Боевая мощь гуля {danger_rank} ранга {name}
+    combat_note: Самое правое значение в таблице ниже - значение, которое реально будет использоваться в бою.
+    # абзацы разделены пустой строкой
+    hints: |-
+      Если надо узнать, как голод влияет на статистики - напиши "голод".
+
+      Если надо узнать, как кагуне влияет на статистики - используй /kagune.
   full: |-
     ⚡ Боевая мощь гуля {danger_rank} ранга {name}
 
@@ -184,6 +192,31 @@ combat_power:
     Твоя боевая мощь вне боя: {vacuum_power}
     Твоя боевая мощь в бою: {effective_power}
 fight:
+  title: ⚔️ Бой
+  versus: VS
+  rank: Гуль {rank} ранга {name}
+  rounds_title: 📜 Ход поединка ({count} раунд(ов))
+  draw: 🤝 Ничья.
+  winner: '🏆 Победитель: {name}'
+  defeated: '{name}: повержен.'
+  lost_on_rounds: '{name}: проиграл по итогам раундов.'
+  final_hp: '❤️ {name}: {hp} HP'
+  log:
+    round: ──── Раунд {number} ────
+    miss: '{icon} {name} промахивается'
+    fast_miss: '{icon} {name} не успевает ударить ещё раз'
+    blocked: '{icon} {name} не пробивает защиту'
+    hit: '{icon} {name} наносит удар — {damage} урона'
+    fast_hit: '{icon} {name} успевает ударить ещё раз — {damage} урона'
+    regen: 💊 {name} регенерирует — +{healed} HP
+    regen_nothing: 💊 {name} регенерирует, но почти не восстанавливает HP
+    hp: '❤️ {name}: {chain}'
+    hp_defeated: '💀 {name}: {chain} — повержен'
+    hp_unchanged: '{hp} HP (без изменений)'
+    hp_damage: '{hp} (-{damage} урон)'
+    hp_blocked: '{hp} (не пробил)'
+    hp_regen: '{hp} (+{healed} регенерация)'
+    hp_weak_regen: '{hp} (почти не помогла)'
   not_ready: 'Ты небоеспособен: {health} HP (нужно минимум {threshold}). Дай себе время восстановиться.'
   summary: |-
     ⚔️ Бой

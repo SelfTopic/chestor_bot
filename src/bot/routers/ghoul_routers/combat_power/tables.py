@@ -6,11 +6,15 @@ from selfrot.types import (
     InputRichMessage,
 )
 
+from typing import Any
+
+from src.bot.dialogs import Dialogs
 from src.bot.services import BattleEngine, GhoulService
 from src.bot.services.battle_engine.core import StatBreakdown, compute_stat_breakdown
 from src.bot.utils import get_hunger_tier
 from src.database.models import Ghoul, User
 
+from ....context import AppContext
 from ...rich import paragraph, table_cell
 
 _STAT_LABELS: list[tuple[str, str]] = [
@@ -27,6 +31,7 @@ def _fmt(value: float) -> str:
 
 
 def combat_power_rich(
+    ctx: AppContext[Any],
     user: User,
     ghoul: Ghoul,
     danger_rank: str,
@@ -112,22 +117,18 @@ def combat_power_rich(
         is_striped=True,
     )
 
+    phrases = Dialogs.combat_power.rich
     blocks: list[InputRichBlock] = [
         InputRichBlockSectionHeading(
-            text=f"⚡ Боевая мощь гуля {danger_rank} ранга {user.full_name}", size=3
+            text=ctx.text(phrases.title(danger_rank=danger_rank, name=user.full_name)),
+            size=3,
         ),
         vacuum_table,
         InputRichBlockDivider(),
-        paragraph(
-            "Самое правое значение в таблице ниже - значение, которое реально "
-            "будет использоваться в бою."
-        ),
+        paragraph(ctx.text(phrases.combat_note())),
         combat_table,
         InputRichBlockDivider(),
-        paragraph('Если надо узнать, как голод влияет на статистики - напиши "голод".'),
-        paragraph(
-            "Если надо узнать, как кагуне влияет на статистики - используй /kagune."
-        ),
+        *(paragraph(text) for text in ctx.text(phrases.hints()).split("\n\n")),
     ]
 
     return InputRichMessage(blocks=blocks)

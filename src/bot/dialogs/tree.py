@@ -480,7 +480,26 @@ class _CoffeeDialogs:
         return Line("coffee.snap_limit", {})
 
 
+class _CombatPowerRichDialogs:
+    def combat_note(self) -> Line:
+        return Line("combat_power.rich.combat_note", {})
+
+    def hints(self) -> Line:
+        return Line("combat_power.rich.hints", {})
+
+    def title(self, *, danger_rank: object, name: object) -> Line:
+        return Line(
+            "combat_power.rich.title",
+            {
+                "danger_rank": danger_rank,
+                "name": name,
+            },
+        )
+
+
 class _CombatPowerDialogs:
+    rich = _CombatPowerRichDialogs()
+
     def full(
         self,
         *,
@@ -791,9 +810,83 @@ class _ErrorsDialogs:
         return Line("errors.username_not_found", {"username": username})
 
 
+class _FightLogDialogs:
+    def blocked(self, *, icon: object, name: object) -> Line:
+        return Line("fight.log.blocked", {"icon": icon, "name": name})
+
+    def fast_hit(self, *, damage: object, icon: object, name: object) -> Line:
+        return Line(
+            "fight.log.fast_hit",
+            {
+                "damage": damage,
+                "icon": icon,
+                "name": name,
+            },
+        )
+
+    def fast_miss(self, *, icon: object, name: object) -> Line:
+        return Line("fight.log.fast_miss", {"icon": icon, "name": name})
+
+    def hit(self, *, damage: object, icon: object, name: object) -> Line:
+        return Line("fight.log.hit", {"damage": damage, "icon": icon, "name": name})
+
+    def hp(self, *, chain: object, name: object) -> Line:
+        return Line("fight.log.hp", {"chain": chain, "name": name})
+
+    def hp_blocked(self, *, hp: object) -> Line:
+        return Line("fight.log.hp_blocked", {"hp": hp})
+
+    def hp_damage(self, *, damage: object, hp: object) -> Line:
+        return Line("fight.log.hp_damage", {"damage": damage, "hp": hp})
+
+    def hp_defeated(self, *, chain: object, name: object) -> Line:
+        return Line("fight.log.hp_defeated", {"chain": chain, "name": name})
+
+    def hp_regen(self, *, healed: object, hp: object) -> Line:
+        return Line("fight.log.hp_regen", {"healed": healed, "hp": hp})
+
+    def hp_unchanged(self, *, hp: object) -> Line:
+        return Line("fight.log.hp_unchanged", {"hp": hp})
+
+    def hp_weak_regen(self, *, hp: object) -> Line:
+        return Line("fight.log.hp_weak_regen", {"hp": hp})
+
+    def miss(self, *, icon: object, name: object) -> Line:
+        return Line("fight.log.miss", {"icon": icon, "name": name})
+
+    def regen(self, *, healed: object, name: object) -> Line:
+        return Line("fight.log.regen", {"healed": healed, "name": name})
+
+    def regen_nothing(self, *, name: object) -> Line:
+        return Line("fight.log.regen_nothing", {"name": name})
+
+    def round(self, *, number: object) -> Line:
+        return Line("fight.log.round", {"number": number})
+
+
 class _FightDialogs:
+    log = _FightLogDialogs()
+
+    def defeated(self, *, name: object) -> Line:
+        return Line("fight.defeated", {"name": name})
+
+    def draw(self) -> Line:
+        return Line("fight.draw", {})
+
+    def final_hp(self, *, hp: object, name: object) -> Line:
+        return Line("fight.final_hp", {"hp": hp, "name": name})
+
+    def lost_on_rounds(self, *, name: object) -> Line:
+        return Line("fight.lost_on_rounds", {"name": name})
+
     def not_ready(self, *, health: object, threshold: object) -> Line:
         return Line("fight.not_ready", {"health": health, "threshold": threshold})
+
+    def rank(self, *, name: object, rank: object) -> Line:
+        return Line("fight.rank", {"name": name, "rank": rank})
+
+    def rounds_title(self, *, count: object) -> Line:
+        return Line("fight.rounds_title", {"count": count})
 
     def summary(
         self,
@@ -818,6 +911,15 @@ class _FightDialogs:
                 "winner_line": winner_line,
             },
         )
+
+    def title(self) -> Line:
+        return Line("fight.title", {})
+
+    def versus(self) -> Line:
+        return Line("fight.versus", {})
+
+    def winner(self, *, name: object) -> Line:
+        return Line("fight.winner", {"name": name})
 
 
 class _FunCalculatorDialogs:
@@ -1787,6 +1889,9 @@ PLACEHOLDERS: dict[str, frozenset[str]] = {
             "vacuum_strength",
         }
     ),
+    "combat_power.rich.combat_note": frozenset(),
+    "combat_power.rich.hints": frozenset(),
+    "combat_power.rich.title": frozenset({"danger_rank", "name"}),
     "combat_power.short": frozenset({"effective_power", "vacuum_power"}),
     "duel.accepted": frozenset(),
     "duel.buttons.consent_initiator": frozenset(),
@@ -1849,7 +1954,28 @@ PLACEHOLDERS: dict[str, frozenset[str]] = {
     "errors.unexpected": frozenset({"error"}),
     "errors.user_not_found": frozenset({"query"}),
     "errors.username_not_found": frozenset({"username"}),
+    "fight.defeated": frozenset({"name"}),
+    "fight.draw": frozenset(),
+    "fight.final_hp": frozenset({"hp", "name"}),
+    "fight.log.blocked": frozenset({"icon", "name"}),
+    "fight.log.fast_hit": frozenset({"damage", "icon", "name"}),
+    "fight.log.fast_miss": frozenset({"icon", "name"}),
+    "fight.log.hit": frozenset({"damage", "icon", "name"}),
+    "fight.log.hp": frozenset({"chain", "name"}),
+    "fight.log.hp_blocked": frozenset({"hp"}),
+    "fight.log.hp_damage": frozenset({"damage", "hp"}),
+    "fight.log.hp_defeated": frozenset({"chain", "name"}),
+    "fight.log.hp_regen": frozenset({"healed", "hp"}),
+    "fight.log.hp_unchanged": frozenset({"hp"}),
+    "fight.log.hp_weak_regen": frozenset({"hp"}),
+    "fight.log.miss": frozenset({"icon", "name"}),
+    "fight.log.regen": frozenset({"healed", "name"}),
+    "fight.log.regen_nothing": frozenset({"name"}),
+    "fight.log.round": frozenset({"number"}),
+    "fight.lost_on_rounds": frozenset({"name"}),
     "fight.not_ready": frozenset({"health", "threshold"}),
+    "fight.rank": frozenset({"name", "rank"}),
+    "fight.rounds_title": frozenset({"count"}),
     "fight.summary": frozenset(
         {
             "hp_line_a",
@@ -1861,6 +1987,9 @@ PLACEHOLDERS: dict[str, frozenset[str]] = {
             "winner_line",
         }
     ),
+    "fight.title": frozenset(),
+    "fight.versus": frozenset(),
+    "fight.winner": frozenset({"name"}),
     "fun.calculator.division_by_zero": frozenset(),
     "fun.calculator.too_big": frozenset(),
     "fun.nobody": frozenset(),

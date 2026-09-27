@@ -60,7 +60,7 @@ class CombatPowerHandler(MessageHandler[AppContext[TextUserMessage]]):
         await answer_rich_or_text(
             ctx.message,
             combat_power_rich(
-                user, ghoul, danger_rank, ghoul_service, ctx.battle_engine
+                ctx, user, ghoul, danger_rank, ghoul_service, ctx.battle_engine
             ),
             lambda: self.plain_text(user, ghoul, danger_rank),
             what="combat power",
