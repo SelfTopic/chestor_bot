@@ -2,6 +2,8 @@ from selfrot import CommandArgs, MessageHandler, Rest
 from selfrot.exceptions import CommandArgsError
 from selfrot.filter import HasReplyUser, HasUser
 
+from src.bot.dialogs import Dialogs
+
 from ....context import AppContext
 from ...types import TextUserMessage, TextUserReplyMessage
 from ...utils import full_name
@@ -17,10 +19,7 @@ class AmountArgs(CommandArgs):
 class TransferToRepliedHandler(MessageHandler[AppContext[TextUserReplyMessage]]):
     command = transfer_command(AmountArgs)
     query = command & HasUser() & HasReplyUser()
-    usage = (
-        "Укажи сумму перевода. Пример: /transfer 500 "
-        "(или «перевести 500», «подать 500», «кинуть 500»)"
-    )
+    usage = Dialogs.transfer.reply_usage()
 
     async def handle(self) -> None:
         args = self.command.parse(self.ctx)
@@ -31,7 +30,7 @@ class TransferToRepliedHandler(MessageHandler[AppContext[TextUserReplyMessage]])
 
     async def on_error(self, exc: Exception) -> None:
         if isinstance(exc, CommandArgsError):
-            await self.ctx.message.reply(self.usage)
+            await self.ctx.message.reply(self.ctx.text(self.usage))
             return
 
         raise exc
@@ -46,13 +45,7 @@ class ReceiverArgs(CommandArgs):
 class TransferToUserHandler(MessageHandler[AppContext[TextUserMessage]]):
     command = transfer_command(ReceiverArgs)
     query = command & HasUser() & ~HasReplyUser()
-    usage = (
-        "Использование:\n"
-        "/transfer <сумма> — в ответ на сообщение получателя\n"
-        "/transfer <id или @username> <сумма>\n\n"
-        "Команду можно вызывать и так: перевести, подать, кинуть.\n"
-        "Пример: /transfer @username 500 (или «кинуть @username 500»)"
-    )
+    usage = Dialogs.transfer.usage()
 
     async def handle(self) -> None:
         args = self.command.parse(self.ctx)
@@ -60,7 +53,9 @@ class TransferToUserHandler(MessageHandler[AppContext[TextUserMessage]]):
         query = args.receiver.strip()
         receiver = await self.ctx.transfer_service.resolve_user(query)
         if not receiver:
-            await self.ctx.message.reply(f"❌ Пользователь не найден: {query}")
+            await self.ctx.message.reply(
+                self.ctx.text(Dialogs.errors.user_not_found(query=query))
+            )
             return
 
         await ask_confirmation(
@@ -72,7 +67,7 @@ class TransferToUserHandler(MessageHandler[AppContext[TextUserMessage]]):
 
     async def on_error(self, exc: Exception) -> None:
         if isinstance(exc, CommandArgsError):
-            await self.ctx.message.reply(self.usage)
+            await self.ctx.message.reply(self.ctx.text(self.usage))
             return
 
         raise exc

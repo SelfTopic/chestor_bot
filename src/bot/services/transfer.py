@@ -8,7 +8,10 @@ from ..exceptions import (
     InsufficientBalanceError,
     InvalidTransferAmountError,
     ReceiverLimitExceededError,
+    ReceiverMissingError,
+    ReceiverVanishedError,
     SelfTransferError,
+    SenderMissingError,
     SenderTooNewError,
 )
 from ..game_configs import TRANSFER_CONFIG
@@ -36,8 +39,7 @@ class TransferService:
     async def validate(self, sender_id: int, receiver_id: int, amount: int) -> None:
         if amount < TRANSFER_CONFIG.min_amount or amount > TRANSFER_CONFIG.max_amount:
             raise InvalidTransferAmountError(
-                f"Сумма перевода должна быть от {TRANSFER_CONFIG.min_amount} "
-                f"до {TRANSFER_CONFIG.max_amount}"
+                TRANSFER_CONFIG.min_amount, TRANSFER_CONFIG.max_amount
             )
 
         if sender_id == receiver_id:
@@ -45,15 +47,12 @@ class TransferService:
 
         sender = await self.user_repository.get(sender_id)
         if not sender:
-            raise SenderTooNewError("Отправитель не найден")
+            raise SenderMissingError()
 
         min_age = timedelta(days=TRANSFER_CONFIG.min_sender_account_age_days)
         account_age = utcnow_naive() - sender.created_at
         if account_age < min_age:
-            raise SenderTooNewError(
-                f"Переводы доступны только аккаунтам старше "
-                f"{TRANSFER_CONFIG.min_sender_account_age_days} дн."
-            )
+            raise SenderTooNewError(TRANSFER_CONFIG.min_sender_account_age_days)
 
         if sender.balance < amount:
             # Ранняя проверка, чтобы не гонять человека по подтверждениям зря; источник
@@ -62,7 +61,7 @@ class TransferService:
 
         receiver = await self.user_repository.get(receiver_id)
         if not receiver:
-            raise SenderTooNewError("Получатель не найден")
+            raise ReceiverMissingError()
 
         received_last_24h = await self.transfer_repository.count_received_last_24h(
             receiver_id
@@ -90,7 +89,7 @@ class TransferService:
         if not receiver:
             # Получателя удалили после validate(): исключение откатит всю транзакцию вместе
             # со списанием.
-            raise InsufficientBalanceError("Получатель не найден, перевод отменён")
+            raise ReceiverVanishedError()
 
         receiver_before = receiver.balance - amount
         await self.balances_log_repository.insert(

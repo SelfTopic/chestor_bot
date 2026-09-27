@@ -18,6 +18,7 @@ profile:
     Для открытия расового профиля используйте команду /race_profile или 'распрофиль'
 errors:
   unexpected: 'Ошибка: {error}'
+  user_not_found: '❌ Пользователь не найден: {query}'
   username_not_found: 'Ошибка: Пользователь с username {username} не найден'
   chat_not_found: 'Ошибка: Чат не найден в базе данных'
   media_not_found: 'Ошибка: Медиа не найдено в базе данных'
@@ -55,6 +56,40 @@ rp:
   delete_usage: 'Ошибка: не указаны аргументы для удаления. используйте /del_rp <command>'
   not_found: 'Ошибка: Такой Role-Play команды не существует'
   limit_reached: 'Ошибка: RP command limit reached ({limit})'
+transfer:
+  ask: |-
+    Перевести {amount} CheSton's пользователю {receiver}?
+
+    Выбери именно кнопку «{confirm}» — остальные отменяют перевод.
+  ask_again: |-
+    Последнее подтверждение: перевести {amount} CheSton's? Это нельзя отменить.
+
+    Выбери именно кнопку «{confirm}» — остальные отменяют перевод.
+  done: ✅ Переведено {amount} CheSton's.
+  cancelled: Перевод отменён.
+  reply_usage: 'Укажи сумму перевода. Пример: /transfer 500 (или «перевести 500», «подать 500», «кинуть 500»)'
+  usage: |-
+    Использование:
+    /transfer <сумма> — в ответ на сообщение получателя
+    /transfer <id или @username> <сумма>
+
+    Команду можно вызывать и так: перевести, подать, кинуть.
+    Пример: /transfer @username 500 (или «кинуть @username 500»)
+  buttons:
+    confirm: подтвердить
+    decline: не подтвердить
+    surely_decline: точно не подтвердить
+    confirm_decline: подтвердить что не подтверждаю
+  errors:
+    failed: ❌ Перевод не выполнен
+    amount_out_of_range: ❌ Сумма перевода должна быть от {min_amount} до {max_amount}
+    self_transfer: ❌ Нельзя перевести деньги самому себе
+    sender_missing: ❌ Отправитель не найден
+    sender_too_new: ❌ Переводы доступны только аккаунтам старше {days} дн.
+    insufficient_balance: ❌ Недостаточно средств для перевода
+    receiver_missing: ❌ Получатель не найден
+    receiver_vanished: ❌ Получатель не найден, перевод отменён
+    receiver_limit: ❌ Этот аккаунт уже получил слишком много переводов за последние сутки
 lottery:
   usage: '❌ Неверный формат команды. Используйте: депнуть <цвет> <ставка>'
   failed: ❌ Произошла ошибка при обработке вашей ставки

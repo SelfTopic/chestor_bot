@@ -1,43 +1,45 @@
-class TransferError(Exception):
-    def __init__(self, message: str = "Перевод не выполнен") -> None:
-        super().__init__(message)
+class TransferError(Exception): ...
 
 
 class InvalidTransferAmountError(TransferError):
-    def __init__(self, message: str = "Некорректная сумма перевода") -> None:
-        super().__init__(message)
+    def __init__(self, min_amount: int, max_amount: int) -> None:
+        super().__init__(min_amount, max_amount)
+        self.min_amount = min_amount
+        self.max_amount = max_amount
 
 
-class SelfTransferError(TransferError):
-    def __init__(self, message: str = "Нельзя перевести деньги самому себе") -> None:
-        super().__init__(message)
+class SelfTransferError(TransferError): ...
 
 
-class InsufficientBalanceError(TransferError):
-    def __init__(self, message: str = "Недостаточно средств для перевода") -> None:
-        super().__init__(message)
+class SenderMissingError(TransferError): ...
 
 
 class SenderTooNewError(TransferError):
-    def __init__(
-        self, message: str = "Аккаунт отправителя слишком новый для переводов"
-    ) -> None:
-        super().__init__(message)
+    def __init__(self, min_age_days: int) -> None:
+        super().__init__(min_age_days)
+        self.min_age_days = min_age_days
 
 
-class ReceiverLimitExceededError(TransferError):
-    def __init__(
-        self,
-        message: str = "Этот аккаунт уже получил слишком много переводов за последние сутки",
-    ) -> None:
-        super().__init__(message)
+class InsufficientBalanceError(TransferError): ...
+
+
+class ReceiverMissingError(TransferError): ...
+
+
+class ReceiverVanishedError(TransferError): ...
+
+
+class ReceiverLimitExceededError(TransferError): ...
 
 
 __all__ = [
     "TransferError",
     "InvalidTransferAmountError",
     "SelfTransferError",
-    "InsufficientBalanceError",
+    "SenderMissingError",
     "SenderTooNewError",
+    "InsufficientBalanceError",
+    "ReceiverMissingError",
+    "ReceiverVanishedError",
     "ReceiverLimitExceededError",
 ]

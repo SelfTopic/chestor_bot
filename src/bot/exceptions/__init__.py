@@ -27,7 +27,10 @@ from .transfer import (
     InsufficientBalanceError,
     InvalidTransferAmountError,
     ReceiverLimitExceededError,
+    ReceiverMissingError,
+    ReceiverVanishedError,
     SelfTransferError,
+    SenderMissingError,
     SenderTooNewError,
     TransferError,
 )
@@ -66,4 +69,7 @@ __all__ = [
     "InsufficientBalanceError",
     "SenderTooNewError",
     "ReceiverLimitExceededError",
+    "ReceiverMissingError",
+    "ReceiverVanishedError",
+    "SenderMissingError",
 ]

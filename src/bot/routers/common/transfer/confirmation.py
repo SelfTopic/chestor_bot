@@ -4,15 +4,17 @@ from selfrot.filter import HasMessageCallbackQuery, InState
 from selfrot.handlers import CallbackQueryHandler
 from selfrot.types import Message
 
+from src.bot.dialogs import Dialogs
 from src.bot.exceptions import TransferError
 
 from ....context import AppContext
 from ...types import DataMessageCallbackQuery
 from .flow import (
-    CONFIRM_LABEL,
+    CONFIRM_BUTTON,
     TransferPress,
     TransferStates,
     build_confirmation_keyboard,
+    transfer_error_line,
 )
 
 logger = logging.getLogger(__name__)
@@ -20,7 +22,7 @@ logger = logging.getLogger(__name__)
 
 async def _cancel(ctx: AppContext[DataMessageCallbackQuery], message: Message) -> None:
     await ctx.fsm.clear()
-    await message.edit_text("Перевод отменён.")
+    await message.edit_text(ctx.text(Dialogs.transfer.cancelled()))
     await ctx.callback_query.answer()
 
 
@@ -43,9 +45,12 @@ class TransferStep1Handler(CallbackQueryHandler[AppContext[DataMessageCallbackQu
 
         await self.ctx.fsm.set(TransferStates.confirm_step_2, data)
         await message.edit_text(
-            f"Последнее подтверждение: перевести {data.amount} CheSton's? Это нельзя отменить.\n\n"
-            f"Выбери именно кнопку «{CONFIRM_LABEL}» — остальные отменяют перевод.",
-            reply_markup=build_confirmation_keyboard(step=2),
+            self.ctx.text(
+                Dialogs.transfer.ask_again(
+                    amount=data.amount, confirm=self.ctx.text(CONFIRM_BUTTON)
+                )
+            ),
+            reply_markup=build_confirmation_keyboard(self.ctx, step=2),
         )
         await callback.answer()
 
@@ -76,9 +81,11 @@ class TransferStep2Handler(CallbackQueryHandler[AppContext[DataMessageCallbackQu
             await transfer_service.transfer(sender_id, data.receiver_id, data.amount)
         except TransferError as e:
             logger.info(f"Transfer failed at final confirmation: {e}")
-            await message.edit_text(f"❌ {e}")
+            await message.edit_text(self.ctx.text(transfer_error_line(e)))
             await callback.answer()
             return
 
-        await message.edit_text(f"✅ Переведено {data.amount} CheSton's.")
+        await message.edit_text(
+            self.ctx.text(Dialogs.transfer.done(amount=data.amount))
+        )
         await callback.answer()

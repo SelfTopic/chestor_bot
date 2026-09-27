@@ -109,6 +109,9 @@ class _ErrorsDialogs:
     def unexpected(self, *, error: object) -> Line:
         return Line("errors.unexpected", {"error": error})
 
+    def user_not_found(self, *, query: object) -> Line:
+        return Line("errors.user_not_found", {"query": query})
+
     def username_not_found(self, *, username: object) -> Line:
         return Line("errors.username_not_found", {"username": username})
 
@@ -470,6 +473,85 @@ class _TopsDialogs:
     balance = _TopsBalanceDialogs()
 
 
+class _TransferButtonsDialogs:
+    def confirm(self) -> Line:
+        return Line("transfer.buttons.confirm", {})
+
+    def confirm_decline(self) -> Line:
+        return Line("transfer.buttons.confirm_decline", {})
+
+    def decline(self) -> Line:
+        return Line("transfer.buttons.decline", {})
+
+    def surely_decline(self) -> Line:
+        return Line("transfer.buttons.surely_decline", {})
+
+
+class _TransferErrorsDialogs:
+    def amount_out_of_range(self, *, max_amount: object, min_amount: object) -> Line:
+        return Line(
+            "transfer.errors.amount_out_of_range",
+            {
+                "max_amount": max_amount,
+                "min_amount": min_amount,
+            },
+        )
+
+    def failed(self) -> Line:
+        return Line("transfer.errors.failed", {})
+
+    def insufficient_balance(self) -> Line:
+        return Line("transfer.errors.insufficient_balance", {})
+
+    def receiver_limit(self) -> Line:
+        return Line("transfer.errors.receiver_limit", {})
+
+    def receiver_missing(self) -> Line:
+        return Line("transfer.errors.receiver_missing", {})
+
+    def receiver_vanished(self) -> Line:
+        return Line("transfer.errors.receiver_vanished", {})
+
+    def self_transfer(self) -> Line:
+        return Line("transfer.errors.self_transfer", {})
+
+    def sender_missing(self) -> Line:
+        return Line("transfer.errors.sender_missing", {})
+
+    def sender_too_new(self, *, days: object) -> Line:
+        return Line("transfer.errors.sender_too_new", {"days": days})
+
+
+class _TransferDialogs:
+    buttons = _TransferButtonsDialogs()
+    errors = _TransferErrorsDialogs()
+
+    def ask(self, *, amount: object, confirm: object, receiver: object) -> Line:
+        return Line(
+            "transfer.ask",
+            {
+                "amount": amount,
+                "confirm": confirm,
+                "receiver": receiver,
+            },
+        )
+
+    def ask_again(self, *, amount: object, confirm: object) -> Line:
+        return Line("transfer.ask_again", {"amount": amount, "confirm": confirm})
+
+    def cancelled(self) -> Line:
+        return Line("transfer.cancelled", {})
+
+    def done(self, *, amount: object) -> Line:
+        return Line("transfer.done", {"amount": amount})
+
+    def reply_usage(self) -> Line:
+        return Line("transfer.reply_usage", {})
+
+    def usage(self) -> Line:
+        return Line("transfer.usage", {})
+
+
 class _Dialogs:
     coffee = _CoffeeDialogs()
     combat_power = _CombatPowerDialogs()
@@ -486,6 +568,7 @@ class _Dialogs:
     snap = _SnapDialogs()
     status = _StatusDialogs()
     tops = _TopsDialogs()
+    transfer = _TransferDialogs()
 
     def balance(self, *, balance: object, name: object) -> Line:
         return Line("balance", {"balance": balance, "name": name})
@@ -535,6 +618,7 @@ PLACEHOLDERS: dict[str, frozenset[str]] = {
     "errors.media_not_found": frozenset(),
     "errors.not_enough_money": frozenset({"money"}),
     "errors.unexpected": frozenset({"error"}),
+    "errors.user_not_found": frozenset({"query"}),
     "errors.username_not_found": frozenset({"username"}),
     "fight.not_ready": frozenset({"health", "threshold"}),
     "fight.summary": frozenset(
@@ -640,4 +724,23 @@ PLACEHOLDERS: dict[str, frozenset[str]] = {
     "tops.balance.bad_count": frozenset(),
     "tops.balance.row": frozenset({"balance", "name", "place"}),
     "tops.balance.text": frozenset({"count", "rows"}),
+    "transfer.ask": frozenset({"amount", "confirm", "receiver"}),
+    "transfer.ask_again": frozenset({"amount", "confirm"}),
+    "transfer.buttons.confirm": frozenset(),
+    "transfer.buttons.confirm_decline": frozenset(),
+    "transfer.buttons.decline": frozenset(),
+    "transfer.buttons.surely_decline": frozenset(),
+    "transfer.cancelled": frozenset(),
+    "transfer.done": frozenset({"amount"}),
+    "transfer.errors.amount_out_of_range": frozenset({"max_amount", "min_amount"}),
+    "transfer.errors.failed": frozenset(),
+    "transfer.errors.insufficient_balance": frozenset(),
+    "transfer.errors.receiver_limit": frozenset(),
+    "transfer.errors.receiver_missing": frozenset(),
+    "transfer.errors.receiver_vanished": frozenset(),
+    "transfer.errors.self_transfer": frozenset(),
+    "transfer.errors.sender_missing": frozenset(),
+    "transfer.errors.sender_too_new": frozenset({"days"}),
+    "transfer.reply_usage": frozenset(),
+    "transfer.usage": frozenset(),
 }
