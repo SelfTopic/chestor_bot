@@ -155,9 +155,9 @@ JSON, `.get()`) сужай через `isinstance` / `assert`, прежде че
 
 - `dependency-injector`: после ухода aiogram контейнер — просто список фабрик под
   `AppContext`. Можно собирать сервисы прямо в `AppContext` и убрать зависимость.
-- Модули, которые никто не импортирует (мёртвые ещё до ухода aiogram):
-  `utils/data_parser.py`, `utils/race_calculate.py`, `services/duration_parser.py`.
-  Решение за владельцем. `utils/generate_lottery_video.py` не из их числа: это скрипт
+- `services/duration_parser.py` (`DurationParser`: «30 мин», `2h`, `1d` → `Duration`) пока
+  никто не вызывает: оставлен для длительностей в `/ban_bot` и будущем модуле модерации
+  (муты, баны). `utils/generate_lottery_video.py` тоже не импортируется, но это скрипт
   (`python -m src.bot.utils.generate_lottery_video`), генерирует видео для лотереи
   через `services/lottery_video_genertor.py`.
 
