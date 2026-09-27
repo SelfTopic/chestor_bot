@@ -30,13 +30,13 @@ async def _perform_set_stat(
             target, field, value, admin_id=admin_id
         )
     except UserNotFound as e:
-        await ctx.message.answer(ctx.text(Dialogs.errors.user_not_found(query=e.query)))
+        await ctx.say(Dialogs.errors.user_not_found(query=e.query))
         return
     except UnknownStatField as e:
-        await ctx.message.answer(ctx.text(stats.unknown_field(field=e.field)))
+        await ctx.say(stats.unknown_field(field=e.field))
         return
     except GhoulNotFound:
-        await ctx.message.answer(ctx.text(stats.no_ghoul()))
+        await ctx.say(stats.no_ghoul())
         return
 
     target_label = (
@@ -45,7 +45,7 @@ async def _perform_set_stat(
     done = stats.done(
         field=result.field, target=ctx.text(target_label), value=result.value
     )
-    await ctx.message.answer(ctx.text(done), parse_mode="HTML")
+    await ctx.say(done, parse_mode="HTML")
 
 
 class SetStatRepliedArgs(CommandArgs):

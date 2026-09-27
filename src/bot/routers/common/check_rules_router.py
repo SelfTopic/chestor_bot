@@ -21,7 +21,7 @@ class CheckRulesHandler(MessageHandler[AppContext[TextMessage]]):
             raise ChatNotFoundInDatabase()
 
         if not chat.rules:
-            await message.answer(self.ctx.text(Dialogs.rules.missing()))
+            await self.ctx.say(Dialogs.rules.missing())
             return
 
         await message.answer(chat.rules)

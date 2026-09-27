@@ -56,7 +56,6 @@ class PickHandler(MessageHandler[AppContext[TextMessage]]):
     async def handle(self) -> None:
         text = self.cmd.parse(self.ctx).items
         items = [item.strip() for item in ITEM_SEPARATOR.split(text) if item.strip()]
-        message = self.ctx.message
 
         if len(items) < 2:
             line = self.too_few
@@ -66,7 +65,7 @@ class PickHandler(MessageHandler[AppContext[TextMessage]]):
             line = self.too_long
         else:
             line = Dialogs.fun.pick.result(choice=random.choice(items))
-        await message.reply(self.ctx.text(line))
+        await self.ctx.say(line, reply=True)
 
 
 class WhoArgs(CommandArgs):
@@ -79,17 +78,15 @@ class WhoHandler(MessageHandler[AppContext[TextMessage]]):
 
     async def handle(self) -> None:
         question = self.cmd.parse(self.ctx).question
-        message = self.ctx.message
 
         mention = await random_mention(self.ctx)
         if mention is None:
-            await message.reply(self.ctx.text(NOBODY))
+            await self.ctx.say(NOBODY, reply=True)
             return
 
-        await message.reply(
-            self.ctx.text(
-                Dialogs.fun.who(question=html.escape(question), mention=mention)
-            ),
+        await self.ctx.say(
+            Dialogs.fun.who(question=html.escape(question), mention=mention),
+            reply=True,
             parse_mode="HTML",
         )
 
@@ -111,11 +108,12 @@ class RandomParticipantHandler(MessageHandler[AppContext[TextMessage]]):
     async def handle(self) -> None:
         mention = await random_mention(self.ctx)
         if mention is None:
-            await self.ctx.message.reply(self.ctx.text(NOBODY))
+            await self.ctx.say(NOBODY, reply=True)
             return
 
-        await self.ctx.message.reply(
-            self.ctx.text(Dialogs.fun.random_participant(mention=mention)),
+        await self.ctx.say(
+            Dialogs.fun.random_participant(mention=mention),
+            reply=True,
             parse_mode="HTML",
         )
 
@@ -136,7 +134,7 @@ class RandomNumberHandler(MessageHandler[AppContext[TextMessage]]):
         args = self.cmd.parse(self.ctx)
         low, high = sorted((int(args.low), int(args.high)))
         number = random.randint(low, high)
-        await self.ctx.message.reply(self.ctx.text(Dialogs.fun.number(number=number)))
+        await self.ctx.say(Dialogs.fun.number(number=number), reply=True)
 
 
 class CalculatorHandler(MessageHandler[AppContext[TextMessage]]):
@@ -148,11 +146,10 @@ class CalculatorHandler(MessageHandler[AppContext[TextMessage]]):
         assert outcome is not None
 
         if isinstance(outcome, DivisionByZero):
-            text = self.ctx.text(Dialogs.fun.calculator.division_by_zero())
+            await self.ctx.say(Dialogs.fun.calculator.division_by_zero(), reply=True)
         elif isinstance(outcome, ResultTooBig):
-            text = self.ctx.text(Dialogs.fun.calculator.too_big())
+            await self.ctx.say(Dialogs.fun.calculator.too_big(), reply=True)
         elif isinstance(outcome, float) and outcome.is_integer():
-            text = str(int(outcome))
+            await self.ctx.message.reply(str(int(outcome)))
         else:
-            text = str(outcome)
-        await self.ctx.message.reply(text)
+            await self.ctx.message.reply(str(outcome))

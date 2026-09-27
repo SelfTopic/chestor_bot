@@ -30,7 +30,7 @@ class TransferToRepliedHandler(MessageHandler[AppContext[TextUserReplyMessage]])
 
     async def on_error(self, exc: Exception) -> None:
         if isinstance(exc, CommandArgsError):
-            await self.ctx.message.reply(self.ctx.text(self.usage))
+            await self.ctx.say(self.usage, reply=True)
             return
 
         raise exc
@@ -53,9 +53,7 @@ class TransferToUserHandler(MessageHandler[AppContext[TextUserMessage]]):
         query = args.receiver.strip()
         receiver = await self.ctx.transfer_service.resolve_user(query)
         if not receiver:
-            await self.ctx.message.reply(
-                self.ctx.text(Dialogs.errors.user_not_found(query=query))
-            )
+            await self.ctx.say(Dialogs.errors.user_not_found(query=query), reply=True)
             return
 
         await ask_confirmation(
@@ -67,7 +65,7 @@ class TransferToUserHandler(MessageHandler[AppContext[TextUserMessage]]):
 
     async def on_error(self, exc: Exception) -> None:
         if isinstance(exc, CommandArgsError):
-            await self.ctx.message.reply(self.ctx.text(self.usage))
+            await self.ctx.say(self.usage, reply=True)
             return
 
         raise exc

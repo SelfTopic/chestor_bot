@@ -21,11 +21,9 @@ class ProfileHandler(MessageHandler[AppContext[UserMessage]]):
             else race.value["name"]
         )
 
-        await self.ctx.answer_message(
-            self.ctx.text(
-                Dialogs.profile.card(
-                    name=user.full_name, race=race_name, balance=str(user.balance)
-                )
+        await self.ctx.say(
+            Dialogs.profile.card(
+                name=user.full_name, race=race_name, balance=str(user.balance)
             )
         )
 

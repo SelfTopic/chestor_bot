@@ -15,7 +15,7 @@ class TopSnapHandler(GhoulTopHandler, MessageHandler[AppContext[TextMessage]]):
         ctx = self.ctx
         top = await ctx.ghoul_service.get_top_snap(count)
         if not top:
-            await ctx.message.answer(ctx.text(Dialogs.tops.empty()))
+            await ctx.say(Dialogs.tops.empty())
             return
 
         names = await ctx.first_names([ghoul.telegram_id for ghoul in top])

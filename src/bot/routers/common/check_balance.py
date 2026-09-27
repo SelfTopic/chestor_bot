@@ -13,10 +13,8 @@ class BalanceHandler(MessageHandler[AppContext[UserMessage]]):
     async def handle(self) -> None:
         user = await self.ctx.db_user()
 
-        await self.ctx.answer_message(
-            self.ctx.text(
-                Dialogs.balance(balance=str(user.balance), name=user.first_name)
-            )
+        await self.ctx.say(
+            Dialogs.balance(balance=str(user.balance), name=user.first_name)
         )
 
 

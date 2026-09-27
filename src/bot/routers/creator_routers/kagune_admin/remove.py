@@ -17,7 +17,7 @@ async def _perform_remove(
     phrases = Dialogs.admin.kagune
     kagune_type = TYPE_BY_NAME.get(type_name)
     if kagune_type is None:
-        await ctx.message.answer(ctx.text(phrases.unknown_type(types=TYPE_NAMES)))
+        await ctx.say(phrases.unknown_type(types=TYPE_NAMES))
         return
 
     name = kagune_type.value["name"]
@@ -31,7 +31,7 @@ async def _perform_remove(
     except LastKaguneType:
         error = Dialogs.admin.last_kagune()
 
-    await ctx.message.answer(ctx.text(error or phrases.removed(kagune=name)))
+    await ctx.say(error or phrases.removed(kagune=name))
 
 
 class RemoveKaguneRepliedArgs(CommandArgs):

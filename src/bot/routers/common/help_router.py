@@ -11,7 +11,7 @@ class HelpHandler(MessageHandler[AppContext[TextMessage]]):
     query = Command("help")
 
     async def handle(self) -> None:
-        await self.ctx.message.answer(self.ctx.text(Dialogs.help()))
+        await self.ctx.say(Dialogs.help())
 
 
 class HelpRouter(BaseRouter[AppContext]):

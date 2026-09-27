@@ -7,7 +7,7 @@ from functools import cached_property
 
 from selfrot import BaseContext, TEvent
 from selfrot.exceptions import TelegramBadRequest
-from selfrot.types import InlineKeyboardMarkup, InputFile, Message
+from selfrot.types import InputFile, Message
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 
 from src.bot.containers import Container
@@ -244,18 +244,15 @@ class AppContext(BaseContext[TEvent]):
         *,
         reply: bool = False,
         parse_mode: str | None = None,
-        reply_markup: InlineKeyboardMarkup | None = None,
     ) -> Message:
         text = self.text(line)
         media = await self._phrase_gif(line) if len(text) <= CAPTION_LIMIT else None
         if media is not None:
             send_gif = self.reply_animation if reply else self.answer_animation
-            return await self._send_gif(
-                send_gif, media, text, parse_mode=parse_mode, reply_markup=reply_markup
-            )
+            return await self._send_gif(send_gif, media, text, parse_mode=parse_mode)
 
         send = self.reply_message if reply else self.answer_message
-        return await send(text, parse_mode=parse_mode, reply_markup=reply_markup)
+        return await send(text, parse_mode=parse_mode)
 
     # Своя сессия: say() зовут и из on_error / defer, где сессии апдейта уже нет.
     async def _phrase_gif(self, line: Line) -> Media | None:
@@ -286,13 +283,8 @@ class AppContext(BaseContext[TEvent]):
         caption: str,
         *,
         parse_mode: str | None = None,
-        reply_markup: InlineKeyboardMarkup | None = None,
     ) -> Message:
-        options = {
-            "caption": caption,
-            "parse_mode": parse_mode,
-            "reply_markup": reply_markup,
-        }
+        options = {"caption": caption, "parse_mode": parse_mode}
         try:
             sent = await send(
                 animation=media.telegram_file_id or InputFile.from_path(media.path),

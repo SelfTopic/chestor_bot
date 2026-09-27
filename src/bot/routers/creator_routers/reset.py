@@ -18,15 +18,15 @@ async def _perform_reset_ghoul(ctx: AppContext[Message], target: str) -> None:
     try:
         result = await ctx.reset_service.reset_ghoul(target)
     except UserNotFound as e:
-        await ctx.message.answer(ctx.text(Dialogs.errors.user_not_found(query=e.query)))
+        await ctx.say(Dialogs.errors.user_not_found(query=e.query))
         return
 
     if not result.ghoul_deleted:
-        await ctx.message.answer(ctx.text(Dialogs.admin.reset.no_ghoul()))
+        await ctx.say(Dialogs.admin.reset.no_ghoul())
         return
 
     done = Dialogs.admin.reset.ghoul_done(id=result.telegram_id)
-    await ctx.message.answer(ctx.text(done), parse_mode="HTML")
+    await ctx.say(done, parse_mode="HTML")
 
 
 class ResetGhoulRepliedHandler(
@@ -55,7 +55,7 @@ async def _perform_reset_user(ctx: AppContext[Message], target: str) -> None:
     try:
         result = await ctx.reset_service.reset_user(target)
     except UserNotFound as e:
-        await ctx.message.answer(ctx.text(Dialogs.errors.user_not_found(query=e.query)))
+        await ctx.say(Dialogs.errors.user_not_found(query=e.query))
         return
 
     reset = Dialogs.admin.reset
@@ -63,7 +63,7 @@ async def _perform_reset_user(ctx: AppContext[Message], target: str) -> None:
         reset.ghoul_deleted() if result.ghoul_deleted else reset.ghoul_missing()
     )
     done = reset.user_done(id=result.telegram_id, ghoul_deleted=ctx.text(ghoul_deleted))
-    await ctx.message.answer(ctx.text(done), parse_mode="HTML")
+    await ctx.say(done, parse_mode="HTML")
 
 
 class ResetUserRepliedHandler(

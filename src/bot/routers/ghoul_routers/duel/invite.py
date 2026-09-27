@@ -66,7 +66,7 @@ class DuelInvite:
                 message.user.id, telegram_id, chat_id=message.chat.id, private=private
             )
         except DuelRefused as refused:
-            await message.reply(ctx.text(self.refusal(refused)))
+            await ctx.say(self.refusal(refused), reply=True)
             return
 
         session = duel.session

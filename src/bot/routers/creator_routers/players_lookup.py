@@ -72,14 +72,14 @@ class AdminProfileHandler(MessageHandler[AppContext[TextMessage]]):
         profile = await self.ctx.player_lookup_service.get_profile(target)
         if not profile:
             not_found = Dialogs.admin.profile.not_found()
-            await self.ctx.message.answer(self.ctx.text(not_found))
+            await self.ctx.say(not_found)
             return
 
         await self.ctx.message.answer(self.profile_text(profile), parse_mode="HTML")
 
     async def on_error(self, exc: Exception) -> None:
         if isinstance(exc, CommandArgsError):
-            await self.ctx.message.reply(self.ctx.text(self.usage))
+            await self.ctx.say(self.usage, reply=True)
             return
 
         raise exc

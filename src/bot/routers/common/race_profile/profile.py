@@ -34,9 +34,7 @@ class RaceProfileHandler(MessageHandler[AppContext[UserMessage]]):
         ghoul_service = self.ctx.ghoul_service
 
         if ghoul.is_dead:
-            await self.ctx.message.answer(
-                self.ctx.text(Dialogs.ghoul.dead_profile(name=user.full_name))
-            )
+            await self.ctx.say(Dialogs.ghoul.dead_profile(name=user.full_name))
             return
 
         power = ghoul_service.calculate_power(ghoul)
@@ -70,10 +68,8 @@ class RaceProfileHandler(MessageHandler[AppContext[UserMessage]]):
             await self.send_ghoul_profile(user, ghoul)
             return
 
-        await self.ctx.message.answer(
-            self.ctx.text(
-                Dialogs.profile.card(
-                    name=user.full_name, race=race.value["name"], balance=user.balance
-                )
+        await self.ctx.say(
+            Dialogs.profile.card(
+                name=user.full_name, race=race.value["name"], balance=user.balance
             )
         )

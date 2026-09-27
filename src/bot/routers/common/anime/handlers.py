@@ -60,10 +60,8 @@ class AnimeHandler(MessageHandler[AppContext[TextMessage]]):
         )
 
         if not input_path.exists():
-            await message.answer(
-                self.ctx.text(
-                    Dialogs.anime.not_found(season=args.season, episode=args.episode)
-                )
+            await self.ctx.say(
+                Dialogs.anime.not_found(season=args.season, episode=args.episode)
             )
             return
 
@@ -72,7 +70,7 @@ class AnimeHandler(MessageHandler[AppContext[TextMessage]]):
             return
 
         if not args.start or not args.end:
-            await message.answer(self.ctx.text(self.format_error))
+            await self.ctx.say(self.format_error)
             return
 
         video_cutter = self.ctx.video_cutter_service
@@ -82,13 +80,13 @@ class AnimeHandler(MessageHandler[AppContext[TextMessage]]):
                 raise ValueError
 
         except ValueError:
-            await message.answer(self.ctx.text(Dialogs.anime.end_before_start()))
+            await self.ctx.say(Dialogs.anime.end_before_start())
             return
 
         user_id = message.user.id if message.user else message.chat.id
 
         if cut_guard.is_busy(user_id):
-            await message.answer(self.ctx.text(Dialogs.anime.busy()))
+            await self.ctx.say(Dialogs.anime.busy())
             return
 
         # Занять место до первого await: иначе два быстрых /anime подряд пройдут проверку
@@ -113,6 +111,7 @@ class AnimeHandler(MessageHandler[AppContext[TextMessage]]):
                 ),
             )
 
+            # Не say(): это сообщение потом правится через edit_text, у гифки так нельзя.
             self.processing = await message.reply(
                 self.ctx.text(
                     Dialogs.anime.cutting(
@@ -158,4 +157,4 @@ class AnimeHandler(MessageHandler[AppContext[TextMessage]]):
 
         field = exc.problems[0].field if exc.problems else ""
         line = {"start": self.start_error, "end": self.end_error}.get(field, self.usage)
-        await self.ctx.message.answer(self.ctx.text(line))
+        await self.ctx.say(line)

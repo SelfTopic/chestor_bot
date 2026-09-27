@@ -128,9 +128,8 @@ class Dispatcher(BaseDispatcher[AppContext]):
     async def on_error(self, ctx: AppContext, exc: Exception) -> None:
         await super().on_error(ctx, exc)
 
-        event = ctx.event
-        if isinstance(event, Message):
-            await event.answer(self.dialog_service.text(error_line(exc)))
+        if isinstance(ctx.event, Message):
+            await ctx.say(error_line(exc))
 
 
 def main() -> None:

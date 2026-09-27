@@ -32,13 +32,11 @@ class TopBalanceHandler(MessageHandler[AppContext[TextMessage]]):
             )
             for place, user in enumerate(top, start=1)
         )
-        await self.ctx.message.answer(
-            self.ctx.text(Dialogs.tops.balance.message(count=count, rows=rows))
-        )
+        await self.ctx.say(Dialogs.tops.balance.message(count=count, rows=rows))
 
     async def on_error(self, exc: Exception) -> None:
         if isinstance(exc, CommandArgsError):
-            await self.ctx.message.reply(self.ctx.text(self.range_error))
+            await self.ctx.say(self.range_error, reply=True)
             return
 
         raise exc

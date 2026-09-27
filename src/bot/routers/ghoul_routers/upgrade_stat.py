@@ -79,7 +79,7 @@ class UpgradeStatHandler(MessageHandler[AppContext[TextUserMessage]]):
         message = ctx.message
 
         if message.chat.type != "private":
-            await message.reply(ctx.text(Dialogs.stats.private_only()))
+            await ctx.say(Dialogs.stats.private_only(), reply=True)
             return
 
         ghoul = await ctx.db_ghoul()

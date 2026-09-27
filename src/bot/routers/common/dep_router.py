@@ -34,33 +34,29 @@ class DepnutHandler(MessageHandler[AppContext[TextUserMessage]]):
     usage = Dialogs.lottery.usage()
     failed = Dialogs.lottery.failed()
 
-    def result_text(self, dep_result: DepResult) -> str:
+    def result_line(self, dep_result: DepResult) -> Line:
         if dep_result.is_won:
             multiplier = LOTTERY_CONFIG.get_multiplier(dep_result.winning_color.value)
-            return self.ctx.text(
-                Dialogs.lottery.win(
-                    chosen_color=dep_result.chosen_color.value,
-                    winning_color=dep_result.winning_color.value,
-                    bet=dep_result.bet_amount,
-                    earned=dep_result.earned,
-                    balance=dep_result.user.balance,
-                    multiplier=f"{multiplier}x",
-                )
-            )
-
-        return self.ctx.text(
-            Dialogs.lottery.lose(
+            return Dialogs.lottery.win(
                 chosen_color=dep_result.chosen_color.value,
                 winning_color=dep_result.winning_color.value,
                 bet=dep_result.bet_amount,
+                earned=dep_result.earned,
                 balance=dep_result.user.balance,
+                multiplier=f"{multiplier}x",
             )
+
+        return Dialogs.lottery.lose(
+            chosen_color=dep_result.chosen_color.value,
+            winning_color=dep_result.winning_color.value,
+            bet=dep_result.bet_amount,
+            balance=dep_result.user.balance,
         )
 
-    async def reply_later(self, text: str) -> None:
+    async def reply_later(self, line: Line) -> None:
         # Ошибка отложенного ответа не идёт в on_error: ставка уже записана в БД.
         try:
-            await self.ctx.message.reply(text)
+            await self.ctx.say(line, reply=True)
         except Exception:
             logger.error("Failed to send delayed lottery result", exc_info=True)
 
@@ -74,7 +70,7 @@ class DepnutHandler(MessageHandler[AppContext[TextUserMessage]]):
         )
 
         if not video_path:
-            await message.reply(self.result_text(dep_result))
+            await self.ctx.say(self.result_line(dep_result), reply=True)
             return
 
         try:
@@ -106,7 +102,7 @@ class DepnutHandler(MessageHandler[AppContext[TextUserMessage]]):
         # Пауза, чтобы итог не пришёл раньше, чем доиграет гифка.
         self.defer(
             self.reply_later,
-            self.result_text(dep_result),
+            self.result_line(dep_result),
             delay=animation_duration + 1,
         )
 
@@ -144,7 +140,7 @@ class DepnutHandler(MessageHandler[AppContext[TextUserMessage]]):
                 return self.failed
 
     async def on_error(self, exc: Exception) -> None:
-        await self.ctx.message.reply(self.ctx.text(self.error_line(exc)))
+        await self.ctx.say(self.error_line(exc), reply=True)
 
 
 class DepRouter(BaseRouter[AppContext]):

@@ -34,33 +34,31 @@ class MobFightHandler(MessageHandler[AppContext[TextUserMessage]]):
                 ghoul, has_pending_confirmation=lambda g: battles.is_busy(g.telegram_id)
             )
         except FighterIsDeadError:
-            await message.reply(ctx.text(Dialogs.ghoul.dead()))
+            await ctx.say(Dialogs.ghoul.dead(), reply=True)
             return
         except FighterNotCombatReadyError as exc:
-            await message.reply(
-                ctx.text(
-                    Dialogs.fight.not_ready(health=exc.health, threshold=exc.threshold)
-                )
+            await ctx.say(
+                Dialogs.fight.not_ready(health=exc.health, threshold=exc.threshold),
+                reply=True,
             )
             return
         except FighterHasPendingBattleError:
-            await message.reply(ctx.text(self.busy_text))
+            await ctx.say(self.busy_text, reply=True)
             return
 
         remaining = await ctx.cooldown_remaining(telegram_id, COOLDOWN_NAME)
         if remaining is not None:
-            await message.reply(
-                ctx.text(
-                    Dialogs.mob.cooldown(
-                        minutes=remaining.minutes_remaining,
-                        seconds=remaining.seconds_remaining,
-                    )
-                )
+            await ctx.say(
+                Dialogs.mob.cooldown(
+                    minutes=remaining.minutes_remaining,
+                    seconds=remaining.seconds_remaining,
+                ),
+                reply=True,
             )
             return
 
         if not await battles.try_claim_mob_fight(telegram_id):
-            await message.reply(ctx.text(self.busy_text))
+            await ctx.say(self.busy_text, reply=True)
             return
 
         battle = await ctx.battle_service.fight_mob(
@@ -78,14 +76,12 @@ class MobFightHandler(MessageHandler[AppContext[TextUserMessage]]):
             outcome = ctx.text(Dialogs.mob.draw())
 
         score = await ctx.battle_service.score(telegram_id, "mob")
-        await message.answer(
-            ctx.text(
-                Dialogs.mob.summary(
-                    outcome=outcome,
-                    total=score.total,
-                    wins=score.wins,
-                    losses=score.losses,
-                )
+        await ctx.say(
+            Dialogs.mob.summary(
+                outcome=outcome,
+                total=score.total,
+                wins=score.wins,
+                losses=score.losses,
             )
         )
 

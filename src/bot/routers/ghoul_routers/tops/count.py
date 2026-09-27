@@ -38,7 +38,7 @@ class GhoulTopHandler:
     async def handle(self) -> None:
         count = self.cmd.parse(self.ctx).count
         if not 1 <= count <= 50:
-            await self.ctx.message.answer(self.ctx.text(self.out_of_range))
+            await self.ctx.say(self.out_of_range)
             return
         await self.show(count)
 
@@ -47,6 +47,6 @@ class GhoulTopHandler:
 
     async def on_error(self, exc: Exception) -> None:
         if isinstance(exc, CommandArgsError):
-            await self.ctx.message.answer(self.ctx.text(self.not_a_number))
+            await self.ctx.say(self.not_a_number)
             return
         raise exc

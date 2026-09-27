@@ -32,7 +32,7 @@ class NewRpOnMediaHandler(MessageHandler[AppContext[CaptionMessage]]):
 
         parsed = self.parse_caption(message.caption)
         if parsed is None:
-            await message.reply(self.ctx.text(self.usage))
+            await self.ctx.say(self.usage, reply=True)
             return
 
         command, action = parsed
@@ -63,9 +63,7 @@ class NewRpOnMediaHandler(MessageHandler[AppContext[CaptionMessage]]):
 
     async def on_error(self, exc: Exception) -> None:
         if isinstance(exc, RpCommandLimitReached):
-            await self.ctx.message.answer(
-                self.ctx.text(Dialogs.rp.limit_reached(limit=exc.limit))
-            )
+            await self.ctx.say(Dialogs.rp.limit_reached(limit=exc.limit))
             return
 
         raise exc
@@ -98,9 +96,7 @@ class NewRpHandler(MessageHandler[AppContext[TextMessage]]):
             type_command=TypeRpCommandEnum.TEXT,
         )
 
-        await self.ctx.message.answer(
-            self.ctx.text(Dialogs.rp.created(command=rp.command, action=rp.action))
-        )
+        await self.ctx.say(Dialogs.rp.created(command=rp.command, action=rp.action))
 
     async def on_error(self, exc: Exception) -> None:
         match exc:
@@ -110,7 +106,7 @@ class NewRpHandler(MessageHandler[AppContext[TextMessage]]):
                 line = Dialogs.rp.limit_reached(limit=limit)
             case _:
                 raise exc
-        await self.ctx.message.answer(self.ctx.text(line))
+        await self.ctx.say(line)
 
 
 class GetAllRpHandler(MessageHandler[AppContext[TextMessage]]):
@@ -121,7 +117,7 @@ class GetAllRpHandler(MessageHandler[AppContext[TextMessage]]):
         all_rp = await self.ctx.rp_commands_service.get_all(chat_id=message.chat.id)
 
         if len(all_rp) == 0:
-            await message.reply(self.ctx.text(Dialogs.rp.empty()))
+            await self.ctx.say(Dialogs.rp.empty(), reply=True)
             return
 
         rows = "\n".join(
@@ -130,7 +126,7 @@ class GetAllRpHandler(MessageHandler[AppContext[TextMessage]]):
             )
             for place, rp in enumerate(all_rp, start=1)
         )
-        await message.answer(self.ctx.text(Dialogs.rp.list(rows=rows)))
+        await self.ctx.say(Dialogs.rp.list(rows=rows))
 
 
 class DelRpArgs(CommandArgs):
@@ -150,7 +146,7 @@ class DeleteRpHandler(MessageHandler[AppContext[TextMessage]]):
             chat_id=message.chat.id, command=command
         )
 
-        await message.reply(self.ctx.text(Dialogs.rp.deleted(command=command)))
+        await self.ctx.say(Dialogs.rp.deleted(command=command), reply=True)
 
     async def on_error(self, exc: Exception) -> None:
         match exc:
@@ -160,4 +156,4 @@ class DeleteRpHandler(MessageHandler[AppContext[TextMessage]]):
                 line = Dialogs.rp.not_found()
             case _:
                 raise exc
-        await self.ctx.message.answer(self.ctx.text(line))
+        await self.ctx.say(line)

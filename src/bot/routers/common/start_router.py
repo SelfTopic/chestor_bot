@@ -13,9 +13,7 @@ class StartHandler(MessageHandler[AppContext[UserMessage]]):
     async def handle(self) -> None:
         user = await self.ctx.db_user()
 
-        await self.ctx.message.answer(
-            self.ctx.text(Dialogs.start(name=user.first_name))
-        )
+        await self.ctx.say(Dialogs.start(name=user.first_name))
 
 
 class StartRouter(BaseRouter[AppContext]):

@@ -17,22 +17,22 @@ async def _perform_clear(
 
     if type_name.lower() == "all":
         count = await cooldown_service.clear_all_cooldowns(telegram_id)
-        await ctx.message.answer(ctx.text(phrases.all_cleared(count=count)))
+        await ctx.say(phrases.all_cleared(count=count))
         return
 
     cooldown_type = type_name.upper()
     known_types = await cooldown_service.list_cooldown_types()
     if cooldown_type not in known_types:
         types = ", ".join(known_types)
-        await ctx.message.answer(ctx.text(phrases.unknown_type(types=types)))
+        await ctx.say(phrases.unknown_type(types=types))
         return
 
     cleared = await cooldown_service.clear_cooldown(telegram_id, cooldown_type)
     if not cleared:
-        await ctx.message.answer(ctx.text(phrases.not_active(type=cooldown_type)))
+        await ctx.say(phrases.not_active(type=cooldown_type))
         return
 
-    await ctx.message.answer(ctx.text(phrases.cleared(type=cooldown_type)))
+    await ctx.say(phrases.cleared(type=cooldown_type))
 
 
 class ClearCooldownRepliedArgs(CommandArgs):

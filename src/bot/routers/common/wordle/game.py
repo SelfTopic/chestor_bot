@@ -85,4 +85,4 @@ class WordleGameHandler(MessageHandler[AppContext[TextUserMessage]]):
                 line = Dialogs.wordle.errors.not_russian()
             case _:
                 raise exc
-        await self.ctx.message.answer(self.ctx.text(line))
+        await self.ctx.say(line)

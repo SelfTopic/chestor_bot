@@ -20,18 +20,17 @@ class BroadcastPrivateHandler(MessageHandler[AppContext[TextMessage]]):
 
     async def handle(self) -> None:
         text = self.cmd.parse(self.ctx).text
-        message = self.ctx.message
 
-        await message.answer(self.ctx.text(Dialogs.admin.broadcast.started()))
+        await self.ctx.say(Dialogs.admin.broadcast.started())
         result = await self.ctx.broadcast_service.broadcast_to_private(text)
         finished = Dialogs.admin.broadcast.finished(
             total=result.total, success=result.success, failed=result.failed
         )
-        await message.answer(self.ctx.text(finished))
+        await self.ctx.say(finished)
 
     async def on_error(self, exc: Exception) -> None:
         if isinstance(exc, CommandArgsError):
-            await self.ctx.message.reply(self.ctx.text(self.usage))
+            await self.ctx.say(self.usage, reply=True)
             return
 
         raise exc
@@ -44,18 +43,17 @@ class BroadcastChatsHandler(MessageHandler[AppContext[TextMessage]]):
 
     async def handle(self) -> None:
         text = self.cmd.parse(self.ctx).text
-        message = self.ctx.message
 
-        await message.answer(self.ctx.text(Dialogs.admin.broadcast.started()))
+        await self.ctx.say(Dialogs.admin.broadcast.started())
         result = await self.ctx.broadcast_service.broadcast_to_chats(text)
         finished = Dialogs.admin.broadcast.finished(
             total=result.total, success=result.success, failed=result.failed
         )
-        await message.answer(self.ctx.text(finished))
+        await self.ctx.say(finished)
 
     async def on_error(self, exc: Exception) -> None:
         if isinstance(exc, CommandArgsError):
-            await self.ctx.message.reply(self.ctx.text(self.usage))
+            await self.ctx.say(self.usage, reply=True)
             return
 
         raise exc
@@ -68,18 +66,17 @@ class BroadcastAllHandler(MessageHandler[AppContext[TextMessage]]):
 
     async def handle(self) -> None:
         text = self.cmd.parse(self.ctx).text
-        message = self.ctx.message
 
-        await message.answer(self.ctx.text(Dialogs.admin.broadcast.started()))
+        await self.ctx.say(Dialogs.admin.broadcast.started())
         result = await self.ctx.broadcast_service.broadcast_to_all(text)
         finished = Dialogs.admin.broadcast.finished(
             total=result.total, success=result.success, failed=result.failed
         )
-        await message.answer(self.ctx.text(finished))
+        await self.ctx.say(finished)
 
     async def on_error(self, exc: Exception) -> None:
         if isinstance(exc, CommandArgsError):
-            await self.ctx.message.reply(self.ctx.text(self.usage))
+            await self.ctx.say(self.usage, reply=True)
             return
 
         raise exc
@@ -97,24 +94,19 @@ class BroadcastUserHandler(MessageHandler[AppContext[TextMessage]]):
 
     async def handle(self) -> None:
         args = self.cmd.parse(self.ctx)
-        message = self.ctx.message
 
         try:
             ok = await self.ctx.broadcast_service.send_to_target(args.target, args.text)
         except UserNotFound as e:
-            await message.answer(
-                self.ctx.text(Dialogs.errors.user_not_found(query=e.query))
-            )
+            await self.ctx.say(Dialogs.errors.user_not_found(query=e.query))
             return
 
         broadcast = Dialogs.admin.broadcast
-        await message.answer(
-            self.ctx.text(broadcast.sent() if ok else broadcast.blocked())
-        )
+        await self.ctx.say(broadcast.sent() if ok else broadcast.blocked())
 
     async def on_error(self, exc: Exception) -> None:
         if isinstance(exc, CommandArgsError):
-            await self.ctx.message.reply(self.ctx.text(self.usage))
+            await self.ctx.say(self.usage, reply=True)
             return
 
         raise exc

@@ -19,11 +19,11 @@ async def _perform_ban(
     try:
         user = await ban_service._resolve_user(target)  # noqa: SLF001
     except UserNotFound as e:
-        await ctx.message.reply(ctx.text(Dialogs.errors.user_not_found(query=e.query)))
+        await ctx.say(Dialogs.errors.user_not_found(query=e.query), reply=True)
         return
 
     if user.is_banned:
-        await ctx.message.reply(ctx.text(Dialogs.admin.ban.already()))
+        await ctx.say(Dialogs.admin.ban.already(), reply=True)
         return
 
     result = await ban_service.ban(target, duration_str=duration, reason=reason)
@@ -33,7 +33,7 @@ async def _perform_ban(
         term=ban_term(ctx, result.banned_until),
         reason=result.reason or "—",
     )
-    await ctx.message.reply(ctx.text(done), parse_mode="HTML")
+    await ctx.say(done, reply=True, parse_mode="HTML")
 
 
 class BanRepliedArgs(CommandArgs):
@@ -73,16 +73,16 @@ async def _perform_unban(ctx: AppContext[Message], target: str) -> None:
     try:
         user = await ban_service._resolve_user(target)  # noqa: SLF001
     except UserNotFound as e:
-        await ctx.message.reply(ctx.text(Dialogs.errors.user_not_found(query=e.query)))
+        await ctx.say(Dialogs.errors.user_not_found(query=e.query), reply=True)
         return
 
     if not user.is_banned:
-        await ctx.message.reply(ctx.text(Dialogs.admin.unban.not_banned()))
+        await ctx.say(Dialogs.admin.unban.not_banned(), reply=True)
         return
 
     unbanned = await ban_service.unban(target)
     done = Dialogs.admin.unban.done(id=unbanned.telegram_id, name=unbanned.full_name)
-    await ctx.message.reply(ctx.text(done), parse_mode="HTML")
+    await ctx.say(done, reply=True, parse_mode="HTML")
 
 
 class UnbanRepliedArgs(CommandArgs):

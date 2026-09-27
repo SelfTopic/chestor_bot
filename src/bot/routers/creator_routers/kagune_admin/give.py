@@ -23,24 +23,24 @@ async def _perform_give(
             names = ", ".join(
                 kt.value["name"] for kt in ghoul_service.owned_kagune_types(ghoul)
             )
-            await ctx.message.answer(ctx.text(phrases.all_given(names=names)))
+            await ctx.say(phrases.all_given(names=names))
             return
 
         kagune_type = TYPE_BY_NAME.get(type_name)
         if kagune_type is None:
             unknown = phrases.unknown_type_or_all(types=TYPE_NAMES)
-            await ctx.message.answer(ctx.text(unknown))
+            await ctx.say(unknown)
             return
 
         ghoul = await ghoul_service.grant_kagune_type(telegram_id, kagune_type)
         strength = ghoul_service.get_kagune_strength(ghoul, kagune_type)
         given = phrases.given(kagune=kagune_type.value["name"], strength=strength)
-        await ctx.message.answer(ctx.text(given))
+        await ctx.say(given)
     except GhoulNotFound:
-        await ctx.message.answer(ctx.text(Dialogs.admin.ghoul_not_found()))
+        await ctx.say(Dialogs.admin.ghoul_not_found())
     except KaguneAlreadyOwned as e:
         owned = Dialogs.admin.kagune_already_owned(kagune=e.kagune_type.value["name"])
-        await ctx.message.answer(ctx.text(owned))
+        await ctx.say(owned)
 
 
 class GiveKaguneRepliedArgs(CommandArgs):

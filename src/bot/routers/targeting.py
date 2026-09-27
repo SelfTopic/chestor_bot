@@ -18,9 +18,7 @@ class _TargetErrors:
     ctx: AppContext[Any]
 
     async def say(self, line: Line) -> None:
-        message = self.ctx.message
-        text = self.ctx.text(line)
-        await (message.reply(text) if self.reply_errors else message.answer(text))
+        await self.ctx.say(line, reply=self.reply_errors)
 
     async def on_error(self, exc: Exception) -> None:
         if isinstance(exc, CommandArgsError) and self.usage is not None:

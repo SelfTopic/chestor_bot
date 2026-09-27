@@ -34,20 +34,19 @@ class RegisterOrRebirthHandler(MessageHandler[AppContext[TextUserMessage]]):
                 raise ValueError("Ghoul is not found")
 
             kagune_type = calculate_kagune(new_ghoul.ghoul.kagune_type_bit)[0]
-            await message.reply(
-                text=ctx.text(
-                    Dialogs.ghoul.new(
-                        name=message.user.first_name,
-                        kagune_type=kagune_type.value["name"],
-                    )
-                )
+            await ctx.say(
+                Dialogs.ghoul.new(
+                    name=message.user.first_name,
+                    kagune_type=kagune_type.value["name"],
+                ),
+                reply=True,
             )
             return
 
         reborn = await ctx.ghoul_service.reset_for_rebirth(telegram_id)
         new_type = calculate_kagune(reborn.kagune_type_bit)[0]
-        await message.reply(
-            text=ctx.text(Dialogs.ghoul.reborn(kagune_type=new_type.value["name"]))
+        await ctx.say(
+            Dialogs.ghoul.reborn(kagune_type=new_type.value["name"]), reply=True
         )
 
 
@@ -66,13 +65,12 @@ class UpgradeKaguneHandler(MessageHandler[AppContext[TextUserMessage]]):
         )
         if cooldown is not None:
             remaining = parse_seconds(int(cooldown.end_at - time.time()))
-            await message.reply(
-                text=ctx.text(
-                    Dialogs.kagune.upgrade.cooldown(
-                        minutes=str(remaining.minutes_remaining),
-                        seconds=str(remaining.seconds_remaining),
-                    )
-                )
+            await ctx.say(
+                Dialogs.kagune.upgrade.cooldown(
+                    minutes=str(remaining.minutes_remaining),
+                    seconds=str(remaining.seconds_remaining),
+                ),
+                reply=True,
             )
             return
 
@@ -87,7 +85,7 @@ class UpgradeKaguneHandler(MessageHandler[AppContext[TextUserMessage]]):
 
         ok, line = await do_upgrade(ctx, telegram_id, owned[0])
         if not ok:
-            await message.reply(text=ctx.text(line))
+            await ctx.say(line, reply=True)
             return
 
         await ctx.say(line)

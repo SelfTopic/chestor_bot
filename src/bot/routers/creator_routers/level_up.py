@@ -18,7 +18,7 @@ async def _perform_level_up(ctx: AppContext[Message], telegram_id: int) -> None:
     try:
         result = await ctx.level_up_service.level_up(telegram_id)
     except GhoulNotFound:
-        await ctx.message.answer(ctx.text(Dialogs.admin.ghoul_not_found()))
+        await ctx.say(Dialogs.admin.ghoul_not_found())
         return
 
     done = Dialogs.admin.level_up.done(
@@ -27,7 +27,7 @@ async def _perform_level_up(ctx: AppContext[Message], telegram_id: int) -> None:
         rc=result.rc_reward,
         notified=_flag(ctx, result.notified),
     )
-    await ctx.message.answer(ctx.text(done))
+    await ctx.say(done)
 
 
 class ForceLevelupRepliedArgs(CommandArgs):
@@ -61,13 +61,13 @@ async def _perform_add_progress(
 ) -> None:
     progress = Dialogs.admin.progress
     if not -100 <= delta <= 100:
-        await ctx.message.answer(ctx.text(progress.delta_range()))
+        await ctx.say(progress.delta_range())
         return
 
     try:
         result = await ctx.level_up_service.add_progress(telegram_id, delta)
     except GhoulNotFound:
-        await ctx.message.answer(ctx.text(Dialogs.admin.ghoul_not_found()))
+        await ctx.say(Dialogs.admin.ghoul_not_found())
         return
 
     lines = [

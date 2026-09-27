@@ -58,12 +58,12 @@ class AddGifHandler(MessageHandler[AppContext[TextUserReplyToMessage]]):
         elif reply.animation:
             type_media, file_id = MediaDownloadType.ANIMATION, reply.animation.file_id
         else:
-            await message.reply(self.ctx.text(Dialogs.admin.media.no_media()))
+            await self.ctx.say(Dialogs.admin.media.no_media(), reply=True)
             return
 
         folder = self.folder(args, type_media)
         if isinstance(folder, Line):
-            await message.reply(self.ctx.text(folder))
+            await self.ctx.say(folder, reply=True)
             return
 
         destination = folder / f"{type_media.value}_{file_id}{EXTENSION[type_media]}"
@@ -72,11 +72,11 @@ class AddGifHandler(MessageHandler[AppContext[TextUserReplyToMessage]]):
         try:
             path = await self.ctx.download(destination)
         except ContextError:
-            await message.reply(self.ctx.text(USAGE))
+            await self.ctx.say(USAGE, reply=True)
             return
 
         if await self.ctx.media_repository.exists_by_path(str(path)):
-            await message.reply(self.ctx.text(Dialogs.admin.media.exists()))
+            await self.ctx.say(Dialogs.admin.media.exists(), reply=True)
             return
 
         is_phrase = args.target not in CollectionParser.MAP
@@ -103,7 +103,7 @@ class AddGifHandler(MessageHandler[AppContext[TextUserReplyToMessage]]):
 
     async def on_error(self, exc: Exception) -> None:
         if isinstance(exc, CommandArgsError):
-            await self.ctx.message.reply(self.ctx.text(USAGE))
+            await self.ctx.say(USAGE, reply=True)
             return
 
         raise exc

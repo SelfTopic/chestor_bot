@@ -27,7 +27,7 @@ class EatHumanHandler(MessageHandler[AppContext[TextUserMessage]]):
             reward_log="mob ambush during eat_human reward",
         )
 
-        await message.reply(ctx.text(Dialogs.eat_human.ambush.started()))
+        await ctx.say(Dialogs.eat_human.ambush.started(), reply=True)
         await answer_mob_battle(
             ctx, message, battle, what="mob ambush during eat_human"
         )
@@ -35,12 +35,10 @@ class EatHumanHandler(MessageHandler[AppContext[TextUserMessage]]):
         ambush = Dialogs.eat_human.ambush
         if battle.report.winner == "a":
             rewards = rewards_text(ctx, battle)
-            await message.answer(ctx.text(ambush.won(rewards=rewards)))
+            await ctx.say(ambush.won(rewards=rewards))
             return True
 
-        await message.answer(
-            ctx.text(ambush.lost() if battle.report.winner == "b" else ambush.draw())
-        )
+        await ctx.say(ambush.lost() if battle.report.winner == "b" else ambush.draw())
         return False
 
     async def handle(self) -> None:
@@ -50,14 +48,13 @@ class EatHumanHandler(MessageHandler[AppContext[TextUserMessage]]):
 
         remaining = await ctx.cooldown_remaining(telegram_id, COOLDOWN_NAME)
         if remaining is not None:
-            await message.reply(
-                ctx.text(
-                    Dialogs.eat_human.cooldown(
-                        hours=remaining.total_hours,
-                        minutes=remaining.minutes_remaining,
-                        seconds=remaining.seconds_remaining,
-                    )
-                )
+            await ctx.say(
+                Dialogs.eat_human.cooldown(
+                    hours=remaining.total_hours,
+                    minutes=remaining.minutes_remaining,
+                    seconds=remaining.seconds_remaining,
+                ),
+                reply=True,
             )
             return
 

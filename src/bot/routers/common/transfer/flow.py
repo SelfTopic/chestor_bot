@@ -97,7 +97,7 @@ async def ask_confirmation(
     try:
         await ctx.transfer_service.validate(message.user.id, receiver_id, amount)
     except TransferError as e:
-        await message.reply(ctx.text(transfer_error_line(e)))
+        await ctx.say(transfer_error_line(e), reply=True)
         return
 
     await ctx.fsm.set(
@@ -105,11 +105,10 @@ async def ask_confirmation(
         TransferData(receiver_id=receiver_id, amount=amount),
     )
 
+    # Не say(): кнопки потом правят это сообщение через edit_text, у гифки так нельзя.
+    ask = Dialogs.transfer.ask(
+        amount=amount, receiver=receiver_name, confirm=ctx.text(CONFIRM_BUTTON)
+    )
     await message.reply(
-        ctx.text(
-            Dialogs.transfer.ask(
-                amount=amount, receiver=receiver_name, confirm=ctx.text(CONFIRM_BUTTON)
-            )
-        ),
-        reply_markup=build_confirmation_keyboard(ctx, step=1),
+        ctx.text(ask), reply_markup=build_confirmation_keyboard(ctx, step=1)
     )

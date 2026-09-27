@@ -19,11 +19,11 @@ async def _perform_kill(ctx: AppContext[Message], telegram_id: int, cause: str) 
     try:
         updated = await ctx.ghoul_service.apply_death(telegram_id, cause=cause)
     except GhoulNotFound:
-        await ctx.message.answer(ctx.text(Dialogs.admin.ghoul_not_found()))
+        await ctx.say(Dialogs.admin.ghoul_not_found())
         return
 
     done = Dialogs.admin.kill.done(id=telegram_id, cause=cause, deaths=updated.deaths)
-    await ctx.message.answer(ctx.text(done), parse_mode="HTML")
+    await ctx.say(done, parse_mode="HTML")
 
 
 class KillGhoulRepliedHandler(

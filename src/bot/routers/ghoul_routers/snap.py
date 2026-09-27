@@ -19,13 +19,12 @@ class SnapHandler(MessageHandler[AppContext[TextUserMessage]]):
 
         remaining = await ctx.cooldown_remaining(telegram_id, "SNAP")
         if remaining is not None:
-            await ctx.message.reply(
-                text=ctx.text(
-                    Dialogs.snap.cooldown(
-                        minutes=str(remaining.minutes_remaining),
-                        seconds=str(remaining.seconds_remaining),
-                    )
-                )
+            await ctx.say(
+                Dialogs.snap.cooldown(
+                    minutes=str(remaining.minutes_remaining),
+                    seconds=str(remaining.seconds_remaining),
+                ),
+                reply=True,
             )
             return
 

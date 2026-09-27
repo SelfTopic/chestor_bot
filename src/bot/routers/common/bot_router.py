@@ -11,7 +11,7 @@ class BotHandler(MessageHandler[AppContext[TextMessage]]):
     query = Text("бот", ignore_case=True)
 
     async def handle(self) -> None:
-        await self.ctx.message.answer(self.ctx.text(Dialogs.bot()))
+        await self.ctx.say(Dialogs.bot())
 
 
 class BotRouter(BaseRouter[AppContext]):
