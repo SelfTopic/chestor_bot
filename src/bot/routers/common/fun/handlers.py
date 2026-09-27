@@ -42,6 +42,9 @@ class PickArgs(CommandArgs):
 class PickHandler(MessageHandler[AppContext[TextMessage]]):
     cmd = bot_command("выбери", PickArgs)
     query = cmd
+    too_few = "Нужно минимум 2 варианта: бот выбери пицца или суши или бургер"
+    too_many = f"Слишком много вариантов (максимум {MAX_PICK_ITEMS})."
+    too_long = "Один из вариантов слишком длинный."
 
     async def handle(self) -> None:
         text = self.cmd.parse(self.ctx).items
@@ -49,11 +52,11 @@ class PickHandler(MessageHandler[AppContext[TextMessage]]):
         message = self.ctx.message
 
         if len(items) < 2:
-            await message.reply("Нужно минимум 2 варианта: бот выбери пицца или суши или бургер")
+            await message.reply(self.too_few)
         elif len(items) > MAX_PICK_ITEMS:
-            await message.reply(f"Слишком много вариантов (максимум {MAX_PICK_ITEMS}).")
+            await message.reply(self.too_many)
         elif any(len(item) > MAX_ITEM_LENGTH for item in items):
-            await message.reply("Один из вариантов слишком длинный.")
+            await message.reply(self.too_long)
         else:
             await message.reply(f"🎲 Выбор пал на: {random.choice(items)}")
 
