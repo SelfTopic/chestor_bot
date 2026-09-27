@@ -1,6 +1,7 @@
 import logging
 import random
 import re
+from collections.abc import Callable
 from dataclasses import dataclass
 from pathlib import Path
 
@@ -33,8 +34,10 @@ class DialogService:
         folder: Path = DIALOGS_DIR,
         expected: Placeholders = PLACEHOLDERS,
         animation_root: Path | None = None,
+        on_broken: Callable[[Exception], None] | None = None,
     ) -> None:
         self._folder = folder
+        self._on_broken = on_broken
         self._expected = expected
         self._animation_root = animation_root
         self._random = random.Random()
@@ -87,8 +90,10 @@ class DialogService:
         self._stamp = stamp
         try:
             self._phrases = self._load()
-        except (DialogFileError, OSError):
+        except (DialogFileError, OSError) as exc:
             logger.warning("Тексты не перечитаны, бот отвечает прежними", exc_info=True)
+            if self._on_broken is not None:
+                self._on_broken(exc)
             return
         logger.info(f"Тексты перечитаны из {self._folder}: {len(self._phrases)} фраз")
 

@@ -1,6 +1,10 @@
 admin:
   flag_yes: да
   flag_no: нет
+  texts_broken: |-
+    ⚠️ Правка текстов в src/bot/dialogs не применилась, бот отвечает прежними. Исправь и сохрани файл ещё раз.
+
+    {error}
   ghoul_not_found: '❌ Ghoul not found'
   kagune_not_owned: '❌ Ghoul does not own kagune type {kagune}'
   kagune_already_owned: '❌ Ghoul already owns kagune type {kagune}'

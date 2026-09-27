@@ -403,6 +403,9 @@ class _AdminDialogs:
     def last_kagune(self) -> Line:
         return Line("admin.last_kagune", {})
 
+    def texts_broken(self, *, error: object) -> Line:
+        return Line("admin.texts_broken", {"error": error})
+
 
 class _AnimeDialogs:
     def bad_end(self) -> Line:
@@ -1885,6 +1888,7 @@ PLACEHOLDERS: dict[str, frozenset[str]] = {
     "admin.stats.target_user": frozenset(),
     "admin.stats.unknown_field": frozenset({"field"}),
     "admin.stats.usage": frozenset({"ghoul_fields", "time_fields", "user_fields"}),
+    "admin.texts_broken": frozenset({"error"}),
     "admin.unban.done": frozenset({"id", "name"}),
     "admin.unban.not_banned": frozenset(),
     "admin.unban.usage": frozenset(),

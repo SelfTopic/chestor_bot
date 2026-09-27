@@ -1,3 +1,4 @@
+import asyncio
 import logging
 import os
 import sys
@@ -30,12 +31,14 @@ from .middlewares import BanMiddleware, DatabaseMiddleware, SyncEntitiesMiddlewa
 from .routers import RootRouter
 from .routers.ghoul_routers.duel import DuelTicker
 from .services.notification_ticker import NotificationTicker
-from .services.notify import SelfrotBotNotifier
+from .services.notify import NotifyError, SelfrotBotNotifier
 from .services.quiz import QuizService
 
 logger = logging.getLogger(__name__)
 
 WEBHOOK_PORT = 8999
+# Сообщение в Telegram — до 4096 символов, остальное место под текст фразы.
+ERROR_LIMIT = 3500
 
 
 def error_line(exc: Exception) -> Line:
@@ -81,7 +84,8 @@ class Dispatcher(BaseDispatcher[AppContext]):
         session_factory: async_sessionmaker[AsyncSession] = default_session_factory,
     ) -> None:
         super().__init__(token)
-        self.dialog_service = DialogService()
+        self.dialog_service = DialogService(on_broken=self.report_broken_texts)
+        self.alerts: set[asyncio.Task[None]] = set()
         self.container = Container()
         self.session_factory = session_factory
         self.notification_ticker = NotificationTicker(
@@ -100,6 +104,23 @@ class Dispatcher(BaseDispatcher[AppContext]):
             container=self.container,
             dialog_service=self.dialog_service,
         )
+
+    def report_broken_texts(self, error: Exception) -> None:
+        # Тексты перечитываются внутри синхронного text(), поэтому отправка — отдельной
+        # задачей; ссылка на неё хранится, иначе сборщик мусора может её убить.
+        line = Dialogs.admin.texts_broken(error=str(error)[:ERROR_LIMIT])
+        task = asyncio.create_task(self.alert_admins(line))
+        self.alerts.add(task)
+        task.add_done_callback(self.alerts.discard)
+
+    async def alert_admins(self, line: Line) -> None:
+        notifier = SelfrotBotNotifier(self.api)
+        text = self.dialog_service.text(line)
+        for admin_id in settings.ADMIN_IDS:
+            try:
+                await notifier.send_message(admin_id, text)
+            except NotifyError:
+                logger.warning("Админ %s не получил сообщение от бота", admin_id)
 
     def create_context(self, update: Update) -> AppContext:
         return self.context(
