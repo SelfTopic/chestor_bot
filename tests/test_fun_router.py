@@ -3,13 +3,12 @@
 
 import pytest
 
-from src.bot.dialogs import load_texts
+from src.bot.dialogs import Dialogs, load_texts
 from src.bot.routers.common.fun import handlers
 
-from .conftest import message_update, owner_dict
+from .conftest import matches_phrase, message_update, owner_dict, phrase_texts
 
 GROUP = -100555
-NOBODY = "Пока некого выбирать - в этом чате ещё никто не написал боту."
 TEXTS = load_texts()
 
 
@@ -29,30 +28,28 @@ class TestPick:
 
         monkeypatch.setattr(handlers.random, "choice", choice)
 
-        assert await send("бот выбери пицца, суши или бургер") == [
-            "🎲 Выбор пал на: бургер"
-        ]
+        (reply,) = await send("бот выбери пицца, суши или бургер")
+        assert reply in phrase_texts(Dialogs.fun.pick.result(choice="бургер"))
         assert seen == [["пицца", "суши", "бургер"]]
 
     async def test_chestor_and_any_case(self, send):
         (reply,) = await send("Честор ВЫБЕРИ чай ИЛИ кофе")
-        assert reply in ("🎲 Выбор пал на: чай", "🎲 Выбор пал на: кофе")
+        assert reply in phrase_texts(Dialogs.fun.pick.result(choice="чай")) | phrase_texts(
+            Dialogs.fun.pick.result(choice="кофе")
+        )
 
     async def test_needs_two_items(self, send):
-        assert await send("бот выбери пицца") == [
-            "Нужно минимум 2 варианта: бот выбери пицца или суши или бургер"
-        ]
+        (reply,) = await send("бот выбери пицца")
+        assert matches_phrase(reply, "fun.pick.too_few")
 
     async def test_too_many_items(self, send):
         items = ", ".join(str(i) for i in range(51))
-        assert await send(f"бот выбери {items}") == [
-            "Слишком много вариантов (максимум 50)."
-        ]
+        (reply,) = await send(f"бот выбери {items}")
+        assert matches_phrase(reply, "fun.pick.too_many") and "50" in reply
 
     async def test_too_long_item(self, send):
-        assert await send(f"бот выбери чай или {'к' * 201}") == [
-            "Один из вариантов слишком длинный."
-        ]
+        (reply,) = await send(f"бот выбери чай или {'к' * 201}")
+        assert matches_phrase(reply, "fun.pick.too_long")
 
     @pytest.mark.parametrize("text", ["выбери чай или кофе", "бот выбери", "бот, выбери чай или кофе"])
     async def test_other_texts_are_ignored(self, send, text):
@@ -61,7 +58,8 @@ class TestPick:
 
 class TestWho:
     async def test_nobody_known_in_chat(self, send):
-        assert await send("бот кто платит") == [NOBODY]
+        (reply,) = await send("бот кто платит")
+        assert matches_phrase(reply, "fun.nobody")
 
     async def test_names_a_participant(self, feed, telegram):
         await seed_group(feed, telegram, first_name="<Вася>")
@@ -73,9 +71,11 @@ class TestWho:
         )
 
         (body,) = telegram.bodies("sendMessage")
-        assert body["text"] == (
-            "По моим расчётам сегодня платит за &lt;всех&gt; "
-            '<a href="tg://user?id=42">&lt;Вася&gt; </a>'
+        assert body["text"] in phrase_texts(
+            Dialogs.fun.who(
+                question="сегодня платит за &lt;всех&gt;",
+                mention='<a href="tg://user?id=42">&lt;Вася&gt; </a>',
+            )
         )
         assert body["parse_mode"] == "HTML"
 
@@ -86,10 +86,14 @@ class TestRandomParticipant:
 
         telegram = await feed(message_update("честор случайный участник", uid=42, chat=GROUP))
 
-        assert telegram.sent == ['🎲 Выбор пал на <a href="tg://user?id=42">Вася </a>!']
+        (sent,) = telegram.sent
+        assert sent in phrase_texts(
+            Dialogs.fun.random_participant(mention='<a href="tg://user?id=42">Вася </a>')
+        )
 
     async def test_nobody_known_in_chat(self, send):
-        assert await send("бот случайный участник") == [NOBODY]
+        (reply,) = await send("бот случайный участник")
+        assert matches_phrase(reply, "fun.nobody")
 
     async def test_trailing_words_are_ignored(self, send):
         assert await send("бот случайный участник пожалуйста") == []

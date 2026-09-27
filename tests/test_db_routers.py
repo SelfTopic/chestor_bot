@@ -5,7 +5,7 @@ import pytest
 from src.bot.dialogs import Dialogs
 from src.bot.repositories import UserRepository
 
-from .conftest import phrase_texts
+from .conftest import only_text, phrase_texts
 
 
 async def set_user(session_factory, telegram_id: int, **data) -> None:
@@ -41,16 +41,14 @@ class TestProfile:
 
         (reply,) = await send(text, uid=42)
 
-        assert "Имя: Вася" in reply
-        assert "Раса: Гуль" in reply
-        assert "Баланс: 50" in reply
+        assert reply == only_text(Dialogs.profile.card(name="Вася ", race="Гуль", balance=50))
 
     async def test_command_with_bot_mention(self, send, session_factory, dispatcher):
         await dispatcher.api.load_me()  # username бота нужен для /command@username
         await set_user(session_factory, 42, race_bit=0)
 
         (reply,) = await send("/profile@dev_bot", uid=42)
-        assert "Раса: Человек" in reply
+        assert reply == only_text(Dialogs.profile.card(name="Вася ", race="Человек", balance=0))
 
         # чужой бот в группе: команда адресована не нам
         assert await send("/profile@other_bot", uid=42) == []
@@ -60,7 +58,8 @@ class TestProfile:
 
         (reply,) = await send("профиль", uid=42)
 
-        assert "Раса: Ээээ.. Пока неясно что это такое." in reply
+        race = only_text(Dialogs.profile.unknown_race())
+        assert reply == only_text(Dialogs.profile.card(name="Вася ", race=race, balance=0))
 
     @pytest.mark.parametrize("text", ["профиль ", "мой профиль", "/profiles"])
     async def test_ignores_other_text(self, send, text):

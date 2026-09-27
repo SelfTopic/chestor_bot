@@ -25,7 +25,11 @@ from src.bot.routers.ghoul_routers.battle_text_generator import (
     BattleTextGenerator,
     _flatten_to_plain_text,
 )
+from src.bot.dialogs import Dialogs
 from src.bot.services.dialog import DialogService
+from tests.conftest import matches_phrase, only_text
+
+LOG = Dialogs.fight.log
 
 RANK_A = "F"
 RANK_B = "D"
@@ -148,13 +152,13 @@ def test_names_and_ranks_come_before_the_round_by_round_process():
         make_generator().build_rich_message(result, fighter_a, fighter_b, RANK_A, RANK_B)
     )
 
-    assert lines[0] == "Гуль F ранга Канеки"
-    assert lines[1] == "VS"
-    assert lines[2] == "Гуль D ранга Крепкий боец"
+    assert lines[0] == only_text(Dialogs.fight.rank(rank=RANK_A, name="Канеки"))
+    assert lines[1] == only_text(Dialogs.fight.versus())
+    assert lines[2] == only_text(Dialogs.fight.rank(rank=RANK_B, name="Крепкий боец"))
     # Раунды (внутри Details) идут следом, итоги ("Победитель") - только
     # ПОСЛЕ них.
-    round_index = next(i for i, line in enumerate(lines) if line.startswith("──── Раунд"))
-    winner_index = next(i for i, line in enumerate(lines) if line.startswith("🏆 Победитель"))
+    round_index = lines.index(only_text(LOG.round(number=1)))
+    winner_index = lines.index(only_text(Dialogs.fight.winner(name="Канеки")))
     assert round_index < winner_index
 
 
@@ -196,13 +200,14 @@ def test_rich_message_action_section_has_no_hp_numbers():
     lines = _all_paragraph_lines(
         make_generator().build_rich_message(result, fighter_a, fighter_b, RANK_A, RANK_B)
     )
-    joined = "\n".join(lines)
 
-    assert "Канеки наносит удар — 30 урона" in joined  # физическая атака A
-    assert "Крепкий боец наносит удар — 20 урона" in joined  # атака кагуне B
-    assert "Канеки промахивается" in joined  # промах A в раунде 2
-    assert "Крепкий боец регенерирует — +15 HP" in joined  # регенерация B
-    assert "Крепкий боец успевает ударить ещё раз — 10 урона" in joined  # бонус от speed
+    physical, kagune = "👊", "♦️"
+    assert only_text(LOG.hit(icon=physical, name="Канеки", damage=30)) in lines
+    assert only_text(LOG.hit(icon=kagune, name="Крепкий боец", damage=20)) in lines
+    assert only_text(LOG.miss(icon="💨", name="Канеки")) in lines  # промах A в раунде 2
+    assert only_text(LOG.regen(name="Крепкий боец", healed=15)) in lines
+    fast = LOG.fast_hit(icon=f"⚡{physical}", name="Крепкий боец", damage=10)
+    assert only_text(fast) in lines  # бонусный удар от speed
 
 
 def test_landed_hit_that_rounds_to_zero_damage_says_did_not_break_through():
@@ -235,11 +240,12 @@ def test_landed_hit_that_rounds_to_zero_damage_says_did_not_break_through():
     )
     joined = "\n".join(lines)
 
-    assert "Канеки не пробивает защиту" in joined
-    assert "Крепкий боец не пробивает защиту" in joined
-    assert "0 урона" not in joined
-    assert "(не пробил)" in joined  # в итоговой HP-цепочке тоже, не только в "что произошло"
-    assert "(0 урон)" not in joined
+    assert only_text(LOG.blocked(icon="🛡️", name="Канеки")) in lines
+    assert only_text(LOG.blocked(icon="⚡🛡️", name="Крепкий боец")) in lines
+    assert only_text(LOG.hit(icon="👊", name="Канеки", damage=0)) not in lines
+    # в итоговой HP-цепочке тоже, не только в "что произошло"
+    assert only_text(LOG.hp_blocked(hp=100)) in joined
+    assert only_text(LOG.hp_damage(hp=100, damage=0)) not in joined
 
 
 def test_regen_that_rounds_to_zero_heal_says_almost_no_effect():
@@ -266,8 +272,8 @@ def test_regen_that_rounds_to_zero_heal_says_almost_no_effect():
     )
     joined = "\n".join(lines)
 
-    assert "Канеки регенерирует, но почти не восстанавливает HP" in joined
-    assert "+0 HP" not in joined
+    assert only_text(LOG.regen_nothing(name="Канеки")) in lines
+    assert only_text(LOG.regen(name="Канеки", healed=0)) not in joined
 
 
 def test_rich_message_outcome_line_shows_full_hp_chain_with_causes():
@@ -286,7 +292,8 @@ def test_rich_message_outcome_line_shows_full_hp_chain_with_causes():
     # После раунда 2: hp_b = 70 (после раунда 1) + 15 (регенерация), урона в
     # этом раунде B не получил (damage_to_b=0) - цепочка останавливается на
     # регенерации, шага "урон" в этом раунде для B нет.
-    assert "❤️ Крепкий боец: 70 → 85 (+15 регенерация) HP" in lines
+    chain = f"70 → {only_text(LOG.hp_regen(hp=85, healed=15))} HP"
+    assert only_text(LOG.hp(name="Крепкий боец", chain=chain)) in lines
 
 
 def test_rich_message_last_round_shows_display_hp_not_raw_zero_on_mutual_ko():
@@ -303,12 +310,14 @@ def test_rich_message_last_round_shows_display_hp_not_raw_zero_on_mutual_ko():
     # "0 против 0". Победитель (A) после подмены даже не помечается 💀, и
     # у подменённого шага НЕТ пометки "(-70 урон)" - она была бы враньём
     # (значение выросло с честного 0 до показанного 1, а не упало на 70).
-    assert "❤️ Канеки: 70 → 1 HP" in lines
-    assert "💀 Крепкий боец: 85 → 0 (-85 урон) HP — повержен" in lines
+    assert only_text(LOG.hp(name="Канеки", chain="70 → 1 HP")) in lines
+    chain = f"85 → {only_text(LOG.hp_damage(hp=0, damage=85))} HP"
+    assert only_text(LOG.hp_defeated(name="Крепкий боец", chain=chain)) in lines
     # Регрессия (см. чат, реальный бой на статах 5-6 HP): подменённое
     # значение НЕ должно нести старую метку "урон"/"регенерация" - иначе
     # получается "0 -> 1 (-70 урон)" - HP выросло, подпись говорит обратное.
-    assert not any("-70 урон" in line for line in lines)
+    wrong = only_text(LOG.hp_damage(hp=1, damage=70))
+    assert not any(wrong in line for line in lines)
 
 
 def test_build_rich_message_includes_winner_line():
@@ -318,10 +327,8 @@ def test_build_rich_message_includes_winner_line():
     lines = _all_paragraph_lines(
         make_generator().build_rich_message(result, fighter_a, fighter_b, RANK_A, RANK_B)
     )
-    joined = "\n".join(lines)
-
-    assert "Победитель: Канеки" in joined
-    assert "Крепкий боец: повержен." in joined
+    assert only_text(Dialogs.fight.winner(name="Канеки")) in lines
+    assert only_text(Dialogs.fight.defeated(name="Крепкий боец")) in lines
 
 
 def test_build_rich_message_true_draw_says_nichya():
@@ -341,7 +348,7 @@ def test_build_rich_message_true_draw_says_nichya():
         make_generator().build_rich_message(result, fighter_a, fighter_b, RANK_A, RANK_B)
     )
 
-    assert any("Ничья" in line for line in lines)
+    assert only_text(Dialogs.fight.draw()) in lines
 
 
 def test_build_plain_text_is_condensed_without_per_round_breakdown():
@@ -350,12 +357,12 @@ def test_build_plain_text_is_condensed_without_per_round_breakdown():
 
     text = make_generator().build_plain_text(result, fighter_a, fighter_b, RANK_A, RANK_B)
 
-    assert "Гуль F ранга Канеки" in text
-    assert "VS" in text
-    assert "Гуль D ранга Крепкий боец" in text
-    assert "Победитель: Канеки" in text
-    assert "Раундов: 3" in text  # только счётчик...
-    assert "Раунд 1" not in text  # ...без самого списка раундов, см. docstring
+    assert matches_phrase(text, "fight.summary")
+    assert only_text(Dialogs.fight.rank(rank=RANK_A, name="Канеки")) in text
+    assert only_text(Dialogs.fight.rank(rank=RANK_B, name="Крепкий боец")) in text
+    assert only_text(Dialogs.fight.winner(name="Канеки")) in text
+    # только счётчик раундов, без самого списка раундов, см. docstring
+    assert only_text(LOG.round(number=1)) not in text
 
 
 # --- MAX_WIDTH_TEXT_RICH_MESSAGE - ни одна строка не переносится ------------

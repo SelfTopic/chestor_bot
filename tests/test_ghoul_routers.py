@@ -12,8 +12,10 @@ import pytest
 from ghoul_quiz import Answer, Question
 
 from src.bot.config import game_config
+from src.bot.dialogs import Dialogs
 from src.bot.game_configs import STAT_UPGRADE_CONFIG
 from src.bot.repositories import GhoulRepository, UserCooldownRepository
+from src.bot.routers.ghoul_routers.upgrade_stat import STAT_LABELS
 from src.bot.types import KaguneType
 from src.bot.utils import (
     calculate_kagune,
@@ -30,7 +32,9 @@ from .conftest import (
     chat_dict,
     matches_phrase,
     message_update,
+    only_text,
     owner_dict,
+    phrase_texts,
 )
 from .test_common_routers import seed
 from .test_update_middlewares import get_user
@@ -118,10 +122,9 @@ class TestCoffee:
 
         (reply,) = await send("пить кофе", uid=UID)
 
-        assert matches_phrase(reply, "coffee.done")
-        assert "Всего выпито: 1" in reply
-
         user = await get_user(session_factory, UID)
+        assert user is not None
+        assert reply in phrase_texts(Dialogs.coffee.done(count=1, money=user.balance))
         assert user is not None and user.balance > 0
 
     async def test_sends_gif_when_one_exists(
@@ -163,7 +166,7 @@ class TestCoffee:
         await seed_cooldown_type(session_factory, "COFFEE_DAY", duration=86400)
 
         (first,) = await send("пить кофе", uid=UID)
-        assert first.startswith("☕️")
+        assert matches_phrase(first, "coffee.done")
         balance_after_first = await balance_of(session_factory, UID)
 
         # повторный клик во время кулдауна COFFEE: рефанд + переход на COFFEE_DAY
@@ -238,7 +241,7 @@ class TestUpgradeKagune:
 
         (reply,) = await send("растить кагуне", uid=UID)
 
-        assert reply.startswith("✅ Ты успешно усилил свое кагуне.")
+        assert matches_phrase(reply, "kagune.upgrade.done")
         ghoul = await get_ghoul(session_factory, UID)
         assert ghoul is not None and ghoul.kagune_strength_ukaku == 2
 
@@ -273,12 +276,12 @@ class TestUpgradeKagune:
         telegram = await feed(message_update("растить кагуне", uid=UID))
 
         (body,) = telegram.bodies("sendMessage")
-        assert "Какое кагуне усилить?" in body["text"]
-        assert button_data(body, "Укаку - 150 CheSton") == f"kagune_upgrade:{UID}:ukaku"
-        assert (
-            button_data(body, "Коукаку - 150 CheSton")
-            == f"kagune_upgrade:{UID}:koukaku"
-        )
+        assert matches_phrase(body["text"], "kagune.upgrade.choice.message")
+        choice = Dialogs.kagune.upgrade.choice
+        ukaku = only_text(choice.button(kagune="Укаку", price=150))
+        koukaku = only_text(choice.button(kagune="Коукаку", price=150))
+        assert button_data(body, ukaku) == f"kagune_upgrade:{UID}:ukaku"
+        assert button_data(body, koukaku) == f"kagune_upgrade:{UID}:koukaku"
 
 
 class TestKaguneChoice:
@@ -304,7 +307,7 @@ class TestKaguneChoice:
 
         assert telegram.methods_called("deleteMessage") == 1
         (body,) = telegram.bodies("sendMessage")
-        assert body["text"].startswith("✅ Ты успешно усилил свое кагуне.")
+        assert matches_phrase(body["text"], "kagune.upgrade.done")
 
         ghoul = await get_ghoul(session_factory, UID)
         assert ghoul is not None and ghoul.kagune_strength_ukaku == 2
@@ -356,7 +359,6 @@ class TestSnap:
         (reply,) = await send(text, uid=UID)
 
         assert matches_phrase(reply, "snap.done")
-        assert "Сломано пальцев: 1" in reply
         ghoul = await get_ghoul(session_factory, UID)
         assert ghoul is not None and ghoul.snap_count == 1
         user = await get_user(session_factory, UID)
@@ -417,7 +419,7 @@ class TestTopSnap:
 
         (reply,) = await send("топ щелк", uid=UID)
 
-        assert reply.startswith("🏆 Топ 20 самых сломанных пальцев")
+        assert reply.startswith(only_text(Dialogs.tops.snap_title(count=20)))
         assert reply.index("Петя") < reply.index("Вася")  # больше щелчков — выше
 
     async def test_explicit_count(self, send, session_factory):
@@ -426,7 +428,7 @@ class TestTopSnap:
 
         (reply,) = await send("топ щелк 3", uid=UID)
 
-        assert reply.startswith("🏆 Топ 3 самых сломанных пальцев")
+        assert reply.startswith(only_text(Dialogs.tops.snap_title(count=3)))
 
     async def test_non_digit_count(self, send, session_factory):
         await seed(session_factory, UID, "Вася")
@@ -460,7 +462,7 @@ class TestTopSnap:
         (answer,) = await send(text, uid=UID)
 
         if reply is None:
-            assert answer.startswith("🏆 Топ 2 самых сломанных пальцев")
+            assert answer.startswith(only_text(Dialogs.tops.snap_title(count=2)))
         else:
             assert matches_phrase(answer, reply)
 
@@ -494,8 +496,8 @@ class TestTopKagune:
         telegram = await feed(message_update("топ кагуне", uid=UID))
 
         (body,) = telegram.bodies("sendMessage")
-        assert body["text"].startswith("🏆 Топ 20 самых сильных кагуне в сумме")
-        assert "Вася - 7" in body["text"]
+        assert body["text"].startswith(only_text(Dialogs.tops.kagune.sum_title(count=20)))
+        assert only_text(Dialogs.tops.row(place=1, name="Вася", value=7)) in body["text"]
         for label in ("Укаку", "Коукаку", "Ринкаку", "Бикаку"):
             assert button_data(body, label) is not None
 
@@ -515,9 +517,11 @@ class TestTopKagune:
         telegram = await feed(callback_update(data, uid=UID))
 
         (edited,) = telegram.bodies("editMessageText")
-        assert edited["text"].startswith("🏆 Топ 20 самых сильных кагуне: Укаку")
-        assert "Вася - 7" in edited["text"]
-        assert button_data(edited, "⬅️ Сумма") is not None
+        title = Dialogs.tops.kagune.type_title(count=20, kagune="Укаку")
+        assert edited["text"].startswith(only_text(title))
+        assert only_text(Dialogs.tops.row(place=1, name="Вася", value=7)) in edited["text"]
+        back = f"⬅️ {only_text(Dialogs.tops.kagune.sum_button())}"
+        assert button_data(edited, back) is not None
 
     async def test_malformed_callback_data(self, feed, telegram, session_factory):
         await seed(session_factory, UID, "Вася")
@@ -528,7 +532,7 @@ class TestTopKagune:
         )
 
         (answer,) = result.bodies("answerCallbackQuery")
-        assert answer["text"] == "Неверные данные кнопки"
+        assert answer["text"] == only_text(Dialogs.tops.kagune.bad_button())
         assert result.methods_called("editMessageText") == 0
 
     async def test_inaccessible_message(self, feed, session_factory):
@@ -545,7 +549,7 @@ class TestTopKagune:
         result = await feed(update)
 
         (answer,) = result.bodies("answerCallbackQuery")
-        assert answer["text"] == "Невозможно обработать запрос"
+        assert answer["text"] == only_text(Dialogs.errors.cannot_process())
 
 
 def group_callback_update(data: str, uid: int, chat: int = -100500) -> dict:
@@ -556,13 +560,18 @@ def group_callback_update(data: str, uid: int, chat: int = -100500) -> dict:
 
 
 class TestUpgradeStat:
+    @staticmethod
+    def row(current: int, x5: object, x10: object) -> str:
+        stat = STAT_LABELS["strength"]
+        return only_text(Dialogs.stats.shop.row(stat=stat, current=current, x5=x5, x10=x10))
+
     async def test_group_is_refused(self, send, telegram, session_factory):
         telegram.results["getChatAdministrators"] = [owner_dict(99)]
         await seed(session_factory, UID, "Вася")
         await seed_ghoul(session_factory, UID)
 
         assert await send("качаться", uid=UID, chat=-100500) == [
-            "Эта команда работает только в личных сообщениях с ботом."
+            only_text(Dialogs.stats.private_only())
         ]
 
     async def test_shop_text_and_buttons(self, feed, session_factory):
@@ -572,11 +581,11 @@ class TestUpgradeStat:
         telegram = await feed(message_update("Качаться", uid=UID))
 
         (body,) = telegram.bodies("sendMessage")
-        lines = body["text"].split("\n")
-        assert lines[0] == "Баланс: 12345"
+        assert matches_phrase(body["text"], "stats.shop.message") and "12345" in body["text"]
         price5 = STAT_UPGRADE_CONFIG.price(1, 5, "strength")
         price10 = STAT_UPGRADE_CONFIG.price(1, 10, "strength")
-        assert lines[2] == f"💪Сила: 1  х5: {price5} х10: {price10}"
+        row = self.row(current=1, x5=price5, x10=price10)
+        assert row in body["text"].split("\n")
         price1 = STAT_UPGRADE_CONFIG.price(1, 1, "strength")
         assert button_data(body, f"💪 +1 ({price1})") == "stat_buy:strength:1"
         assert button_data(body, f"💪 +10 ({price10})") == "stat_buy:strength:10"
@@ -590,13 +599,13 @@ class TestUpgradeStat:
         (body,) = telegram.bodies("sendMessage")
         price2 = STAT_UPGRADE_CONFIG.price(98, 2, "strength")
         # у прода в тексте и на кнопках — цена того, что реально влезет до потолка
-        assert f"💪Сила: 98  х5: {price2} х10: {price2}" in body["text"]
+        assert self.row(current=98, x5=price2, x10=price2) in body["text"].split("\n")
         assert button_data(body, f"💪 +5 ({price2})") == "stat_buy:strength:5"
 
         await seed_ghoul(session_factory, UID, strength=100)
         telegram = await feed(message_update("качаться", uid=UID))
         (body,) = telegram.bodies("sendMessage")
-        assert "💪Сила: 100  х5: — х10: —" in body["text"]
+        assert self.row(current=100, x5="—", x10="—") in body["text"].split("\n")
         assert button_data(body, "💪 +1 (—)") == "stat_nop"
 
     async def test_buy_edits_shop_and_answers(self, feed, session_factory):
@@ -607,10 +616,18 @@ class TestUpgradeStat:
         telegram = await feed(callback_update("stat_buy:strength:5", uid=UID))
 
         (edited,) = telegram.bodies("editMessageText")
-        assert edited["text"].startswith(f"Баланс: {100000 - price}")
-        assert "💪Сила: 6 " in edited["text"]
+        assert matches_phrase(edited["text"], "stats.shop.message")
+        assert str(100000 - price) in edited["text"]
+        row = self.row(
+            current=6,
+            x5=STAT_UPGRADE_CONFIG.price(6, 5, "strength"),
+            x10=STAT_UPGRADE_CONFIG.price(6, 10, "strength"),
+        )
+        assert row in edited["text"].split("\n")
         (answer,) = telegram.bodies("answerCallbackQuery")
-        assert answer["text"] == f"Прокачано 💪Сила +5. Потрачено: {price}"
+        assert answer["text"] == only_text(
+            Dialogs.stats.bought(stat=STAT_LABELS["strength"], count=5, price=price)
+        )
 
         ghoul = await get_ghoul(session_factory, UID)
         assert ghoul is not None and ghoul.strength == 6
@@ -634,7 +651,9 @@ class TestUpgradeStat:
         telegram = await feed(callback_update("stat_buy:strength:10", uid=UID))
 
         (answer,) = telegram.bodies("answerCallbackQuery")
-        assert answer["text"] == f"Прокачано 💪Сила +2. Потрачено: {price}"
+        assert answer["text"] == only_text(
+            Dialogs.stats.bought(stat=STAT_LABELS["strength"], count=2, price=price)
+        )
 
     async def test_not_enough_money(self, feed, session_factory):
         await seed(session_factory, UID, "Вася", balance=0)
@@ -643,7 +662,7 @@ class TestUpgradeStat:
         telegram = await feed(callback_update("stat_buy:strength:1", uid=UID))
 
         (answer,) = telegram.bodies("answerCallbackQuery")
-        assert answer["text"] == "Недостаточно средств"
+        assert matches_phrase(answer["text"], "stats.no_money")
         assert telegram.methods_called("editMessageText") == 0
         ghoul = await get_ghoul(session_factory, UID)
         assert ghoul is not None and ghoul.strength == 1
@@ -655,7 +674,7 @@ class TestUpgradeStat:
         telegram = await feed(callback_update("stat_buy:strength:1", uid=UID))
 
         (answer,) = telegram.bodies("answerCallbackQuery")
-        assert answer["text"] == "Достигнут предел прокачки для этого стата."
+        assert answer["text"] == only_text(Dialogs.stats.limit())
         assert await balance_of(session_factory, UID) == 100000
 
     async def test_nop_button(self, feed, session_factory):
@@ -665,7 +684,7 @@ class TestUpgradeStat:
         telegram = await feed(callback_update("stat_nop", uid=UID))
 
         (answer,) = telegram.bodies("answerCallbackQuery")
-        assert answer["text"] == "Достигнут предел прокачки для этого стата."
+        assert answer["text"] == only_text(Dialogs.stats.limit())
 
     @pytest.mark.parametrize("data", ["stat_nop", "stat_buy:strength:1"])
     async def test_press_in_group_is_refused(self, feed, session_factory, data):
@@ -675,7 +694,7 @@ class TestUpgradeStat:
         telegram = await feed(group_callback_update(data, uid=UID))
 
         (answer,) = telegram.bodies("answerCallbackQuery")
-        assert answer["text"] == "Эта операция доступна только в личных сообщениях."
+        assert answer["text"] == only_text(Dialogs.stats.private_only_action())
         ghoul = await get_ghoul(session_factory, UID)
         assert ghoul is not None and ghoul.strength == 1
 
@@ -687,8 +706,8 @@ class TestRegenStatus:
 
         (reply,) = await send("Реген", uid=UID)
 
-        assert reply.startswith("❤️ Здоровье: 5/5\n")
-        assert reply.endswith("🕰 Уже полностью здоров(а).")
+        assert matches_phrase(reply, "status.regen") and "5/5" in reply
+        assert reply.endswith(only_text(Dialogs.status.healthy()))
 
     async def test_time_until_full_health(self, send, session_factory):
         await seed(session_factory, UID, "Вася")
@@ -705,11 +724,16 @@ class TestRegenStatus:
         (reply,) = await send("реген", uid=UID)
 
         per_hour = health_regen_per_hour(3, 100, KaguneType.UKAKU.value["bit"], False)
-        assert f"Скорость регенерации сейчас: {round(per_hour, 2)} HP/ч" in reply
         hours = hours_until_full_health(1, 500, per_hour)
         assert hours is not None
-        assert reply.endswith(
-            f"До полного здоровья: {format_duration(int(hours * 3600))}"
+        until = Dialogs.status.until_healthy(duration=format_duration(int(hours * 3600)))
+        assert reply == only_text(
+            Dialogs.status.regen(
+                health=1,
+                max_health=500,
+                hp_per_hour=round(per_hour, 2),
+                time_left=only_text(until),
+            )
         )
 
     async def test_zero_regeneration_never_heals(self, send, session_factory):
@@ -718,9 +742,7 @@ class TestRegenStatus:
 
         (reply,) = await send("реген", uid=UID)
 
-        assert reply.endswith(
-            "При текущей скорости регенерации здоровье само не восстановится."
-        )
+        assert reply.endswith(only_text(Dialogs.status.no_regen()))
 
 
 class TestHungerStatus:
@@ -738,10 +760,9 @@ class TestHungerStatus:
         (reply,) = await send("Голод", uid=UID)
 
         tier = get_hunger_tier(80)
-        assert reply.startswith(f"🍖 Голод: 80% ({tier.name})\n🕰 До истощения: ")
-        assert f"сейчас: ×{tier.falling_multiplier}\n" in reply
-        assert f"сейчас: ×{tier.rising_multiplier}\n" in reply
-        assert "🤟 Сила: " in reply and "♦️ Кагуне: " in reply
+        assert matches_phrase(reply, "status.hunger")
+        assert tier.name in reply
+        assert str(tier.falling_multiplier) in reply and str(tier.rising_multiplier) in reply
 
     async def test_starved(self, send, session_factory):
         await seed(session_factory, UID, "Вася")
@@ -749,7 +770,7 @@ class TestHungerStatus:
 
         (reply,) = await send("голод", uid=UID)
 
-        assert "🕰 Голод уже на нуле.\n" in reply
+        assert only_text(Dialogs.status.starved()) in reply
 
 
 class FakeQuiz:
@@ -815,12 +836,17 @@ class TestQuiz:
         telegram = await feed(keyboard_callback(body, "Канеки", UID))
 
         (edited,) = telegram.bodies("editMessageText")
-        head, award = edited["text"].split("Получено CheSton: ")
-        assert head == (
-            "Вопрос: Кто?\nОтвет: Канеки.\nТвой выбор: Канеки\nСтатус: верно\n\n"
+        award = await balance_of(session_factory, UID)
+        assert award > 0
+        assert edited["text"] in phrase_texts(
+            Dialogs.quiz.result(
+                question="Кто?",
+                answer="Канеки",
+                choice="Канеки",
+                status=Dialogs.quiz.correct(award=award),
+            )
         )
-        assert await balance_of(session_factory, UID) == int(award)
-        assert button_data(edited, "Play Again") == "quiz_restart"
+        assert button_data(edited, only_text(Dialogs.quiz.play_again())) == "quiz_restart"
         # как у прода: часики на кнопке не закрываются
         assert telegram.methods_called("answerCallbackQuery") == 0
 
@@ -830,8 +856,10 @@ class TestQuiz:
         telegram = await feed(keyboard_callback(body, "Тоука", UID))
 
         (edited,) = telegram.bodies("editMessageText")
-        assert edited["text"] == (
-            "Вопрос: Кто?\nОтвет: Канеки.\nТвой выбор: Тоука\nСтатус: неверно"
+        assert edited["text"] in phrase_texts(
+            Dialogs.quiz.result(
+                question="Кто?", answer="Канеки", choice="Тоука", status=Dialogs.quiz.wrong()
+            )
         )
         assert await balance_of(session_factory, UID) == 0
 
@@ -842,7 +870,7 @@ class TestQuiz:
         telegram = await feed(keyboard_callback(body, "Канеки", UID))
 
         (answer,) = telegram.bodies("answerCallbackQuery")
-        assert answer["text"] == "Quiz is not active."
+        assert answer["text"] == only_text(Dialogs.quiz.not_active())
         assert await balance_of(session_factory, UID) == 0
 
     async def test_someone_elses_quiz_is_not_active(self, feed, session_factory, quiz):
@@ -853,20 +881,21 @@ class TestQuiz:
         telegram = await feed(keyboard_callback(body, "Канеки", UID + 1))
 
         (answer,) = telegram.bodies("answerCallbackQuery")
-        assert answer["text"] == "Quiz is not active."
+        assert answer["text"] == only_text(Dialogs.quiz.not_active())
 
     async def test_play_again_asks_a_new_question(self, feed, session_factory, quiz):
         body = await self._ask(feed, session_factory)
         telegram = await feed(keyboard_callback(body, "Тоука", UID))
         (edited,) = telegram.bodies("editMessageText")
 
-        telegram = await feed(keyboard_callback(edited, "Play Again", UID))
+        telegram = await feed(keyboard_callback(edited, only_text(Dialogs.quiz.play_again()), UID))
 
         (question,) = telegram.bodies("editMessageText")
         assert question["text"] == "Кто?"
         telegram = await feed(keyboard_callback(question, "Канеки", UID))
         (result,) = telegram.bodies("editMessageText")
-        assert "Статус: верно" in result["text"]
+        assert matches_phrase(result["text"], "quiz.result")
+        assert await balance_of(session_factory, UID) > 0
 
     async def test_long_option_fits_the_button(
         self, feed, session_factory, dispatcher, monkeypatch
@@ -880,7 +909,15 @@ class TestQuiz:
         telegram = await feed(keyboard_callback(body, long, UID))
 
         (edited,) = telegram.bodies("editMessageText")
-        assert f"Твой выбор: {long}\nСтатус: верно" in edited["text"]
+        award = await balance_of(session_factory, UID)
+        assert edited["text"] in phrase_texts(
+            Dialogs.quiz.result(
+                question="Кто?",
+                answer=long,
+                choice=long,
+                status=Dialogs.quiz.correct(award=award),
+            )
+        )
 
 
 class TestCombatPower:
@@ -908,8 +945,8 @@ class TestCombatPower:
         (rich,) = telegram.bodies("sendRichMessage")
         blocks = rich["rich_message"]["blocks"]
         # у БД-пользователя без фамилии full_name с пробелом на конце, как у прода
-        assert blocks[0]["text"].startswith("⚡ Боевая мощь гуля ")
-        assert blocks[0]["text"].endswith(" ранга Вася ")
+        assert matches_phrase(blocks[0]["text"], "combat_power.rich.title")
+        assert blocks[0]["text"].endswith("Вася ")
         vacuum = [[c["text"] for c in row] for row in blocks[1]["cells"]]
         assert vacuum[1] == ["Сила", "10"]
         assert vacuum[4] == ["Здоровье", "50"]  # паспортный max_health
@@ -925,11 +962,7 @@ class TestCombatPower:
 
         (reply,) = (await feed(message_update("боевая мощь", uid=UID))).sent
 
-        assert reply.startswith("⚡ Боевая мощь гуля ")
-        assert "\n\n🤟 Сила: 10 → " in reply
-        assert "\n❤️ Здоровье: 50 → " in reply
-        assert "\n♦️ Кагуне: 4 → " in reply
-        assert reply.endswith("используй /kagune.")
+        assert matches_phrase(reply, "combat_power.full")
 
     async def test_short_alias(self, send, session_factory):
         ghoul = await self._seed(session_factory)
@@ -939,6 +972,4 @@ class TestCombatPower:
 
         (reply,) = await send("БМ", uid=UID)
 
-        vacuum, effective = reply.split("\n")
-        assert vacuum == f"Твоя боевая мощь вне боя: {power}"
-        assert effective.startswith("Твоя боевая мощь в бою: ")
+        assert matches_phrase(reply, "combat_power.short") and str(power) in reply

@@ -9,10 +9,17 @@ from typing import Any
 import pytest
 from sqlalchemy import select, update
 
+from src.bot.dialogs import Dialogs
 from src.bot.exceptions import ChatNotFoundInDatabase
 from src.database.models import Chat, ChatParticipant, User
 
-from .conftest import chat_member_update, message_update, owner_dict, user_dict
+from .conftest import (
+    chat_member_update,
+    message_update,
+    owner_dict,
+    phrase_texts,
+    user_dict,
+)
 
 GROUP = -100777
 
@@ -30,9 +37,8 @@ class TestBotAdded:
             chat_member_update(1, GROUP, "left", "member", my_chat_member=True)
         )
 
-        assert telegram.sent == [
-            "Пиздато конечно, что вы меня добавили. Я тупой даунский бот."
-        ]
+        (sent,) = telegram.sent
+        assert sent in phrase_texts(Dialogs.moderation.bot_added())
 
     async def test_bot_leave_transition_has_no_handler(self, feed):
         # прод держит тут пустой TODO-хендлер (см. left_chat_member.py); порт его не

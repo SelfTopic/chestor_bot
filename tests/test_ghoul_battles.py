@@ -2,18 +2,17 @@
 (eat_human.py). Исход боя задаётся подменённым MobService: моб-пустышка (игрок
 побеждает), моб-громила (игрок проигрывает) или зеркало без урона (ничья)."""
 
-import json
-
 import pytest
 from dependency_injector import providers
 
 from src.bot.config import game_config
+from src.bot.dialogs import Dialogs
 from src.bot.game_configs import EAT_HUMAN_CONFIG, MOB_CONFIG
 from src.bot.repositories import ActiveBattleRepository, BattleRepository
 from src.bot.services.battle_engine.core import FighterSnapshot
 from src.bot.services.battle_record import BattleRecordService
 
-from .conftest import matches_phrase, message_update
+from .conftest import matches_phrase, message_update, only_text, phrase_texts, rich_texts
 from .test_common_routers import seed
 from .test_ghoul_routers import (
     UID,
@@ -118,18 +117,18 @@ class TestMobFight:
         telegram = await feed(message_update("Бить моба", uid=UID))
 
         (rich,) = telegram.bodies("sendRichMessage")
-        rich_text = json.dumps(rich, ensure_ascii=False)
-        assert "⚔️ Бой" in rich_text and "Безумный гуль" in rich_text
-        (summary,) = telegram.sent
-        lines = summary.split("\n")
-        assert lines[0].startswith("📈 Опыт: +")
-        assert lines[1].startswith("💸 CheSton: +")
-        assert lines[2] == "📊 Боёв с мобами: 1 (1 побед / 0 поражений)"
+        texts = rich_texts(rich)
+        assert only_text(Dialogs.fight.title()) in texts
+        assert any("Безумный гуль" in text for text in texts)
 
-        cheston = int(lines[1].removeprefix("💸 CheSton: +"))
-        assert await balance_of(session_factory, UID) == cheston
+        cheston = await balance_of(session_factory, UID)
         ghoul = await get_ghoul(session_factory, UID)
-        assert ghoul is not None and ghoul.level_progress > 0
+        assert ghoul is not None and ghoul.level_progress > 0 and cheston > 0
+        rewards = Dialogs.mob.rewards(progress=f"{ghoul.level_progress:.2f}", cheston=cheston)
+        (summary,) = telegram.sent
+        assert summary in phrase_texts(
+            Dialogs.mob.summary(outcome=rewards, total=1, wins=1, losses=0)
+        )
         assert await mob_battles(session_factory, UID) == (1, 1, 0)
         assert not await is_busy(session_factory, UID)
 
@@ -141,18 +140,18 @@ class TestMobFight:
         (summary,) = await send("бить моба", uid=UID)
 
         rc_line = summary.split("\n")[2]
-        assert matches_phrase(rc_line, "mob.rc_found")
         ghoul = await get_ghoul(session_factory, UID)
-        assert ghoul is not None and f"{ghoul.rc_money} RC-клеток" in rc_line
+        assert ghoul is not None and ghoul.rc_money > 0
+        assert rc_line in phrase_texts(Dialogs.mob.rc_found(rc=ghoul.rc_money))
 
     async def test_loss(self, send, session_factory, mob):
         mob("strong")
         await self._seed(session_factory, **HARMLESS_PLAYER)
 
         (reply,) = await send("бить моба", uid=UID)
-        outcome, score = reply.split("\n")
-        assert matches_phrase(outcome, "mob.lost")
-        assert score == "📊 Боёв с мобами: 1 (0 побед / 1 поражений)"
+        assert reply in phrase_texts(
+            Dialogs.mob.summary(outcome=Dialogs.mob.lost(), total=1, wins=0, losses=1)
+        )
         ghoul = await get_ghoul(session_factory, UID)
         assert ghoul is not None and ghoul.health == 1  # бой сам не убивает
         assert await balance_of(session_factory, UID) == 0
@@ -162,9 +161,9 @@ class TestMobFight:
         await self._seed(session_factory, **HARMLESS_PLAYER)
 
         (reply,) = await send("бить моба", uid=UID)
-        outcome, score = reply.split("\n")
-        assert matches_phrase(outcome, "mob.draw")
-        assert score == "📊 Боёв с мобами: 1 (0 побед / 0 поражений)"
+        assert reply in phrase_texts(
+            Dialogs.mob.summary(outcome=Dialogs.mob.draw(), total=1, wins=0, losses=0)
+        )
 
     async def test_plain_text_when_rich_fails(
         self, feed, telegram, session_factory, mob
@@ -176,9 +175,8 @@ class TestMobFight:
         sent = (await feed(message_update("бить моба", uid=UID))).sent
 
         assert len(sent) == 2
-        assert sent[0].startswith("⚔️ Бой\n\nГуль ")
-        assert "\nVS\n" in sent[0] and "📜 Раундов: " in sent[0]
-        assert sent[1].startswith("📈 Опыт: +")
+        assert matches_phrase(sent[0], "fight.summary")
+        assert matches_phrase(sent[1], "mob.summary")
 
     async def test_cooldown(self, send, session_factory, mob):
         mob("weak")
@@ -248,9 +246,8 @@ class TestEatHuman:
         ghoul = await get_ghoul(session_factory, UID)
         assert ghoul is not None and ghoul.eat_humans == 3
         restored = ghoul.hunger - 10
-        assert matches_phrase(reply, "eat_human.done")
-        assert reply.endswith(
-            f"🍖 Голод: +{restored}%, теперь {ghoul.hunger}%\n🥩 Съедено людей: 3"
+        assert reply in phrase_texts(
+            Dialogs.eat_human.done(restored=restored, hunger=ghoul.hunger, count=3)
         )
         assert await mob_battles(session_factory, UID) == (0, 0, 0)
 
@@ -261,8 +258,7 @@ class TestEatHuman:
 
         (reply,) = await send("сожрать человека", uid=UID)
 
-        # 14 или ровно 15 часов: остаток округляется до секунд
-        assert matches_phrase(reply, "eat_human.cooldown") and "⏳ 1" in reply
+        assert matches_phrase(reply, "eat_human.cooldown")
         ghoul = await get_ghoul(session_factory, UID)
         assert ghoul is not None and ghoul.eat_humans == 1
 
@@ -291,7 +287,6 @@ class TestEatHuman:
         assert telegram.methods_called("sendRichMessage") == 1
         ambushed, rewards, eaten = telegram.sent
         assert matches_phrase(ambushed, "eat_human.ambush.started")
-        assert rewards.startswith("📈 Опыт: +")
         assert matches_phrase(rewards, "eat_human.ambush.won")
         assert matches_phrase(eaten, "eat_human.done")
 

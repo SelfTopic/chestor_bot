@@ -337,8 +337,54 @@ def make_ghoul(ghoul_repo: GhoulRepository) -> Callable[..., Awaitable[Ghoul]]:
 
 
 def phrase_texts(line: Line) -> set[str]:
-    """Все тексты, которыми бот может ответить фразой с этими подстановками."""
-    return {variant.format_map(line.params) for variant in load_texts()[line.key].variants}
+    """Все тексты, которыми бот может ответить фразой с этими подстановками.
+
+    Подстановка-фраза (Line) раскрывается во все свои варианты: так проверяются
+    составные сообщения, например итог боя с фразой поражения внутри. Тесты сверяют
+    фразу и значения, а не формулировку: текст из YAML в тестах не пишется."""
+    expanded: list[dict[str, object]] = [{}]
+    for name, value in line.params.items():
+        options = phrase_texts(value) if isinstance(value, Line) else {value}
+        expanded = [{**params, name: option} for params in expanded for option in options]
+    return {
+        variant.format_map(params)
+        for variant in load_texts()[line.key].variants
+        for params in expanded
+    }
+
+
+def only_text(line: Line) -> str:
+    """Текст фразы с одним вариантом, например надпись на кнопке."""
+    (text,) = phrase_texts(line)
+    return text
+
+
+def rich_texts(body: dict[str, Any]) -> list[str]:
+    """Тексты всех блоков rich-сообщения: сегменты (жирное имя и т. п.) склеены."""
+
+    def flat(value: object) -> str:
+        if isinstance(value, str):
+            return value
+        if isinstance(value, list):
+            return "".join(flat(item) for item in value)
+        if isinstance(value, dict):
+            return flat(value.get("text", ""))
+        return ""
+
+    found: list[str] = []
+
+    def walk(node: object) -> None:
+        if isinstance(node, dict):
+            for key, value in node.items():
+                if key in ("text", "summary"):
+                    found.append(flat(value))
+                walk(value)
+        elif isinstance(node, list):
+            for item in node:
+                walk(item)
+
+    walk(body)
+    return found
 
 
 def matches_phrase(text: str, key: str) -> bool:
@@ -346,7 +392,7 @@ def matches_phrase(text: str, key: str) -> bool:
     выбираются случайно, поэтому тест не знает, какой именно пришёл."""
     for variant in load_texts()[key].variants:
         pattern = "".join(
-            re.escape(literal) + (".+?" if field is not None else "")
+            re.escape(literal) + (".*?" if field is not None else "")
             for literal, field, _, _ in string.Formatter().parse(variant)
         )
         if re.fullmatch(pattern, text, re.DOTALL):

@@ -6,16 +6,17 @@ from pathlib import Path
 
 import pytest
 
-from src.bot.dialogs import Line
+from src.bot.dialogs import Dialogs, Line
 from src.bot.repositories import ChatRepository, GhoulRepository, UserRepository
 from src.bot.types import KaguneType
 from src.config import settings
 from src.database.models import Cooldown
 from src.bot.routers.creator_routers.media import USAGE as ADD_GIF_USAGE
+from src.bot.routers.creator_routers.stats_edits import USAGE as SET_STAT_USAGE
 from src.bot.services.broadcast import BroadcastService
 from src.bot.services.notify import NotifyError, SelfrotBotNotifier
 
-from .conftest import message_update, owner_dict
+from .conftest import matches_phrase, message_update, only_text, owner_dict
 from .test_common_routers import seed
 from .test_update_middlewares import get_user
 
@@ -64,7 +65,8 @@ class TestBan:
         await seed(session_factory, 42, "Вася", username="vasya")
 
         (reply,) = await send("/ban_bot @vasya", uid=ADMIN)
-        assert "заблокирован навсегда" in reply
+        assert matches_phrase(reply, "admin.ban.done")
+        assert only_text(Dialogs.banned.forever()) in reply
 
         user = await get_user(session_factory, 42)
         assert user is not None and user.is_banned
@@ -75,11 +77,11 @@ class TestBan:
         telegram.calls.clear()
         await feed(message_update("/ban_bot причина", uid=ADMIN, reply_to_uid=42))
 
-        assert telegram.sent == ["⚠️ Пользователь уже забанен."]
+        assert telegram.sent == [only_text(Dialogs.admin.ban.already())]
 
     async def test_target_not_found(self, send):
         (reply,) = await send("/ban_bot @nobody", uid=ADMIN)
-        assert "не найден" in reply
+        assert reply == only_text(Dialogs.errors.user_not_found(query="@nobody"))
 
     async def test_unban_by_reply(self, feed, telegram, session_factory):
         await seed(session_factory, 42, "Вася", is_banned=True)
@@ -92,7 +94,9 @@ class TestBan:
     async def test_unban_explicit_not_banned(self, send, session_factory):
         await seed(session_factory, 42, "Вася", username="vasya")
 
-        assert await send("/unban @vasya", uid=ADMIN) == ["⚠️ Пользователь не забанен."]
+        assert await send("/unban @vasya", uid=ADMIN) == [
+            only_text(Dialogs.admin.unban.not_banned())
+        ]
 
 
 class TestPlayersLookup:
@@ -100,24 +104,29 @@ class TestPlayersLookup:
         await seed(session_factory, 42, "Вася", balance=500)
 
         (reply,) = await send("/admin_profile 42", uid=ADMIN)
+        assert matches_phrase(reply, "admin.profile.card")
         assert "Вася" in reply and "500" in reply
-        assert "✅ Активен" in reply and "Причина" not in reply
+        assert only_text(Dialogs.admin.profile.active()) in reply
+        assert only_text(Dialogs.admin.profile.banned()) not in reply
 
     async def test_banned_profile_shows_reason_and_term(self, send, session_factory):
         await seed(session_factory, 42, "Вася")
         await send("/ban_bot 42 читерство", uid=ADMIN)
 
         (reply,) = await send("/admin_profile 42", uid=ADMIN)
-        assert "🚫 Забанен\nПричина: читерство\nСрок: навсегда" in reply
+        ban = Dialogs.admin.profile.ban(
+            reason="читерство", term=only_text(Dialogs.banned.forever())
+        )
+        assert only_text(Dialogs.admin.profile.banned()) + only_text(ban) in reply
 
     async def test_profile_not_found(self, send):
         assert await send("/admin_profile @nobody", uid=ADMIN) == [
-            "❌ Пользователь не найден."
+            only_text(Dialogs.admin.profile.not_found())
         ]
 
     async def test_usage_on_missing_argument(self, send):
         (reply,) = await send("/admin_profile", uid=ADMIN)
-        assert reply.startswith("Использование:")
+        assert reply == only_text(Dialogs.admin.profile.usage())
 
 
 class TestStatsEdit:
@@ -134,7 +143,10 @@ class TestStatsEdit:
         await seed(session_factory, 42, "Вася", username="vasya", balance=100)
 
         (reply,) = await send("/set_stat @vasya balance 300", uid=ADMIN)
-        assert "установлено в <code>300</code>" in reply
+        target = only_text(Dialogs.admin.stats.target_user())
+        assert reply == only_text(
+            Dialogs.admin.stats.done(field="balance", target=target, value=300)
+        )
 
     async def test_ghoul_field(self, send, session_factory):
         await seed(session_factory, 42, "Вася")
@@ -143,7 +155,10 @@ class TestStatsEdit:
             await session.commit()
 
         (reply,) = await send("/set_stat 42 level 5", uid=ADMIN)
-        assert "гуля" in reply
+        target = only_text(Dialogs.admin.stats.target_ghoul())
+        assert reply == only_text(
+            Dialogs.admin.stats.done(field="level", target=target, value=5)
+        )
 
         ghoul = await get_ghoul(session_factory, 42)
         assert ghoul is not None and ghoul.level == 5
@@ -152,13 +167,12 @@ class TestStatsEdit:
         await seed(session_factory, 42, "Вася")
 
         (reply,) = await send("/set_stat 42 nonsense 1", uid=ADMIN)
-        assert "Неизвестное поле" in reply
+        assert reply == only_text(Dialogs.admin.stats.unknown_field(field="nonsense"))
 
     async def test_usage_lists_fields(self, send):
         (reply,) = await send("/set_stat", uid=ADMIN)
-        assert reply.startswith("Использование: /set_stat")
+        assert reply == only_text(SET_STAT_USAGE)
         assert "hunger_hours_ago" in reply and "health_hours_ago" in reply
-        assert "Поля пользователя" in reply
 
 
 class TestReset:
@@ -177,14 +191,14 @@ class TestReset:
         await seed(session_factory, 42, "Вася", username="vasya")
 
         assert await send("/reset_ghoul @vasya", uid=ADMIN) == [
-            "⚠️ Профиль гуля не найден."
+            only_text(Dialogs.admin.reset.no_ghoul())
         ]
 
     async def test_reset_user_explicit(self, send, session_factory):
         await seed(session_factory, 42, "Вася", username="vasya")
 
         (reply,) = await send("/reset_user @vasya", uid=ADMIN)
-        assert "полностью удалён" in reply
+        assert matches_phrase(reply, "admin.reset.user_done")
         assert await get_user(session_factory, 42) is None
 
 
@@ -207,17 +221,17 @@ class TestKill:
             await session.commit()
 
         (reply,) = await send("/kill_ghoul @vasya", uid=ADMIN)
-        assert "причина: admin" in reply
+        assert reply == only_text(Dialogs.admin.kill.done(id=42, cause="admin", deaths=1))
 
     async def test_kill_no_ghoul(self, send, session_factory):
         await seed(session_factory, 42, "Вася", username="vasya")
 
         (reply,) = await send("/kill_ghoul @vasya", uid=ADMIN)
-        assert reply.startswith("❌")
+        assert reply == only_text(Dialogs.admin.ghoul_not_found())
 
     async def test_kill_target_not_found(self, send):
         (reply,) = await send("/kill_ghoul @nobody", uid=ADMIN)
-        assert "не найден" in reply
+        assert reply == only_text(Dialogs.errors.user_not_found(query="@nobody"))
 
 
 class TestCooldownAdmin:
@@ -238,21 +252,21 @@ class TestCooldownAdmin:
 
         await feed(message_update("/clear_cooldown snap", uid=ADMIN, reply_to_uid=42))
 
-        assert telegram.sent == ["✅ Кулдаун SNAP сброшен."]
+        assert telegram.sent == [only_text(Dialogs.admin.cooldown.cleared(type="SNAP"))]
 
     async def test_clear_all_explicit(self, send, session_factory):
         await seed(session_factory, 42, "Вася", username="vasya")
         await self.seed_cooldown(session_factory, 42)
 
         assert await send("/clear_cooldown @vasya all", uid=ADMIN) == [
-            "✅ Сброшено кулдаунов: 1."
+            only_text(Dialogs.admin.cooldown.all_cleared(count=1))
         ]
 
     async def test_unknown_type(self, send, session_factory):
         await seed(session_factory, 42, "Вася", username="vasya")
 
         (reply,) = await send("/clear_cooldown @vasya nonsense", uid=ADMIN)
-        assert reply.startswith("❌ Неизвестный тип")
+        assert matches_phrase(reply, "admin.cooldown.unknown_type")
 
     async def test_nothing_to_clear(self, send, session_factory):
         await seed(session_factory, 42, "Вася", username="vasya")
@@ -262,7 +276,7 @@ class TestCooldownAdmin:
             await session.commit()
 
         (reply,) = await send("/clear_cooldown @vasya other", uid=ADMIN)
-        assert "не было активного кулдауна" in reply
+        assert matches_phrase(reply, "admin.cooldown.not_active")
 
 
 class TestKaguneAdmin:
@@ -292,13 +306,13 @@ class TestKaguneAdmin:
         name = next(iter(KaguneType)).value["name_english"]
 
         (reply,) = await send(f"/give_kagune @vasya {name}", uid=ADMIN)
-        assert reply.startswith("✅ Выдан тип")
+        assert matches_phrase(reply, "admin.kagune.given")
 
     async def test_give_unknown_type(self, send, session_factory):
         await self.seed_ghoul(session_factory, self.UID)
 
         (reply,) = await send("/give_kagune @vasya nonsense", uid=ADMIN)
-        assert reply.startswith("❌ Неизвестный тип")
+        assert matches_phrase(reply, "admin.kagune.unknown_type_or_all")
 
     async def test_remove(self, send, session_factory):
         await self.seed_ghoul(session_factory, self.UID)
@@ -310,7 +324,7 @@ class TestKaguneAdmin:
             f"/remove_kagune @vasya {first.value['name_english']}", uid=ADMIN
         )
 
-        assert reply.startswith("✅ Тип")
+        assert matches_phrase(reply, "admin.kagune.removed")
 
 
 class TestMedia:
@@ -382,7 +396,7 @@ class TestMedia:
 
         assert path.exists() and path.read_bytes() == b"gif-bytes"
         (sent,) = telegram.bodies("sendAnimation")
-        assert "успешно скачано" in sent["caption"]
+        assert matches_phrase(sent["caption"], "admin.media.saved")
 
         row = await self.get_media_row(session_factory, str(path))
         assert row is not None
@@ -423,7 +437,9 @@ class TestMedia:
             reply_extra=self.animation_reply(),
         )
 
-        assert reply.startswith("Для папки гифок фразы kagune.upgrade.done нужна")
+        assert reply == only_text(
+            Dialogs.admin.media.missing_param(key="kagune.upgrade.done", name="kagune")
+        )
         assert telegram.downloads == []
 
     async def test_unknown_collection(self, feed, telegram):
@@ -436,12 +452,12 @@ class TestMedia:
             )
         )
 
-        assert "не найдена" in telegram_response.sent[0]
+        assert matches_phrase(telegram_response.sent[0], "admin.media.unknown_collection")
         assert telegram.downloads == []  # до скачивания не дошло
 
     async def test_no_media_in_reply(self, send):
         assert await send("/add_gif snap", uid=ADMIN, reply_to_uid=42) == [
-            "В выбранном вами сообщении отсутствует гиф или видео"
+            only_text(Dialogs.admin.media.no_media())
         ]
 
     async def test_missing_collection_argument(self, send):
@@ -469,7 +485,7 @@ class TestMedia:
         telegram.calls.clear()
         await feed(raw)
 
-        assert telegram.sent == ["Запись в базе данных с таким файлом уже существует"]
+        assert telegram.sent == [only_text(Dialogs.admin.media.exists())]
 
 
 class TestBroadcast:
@@ -486,7 +502,9 @@ class TestBroadcast:
         # получателей 2: seed(42) и сам админ — SyncEntitiesMiddleware завёл его
         # с has_private_chat=True (личка с ботом, раз он пишет команду в личке);
         # 43 (has_private_chat=False) в рассылку не попал
-        assert "Всего: 2 | Успешно: 2 | Ошибок: 0" in texts[-1]
+        assert texts[-1] == only_text(
+            Dialogs.admin.broadcast.finished(total=2, success=2, failed=0)
+        )
 
     async def test_broadcast_chats_targets_known_chats(
         self, feed, telegram, session_factory
@@ -496,7 +514,9 @@ class TestBroadcast:
         telegram.calls.clear()
 
         telegram = await feed(message_update("/broadcast_chats новости", uid=ADMIN))
-        assert "Всего: 1 | Успешно: 1 | Ошибок: 0" in telegram.sent[-1]
+        assert telegram.sent[-1] == only_text(
+            Dialogs.admin.broadcast.finished(total=1, success=1, failed=0)
+        )
 
     async def test_broadcast_all_sums_both(self, feed, telegram, session_factory):
         await seed(session_factory, 42, "Вася", has_private_chat=True)
@@ -506,21 +526,23 @@ class TestBroadcast:
 
         telegram = await feed(message_update("/broadcast_all всем", uid=ADMIN))
         # личка: 42 + сам админ (см. test_broadcast_private_*), плюс 1 чат
-        assert "Всего: 3 | Успешно: 3 | Ошибок: 0" in telegram.sent[-1]
+        assert telegram.sent[-1] == only_text(
+            Dialogs.admin.broadcast.finished(total=3, success=3, failed=0)
+        )
 
     async def test_broadcast_user_by_username(self, send, session_factory):
         await seed(session_factory, 42, "Вася", username="vasya")
 
         texts = await send("/broadcast_user @vasya привет лично", uid=ADMIN)
-        assert texts[-1] == "✅ Сообщение отправлено."
+        assert texts[-1] == only_text(Dialogs.admin.broadcast.sent())
 
     async def test_broadcast_user_not_found(self, send):
         (reply,) = await send("/broadcast_user @nobody текст", uid=ADMIN)
-        assert "не найден" in reply
+        assert reply == only_text(Dialogs.errors.user_not_found(query="@nobody"))
 
     async def test_missing_text_shows_usage(self, send):
         (reply,) = await send("/broadcast_private", uid=ADMIN)
-        assert reply == "Использование: /broadcast_private <текст>"
+        assert reply == only_text(Dialogs.admin.broadcast.private_usage())
 
 
 class TestLevelUp:
@@ -543,7 +565,7 @@ class TestLevelUp:
             message_update("/force_levelup", uid=ADMIN, reply_to_uid=self.UID)
         )
         # два сообщения: ЛС о левелапе адресату и подтверждение админу (последнее)
-        assert telegram.sent[-1].startswith("✅ Уровень: 4.")
+        assert matches_phrase(telegram.sent[-1], "admin.level_up.done")
         ghoul = await get_ghoul(session_factory, self.UID)
         assert ghoul is not None and ghoul.level == 4
 
@@ -551,11 +573,11 @@ class TestLevelUp:
         await seed(session_factory, self.UID, "Вася", username="vasya")
 
         (reply,) = await send(f"/force_levelup {self.UID}", uid=ADMIN)
-        assert reply.startswith("❌")
+        assert reply == only_text(Dialogs.admin.ghoul_not_found())
 
     async def test_force_levelup_target_not_found(self, send):
         (reply,) = await send("/force_levelup @nobody", uid=ADMIN)
-        assert "не найден" in reply
+        assert reply == only_text(Dialogs.errors.user_not_found(query="@nobody"))
 
     async def test_add_progress_by_reply_triggers_level_up(
         self, feed, telegram, session_factory
@@ -565,7 +587,8 @@ class TestLevelUp:
         telegram = await feed(
             message_update("/add_progress 50", uid=ADMIN, reply_to_uid=self.UID)
         )
-        assert "Уровней получено: 1" in telegram.sent[-1]
+        progress, _level_line = telegram.sent[-1].split("\n")
+        assert matches_phrase(progress, "admin.progress.done")
         ghoul = await get_ghoul(session_factory, self.UID)
         assert ghoul is not None and ghoul.level == 4
 
@@ -573,12 +596,12 @@ class TestLevelUp:
         await self.ghoul(session_factory, self.UID)
 
         assert await send(f"/add_progress {self.UID} 500", uid=ADMIN) == [
-            "❌ Дельта должна быть в диапазоне от -100 до 100."
+            only_text(Dialogs.admin.progress.delta_range())
         ]
 
     async def test_add_progress_usage(self, send):
         (reply,) = await send("/add_progress", uid=ADMIN, reply_to_uid=self.UID)
-        assert reply.startswith("Использование (реплаем")
+        assert reply == only_text(Dialogs.admin.progress.replied_usage())
 
 
 class FakeNotifier:

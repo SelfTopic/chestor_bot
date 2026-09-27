@@ -25,8 +25,10 @@ from .conftest import (
     callback_update,
     matches_phrase,
     message_update,
+    only_text,
     owner_dict,
     phrase_texts,
+    rich_texts,
 )
 from .test_common_routers import seed
 from .test_ghoul_battles import is_busy
@@ -114,10 +116,7 @@ class TestInvite:
     async def test_usage_without_target(self, send, session_factory):
         await seed_duelist(session_factory, A, "Вася")
 
-        assert await send("Дуэль", uid=A, chat=GROUP) == [
-            "Вызови реплаем на сообщение соперника, либо «дуэль @username» / "
-            "«дуэль <id>»."
-        ]
+        assert await send("Дуэль", uid=A, chat=GROUP) == [only_text(Dialogs.duel.usage())]
 
     async def test_word_starting_with_duel_is_not_a_command(self, send, session_factory):
         # исправленный прод-баг: прод ловил команду по началу текста и отвечал
@@ -139,7 +138,7 @@ class TestInvite:
         await seed_duelist(session_factory, A, "Вася")
 
         assert await send("дуэль @nobody", uid=A, chat=GROUP) == [
-            "Пользователь не найден: @nobody"
+            only_text(Dialogs.duel.user_not_found(target="@nobody"))
         ]
 
     async def test_self(self, send, session_factory):
@@ -154,21 +153,24 @@ class TestInvite:
         await seed_duelist(session_factory, A, "Вася")
 
         assert await send("дуэль", uid=A, chat=GROUP, reply_to_uid=B) == [
-            "Один из участников не зарегистрирован."
+            only_text(Dialogs.duel.refusals.not_registered())
         ]
 
     @pytest.mark.parametrize(
-        ("initiator_private", "who"), [(False, "Тебе"), (True, "Сопернику")]
+        ("initiator_private", "refusal"),
+        [
+            (False, Dialogs.duel.refusals.initiator_no_private_chat()),
+            (True, Dialogs.duel.refusals.target_no_private_chat()),
+        ],
     )
     async def test_private_chat_required(
-        self, send, session_factory, initiator_private, who
+        self, send, session_factory, initiator_private, refusal
     ):
         await seed_duelist(session_factory, A, "Вася", private=initiator_private)
         await seed_duelist(session_factory, B, "Петя", private=False)
 
         assert await send("дуэль", uid=A, chat=GROUP, reply_to_uid=B) == [
-            f"{who} нужно один раз написать боту в ЛС (подойдёт /start) - иначе "
-            "часть сообщений о бое некуда будет доставить."
+            only_text(refusal)
         ]
 
     async def test_target_without_ghoul(self, send, session_factory):
@@ -207,7 +209,7 @@ class TestInvite:
         await record_duels(session_factory, A, B, 5)
 
         assert await send("дуэль", uid=A, chat=GROUP, reply_to_uid=B) == [
-            "Лимит боёв с этим соперником на сегодня исчерпан (5/сутки)."
+            only_text(Dialogs.duel.refusals.pair_limit(per_pair=5))
         ]
 
     async def test_daily_limit(self, send, session_factory):
@@ -217,7 +219,7 @@ class TestInvite:
         await record_duels(session_factory, A, C, 20)
 
         assert await send("дуэль", uid=A, chat=GROUP, reply_to_uid=B) == [
-            "Твой дневной лимит боёв исчерпан (20/сутки)."
+            only_text(Dialogs.duel.refusals.initiator_day_limit(per_day=20))
         ]
 
     async def test_target_daily_limit(self, send, session_factory):
@@ -227,7 +229,7 @@ class TestInvite:
         await record_duels(session_factory, B, C, 20)
 
         assert await send("дуэль", uid=A, chat=GROUP, reply_to_uid=B) == [
-            "У соперника исчерпан дневной лимит боёв на сегодня."
+            only_text(Dialogs.duel.refusals.target_day_limit())
         ]
 
     async def test_group_invite(self, feed, session_factory):
@@ -248,11 +250,11 @@ class TestInvite:
         assert duel is not None and not duel.is_private_origin
         assert duel.consent_message_id == 100
         assert (
-            button_data(body, "✅ Подтверждаю вызов (инициатор)")
+            button_data(body, only_text(Dialogs.duel.buttons.consent_initiator()))
             == f"duel:{duel.id}:consent_initiator:{A}"
         )
         assert (
-            button_data(body, "⚔️ Принимаю бой") == f"duel:{duel.id}:consent_target:{B}"
+            button_data(body, only_text(Dialogs.duel.buttons.consent_target())) == f"duel:{duel.id}:consent_target:{B}"
         )
         assert await is_busy(session_factory, A) and await is_busy(session_factory, B)
 
@@ -309,11 +311,11 @@ class TestConsent:
         telegram = await feed(press(duel_id, "consent_target", B))
 
         (answer,) = telegram.bodies("answerCallbackQuery")
-        assert answer["text"] == "Принято, ждём второго участника."
+        assert answer["text"] == only_text(Dialogs.duel.consent.accepted())
         (edited,) = telegram.bodies("editMessageText")
         assert edited["chat_id"] == GROUP and edited["message_id"] == 100
-        assert edited["text"] == "✅ Один из участников подтвердил, ждём второго."
-        assert button_data(edited, "⚔️ Принимаю бой")
+        assert edited["text"] == only_text(Dialogs.duel.consent.one_confirmed())
+        assert button_data(edited, only_text(Dialogs.duel.buttons.consent_target()))
 
     async def test_both_consent_runs_the_fight(self, feed, session_factory, invite):
         await self._seed(session_factory)
@@ -323,14 +325,15 @@ class TestConsent:
         telegram = await feed(press(duel_id, "consent_initiator", A))
 
         (answer,) = telegram.bodies("answerCallbackQuery")
-        assert answer["text"] == "Оба подтвердили!"
+        assert answer["text"] == only_text(Dialogs.duel.consent.both_confirmed())
         assert telegram.bodies("deleteMessage") == [
             {"chat_id": GROUP, "message_id": 100}
         ]
         (rich,) = telegram.bodies("sendRichMessage")
         assert rich["chat_id"] == GROUP
-        assert "🏆 Победитель: " in rich_text(rich) and "Вася" in rich_text(rich)
-        assert button_data(rich, "🕊️ Отпустить") == f"duel:{duel_id}:outcome_release:{A}"
+        assert any(matches_phrase(text, "fight.winner") for text in rich_texts(rich))
+        assert "Вася" in rich_text(rich)
+        assert button_data(rich, only_text(Dialogs.duel.buttons.release())) == f"duel:{duel_id}:outcome_release:{A}"
 
         duel = await get_duel(session_factory, duel_id)
         assert duel.stage == "awaiting_winner_choice"
@@ -348,7 +351,7 @@ class TestConsent:
         telegram = await feed(press(duel_id, "consent_target", B))
 
         (answer,) = telegram.bodies("answerCallbackQuery")
-        assert answer["text"] == "Приглашение уже неактуально."
+        assert answer["text"] == only_text(Dialogs.duel.consent.stale())
         assert answer["show_alert"] is True
 
     async def test_plain_text_when_rich_fails(
@@ -362,8 +365,8 @@ class TestConsent:
         telegram = await feed(press(duel_id, "consent_initiator", A))
 
         (body,) = telegram.bodies("sendMessage")
-        assert body["text"].startswith("⚔️ Бой\n\nГуль ")
-        assert button_data(body, "💰 Ограбить") == f"duel:{duel_id}:outcome_rob:{A}"
+        assert matches_phrase(body["text"], "fight.summary")
+        assert button_data(body, only_text(Dialogs.duel.buttons.rob())) == f"duel:{duel_id}:outcome_rob:{A}"
 
     async def test_much_stronger_side_chooses(self, feed, session_factory, invite):
         await self._seed(session_factory, a=FAVORED)
@@ -374,10 +377,10 @@ class TestConsent:
 
         group, dm = telegram.bodies("sendMessage")
         assert group["chat_id"] == GROUP
-        assert group["text"] == "⚔️ Оба согласились! Ждём решения сильнейшей стороны."
+        assert group["text"] == only_text(Dialogs.duel.consent.waiting_favored())
         assert dm["chat_id"] == A
         assert matches_phrase(dm["text"], "duel.fora.question")
-        assert button_data(dm, "🤝 Дать фору") == f"duel:{duel_id}:fora_handicap:{A}"
+        assert button_data(dm, only_text(Dialogs.duel.buttons.handicap())) == f"duel:{duel_id}:fora_handicap:{A}"
         assert telegram.methods_called("sendRichMessage") == 0
         duel = await get_duel(session_factory, duel_id)
         assert duel.stage == "awaiting_serious_or_handicap"
@@ -397,9 +400,9 @@ class TestConsent:
         telegram = await feed(press(duel_id, action, A))
 
         (answer,) = telegram.bodies("answerCallbackQuery")
-        assert answer["text"] == "Принято!"
+        assert answer["text"] == only_text(Dialogs.duel.accepted())
         (edited,) = telegram.bodies("editMessageText")
-        assert edited["text"] == "Решение принято, бой начинается."
+        assert edited["text"] == only_text(Dialogs.duel.fora.starting())
         assert telegram.methods_called("sendRichMessage") == 1
         duel = await get_duel(session_factory, duel_id)
         assert duel.compress_hp is compress
@@ -407,7 +410,7 @@ class TestConsent:
 
         telegram = await feed(press(duel_id, action, A))
         (late,) = telegram.bodies("answerCallbackQuery")
-        assert late["text"] == "Уже неактуально."
+        assert late["text"] == only_text(Dialogs.duel.stale())
 
 
 class TestOutcome:
@@ -424,7 +427,7 @@ class TestOutcome:
         telegram = await feed(press(fought, "outcome_release", A))
 
         (answer,) = telegram.bodies("answerCallbackQuery")
-        assert answer["text"] == "Принято!"
+        assert answer["text"] == only_text(Dialogs.duel.accepted())
         assert telegram.bodies("editMessageReplyMarkup") == [
             {"chat_id": GROUP, "message_id": 100}
         ]
@@ -434,9 +437,13 @@ class TestOutcome:
         assert released in phrase_texts(
             Dialogs.duel.outcome.released(winner="Вася ", loser="Петя ")
         )
+        outcome = Dialogs.duel.outcome
         assert rest == (
-            "📈 Вася  получил 1.00% опыта за победу.\n\n"
-            "📊 Вася : 1 боёв (1П/0)\n📊 Петя : 1 боёв (0П/1)"
+            only_text(outcome.experience(winner="Вася ", progress="1.00"))
+            + "\n\n"
+            + only_text(outcome.score(name="Вася ", total=1, wins=1, losses=0))
+            + "\n"
+            + only_text(outcome.score(name="Петя ", total=1, wins=0, losses=1))
         )
         duel = await get_duel(session_factory, fought)
         assert duel.stage == "done" and duel.winner_choice == "outcome_release"
@@ -445,7 +452,7 @@ class TestOutcome:
 
         telegram = await feed(press(fought, "outcome_rob", A))
         (late,) = telegram.bodies("answerCallbackQuery")
-        assert late["text"] == "Уже неактуально."
+        assert late["text"] == only_text(Dialogs.duel.stale())
 
     async def test_rob(self, feed, session_factory, fought):
         async with session_factory() as session:
@@ -483,7 +490,7 @@ class TestOutcome:
         assert eaten in phrase_texts(
             Dialogs.duel.outcome.eaten(winner="Вася ", loser="Петя ", rc=winner.rc_money)
         )
-        assert hunger.startswith("🍖 Голод Вася  восстановлен на ")
+        assert matches_phrase(hunger, "duel.outcome.hunger")
 
     async def test_loser_cannot_choose(self, feed, session_factory, fought):
         telegram = await feed(press(fought, "outcome_release", A, uid=B))
@@ -502,7 +509,7 @@ class TestDraw:
         telegram = await feed(press(duel_id, "consent_initiator", A))
 
         (rich,) = telegram.bodies("sendRichMessage")
-        assert "🤝 Ничья." in rich_text(rich)
+        assert only_text(Dialogs.fight.draw()) in rich_texts(rich)
         assert "reply_markup" not in rich
         duel = await get_duel(session_factory, duel_id)
         assert duel.stage == "done"

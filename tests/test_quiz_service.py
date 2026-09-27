@@ -5,9 +5,11 @@ import time
 import pytest
 from ghoul_quiz import Question, TokenManager, TokenPair
 
+from src.bot.dialogs import Dialogs
 from src.bot.exceptions import QuizEmailMissing, QuizSessionMissing
 from src.bot.services.quiz import QuizService
 
+from .conftest import only_text
 from .test_common_routers import seed
 from .test_ghoul_routers import seed_ghoul
 
@@ -111,7 +113,7 @@ async def test_quiz_without_session_answers_global_error(
 
     (reply,) = await send("/quiz", uid=700001)
 
-    assert "GHOUL_QUIZ_EMAIL" in reply
+    assert reply == only_text(Dialogs.errors.quiz.email_missing())
     (error,) = dispatcher.errors
     assert isinstance(error, QuizEmailMissing)
     dispatcher.errors.clear()  # ошибка ожидаемая

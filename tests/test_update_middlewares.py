@@ -12,7 +12,13 @@ from src.database.models import Chat, User
 from src.bot.__main__ import Dispatcher
 from src.bot.context import AppContext
 
-from .conftest import admin_dict, callback_update, message_update, owner_dict
+from .conftest import (
+    admin_dict,
+    callback_update,
+    matches_phrase,
+    message_update,
+    owner_dict,
+)
 
 
 async def get_user(session_factory, telegram_id: int) -> User | None:
@@ -103,7 +109,7 @@ class TestBan:
 
         (answer,) = telegram.bodies("answerCallbackQuery")
         assert answer["show_alert"] is True
-        assert "заблокированы" in answer["text"] and "спам" in answer["text"]
+        assert matches_phrase(answer["text"], "banned.notice") and "спам" in answer["text"]
 
     async def test_expired_ban_is_lifted_and_committed(self, send, session_factory):
         # unban идёт через сессию DatabaseMiddleware (ContextVar виден в BanMiddleware)

@@ -3,8 +3,6 @@ Role-Play, кагуне и расовый профиль, wordle, anime. Оши�
 через Dispatcher.on_error (замена error_router)."""
 
 import asyncio
-import json
-import re
 from datetime import datetime
 from pathlib import Path
 
@@ -18,14 +16,17 @@ from src.bot.services.wikipedia import WikipediaSummary
 from src.database.models import Chat
 from src.bot.routers.common.anime.guard import cut_guard
 from src.bot.routers.common.transfer.flow import TransferPress
+from src.bot.routers.common.wordle.captions import attempts_word
 
 from .conftest import (
     button_data,
     callback_update,
     matches_phrase,
     message_update,
-    phrase_texts,
+    only_text,
     owner_dict,
+    phrase_texts,
+    rich_texts,
 )
 from .test_update_middlewares import get_user
 
@@ -55,8 +56,7 @@ class TestStartAndHelp:
     async def test_help(self, send):
         (reply,) = await send("/help")
 
-        assert reply == send.dispatcher.dialog_service.text(Dialogs.help())
-        assert "https://t.me/CheStorCommands" in reply
+        assert reply == only_text(Dialogs.help())
 
     @pytest.mark.parametrize("text", ["старт", "/starts", "/helper"])
     async def test_ignores_other_text(self, send, text):
@@ -73,18 +73,20 @@ class TestTops:
     async def test_default_top_is_ordered_by_balance(self, send):
         (reply,) = await send("топ бал", uid=50)
 
-        lines = reply.splitlines()
-        assert lines[0] == "🏆 Топ 20 самых богатых гулей:"
-        assert lines[2:5] == [
-            "1. Альфа - 300 CheSton",
-            "2. Бета - 200 CheSton",
-            "3. Гамма - 100 CheSton",
-        ]
+        rows = "\n".join(
+            only_text(Dialogs.tops.balance.row(place=place, name=name, balance=balance))
+            for place, (name, balance) in enumerate(
+                # последний — сам отправитель: его заводит SyncEntitiesMiddleware
+                [("Альфа", 300), ("Бета", 200), ("Гамма", 100), ("Вася", 0)],
+                start=1,
+            )
+        )
+        assert reply == only_text(Dialogs.tops.balance.message(count=20, rows=rows))
 
     async def test_count_limits_the_top(self, send):
         (reply,) = await send("Топ Бал 2", uid=50)
 
-        assert reply.startswith("🏆 Топ 2 ")
+        assert matches_phrase(reply, "tops.balance.message")
         assert "Гамма" not in reply and "Бета" in reply
 
     @pytest.mark.parametrize("text", ["топ бал 0", "топ бал 51", "топ бал abc"])
@@ -95,13 +97,14 @@ class TestTops:
     async def test_text_after_the_count_is_ignored(self, send):
         (reply,) = await send("топ бал 2 пожалуйста", uid=50)
 
-        assert reply.startswith("🏆 Топ 2 ")
+        assert matches_phrase(reply, "tops.balance.message")
+        assert "Гамма" not in reply
 
     async def test_trailing_space_gives_default_top(self, send):
         # у прода падало с IndexError
         (reply,) = await send("топ бал ", uid=50)
 
-        assert reply.startswith("🏆 Топ 20 ")
+        assert matches_phrase(reply, "tops.balance.message") and "Гамма" in reply
 
     async def test_other_command_with_same_prefix_is_ignored(self, send):
         assert await send("топ балл") == []
@@ -193,6 +196,8 @@ class TestDep:
 
 
 class TestTransfer:
+    CONFIRM = only_text(Dialogs.transfer.buttons.confirm())
+
     @pytest.fixture(autouse=True)
     async def users(self, session_factory):
         await seed(session_factory, 42, "Вася", balance=1000, created_at=OLD)
@@ -203,17 +208,21 @@ class TestTransfer:
         body = (telegram.bodies("editMessageText") or telegram.bodies("sendMessage"))[
             -1
         ]
-        await feed(callback_update(button_data(body, "подтвердить"), uid=uid))
+        await feed(callback_update(button_data(body, self.CONFIRM), uid=uid))
 
     async def test_full_flow_moves_money(self, feed, telegram, session_factory):
         await feed(message_update("/transfer 100", uid=42, reply_to_uid=43))
         (ask,) = telegram.bodies("sendMessage")
-        assert ask["text"].startswith("Перевести 100 CheSton's пользователю Петя?")
+        assert ask["text"] == only_text(
+            Dialogs.transfer.ask(amount=100, receiver="Петя", confirm=self.CONFIRM)
+        )
         assert len(ask["reply_markup"]["inline_keyboard"]) == 4
 
         await self.confirm(feed, telegram)
         (step2,) = telegram.bodies("editMessageText")
-        assert "Последнее подтверждение: перевести 100" in step2["text"]
+        assert step2["text"] == only_text(
+            Dialogs.transfer.ask_again(amount=100, confirm=self.CONFIRM)
+        )
 
         await self.confirm(feed, telegram)
         (done,) = telegram.bodies("editMessageText")
@@ -228,12 +237,13 @@ class TestTransfer:
         await feed(message_update("перевести 100", uid=42, reply_to_uid=43))
         (ask,) = telegram.bodies("sendMessage")
 
-        await feed(callback_update(button_data(ask, "не подтвердить"), uid=42))
+        decline = only_text(Dialogs.transfer.buttons.decline())
+        await feed(callback_update(button_data(ask, decline), uid=42))
         (edit,) = telegram.bodies("editMessageText")
         assert edit["text"] in phrase_texts(Dialogs.transfer.cancelled())
 
         # состояние сброшено: повторное нажатие «подтвердить» уже ничего не делает
-        await feed(callback_update(button_data(ask, "подтвердить"), uid=42))
+        await feed(callback_update(button_data(ask, self.CONFIRM), uid=42))
         assert telegram.bodies("editMessageText") == []
 
         sender = await get_user(session_factory, 42)
@@ -251,7 +261,7 @@ class TestTransfer:
         await feed(message_update("/transfer 100", uid=42, reply_to_uid=43))
         (ask,) = telegram.bodies("sendMessage")
 
-        await feed(callback_update(button_data(ask, "подтвердить"), uid=43))
+        await feed(callback_update(button_data(ask, self.CONFIRM), uid=43))
 
         assert telegram.bodies("editMessageText") == []
 
@@ -260,7 +270,9 @@ class TestTransfer:
             "перевести 100 за пиццу", uid=42, reply_to_uid=43, first_name="Вася"
         )
 
-        assert reply.startswith("Перевести 100 CheSton's пользователю Петя?")
+        assert reply == only_text(
+            Dialogs.transfer.ask(amount=100, receiver="Петя", confirm=self.CONFIRM)
+        )
 
     @pytest.mark.parametrize("text", ["податься 100", "перевод 100", "кинутьу 100"])
     async def test_only_exact_command_words_match(self, send, text):
@@ -270,40 +282,42 @@ class TestTransfer:
     async def test_by_username_without_reply(self, send):
         (reply,) = await send("кинуть @petya 50", uid=42)
 
-        assert reply.startswith("Перевести 50 CheSton's пользователю petya?")
+        assert reply == only_text(
+            Dialogs.transfer.ask(amount=50, receiver="petya", confirm=self.CONFIRM)
+        )
 
     async def test_unknown_receiver(self, send):
         assert await send("/transfer @nobody 50", uid=42) == [
-            "❌ Пользователь не найден: @nobody"
+            only_text(Dialogs.errors.user_not_found(query="@nobody"))
         ]
 
     @pytest.mark.parametrize("text", ["/transfer", "перевести @petya", "подать x y"])
     async def test_usage_hint(self, send, text):
         (reply,) = await send(text, uid=42)
 
-        assert reply.startswith("Использование:")
+        assert reply == only_text(Dialogs.transfer.usage())
 
     async def test_amount_required_in_reply_mode(self, send):
         (reply,) = await send("/transfer", uid=42, reply_to_uid=43)
 
-        assert reply.startswith("Укажи сумму перевода")
+        assert reply == only_text(Dialogs.transfer.reply_usage())
 
     async def test_self_transfer_rejected(self, send):
         (reply,) = await send("/transfer 10", uid=42, reply_to_uid=42)
 
-        assert reply.startswith("❌")
+        assert reply in phrase_texts(Dialogs.transfer.errors.self_transfer())
 
     async def test_new_account_rejected(self, send, session_factory):
         await seed(session_factory, 44, "Новичок", balance=1000)  # создан только что
 
         (reply,) = await send("/transfer 10", uid=44, reply_to_uid=43)
 
-        assert "старше 3 дн." in reply
+        assert reply in phrase_texts(Dialogs.transfer.errors.sender_too_new(days=3))
 
     async def test_insufficient_balance_rejected(self, send):
         (reply,) = await send("/transfer 5000", uid=42, reply_to_uid=43)
 
-        assert reply.startswith("❌")
+        assert reply in phrase_texts(Dialogs.transfer.errors.insufficient_balance())
 
 
 class TestRolePlay:
@@ -313,11 +327,12 @@ class TestRolePlay:
         await seed(session_factory, 43, "Петя", username="petya")
 
         assert await send(self.SET, uid=42) == [
-            "Установлена Role-Play команда погладить с действием погладила по головке"
+            only_text(Dialogs.rp.created(command="погладить", action="погладила по головке"))
         ]
-        assert await send("/all_rp", uid=42) == [
-            "Список всех Role-Play команд чата:\n\n1. погладить - погладила по головке"
-        ]
+        row = only_text(
+            Dialogs.rp.row(place=1, command="погладить", action="погладила по головке")
+        )
+        assert await send("/all_rp", uid=42) == [only_text(Dialogs.rp.list(rows=row))]
 
         # в ответ на сообщение и по @username
         assert await send("Погладить", uid=42, first_name="Вася", reply_to_uid=43) == [
@@ -338,11 +353,9 @@ class TestRolePlay:
         ) == ["Вася погладила по головке Петя"]
 
         assert await send("/del_rp погладить", uid=42) == [
-            "Role-Play команда погладить удалена"
+            only_text(Dialogs.rp.deleted(command="погладить"))
         ]
-        assert await send("/all_rp", uid=42) == [
-            "В этом чате нет Role-Play команд. Используйте /set_rp"
-        ]
+        assert await send("/all_rp", uid=42) == [only_text(Dialogs.rp.empty())]
         assert await send("погладить", uid=42, reply_to_uid=43) == []
 
     async def test_reply_to_a_person_the_bot_has_never_seen(self, send):
@@ -362,12 +375,10 @@ class TestRolePlay:
 
         (reply,) = await send("погладить @ghost", uid=42)
 
-        assert "ghost" in reply and "не найден" in reply
+        assert reply == only_text(Dialogs.errors.username_not_found(username="ghost"))
 
     async def test_deleting_unknown_command(self, send):
-        assert await send("/del_rp обнять", uid=42) == [
-            "Ошибка: Такой Role-Play команды не существует"
-        ]
+        assert await send("/del_rp обнять", uid=42) == [only_text(Dialogs.rp.not_found())]
 
     @pytest.mark.parametrize("text", ["/set_rp", "/set_rp одно", "/del_rp"])
     async def test_bad_arguments_go_to_on_error(self, send, text):
@@ -395,7 +406,7 @@ class TestRolePlay:
         assert sent["photo"] == "BIG"
         assert (
             sent["caption"]
-            == "Установлена Role-Play команда обнять с действием обнял(а)"
+            == only_text(Dialogs.rp.created(command="обнять", action="обнял(а)"))
         )
 
         await feed(message_update("обнять", uid=42, first_name="Вася", reply_to_uid=43))
@@ -420,7 +431,7 @@ class TestRolePlay:
         assert set_ok["animation"] == "GIF"
         assert (
             set_ok["caption"]
-            == "Установлена Role-Play команда обнять с действием обнял(а)"
+            == only_text(Dialogs.rp.created(command="обнять", action="обнял(а)"))
         )
 
         await feed(message_update("обнять", uid=42, first_name="Вася", reply_to_uid=43))
@@ -433,7 +444,7 @@ class TestRolePlay:
 
         await feed(message_update(None, uid=42, photo=photo, caption="/set_rp обнять"))
 
-        assert telegram.sent == ["Используйте\n/set_rp\n<команда>\n<действие>"]
+        assert telegram.sent == [only_text(Dialogs.rp.media_usage())]
 
     async def test_photo_with_other_caption_is_ignored(self, feed, telegram):
         photo = [{"file_id": "P", "file_unique_id": "a", "width": 1, "height": 1}]
@@ -449,14 +460,14 @@ class TestRaceProfile:
         assert await send(text) == []  # это не sendMessage
 
         (rich,) = telegram.bodies("sendRichMessage")
-        assert "Влияние типов кагуне на статы" in json.dumps(rich, ensure_ascii=False)
+        assert only_text(Dialogs.kagune.guide.table_title()) in rich_texts(rich)
 
     async def test_kagune_info_falls_back_to_text(self, send, telegram):
         telegram.errors["sendRichMessage"] = (400, "Bad Request: rich not supported")
 
         (reply,) = await send("кагуне")
 
-        assert reply == send.dispatcher.dialog_service.text(Dialogs.kagune.info())
+        assert reply == only_text(Dialogs.kagune.info())
 
     @pytest.mark.parametrize("text", ["распрофиль", "/race_profile"])
     async def test_human_gets_plain_profile(self, send, session_factory, text):
@@ -476,7 +487,9 @@ class TestRaceProfile:
         assert await send("распрофиль", uid=uid, first_name="Гуль") == []
 
         (rich,) = telegram.bodies("sendRichMessage")
-        assert "Профиль гуля" in json.dumps(rich, ensure_ascii=False)
+        assert any(
+            matches_phrase(text, "ghoul.rich_profile.title") for text in rich_texts(rich)
+        )
 
     async def test_ghoul_profile_falls_back_to_text(
         self, send, telegram, session_factory
@@ -525,11 +538,11 @@ class TestWordle:
         await feed(message_update("вордли", uid=42))
         (board,) = telegram.bodies("sendPhoto")
         assert board["photo"] == "<file:wordle.png>"
-        assert "Новая игра" in board["caption"]
+        assert board["caption"] == only_text(Dialogs.wordle.new_game())
 
         await feed(message_update("/wordle", uid=42))
         (again,) = telegram.bodies("sendPhoto")
-        assert "незавершённая игра" in again["caption"]
+        assert again["caption"] == only_text(Dialogs.wordle.resume())
 
     @pytest.mark.parametrize("text", ["слово", "два слова", "длинноеслово"])
     async def test_ignores_words_without_active_game(self, feed, telegram, text):
@@ -554,7 +567,7 @@ class TestWordle:
 
         await feed(message_update("house", uid=42))
 
-        assert telegram.sent == ["Ошибка: Используйте только русские буквы."]
+        assert telegram.sent == [only_text(Dialogs.wordle.errors.not_russian())]
 
     async def test_guess_from_other_user_is_ignored(self, feed, dispatcher, telegram):
         await feed(message_update("вордли", uid=42))
@@ -569,15 +582,17 @@ class TestWordle:
 
         await feed(message_update("стена", uid=42))
 
-        assert telegram.sent, telegram.calls
-        text = telegram.sent[-1]
-        assert "Слово <b>СТЕНА</b> угадано" in text
-
-        # награда случайная (WORDLE_CONFIG.award каждый раз новая): сверяем с текстом
-        named = re.search(r"Заработано (\d+) CheSton's", text)
-        assert named is not None
+        # награда случайная (WORDLE_CONFIG.award каждый раз новая): берём её из баланса
         user = await get_user(session_factory, 42)
-        assert user is not None and user.balance == int(named.group(1)) > 0
+        assert user is not None and user.balance > 0
+        win = Dialogs.wordle.win(
+            word="<b>СТЕНА</b>",
+            attempts=1,
+            attempts_word=attempts_word(1),
+            award=user.balance,
+            wiki="",
+        )
+        assert telegram.sent[-1] in phrase_texts(win)
 
 
 class TestWordleFinishLink:
@@ -587,6 +602,7 @@ class TestWordleFinishLink:
         extract="Стена — вертикальная конструкция.",
         url="https://ru.wikipedia.org/wiki/Стена",
     )
+    LINK = '<a href="https://ru.wikipedia.org/wiki/Стена">СТЕНА</a>'
 
     @pytest.fixture(autouse=True)
     def wiki(self, dispatcher):
@@ -598,16 +614,21 @@ class TestWordleFinishLink:
         await feed(message_update("вордли", uid=42))
         dispatcher.container.wordle_service()._sessions[42].target = "СТЕНА"
 
-    async def test_win_links_the_word(self, feed, dispatcher, telegram):
+    async def test_win_links_the_word(self, feed, dispatcher, telegram, session_factory):
         await self.start(feed, dispatcher)
 
         await feed(message_update("стена", uid=42))
 
-        text = telegram.sent[-1]
-        assert '<a href="https://ru.wikipedia.org/wiki/Стена">СТЕНА</a>' in text
-        assert "📖 Стена — вертикальная конструкция." in text
-        assert "🔗" not in text
-        assert "<b>СТЕНА</b>" not in text  # слово теперь ссылка, а не жирный текст
+        user = await get_user(session_factory, 42)
+        assert user is not None
+        win = Dialogs.wordle.win(
+            word=self.LINK,
+            attempts=1,
+            attempts_word=attempts_word(1),
+            award=user.balance,
+            wiki=Dialogs.wordle.wiki_extract(extract=self.ARTICLE.extract),
+        )
+        assert telegram.sent[-1] in phrase_texts(win)
 
     async def test_loss_links_the_word(self, feed, dispatcher, telegram):
         await self.start(feed, dispatcher)
@@ -615,10 +636,11 @@ class TestWordleFinishLink:
         for word in ("лодка", "книга", "ручка", "берег", "город", "место"):
             await feed(message_update(word, uid=42))
 
-        text = telegram.sent[-1]
-        assert text.startswith("😔 Не получилось. Загаданное слово: ")
-        assert '<a href="https://ru.wikipedia.org/wiki/Стена">СТЕНА</a>' in text
-        assert "🔗" not in text
+        lose = Dialogs.wordle.lose(
+            word=self.LINK,
+            wiki=Dialogs.wordle.wiki_extract(extract=self.ARTICLE.extract),
+        )
+        assert telegram.sent[-1] in phrase_texts(lose)
 
     async def test_url_is_escaped_in_href(self, feed, dispatcher, telegram):
         dispatcher.container.wikipedia_service.override(
@@ -665,27 +687,26 @@ class TestAnime:
     async def test_usage(self, send):
         (reply,) = await send("/anime")
 
-        assert reply.startswith("Укажи сезон и серию.")
+        assert reply == only_text(Dialogs.anime.usage())
 
     async def test_unknown_episode(self, send):
-        assert await send("/anime 98 98") == ["❌ Видео сезона 98 серии 98 не найдено."]
+        assert await send("/anime 98 98") == [
+            only_text(Dialogs.anime.not_found(season=98, episode=98))
+        ]
 
     @pytest.mark.parametrize(
         ("text", "expected"),
         [
-            ("/anime 99 99 18:37", "❌ Неверный формат команды."),
-            ("/anime 99 99 xx 18:47", "❌ Неверный начальный таймкод."),
-            ("/anime 99 99 18:37 yy", "❌ Неверный конечный таймкод."),
-            (
-                "/anime 99 99 18:47 18:37",
-                "❌ Конечный таймкод должен быть больше начального.",
-            ),
+            ("/anime 99 99 18:37", Dialogs.anime.bad_format()),
+            ("/anime 99 99 xx 18:47", Dialogs.anime.bad_start()),
+            ("/anime 99 99 18:37 yy", Dialogs.anime.bad_end()),
+            ("/anime 99 99 18:47 18:37", Dialogs.anime.end_before_start()),
         ],
     )
     async def test_bad_fragment_arguments(self, send, episode, text, expected):
         (reply,) = await send(text)
 
-        assert reply.startswith(expected)
+        assert reply == only_text(expected)
 
 
 class FakeVideoWorker:
@@ -739,19 +760,25 @@ class TestAnimeCut:
         await feed(message_update("/anime 99 99 00:10 00:20"))
         await settle()
 
-        assert telegram.sent[0].startswith("⏳ Начинаю нарезку видео...")
+        assert telegram.sent[0] == only_text(
+            Dialogs.anime.cutting(season=99, episode=99, start="00:10", end="00:20")
+        )
         assert telegram.methods_called("deleteMessage") == 1  # сообщение о ходе работы
         (video,) = telegram.bodies("sendVideo")
-        assert video["caption"] == (
-            "Video\n🎬 Сезон 99. Серия 99. Отрывок с 00:10 до 00:20"
+        caption = Dialogs.anime.cut_caption(
+            season=99, episode=99, start="00:10", end="00:20"
         )
+        assert video["caption"] == only_text(Dialogs.anime.video(caption=caption))
 
     async def test_fragment_as_gif(self, feed, telegram, episode, worker, settle):
         await feed(message_update("/anime 99 99 00:10 00:20 gif"))
         await settle()
 
         (gif,) = telegram.bodies("sendAnimation")
-        assert gif["caption"].startswith("Gif\n🎬 Сезон 99. Серия 99.")
+        caption = Dialogs.anime.cut_caption(
+            season=99, episode=99, start="00:10", end="00:20"
+        )
+        assert gif["caption"] == only_text(Dialogs.anime.gif(caption=caption))
 
     async def test_whole_episode_is_uploaded(self, feed, telegram, episode, settle):
         await feed(message_update("/anime 99 99"))
@@ -759,7 +786,9 @@ class TestAnimeCut:
 
         (video,) = telegram.bodies("sendVideo")
         assert video["video"] == "<file:Season_99_Episode_99.mp4>"
-        assert video["caption"] == "🎬 Сезон 99. Серия 99"
+        assert video["caption"] == only_text(
+            Dialogs.anime.episode_caption(season=99, episode=99)
+        )
 
     async def test_handler_returns_before_the_cut_is_done(
         self, feed, dispatcher, telegram, episode, settle
@@ -789,9 +818,7 @@ class TestAnimeCut:
         await asyncio.sleep(0.2)
         await feed(message_update("/anime 99 99 00:10 00:30", uid=42))
 
-        assert telegram.sent == [
-            "⏳ У тебя уже есть нарезка в процессе. Дождись её завершения."
-        ]
+        assert telegram.sent == [only_text(Dialogs.anime.busy())]
 
         worker.finish(worker.jobs[0])
         await settle()
@@ -811,13 +838,13 @@ class TestAnimeCut:
 
         replies = await send("/anime 99 99 00:20 00:10", uid=42)
 
-        assert replies == ["❌ Конечный таймкод должен быть больше начального."]
+        assert replies == [only_text(Dialogs.anime.end_before_start())]
 
     @pytest.mark.parametrize("text", ["/anime", "/anime x 1", "/anime 1"])
     async def test_usage_for_missing_or_bad_season(self, send, text):
         (reply,) = await send(text)
 
-        assert reply.startswith("Укажи сезон и серию.")
+        assert reply == only_text(Dialogs.anime.usage())
 
 
 class TestVideoWorkerLifecycle:
