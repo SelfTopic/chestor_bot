@@ -743,7 +743,20 @@ class _EatHumanDialogs:
         )
 
 
+class _ErrorsChatTextLengthDialogs:
+    def goodbye(self) -> Line:
+        return Line("errors.chat_text_length.goodbye", {})
+
+    def rules(self) -> Line:
+        return Line("errors.chat_text_length.rules", {})
+
+    def welcome(self) -> Line:
+        return Line("errors.chat_text_length.welcome", {})
+
+
 class _ErrorsDialogs:
+    chat_text_length = _ErrorsChatTextLengthDialogs()
+
     def cannot_process(self) -> Line:
         return Line("errors.cannot_process", {})
 
@@ -1101,6 +1114,20 @@ class _MobDialogs:
                 "wins": wins,
             },
         )
+
+
+class _ModerationDialogs:
+    def bot_added(self) -> Line:
+        return Line("moderation.bot_added", {})
+
+    def goodbye_updated(self, *, text: object) -> Line:
+        return Line("moderation.goodbye_updated", {"text": text})
+
+    def rules_updated(self, *, rules: object) -> Line:
+        return Line("moderation.rules_updated", {"rules": rules})
+
+    def welcome_updated(self, *, text: object) -> Line:
+        return Line("moderation.welcome_updated", {"text": text})
 
 
 class _NotifyDialogs:
@@ -1572,6 +1599,7 @@ class _Dialogs:
     kagune = _KaguneDialogs()
     lottery = _LotteryDialogs()
     mob = _MobDialogs()
+    moderation = _ModerationDialogs()
     notify = _NotifyDialogs()
     profile = _ProfileDialogs()
     quiz = _QuizDialogs()
@@ -1788,6 +1816,9 @@ PLACEHOLDERS: dict[str, frozenset[str]] = {
     "eat_human.done": frozenset({"count", "hunger", "restored"}),
     "errors.cannot_process": frozenset(),
     "errors.chat_not_found": frozenset(),
+    "errors.chat_text_length.goodbye": frozenset(),
+    "errors.chat_text_length.rules": frozenset(),
+    "errors.chat_text_length.welcome": frozenset(),
     "errors.ghoul_not_found": frozenset(),
     "errors.media_not_found": frozenset(),
     "errors.not_enough_money": frozenset({"money"}),
@@ -1891,6 +1922,10 @@ PLACEHOLDERS: dict[str, frozenset[str]] = {
     "mob.rc_found": frozenset({"rc"}),
     "mob.rewards": frozenset({"cheston", "progress"}),
     "mob.summary": frozenset({"losses", "outcome", "total", "wins"}),
+    "moderation.bot_added": frozenset(),
+    "moderation.goodbye_updated": frozenset({"text"}),
+    "moderation.rules_updated": frozenset({"rules"}),
+    "moderation.welcome_updated": frozenset({"text"}),
     "notify.death": frozenset({"cause", "level", "lifetime_rc_earned"}),
     "notify.health_full": frozenset(),
     "notify.hunger": frozenset({"threshold"}),

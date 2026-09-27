@@ -5,6 +5,7 @@ from selfrot.filter import MemberJoined
 from selfrot.handlers import ChatMemberHandler, MyChatMemberHandler
 from selfrot.types import ChatMemberUpdated
 
+from src.bot.dialogs import Dialogs
 from src.bot.exceptions import ChatNotFoundInDatabase
 
 from ...context import AppContext
@@ -14,9 +15,7 @@ class BotAddedHandler(MyChatMemberHandler[AppContext[ChatMemberUpdated]]):
     query = MemberJoined()
 
     async def handle(self) -> None:
-        await self.ctx.my_chat_member.answer(
-            "Пиздато конечно, что вы меня добавили. Я тупой даунский бот."
-        )
+        await self.ctx.my_chat_member.answer(self.ctx.text(Dialogs.moderation.bot_added()))
 
 
 class NewChatMemberHandler(ChatMemberHandler[AppContext[ChatMemberUpdated]]):

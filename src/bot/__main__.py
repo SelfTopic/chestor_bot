@@ -10,7 +10,13 @@ from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 
 from src.bot.containers import Container
 from src.bot.dialogs import Dialogs, Line
-from src.bot.exceptions import ChatNotFound, GhoulNotFound, MediaNotFound, UserNotFound
+from src.bot.exceptions import (
+    ChatNotFound,
+    ChatTextLengthError,
+    GhoulNotFound,
+    MediaNotFound,
+    UserNotFound,
+)
 from src.bot.services.dialog import DialogService
 from src.config import settings
 from src.database import session_factory as default_session_factory
@@ -38,6 +44,12 @@ def error_line(exc: Exception) -> Line:
             return Dialogs.errors.chat_not_found()
         case GhoulNotFound():
             return Dialogs.errors.ghoul_not_found()
+        case ChatTextLengthError(kind="rules"):
+            return Dialogs.errors.chat_text_length.rules()
+        case ChatTextLengthError(kind="welcome"):
+            return Dialogs.errors.chat_text_length.welcome()
+        case ChatTextLengthError(kind="goodbye"):
+            return Dialogs.errors.chat_text_length.goodbye()
         case MediaNotFound():
             return Dialogs.errors.media_not_found()
         case _:

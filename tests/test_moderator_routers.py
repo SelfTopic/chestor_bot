@@ -3,7 +3,7 @@
 getChatMember — только админ/создатель супергруппы, молчит и для private/group/channel,
 и для не-админа в супергруппе."""
 
-from src.bot.exceptions.chat import ChatRulesError
+from src.bot.exceptions import ChatTextLengthError
 
 from .conftest import admin_dict, member_dict, owner_dict
 
@@ -44,7 +44,7 @@ class TestSetRules:
         (reply,) = await send("новые правила Не спамить", uid=ADMIN, chat=GROUP)
 
         # исправленный прод-баг: у прода в тексте оставался пробел в начале
-        assert reply == "Правила чата обновлены: \n\nНе спамить"
+        assert reply == "Правила чата обновлены:\n\nНе спамить"
 
     async def test_multiline_rules_keep_line_breaks(self, send, telegram):
         telegram.results["getChatAdministrators"] = [owner_dict(99)]
@@ -54,7 +54,7 @@ class TestSetRules:
             "Новые правила\n1. Не спамить\n2. Не флудить  ", uid=ADMIN, chat=GROUP
         )
 
-        assert reply == "Правила чата обновлены: \n\n1. Не спамить\n2. Не флудить"
+        assert reply == "Правила чата обновлены:\n\n1. Не спамить\n2. Не флудить"
 
     async def test_empty_rules_are_rejected(self, send, telegram):
         # как у прода: пустые правила отвергает ChatService, ответ — global_error
@@ -65,7 +65,7 @@ class TestSetRules:
 
         assert reply.startswith("Ошибка: Кол-во символов в правилах")
         (error,) = send.dispatcher.errors
-        assert isinstance(error, ChatRulesError)
+        assert isinstance(error, ChatTextLengthError)
         send.dispatcher.errors.clear()  # ошибка ожидаемая
 
     async def test_glued_word_is_not_a_command(self, send, telegram):
@@ -83,7 +83,7 @@ class TestSetWelcome:
 
         (reply,) = await send("новое приветствие Здравствуй!", uid=ADMIN, chat=GROUP)
 
-        assert reply == "Приветственное сообщение обновлено: \n\nЗдравствуй!"
+        assert reply == "Приветственное сообщение обновлено:\n\nЗдравствуй!"
 
 
 class TestSetGoodbye:
@@ -93,4 +93,4 @@ class TestSetGoodbye:
 
         (reply,) = await send("новое прощание Пока!", uid=ADMIN, chat=GROUP)
 
-        assert reply == "Прощальное сообщение обновлено: \n\nПока!"
+        assert reply == "Прощальное сообщение обновлено:\n\nПока!"

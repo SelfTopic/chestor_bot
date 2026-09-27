@@ -5,7 +5,7 @@ from .battle import (
     FighterIsDeadError,
     FighterNotCombatReadyError,
 )
-from .chat import ChatError, ChatMemberUpdateMessageError, ChatRulesError
+from .chat import ChatError, ChatTextLengthError
 from .chat_not_found import ChatNotFound, ChatNotFoundInDatabase
 from .media_download import (
     CollectionNotFoundError,
@@ -45,8 +45,7 @@ __all__ = [
     "FighterIsDeadError",
     "FighterNotCombatReadyError",
     "ChatError",
-    "ChatMemberUpdateMessageError",
-    "ChatRulesError",
+    "ChatTextLengthError",
     "ChatNotFound",
     "ChatNotFoundInDatabase",
     "MediaError",
