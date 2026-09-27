@@ -198,6 +198,10 @@ fight:
     {hp_line_b}
     📜 Раундов: {rounds}
 notify:
+  death_cause:
+    starvation: умер от голода
+    eaten: был съеден другим гулем
+    admin: был убит рукой создателя (/kill_ghoul)
   level_up: |-
     🎉 Новый уровень: {level}!
 

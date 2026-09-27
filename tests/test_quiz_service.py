@@ -3,8 +3,9 @@
 import time
 
 import pytest
-from ghoul_quiz import AuthenticationRequiredError, Question, TokenManager, TokenPair
+from ghoul_quiz import Question, TokenManager, TokenPair
 
+from src.bot.exceptions import QuizEmailMissing, QuizSessionMissing
 from src.bot.services.quiz import QuizService
 
 from .test_common_routers import seed
@@ -55,20 +56,20 @@ async def test_without_email_fails_before_any_request():
     asked = Asked()
     quiz._api.get_random_question = asked  # type: ignore[method-assign]
 
-    with pytest.raises(AuthenticationRequiredError, match="GHOUL_QUIZ_EMAIL"):
+    with pytest.raises(QuizEmailMissing):
         await quiz.get_random_quiz()
     assert asked.calls == 0
 
 
 async def test_without_saved_session_points_to_register(service):
-    with pytest.raises(AuthenticationRequiredError, match="ghoul-quiz-register"):
+    with pytest.raises(QuizSessionMissing):
         await service.get_answer_by_id(1)
 
 
 async def test_session_saved_for_another_server_is_ignored(service):
     save_session(api_url="https://other.test/api")
 
-    with pytest.raises(AuthenticationRequiredError):
+    with pytest.raises(QuizSessionMissing):
         await service.get_random_quiz()
 
 
@@ -92,7 +93,7 @@ async def test_picks_up_new_login_after_session_was_dropped(service):
     # Так библиотека сбрасывает сессию, когда refresh-токен истёк.
     service._api.clear()
     TokenManager.delete(EMAIL)
-    with pytest.raises(AuthenticationRequiredError):
+    with pytest.raises(QuizSessionMissing):
         await service.get_random_quiz()
 
     save_session()  # новый вход через ghoul-quiz-register
@@ -112,5 +113,5 @@ async def test_quiz_without_session_answers_global_error(
 
     assert "GHOUL_QUIZ_EMAIL" in reply
     (error,) = dispatcher.errors
-    assert isinstance(error, AuthenticationRequiredError)
+    assert isinstance(error, QuizEmailMissing)
     dispatcher.errors.clear()  # ошибка ожидаемая

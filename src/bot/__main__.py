@@ -15,6 +15,8 @@ from src.bot.exceptions import (
     ChatTextLengthError,
     GhoulNotFound,
     MediaNotFound,
+    QuizEmailMissing,
+    QuizSessionMissing,
     UserNotFound,
 )
 from src.bot.services.dialog import DialogService
@@ -44,6 +46,10 @@ def error_line(exc: Exception) -> Line:
             return Dialogs.errors.chat_not_found()
         case GhoulNotFound():
             return Dialogs.errors.ghoul_not_found()
+        case QuizEmailMissing():
+            return Dialogs.errors.quiz.email_missing()
+        case QuizSessionMissing(email=email):
+            return Dialogs.errors.quiz.session_missing(email=email)
         case ChatTextLengthError(kind="rules"):
             return Dialogs.errors.chat_text_length.rules()
         case ChatTextLengthError(kind="welcome"):

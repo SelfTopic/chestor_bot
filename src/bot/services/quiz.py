@@ -1,10 +1,6 @@
-from ghoul_quiz import (
-    DEFAULT_BASE_URL,
-    Answer,
-    AuthenticationRequiredError,
-    GhoulQuizAPI,
-    Question,
-)
+from ghoul_quiz import DEFAULT_BASE_URL, Answer, GhoulQuizAPI, Question
+
+from ..exceptions import QuizEmailMissing, QuizSessionMissing
 
 
 class QuizService:
@@ -18,12 +14,9 @@ class QuizService:
         if self._api.tokens is not None:
             return
         if not self._email:
-            raise AuthenticationRequiredError("Квиз: не задан GHOUL_QUIZ_EMAIL")
+            raise QuizEmailMissing()
         if not self._api.load_saved_token(self._email):
-            raise AuthenticationRequiredError(
-                f"Квиз: нет сохранённой сессии для {self._email}, "
-                "войди через ghoul-quiz-register"
-            )
+            raise QuizSessionMissing(self._email)
 
     async def get_random_quiz(self) -> Question:
         self._ensure_session()

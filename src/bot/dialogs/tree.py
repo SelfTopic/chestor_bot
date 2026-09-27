@@ -754,8 +754,17 @@ class _ErrorsChatTextLengthDialogs:
         return Line("errors.chat_text_length.welcome", {})
 
 
+class _ErrorsQuizDialogs:
+    def email_missing(self) -> Line:
+        return Line("errors.quiz.email_missing", {})
+
+    def session_missing(self, *, email: object) -> Line:
+        return Line("errors.quiz.session_missing", {"email": email})
+
+
 class _ErrorsDialogs:
     chat_text_length = _ErrorsChatTextLengthDialogs()
+    quiz = _ErrorsQuizDialogs()
 
     def cannot_process(self) -> Line:
         return Line("errors.cannot_process", {})
@@ -1130,7 +1139,20 @@ class _ModerationDialogs:
         return Line("moderation.welcome_updated", {"text": text})
 
 
+class _NotifyDeathCauseDialogs:
+    def admin(self) -> Line:
+        return Line("notify.death_cause.admin", {})
+
+    def eaten(self) -> Line:
+        return Line("notify.death_cause.eaten", {})
+
+    def starvation(self) -> Line:
+        return Line("notify.death_cause.starvation", {})
+
+
 class _NotifyDialogs:
+    death_cause = _NotifyDeathCauseDialogs()
+
     def death(
         self,
         *,
@@ -1822,6 +1844,8 @@ PLACEHOLDERS: dict[str, frozenset[str]] = {
     "errors.ghoul_not_found": frozenset(),
     "errors.media_not_found": frozenset(),
     "errors.not_enough_money": frozenset({"money"}),
+    "errors.quiz.email_missing": frozenset(),
+    "errors.quiz.session_missing": frozenset({"email"}),
     "errors.unexpected": frozenset({"error"}),
     "errors.user_not_found": frozenset({"query"}),
     "errors.username_not_found": frozenset({"username"}),
@@ -1927,6 +1951,9 @@ PLACEHOLDERS: dict[str, frozenset[str]] = {
     "moderation.rules_updated": frozenset({"rules"}),
     "moderation.welcome_updated": frozenset({"text"}),
     "notify.death": frozenset({"cause", "level", "lifetime_rc_earned"}),
+    "notify.death_cause.admin": frozenset(),
+    "notify.death_cause.eaten": frozenset(),
+    "notify.death_cause.starvation": frozenset(),
     "notify.health_full": frozenset(),
     "notify.hunger": frozenset({"threshold"}),
     "notify.level_up": frozenset({"cheston", "level", "rc", "stat_changes"}),

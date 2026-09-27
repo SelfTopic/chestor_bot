@@ -118,11 +118,3 @@ class StatsEditService:
         return StatEditResult(
             target=updated_ghoul, field=field, value=value, is_ghoul_field=True
         )
-
-    def format_fields_help(self) -> str:
-        return (
-            f"Поля пользователя: {', '.join(sorted(ALLOWED_USER_FIELDS))}\n"
-            f"Поля гуля: {', '.join(sorted(ALLOWED_GHOUL_FIELDS))}\n"
-            f"Служебные поля гуля (сдвиг снапшота назад на N часов, для теста "
-            f"голода/регена): {', '.join(sorted(ALLOWED_GHOUL_TIME_FIELDS))}"
-        )

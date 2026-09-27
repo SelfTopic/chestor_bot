@@ -23,6 +23,7 @@ from .lottery import (
     UnknownLotteryColor,
 )
 from .media_not_found import MediaNotFound, MediaNotFoundInDatabase
+from .quiz import QuizEmailMissing, QuizSessionMissing, QuizUnavailable
 from .rp_commands import RpCommandError, RpCommandLimitReached, RpCommandNotFound
 from .time import DurationParseError
 from .transfer import (
@@ -64,6 +65,9 @@ __all__ = [
     "RpCommandNotFound",
     "RpCommandError",
     "DurationParseError",
+    "QuizEmailMissing",
+    "QuizSessionMissing",
+    "QuizUnavailable",
     "GhoulNotFound",
     "KaguneAlreadyOwned",
     "KaguneNotOwned",

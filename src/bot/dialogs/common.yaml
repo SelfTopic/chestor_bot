@@ -29,6 +29,9 @@ errors:
   chat_not_found: 'Ошибка: Чат не найден в базе данных'
   ghoul_not_found: 'Ошибка: Ghoul not found'
   media_not_found: 'Ошибка: Медиа не найдено в базе данных'
+  quiz:
+    email_missing: 'Ошибка: Квиз: не задан GHOUL_QUIZ_EMAIL'
+    session_missing: 'Ошибка: Квиз: нет сохранённой сессии для {email}, войди через ghoul-quiz-register'
   chat_text_length:
     rules: 'Ошибка: Кол-во символов в правилах не может быть меньше 1 и больше 4000 символов.'
     welcome: 'Ошибка: Кол-во символов в приветственном сообщении не может быть меньше 1 и больше 4000 символов.'

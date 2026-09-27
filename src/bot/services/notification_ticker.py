@@ -24,10 +24,10 @@ from .notify import NotifyError, Notifier
 
 logger = logging.getLogger(__name__)
 
-_DEATH_CAUSE_TEXT = {
-    "starvation": "умер от голода",
-    "eaten": "был съеден другим гулем",
-    "admin": "был убит рукой создателя (/kill_ghoul)",
+_DEATH_CAUSES = {
+    "starvation": Dialogs.notify.death_cause.starvation(),
+    "eaten": Dialogs.notify.death_cause.eaten(),
+    "admin": Dialogs.notify.death_cause.admin(),
 }
 
 
@@ -214,11 +214,15 @@ class NotificationTicker:
                 exc_info=True,
             )
 
+    def _death_cause(self, cause: str) -> str:
+        line = _DEATH_CAUSES.get(cause)
+        return self._dialog_service.text(line) if line else cause
+
     async def _send_death(
         self, telegram_id: int, death: DeathLog, media_repository: MediaRepository
     ) -> None:
         obituary = Dialogs.notify.death(
-            cause=_DEATH_CAUSE_TEXT.get(death.cause, death.cause),
+            cause=self._death_cause(death.cause),
             level=death.level,
             lifetime_rc_earned=death.lifetime_rc_earned,
         )

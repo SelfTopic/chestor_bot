@@ -105,9 +105,3 @@ async def test_set_health_hours_ago_moves_snapshot_into_the_past(
 
     assert before - timedelta(hours=2) <= result.target.health_updated_at
     assert result.target.health_updated_at <= after - timedelta(hours=2)
-
-
-def test_format_fields_help_mentions_time_fields(stats_service):
-    text = stats_service.format_fields_help()
-    assert "hunger_hours_ago" in text
-    assert "health_hours_ago" in text

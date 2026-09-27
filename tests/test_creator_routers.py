@@ -156,6 +156,7 @@ class TestStatsEdit:
     async def test_usage_lists_fields(self, send):
         (reply,) = await send("/set_stat", uid=ADMIN)
         assert reply.startswith("Использование: /set_stat")
+        assert "hunger_hours_ago" in reply and "health_hours_ago" in reply
         assert "Поля пользователя" in reply
 
 
