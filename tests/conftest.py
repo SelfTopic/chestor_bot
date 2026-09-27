@@ -53,7 +53,7 @@ REPO_ROOT = os.path.dirname(os.path.dirname(__file__))
 # Ошибки приложения, которые тесты вызывают намеренно (ответ на них даёт on_error)
 from src.bot.__main__ import Dispatcher  # noqa: E402
 from src.bot.context import AppContext  # noqa: E402
-from src.bot.dialogs import load_texts  # noqa: E402
+from src.bot.dialogs import Line, load_texts  # noqa: E402
 from src.bot.exceptions import (  # noqa: E402
     ChatNotFoundInDatabase,
     UserNotFound,
@@ -334,6 +334,11 @@ def make_ghoul(ghoul_repo: GhoulRepository) -> Callable[..., Awaitable[Ghoul]]:
         return await ghoul_repo.upsert(telegram_id=telegram_id, **kwargs)
 
     return _make
+
+
+def phrase_texts(line: Line) -> set[str]:
+    """Все тексты, которыми бот может ответить фразой с этими подстановками."""
+    return {variant.format_map(line.params) for variant in load_texts()[line.key].variants}
 
 
 def matches_phrase(text: str, key: str) -> bool:

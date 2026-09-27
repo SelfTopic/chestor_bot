@@ -11,6 +11,7 @@ from typing import Any
 
 import pytest
 
+from src.bot.dialogs import Dialogs
 from src.bot.repositories import (
     ActiveBattleRepository,
     BattleRepository,
@@ -19,7 +20,14 @@ from src.bot.repositories import (
 from src.bot.services.battle_record import BattleRecordService
 from src.database.models import DuelSession
 
-from .conftest import button_data, callback_update, message_update, owner_dict
+from .conftest import (
+    button_data,
+    callback_update,
+    matches_phrase,
+    message_update,
+    owner_dict,
+    phrase_texts,
+)
 from .test_common_routers import seed
 from .test_ghoul_battles import is_busy
 from .test_ghoul_routers import balance_of, get_ghoul, seed_ghoul
@@ -137,9 +145,10 @@ class TestInvite:
     async def test_self(self, send, session_factory):
         await seed_duelist(session_factory, A, "Вася")
 
-        assert await send(
+        (reply,) = await send(
             "дуэль", uid=A, chat=GROUP, reply_to_uid=A, reply_to_name="Вася"
-        ) == ["Нельзя вызвать на дуэль самого себя."]
+        )
+        assert matches_phrase(reply, "duel.refusals.self_duel")
 
     async def test_unregistered_target(self, send, session_factory):
         await seed_duelist(session_factory, A, "Вася")
@@ -166,25 +175,22 @@ class TestInvite:
         await seed_duelist(session_factory, A, "Вася")
         await seed(session_factory, B, "Петя", has_private_chat=True)
 
-        assert await send("дуэль", uid=A, chat=GROUP, reply_to_uid=B) == [
-            "У соперника ещё нет гуля."
-        ]
+        (reply,) = await send("дуэль", uid=A, chat=GROUP, reply_to_uid=B)
+        assert matches_phrase(reply, "duel.refusals.target_no_ghoul")
 
     @pytest.mark.parametrize(
-        ("target", "reply"),
+        ("target", "refusal"),
         [
-            ({"is_dead": True}, "Один из участников мёртв."),
-            (
-                {"health": 4},
-                "Один из участников небоеспособен: 4 HP (нужно минимум 5).",
-            ),
+            ({"is_dead": True}, "duel.refusals.dead"),
+            ({"health": 4}, "duel.refusals.not_combat_ready"),
         ],
     )
-    async def test_target_cannot_fight(self, send, session_factory, target, reply):
+    async def test_target_cannot_fight(self, send, session_factory, target, refusal):
         await seed_duelist(session_factory, A, "Вася", **WINNER)
         await seed_duelist(session_factory, B, "Петя", **{**HARMLESS, **target})
 
-        assert await send("дуэль", uid=A, chat=GROUP, reply_to_uid=B) == [reply]
+        (reply,) = await send("дуэль", uid=A, chat=GROUP, reply_to_uid=B)
+        assert matches_phrase(reply, refusal)
 
     async def test_busy_target(self, send, session_factory):
         await seed_duelist(session_factory, A, "Вася", **WINNER)
@@ -192,9 +198,8 @@ class TestInvite:
         await seed_duelist(session_factory, C, "Коля", **HARMLESS)
         await send("дуэль", uid=C, chat=GROUP, reply_to_uid=B)
 
-        assert await send("дуэль", uid=A, chat=GROUP, reply_to_uid=B) == [
-            "Один из участников уже занят другим боем."
-        ]
+        (reply,) = await send("дуэль", uid=A, chat=GROUP, reply_to_uid=B)
+        assert matches_phrase(reply, "duel.refusals.busy")
 
     async def test_pair_limit(self, send, session_factory):
         await seed_duelist(session_factory, A, "Вася", **WINNER)
@@ -236,9 +241,8 @@ class TestInvite:
         (body,) = telegram.bodies("sendMessage")
         assert body["chat_id"] == GROUP
         # у БД-пользователя без фамилии full_name с пробелом на конце, как у прода
-        assert body["text"] == (
-            "⚔️ Вася  вызывает Петя  на дуэль!\n"
-            "Бой начнётся только после подтверждения ОБЕИХ сторон."
+        assert body["text"] in phrase_texts(
+            Dialogs.duel.invite(initiator="Вася ", target="Петя ")
         )
         duel = await active_duel(session_factory)
         assert duel is not None and not duel.is_private_origin
@@ -286,11 +290,8 @@ class TestConsent:
         telegram = await feed(press(duel_id, "consent_target", B, uid=A))
 
         (answer,) = telegram.bodies("answerCallbackQuery")
-        assert answer == {
-            "callback_query_id": "cq1",
-            "text": "Это не твоя кнопка.",
-            "show_alert": True,
-        }
+        assert answer["show_alert"] is True
+        assert matches_phrase(answer["text"], "duel.not_your_button")
         duel = await get_duel(session_factory, duel_id)
         assert not duel.target_consented
 
@@ -375,9 +376,7 @@ class TestConsent:
         assert group["chat_id"] == GROUP
         assert group["text"] == "⚔️ Оба согласились! Ждём решения сильнейшей стороны."
         assert dm["chat_id"] == A
-        assert dm["text"] == (
-            "Ты значительно сильнее соперника. Драться всерьёз или дать фору?"
-        )
+        assert matches_phrase(dm["text"], "duel.fora.question")
         assert button_data(dm, "🤝 Дать фору") == f"duel:{duel_id}:fora_handicap:{A}"
         assert telegram.methods_called("sendRichMessage") == 0
         duel = await get_duel(session_factory, duel_id)
@@ -431,8 +430,11 @@ class TestOutcome:
         ]
         sent = telegram.bodies("sendMessage")
         assert sorted(b["chat_id"] for b in sent) == sorted([A, B, GROUP])
-        assert sent[0]["text"] == (
-            "🕊️ Вася  решил отпустить Петя .\n\n"
+        released, rest = sent[0]["text"].split("\n\n", 1)
+        assert released in phrase_texts(
+            Dialogs.duel.outcome.released(winner="Вася ", loser="Петя ")
+        )
+        assert rest == (
             "📈 Вася  получил 1.00% опыта за победу.\n\n"
             "📊 Вася : 1 боёв (1П/0)\n📊 Петя : 1 боёв (0П/1)"
         )
@@ -457,16 +459,17 @@ class TestOutcome:
         taken = await balance_of(session_factory, A)
         assert 100 <= taken <= 250
         assert await balance_of(session_factory, B) == 1000 - taken
-        assert telegram.bodies("sendMessage")[0]["text"].startswith(
-            f"💰 Вася  ограбил Петя  и забрал {taken} CheSton's!"
+        robbed = telegram.bodies("sendMessage")[0]["text"].split("\n")[0]
+        assert robbed in phrase_texts(
+            Dialogs.duel.outcome.robbed(winner="Вася ", loser="Петя ", amount=taken)
         )
 
     async def test_rob_a_broke_loser(self, feed, session_factory, fought):
         telegram = await feed(press(fought, "outcome_rob", A))
 
-        assert telegram.bodies("sendMessage")[0]["text"].startswith(
-            "💰 Вася  попытался ограбить Петя , но у тот оказался ебаный бомж "
-            "и у нечего взять."
+        first_line = telegram.bodies("sendMessage")[0]["text"].split("\n")[0]
+        assert first_line in phrase_texts(
+            Dialogs.duel.outcome.robbed_nothing(winner="Вася ", loser="Петя ")
         )
 
     async def test_eat(self, feed, session_factory, fought):
@@ -476,17 +479,17 @@ class TestOutcome:
         assert loser is not None and loser.is_dead
         winner = await get_ghoul(session_factory, A)
         assert winner is not None and winner.eat_ghouls == 1 and winner.rc_money > 0
-        text = telegram.bodies("sendMessage")[0]["text"]
-        assert text.startswith(
-            f"🍖 Вася  нещадно добил и сожрал Петя , получив {winner.rc_money} "
-            "RC-клеток\n🍖 Голод Вася  восстановлен на "
+        eaten, hunger = telegram.bodies("sendMessage")[0]["text"].split("\n")[:2]
+        assert eaten in phrase_texts(
+            Dialogs.duel.outcome.eaten(winner="Вася ", loser="Петя ", rc=winner.rc_money)
         )
+        assert hunger.startswith("🍖 Голод Вася  восстановлен на ")
 
     async def test_loser_cannot_choose(self, feed, session_factory, fought):
         telegram = await feed(press(fought, "outcome_release", A, uid=B))
 
         (answer,) = telegram.bodies("answerCallbackQuery")
-        assert answer["text"] == "Это не твоя кнопка."
+        assert matches_phrase(answer["text"], "duel.not_your_button")
 
 
 class TestDraw:
@@ -551,9 +554,8 @@ class TestTicker:
         ]
         sent = telegram.bodies("sendMessage")
         assert sorted(b["chat_id"] for b in sent) == sorted([A, B, GROUP])
-        assert {b["text"] for b in sent} == {
-            "⌛ Время на согласие вышло - дуэль отменена."
-        }
+        (text,) = {b["text"] for b in sent}
+        assert matches_phrase(text, "duel.consent.timeout")
         duel = await get_duel(session_factory, duel_id)
         assert duel.stage == "done"
         assert not await is_busy(session_factory, A)
@@ -586,8 +588,9 @@ class TestTicker:
 
         telegram = await tick(60)
 
-        assert telegram.bodies("sendMessage")[0]["text"].startswith(
-            "🕊️ Вася  решил отпустить Петя ."
+        released = telegram.bodies("sendMessage")[0]["text"].split("\n")[0]
+        assert released in phrase_texts(
+            Dialogs.duel.outcome.released(winner="Вася ", loser="Петя ")
         )
         duel = await get_duel(session_factory, duel_id)
         assert duel.stage == "done" and duel.winner_choice == "outcome_release"

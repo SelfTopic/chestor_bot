@@ -2,7 +2,10 @@
 
 import pytest
 
+from src.bot.dialogs import Dialogs
 from src.bot.repositories import UserRepository
+
+from .conftest import phrase_texts
 
 
 async def set_user(session_factory, telegram_id: int, **data) -> None:
@@ -18,13 +21,13 @@ class TestBalance:
     async def test_shows_balance_and_name(self, send, session_factory, text):
         await set_user(session_factory, 42, balance=123)
 
-        assert await send(text, uid=42) == ["Вася, твой баланс составляет 123 CheSton."]
+        (reply,) = await send(text, uid=42)
+        assert reply in phrase_texts(Dialogs.balance(name="Вася", balance="123"))
 
     async def test_new_user_is_created_by_sync_and_has_zero(self, send):
         # пользователя в БД ещё не было: его создаёт SyncEntitiesMiddleware до хендлера
-        assert await send("бал", uid=77, first_name="Новичок") == [
-            "Новичок, твой баланс составляет 0 CheSton."
-        ]
+        (reply,) = await send("бал", uid=77, first_name="Новичок")
+        assert reply in phrase_texts(Dialogs.balance(name="Новичок", balance="0"))
 
     @pytest.mark.parametrize("text", ["баланс", "бал ", "мой бал"])
     async def test_ignores_other_text(self, send, text):
@@ -38,7 +41,7 @@ class TestProfile:
 
         (reply,) = await send(text, uid=42)
 
-        assert "Имя:Вася" in reply
+        assert "Имя: Вася" in reply
         assert "Раса: Гуль" in reply
         assert "Баланс: 50" in reply
 

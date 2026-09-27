@@ -24,6 +24,7 @@ from .conftest import (
     callback_update,
     matches_phrase,
     message_update,
+    phrase_texts,
     owner_dict,
 )
 from .test_update_middlewares import get_user
@@ -49,8 +50,7 @@ class TestStartAndHelp:
     async def test_start_greets_by_name(self, send, text):
         (reply,) = await send(text, uid=42, first_name="Вася")
 
-        dp = send.dispatcher
-        assert reply == dp.dialog_service.text(Dialogs.start(name="Вася"))
+        assert reply in phrase_texts(Dialogs.start(name="Вася"))
 
     async def test_help(self, send):
         (reply,) = await send("/help")
@@ -74,7 +74,7 @@ class TestTops:
         (reply,) = await send("топ бал", uid=50)
 
         lines = reply.splitlines()
-        assert lines[0] == "Топ 20 самых богатих гулий:"
+        assert lines[0] == "🏆 Топ 20 самых богатых гулей:"
         assert lines[2:5] == [
             "1. Альфа - 300 CheSton",
             "2. Бета - 200 CheSton",
@@ -84,25 +84,24 @@ class TestTops:
     async def test_count_limits_the_top(self, send):
         (reply,) = await send("Топ Бал 2", uid=50)
 
-        assert reply.startswith("Топ 2 ")
+        assert reply.startswith("🏆 Топ 2 ")
         assert "Гамма" not in reply and "Бета" in reply
 
     @pytest.mark.parametrize("text", ["топ бал 0", "топ бал 51", "топ бал abc"])
     async def test_bad_count(self, send, text):
-        assert await send(text) == [
-            "Топ нужно указывать положительной цифрой в диапазоне 1-50"
-        ]
+        (reply,) = await send(text)
+        assert matches_phrase(reply, "tops.balance.bad_count")
 
     async def test_text_after_the_count_is_ignored(self, send):
         (reply,) = await send("топ бал 2 пожалуйста", uid=50)
 
-        assert reply.startswith("Топ 2 ")
+        assert reply.startswith("🏆 Топ 2 ")
 
     async def test_trailing_space_gives_default_top(self, send):
         # у прода падало с IndexError
         (reply,) = await send("топ бал ", uid=50)
 
-        assert reply.startswith("Топ 20 ")
+        assert reply.startswith("🏆 Топ 20 ")
 
     async def test_other_command_with_same_prefix_is_ignored(self, send):
         assert await send("топ балл") == []
@@ -121,7 +120,7 @@ class TestCheckRules:
         telegram.results["getChatAdministrators"] = [owner_dict(99)]
 
         (empty,) = await send("Правила", uid=42, chat=-100123)
-        assert empty.startswith("В этом чате правила отсутствуют")
+        assert matches_phrase(empty, "rules.missing")
 
         async with session_factory() as session:
             await session.execute(
@@ -218,7 +217,7 @@ class TestTransfer:
 
         await self.confirm(feed, telegram)
         (done,) = telegram.bodies("editMessageText")
-        assert done["text"] == "✅ Переведено 100 CheSton's."
+        assert done["text"] in phrase_texts(Dialogs.transfer.done(amount=100))
 
         sender = await get_user(session_factory, 42)
         receiver = await get_user(session_factory, 43)
@@ -231,7 +230,7 @@ class TestTransfer:
 
         await feed(callback_update(button_data(ask, "не подтвердить"), uid=42))
         (edit,) = telegram.bodies("editMessageText")
-        assert edit["text"] == "Перевод отменён."
+        assert edit["text"] in phrase_texts(Dialogs.transfer.cancelled())
 
         # состояние сброшено: повторное нажатие «подтвердить» уже ничего не делает
         await feed(callback_update(button_data(ask, "подтвердить"), uid=42))

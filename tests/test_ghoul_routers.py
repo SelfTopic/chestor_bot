@@ -81,7 +81,7 @@ class TestGhoulMiddleware:
         # миддлварь не блокирует апдейт хинтом "ты не гуль" — доходит до хендлера
         # регистрации (подробно проверяется в TestUpgradeKagune)
         (reply,) = await send("растить кагуне", uid=UID)
-        assert reply.startswith("Рождение нового гуля")
+        assert matches_phrase(reply, "ghoul.new")
 
     async def test_dead_ghoul_is_blocked(self, send, session_factory):
         await seed(session_factory, UID, "Вася")
@@ -185,7 +185,7 @@ class TestUpgradeKagune:
 
         (reply,) = await send("растить кагуне", uid=UID)
 
-        assert reply.startswith("Рождение нового гуля")
+        assert matches_phrase(reply, "ghoul.new")
         ghoul = await get_ghoul(session_factory, UID)
         assert ghoul is not None and ghoul.kagune_type_bit is not None
         kagune_type = calculate_kagune(ghoul.kagune_type_bit)[0]
@@ -203,7 +203,7 @@ class TestUpgradeKagune:
 
         (reply,) = await send("растить кагуне", uid=UID)
 
-        assert reply.startswith("🐣 Вау, отныне ты гуль... Снова.")
+        assert matches_phrase(reply, "ghoul.reborn")
         ghoul = await get_ghoul(session_factory, UID)
         assert ghoul is not None
         assert ghoul.is_dead is False
@@ -417,7 +417,7 @@ class TestTopSnap:
 
         (reply,) = await send("топ щелк", uid=UID)
 
-        assert reply.startswith("Топ 20 самых сломанных пальцев")
+        assert reply.startswith("🏆 Топ 20 самых сломанных пальцев")
         assert reply.index("Петя") < reply.index("Вася")  # больше щелчков — выше
 
     async def test_explicit_count(self, send, session_factory):
@@ -426,7 +426,7 @@ class TestTopSnap:
 
         (reply,) = await send("топ щелк 3", uid=UID)
 
-        assert reply.startswith("Топ 3 самых сломанных пальцев")
+        assert reply.startswith("🏆 Топ 3 самых сломанных пальцев")
 
     async def test_non_digit_count(self, send, session_factory):
         await seed(session_factory, UID, "Вася")
@@ -434,7 +434,7 @@ class TestTopSnap:
 
         (reply,) = await send("топ щелк абв", uid=UID)
 
-        assert reply == "Топ нужно указывать положительной цифрой"
+        assert matches_phrase(reply, "tops.not_a_number")
 
     async def test_count_out_of_range(self, send, session_factory):
         await seed(session_factory, UID, "Вася")
@@ -442,14 +442,14 @@ class TestTopSnap:
 
         (reply,) = await send("топ щелк 51", uid=UID)
 
-        assert reply == "Топ не может выходить за пределы значений 1-50"
+        assert matches_phrase(reply, "tops.out_of_range")
 
     @pytest.mark.parametrize(
         ("text", "reply"),
         [
             # как у прода (isdigit): отрицательное — "не цифра", а 0 — вне диапазона
-            ("топ щелк -5", "Топ нужно указывать положительной цифрой"),
-            ("топ щелк 0", "Топ не может выходить за пределы значений 1-50"),
+            ("топ щелк -5", "tops.not_a_number"),
+            ("топ щелк 0", "tops.out_of_range"),
             ("Топ Щелк 2 лишнее", None),  # регистр и хвост после числа не мешают
         ],
     )
@@ -460,9 +460,9 @@ class TestTopSnap:
         (answer,) = await send(text, uid=UID)
 
         if reply is None:
-            assert answer.startswith("Топ 2 самых сломанных пальцев")
+            assert answer.startswith("🏆 Топ 2 самых сломанных пальцев")
         else:
-            assert answer == reply
+            assert matches_phrase(answer, reply)
 
     async def test_longer_word_is_not_a_command(self, send, session_factory):
         # исправленный прод-баг: "топ щелкает" ловилось по началу текста и падало
@@ -477,12 +477,10 @@ class TestTopKagune:
         await seed(session_factory, UID, "Вася")
         await seed_ghoul(session_factory, UID)
 
-        assert await send("топ кагуне абв", uid=UID) == [
-            "Топ нужно указывать положительной цифрой"
-        ]
-        assert await send("топ кагуне 99", uid=UID) == [
-            "Топ не может выходить за пределы значений 1-50"
-        ]
+        (not_a_number,) = await send("топ кагуне абв", uid=UID)
+        assert matches_phrase(not_a_number, "tops.not_a_number")
+        (out_of_range,) = await send("топ кагуне 99", uid=UID)
+        assert matches_phrase(out_of_range, "tops.out_of_range")
 
     async def test_sum_view_with_keyboard(self, feed, session_factory):
         await seed(session_factory, UID, "Вася")
@@ -496,7 +494,7 @@ class TestTopKagune:
         telegram = await feed(message_update("топ кагуне", uid=UID))
 
         (body,) = telegram.bodies("sendMessage")
-        assert body["text"].startswith("Топ 20 самых сильных кагуне в сумме")
+        assert body["text"].startswith("🏆 Топ 20 самых сильных кагуне в сумме")
         assert "Вася - 7" in body["text"]
         for label in ("Укаку", "Коукаку", "Ринкаку", "Бикаку"):
             assert button_data(body, label) is not None
@@ -517,7 +515,7 @@ class TestTopKagune:
         telegram = await feed(callback_update(data, uid=UID))
 
         (edited,) = telegram.bodies("editMessageText")
-        assert edited["text"].startswith("Топ 20 самых сильных кагуне: Укаку")
+        assert edited["text"].startswith("🏆 Топ 20 самых сильных кагуне: Укаку")
         assert "Вася - 7" in edited["text"]
         assert button_data(edited, "⬅️ Сумма") is not None
 
