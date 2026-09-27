@@ -236,6 +236,18 @@ class _KaguneDialogs:
 
 
 class _LotteryDialogs:
+    def bet_out_of_range(self, *, max_bet: object, min_bet: object) -> Line:
+        return Line(
+            "lottery.bet_out_of_range",
+            {
+                "max_bet": max_bet,
+                "min_bet": min_bet,
+            },
+        )
+
+    def failed(self) -> Line:
+        return Line("lottery.failed", {})
+
     def lose(
         self,
         *,
@@ -253,6 +265,18 @@ class _LotteryDialogs:
                 "winning_color": winning_color,
             },
         )
+
+    def not_enough_money(self) -> Line:
+        return Line("lottery.not_enough_money", {})
+
+    def player_missing(self) -> Line:
+        return Line("lottery.player_missing", {})
+
+    def unknown_color(self, *, color: object, colors: object) -> Line:
+        return Line("lottery.unknown_color", {"color": color, "colors": colors})
+
+    def usage(self) -> Line:
+        return Line("lottery.usage", {})
 
     def win(
         self,
@@ -319,6 +343,51 @@ class _NotifyDialogs:
         )
 
 
+class _ProfileDialogs:
+    def card(self, *, balance: object, name: object, race: object) -> Line:
+        return Line("profile.card", {"balance": balance, "name": name, "race": race})
+
+    def unknown_race(self) -> Line:
+        return Line("profile.unknown_race", {})
+
+
+class _RpDialogs:
+    def created(self, *, action: object, command: object) -> Line:
+        return Line("rp.created", {"action": action, "command": command})
+
+    def delete_usage(self) -> Line:
+        return Line("rp.delete_usage", {})
+
+    def deleted(self, *, command: object) -> Line:
+        return Line("rp.deleted", {"command": command})
+
+    def empty(self) -> Line:
+        return Line("rp.empty", {})
+
+    def limit_reached(self, *, limit: object) -> Line:
+        return Line("rp.limit_reached", {"limit": limit})
+
+    def list(self, *, rows: object) -> Line:
+        return Line("rp.list", {"rows": rows})
+
+    def media_usage(self) -> Line:
+        return Line("rp.media_usage", {})
+
+    def not_found(self) -> Line:
+        return Line("rp.not_found", {})
+
+    def row(self, *, action: object, command: object, place: object) -> Line:
+        return Line("rp.row", {"action": action, "command": command, "place": place})
+
+    def set_usage(self) -> Line:
+        return Line("rp.set_usage", {})
+
+
+class _RulesDialogs:
+    def missing(self) -> Line:
+        return Line("rules.missing", {})
+
+
 class _SnapDialogs:
     def cooldown(self, *, minutes: object, seconds: object) -> Line:
         return Line("snap.cooldown", {"minutes": minutes, "seconds": seconds})
@@ -379,6 +448,28 @@ class _StatusDialogs:
         )
 
 
+class _TopsBalanceDialogs:
+    def bad_count(self) -> Line:
+        return Line("tops.balance.bad_count", {})
+
+    def row(self, *, balance: object, name: object, place: object) -> Line:
+        return Line(
+            "tops.balance.row",
+            {
+                "balance": balance,
+                "name": name,
+                "place": place,
+            },
+        )
+
+    def text(self, *, count: object, rows: object) -> Line:
+        return Line("tops.balance.text", {"count": count, "rows": rows})
+
+
+class _TopsDialogs:
+    balance = _TopsBalanceDialogs()
+
+
 class _Dialogs:
     coffee = _CoffeeDialogs()
     combat_power = _CombatPowerDialogs()
@@ -389,8 +480,12 @@ class _Dialogs:
     kagune = _KaguneDialogs()
     lottery = _LotteryDialogs()
     notify = _NotifyDialogs()
+    profile = _ProfileDialogs()
+    rp = _RpDialogs()
+    rules = _RulesDialogs()
     snap = _SnapDialogs()
     status = _StatusDialogs()
+    tops = _TopsDialogs()
 
     def balance(self, *, balance: object, name: object) -> Line:
         return Line("balance", {"balance": balance, "name": name})
@@ -398,11 +493,8 @@ class _Dialogs:
     def bot(self) -> Line:
         return Line("bot", {})
 
-    def help(self, *, commands_link: object, lore_link: object) -> Line:
-        return Line("help", {"commands_link": commands_link, "lore_link": lore_link})
-
-    def profile(self, *, balance: object, name: object, race: object) -> Line:
-        return Line("profile", {"balance": balance, "name": name, "race": race})
+    def help(self) -> Line:
+        return Line("help", {})
 
     def start(self, *, name: object) -> Line:
         return Line("start", {"name": name})
@@ -488,11 +580,17 @@ PLACEHOLDERS: dict[str, frozenset[str]] = {
         }
     ),
     "ghoul.reborn": frozenset({"kagune_type"}),
-    "help": frozenset({"commands_link", "lore_link"}),
+    "help": frozenset(),
     "kagune.info": frozenset(),
     "kagune.upgrade.cooldown": frozenset({"minutes", "seconds"}),
     "kagune.upgrade.done": frozenset({"kagune_strength", "money"}),
+    "lottery.bet_out_of_range": frozenset({"max_bet", "min_bet"}),
+    "lottery.failed": frozenset(),
     "lottery.lose": frozenset({"balance", "bet", "chosen_color", "winning_color"}),
+    "lottery.not_enough_money": frozenset(),
+    "lottery.player_missing": frozenset(),
+    "lottery.unknown_color": frozenset({"color", "colors"}),
+    "lottery.usage": frozenset(),
     "lottery.win": frozenset(
         {
             "balance",
@@ -507,7 +605,19 @@ PLACEHOLDERS: dict[str, frozenset[str]] = {
     "notify.health_full": frozenset(),
     "notify.hunger": frozenset({"threshold"}),
     "notify.level_up": frozenset({"cheston", "level", "rc", "stat_changes"}),
-    "profile": frozenset({"balance", "name", "race"}),
+    "profile.card": frozenset({"balance", "name", "race"}),
+    "profile.unknown_race": frozenset(),
+    "rp.created": frozenset({"action", "command"}),
+    "rp.delete_usage": frozenset(),
+    "rp.deleted": frozenset({"command"}),
+    "rp.empty": frozenset(),
+    "rp.limit_reached": frozenset({"limit"}),
+    "rp.list": frozenset({"rows"}),
+    "rp.media_usage": frozenset(),
+    "rp.not_found": frozenset(),
+    "rp.row": frozenset({"action", "command", "place"}),
+    "rp.set_usage": frozenset(),
+    "rules.missing": frozenset(),
     "snap.cooldown": frozenset({"minutes", "seconds"}),
     "snap.done": frozenset({"count", "money"}),
     "start": frozenset({"name"}),
@@ -527,4 +637,7 @@ PLACEHOLDERS: dict[str, frozenset[str]] = {
         }
     ),
     "status.regen": frozenset({"health", "hp_per_hour", "max_health", "time_left"}),
+    "tops.balance.bad_count": frozenset(),
+    "tops.balance.row": frozenset({"balance", "name", "place"}),
+    "tops.balance.text": frozenset({"count", "rows"}),
 }

@@ -71,7 +71,7 @@ class RaceProfileHandler(MessageHandler[AppContext[UserMessage]]):
 
         await self.ctx.message.answer(
             self.ctx.text(
-                Dialogs.profile(
+                Dialogs.profile.card(
                     name=user.full_name, race=race.value["name"], balance=user.balance
                 )
             )

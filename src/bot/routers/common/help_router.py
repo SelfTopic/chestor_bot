@@ -11,14 +11,7 @@ class HelpHandler(MessageHandler[AppContext[TextMessage]]):
     query = Command("help")
 
     async def handle(self) -> None:
-        await self.ctx.message.answer(
-            self.ctx.text(
-                Dialogs.help(
-                    commands_link="https://t.me/CheStorCommands",
-                    lore_link="Временно отсутствует",
-                )
-            )
-        )
+        await self.ctx.message.answer(self.ctx.text(Dialogs.help()))
 
 
 class HelpRouter(BaseRouter[AppContext]):

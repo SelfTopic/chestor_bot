@@ -13,8 +13,15 @@ from .media_download import (
     MediaNotFoundError,
     ValidationMediaError,
 )
+from .lottery import (
+    BetOutOfRange,
+    LotteryError,
+    LotteryPlayerMissing,
+    NotEnoughMoneyForBet,
+    UnknownLotteryColor,
+)
 from .media_not_found import MediaNotFound, MediaNotFoundInDatabase
-from .rp_commands import RpCommandError, RpCommandNotFound, RpCommandValidateError
+from .rp_commands import RpCommandError, RpCommandLimitReached, RpCommandNotFound
 from .time import DurationParseError
 from .transfer import (
     InsufficientBalanceError,
@@ -44,10 +51,15 @@ __all__ = [
     "ValidationMediaError",
     "MediaNotFoundInDatabase",
     "MediaNotFound",
-    "RpCommandValidateError",
+    "RpCommandLimitReached",
     "RpCommandNotFound",
     "RpCommandError",
     "DurationParseError",
+    "LotteryError",
+    "BetOutOfRange",
+    "NotEnoughMoneyForBet",
+    "LotteryPlayerMissing",
+    "UnknownLotteryColor",
     "TransferError",
     "InvalidTransferAmountError",
     "SelfTransferError",

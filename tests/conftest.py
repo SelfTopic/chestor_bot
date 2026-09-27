@@ -53,7 +53,6 @@ from src.bot.__main__ import Dispatcher  # noqa: E402
 from src.bot.context import AppContext  # noqa: E402
 from src.bot.exceptions import (  # noqa: E402
     ChatNotFoundInDatabase,
-    RpCommandValidateError,
     UserNotFound,
 )
 from src.bot.repositories.ghoul import GhoulRepository  # noqa: E402
@@ -62,7 +61,6 @@ from src.database.models import Ghoul, User  # noqa: E402
 
 EXPECTED_ERRORS: tuple[type[Exception], ...] = (
     ChatNotFoundInDatabase,
-    RpCommandValidateError,
     UserNotFound,
 )
 

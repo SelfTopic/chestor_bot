@@ -1,6 +1,7 @@
 from selfrot import BaseRouter, MessageHandler
 from selfrot.filter import Text
 
+from src.bot.dialogs import Dialogs
 from src.bot.exceptions import ChatNotFoundInDatabase
 
 from ...context import AppContext
@@ -20,9 +21,7 @@ class CheckRulesHandler(MessageHandler[AppContext[TextMessage]]):
             raise ChatNotFoundInDatabase()
 
         if not chat.rules:
-            await message.answer(
-                "В этом чате правила отсутствуют. Чтобы указать новые правила используйте команду 'новые правила'"
-            )
+            await message.answer(self.ctx.text(Dialogs.rules.missing()))
             return
 
         await message.answer(chat.rules)

@@ -5,7 +5,8 @@ from selfrot import CommandArgs, MessageHandler, Rest
 from selfrot.exceptions import CommandArgsError
 from selfrot.filter import Command
 
-from src.bot.exceptions import RpCommandValidateError
+from src.bot.dialogs import Dialogs
+from src.bot.exceptions import RpCommandLimitReached, RpCommandNotFound
 from src.bot.types.rp_commands import TypeRpCommandEnum
 
 from ....context import AppContext
@@ -16,6 +17,7 @@ from .sending import send_rp
 
 class NewRpOnMediaHandler(MessageHandler[AppContext[CaptionMessage]]):
     query = SetRpOnMedia()
+    usage = Dialogs.rp.media_usage()
 
     @staticmethod
     def parse_caption(caption: str) -> tuple[str, str] | None:
@@ -30,7 +32,7 @@ class NewRpOnMediaHandler(MessageHandler[AppContext[CaptionMessage]]):
 
         parsed = self.parse_caption(message.caption)
         if parsed is None:
-            await message.reply("Используйте\n/set_rp\n<команда>\n<действие>")
+            await message.reply(self.ctx.text(self.usage))
             return
 
         command, action = parsed
@@ -56,8 +58,17 @@ class NewRpOnMediaHandler(MessageHandler[AppContext[CaptionMessage]]):
             message,
             type_command,
             file_id,
-            f"Установлена Role-Play команда {rp.command} с действием {rp.action}",
+            self.ctx.text(Dialogs.rp.created(command=rp.command, action=rp.action)),
         )
+
+    async def on_error(self, exc: Exception) -> None:
+        if isinstance(exc, RpCommandLimitReached):
+            await self.ctx.message.answer(
+                self.ctx.text(Dialogs.rp.limit_reached(limit=exc.limit))
+            )
+            return
+
+        raise exc
 
 
 def _squash_spaces(value: str) -> str:
@@ -75,10 +86,7 @@ class SetRpArgs(CommandArgs):
 class NewRpHandler(MessageHandler[AppContext[TextMessage]]):
     cmd = Command("set_rp", SetRpArgs)
     query = cmd
-    usage = (
-        "Используйте как /set_rp\n<команда>\n<действие>\nнапример:\n"
-        "/set_rp\nпогладить\nпогладила(-а) по головке"
-    )
+    usage = Dialogs.rp.set_usage()
 
     async def handle(self) -> None:
         args = self.cmd.parse(self.ctx)
@@ -91,14 +99,18 @@ class NewRpHandler(MessageHandler[AppContext[TextMessage]]):
         )
 
         await self.ctx.message.answer(
-            f"Установлена Role-Play команда {rp.command} с действием {rp.action}"
+            self.ctx.text(Dialogs.rp.created(command=rp.command, action=rp.action))
         )
 
     async def on_error(self, exc: Exception) -> None:
-        if isinstance(exc, CommandArgsError):
-            raise RpCommandValidateError(self.usage) from exc
-
-        raise exc
+        match exc:
+            case CommandArgsError():
+                line = self.usage
+            case RpCommandLimitReached(limit=limit):
+                line = Dialogs.rp.limit_reached(limit=limit)
+            case _:
+                raise exc
+        await self.ctx.message.answer(self.ctx.text(line))
 
 
 class GetAllRpHandler(MessageHandler[AppContext[TextMessage]]):
@@ -109,15 +121,16 @@ class GetAllRpHandler(MessageHandler[AppContext[TextMessage]]):
         all_rp = await self.ctx.rp_commands_service.get_all(chat_id=message.chat.id)
 
         if len(all_rp) == 0:
-            await message.reply("В этом чате нет Role-Play команд. Используйте /set_rp")
+            await message.reply(self.ctx.text(Dialogs.rp.empty()))
             return
 
-        answer_text = "Список всех Role-Play команд чата: \n\n"
-
-        for index, rp in enumerate(all_rp, start=1):
-            answer_text += f"{index}. {rp.command} - {rp.action}\n"
-
-        await message.answer(answer_text)
+        rows = "\n".join(
+            self.ctx.text(
+                Dialogs.rp.row(place=place, command=rp.command, action=rp.action)
+            )
+            for place, rp in enumerate(all_rp, start=1)
+        )
+        await message.answer(self.ctx.text(Dialogs.rp.list(rows=rows)))
 
 
 class DelRpArgs(CommandArgs):
@@ -127,7 +140,7 @@ class DelRpArgs(CommandArgs):
 class DeleteRpHandler(MessageHandler[AppContext[TextMessage]]):
     cmd = Command("del_rp", DelRpArgs)
     query = cmd
-    usage = "не указаны аргументы для удаления. используйте /del_rp <command>"
+    usage = Dialogs.rp.delete_usage()
 
     async def handle(self) -> None:
         command = self.cmd.parse(self.ctx).command
@@ -137,10 +150,14 @@ class DeleteRpHandler(MessageHandler[AppContext[TextMessage]]):
             chat_id=message.chat.id, command=command
         )
 
-        await message.reply(f"Role-Play команда {command} удалена")
+        await message.reply(self.ctx.text(Dialogs.rp.deleted(command=command)))
 
     async def on_error(self, exc: Exception) -> None:
-        if isinstance(exc, CommandArgsError):
-            raise RpCommandValidateError(self.usage) from exc
-
-        raise exc
+        match exc:
+            case CommandArgsError():
+                line = self.usage
+            case RpCommandNotFound():
+                line = Dialogs.rp.not_found()
+            case _:
+                raise exc
+        await self.ctx.message.answer(self.ctx.text(line))

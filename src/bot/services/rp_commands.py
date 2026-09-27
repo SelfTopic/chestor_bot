@@ -3,13 +3,15 @@ import logging
 from collections import defaultdict
 from typing import Callable
 
-from src.bot.exceptions import RpCommandError
+from src.bot.exceptions import RpCommandLimitReached, RpCommandNotFound
 from src.bot.types.rp_commands import RpCommandDTO, TypeRpCommandEnum
 from src.database.models import Rp
 
 from ..repositories.rp_commands import RpCommandsRepository
 
 logger = logging.getLogger(__name__)
+
+RP_LIMIT = 20
 
 
 class RpCommandsService:
@@ -65,10 +67,10 @@ class RpCommandsService:
         command = self._normalize_command(command)
         await self._ensure_cache(chat_id)
 
-        if len(self.cache.get(chat_id, {})) >= 20 and command not in self.cache.get(
-            chat_id, {}
-        ):
-            raise ValueError("RP command limit reached (20)")
+        if len(
+            self.cache.get(chat_id, {})
+        ) >= RP_LIMIT and command not in self.cache.get(chat_id, {}):
+            raise RpCommandLimitReached(RP_LIMIT)
 
         rp = await self.rp_commands_repository.insert(
             chat_id=chat_id,
@@ -89,7 +91,7 @@ class RpCommandsService:
         await self._ensure_cache(chat_id)
 
         if command not in self.cache.get(chat_id, {}):
-            raise RpCommandError("Такой Role-Play команды не существует")
+            raise RpCommandNotFound(command)
 
         await self.rp_commands_repository.delete_by_chat_id_and_command(
             chat_id, command

@@ -5,11 +5,17 @@ from selfrot.exceptions import CommandArgsError, TelegramBadRequest
 from selfrot.filter import Command, HasUser
 from selfrot.types import InputFile
 
-from src.bot.dialogs import Dialogs
+from src.bot.dialogs import Dialogs, Line
+from src.bot.exceptions import (
+    BetOutOfRange,
+    LotteryPlayerMissing,
+    NotEnoughMoneyForBet,
+    UnknownLotteryColor,
+)
 from src.bot.game_configs import LOTTERY_CONFIG
 from src.bot.services.ghoul_game import LotteryService
 from src.bot.services.ghoul_game.lottery import COLOR_TO_FOLDER
-from src.bot.types.dep import DepResult
+from src.bot.types.dep import DepColor, DepResult
 
 from ...context import AppContext
 from ..types import TextUserMessage
@@ -25,14 +31,13 @@ class DepArgs(CommandArgs):
 class DepnutHandler(MessageHandler[AppContext[TextUserMessage]]):
     cmd = Command("депнуть", DepArgs, prefixes="", ignore_case=True)
     query = cmd & HasUser()
-    format_error = "❌ Неверный формат команды. Используйте: депнуть <цвет> <ставка>"
+    usage = Dialogs.lottery.usage()
+    failed = Dialogs.lottery.failed()
 
     def result_text(self, dep_result: DepResult) -> str:
-        dialog = self.ctx.dialog_service
-
         if dep_result.is_won:
             multiplier = LOTTERY_CONFIG.get_multiplier(dep_result.winning_color.value)
-            return dialog.text(
+            return self.ctx.text(
                 Dialogs.lottery.win(
                     chosen_color=dep_result.chosen_color.value,
                     winning_color=dep_result.winning_color.value,
@@ -43,7 +48,7 @@ class DepnutHandler(MessageHandler[AppContext[TextUserMessage]]):
                 )
             )
 
-        return dialog.text(
+        return self.ctx.text(
             Dialogs.lottery.lose(
                 chosen_color=dep_result.chosen_color.value,
                 winning_color=dep_result.winning_color.value,
@@ -119,16 +124,27 @@ class DepnutHandler(MessageHandler[AppContext[TextUserMessage]]):
 
         await self.send_answer(lottery_service, dep_result)
 
-    async def on_error(self, exc: Exception) -> None:
-        message = self.ctx.message
+    def error_line(self, exc: Exception) -> Line:
+        match exc:
+            case CommandArgsError():
+                return self.usage
+            case BetOutOfRange(min_bet=min_bet, max_bet=max_bet):
+                return Dialogs.lottery.bet_out_of_range(
+                    min_bet=min_bet, max_bet=max_bet
+                )
+            case NotEnoughMoneyForBet():
+                return Dialogs.lottery.not_enough_money()
+            case LotteryPlayerMissing():
+                return Dialogs.lottery.player_missing()
+            case UnknownLotteryColor(color=color):
+                colors = ", ".join(c.value for c in DepColor)
+                return Dialogs.lottery.unknown_color(color=color, colors=colors)
+            case _:
+                logger.error(f"Ошибка при обработке депнуть: {exc}")
+                return self.failed
 
-        if isinstance(exc, CommandArgsError):
-            await message.reply(self.format_error)
-        elif isinstance(exc, ValueError):
-            await message.reply(str(exc))
-        else:
-            logger.error(f"Ошибка при обработке депнуть: {exc}")
-            await message.reply("❌ Произошла ошибка при обработке вашей ставки")
+    async def on_error(self, exc: Exception) -> None:
+        await self.ctx.message.reply(self.ctx.text(self.error_line(exc)))
 
 
 class DepRouter(BaseRouter[AppContext]):

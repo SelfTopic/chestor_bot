@@ -16,12 +16,14 @@ class ProfileHandler(MessageHandler[AppContext[UserMessage]]):
         race = self.ctx.user_service.race(user.race_bit)
 
         race_name = (
-            "Ээээ.. Пока неясно что это такое." if not race else race.value["name"]
+            self.ctx.text(Dialogs.profile.unknown_race())
+            if not race
+            else race.value["name"]
         )
 
         await self.ctx.answer_message(
             self.ctx.text(
-                Dialogs.profile(
+                Dialogs.profile.card(
                     name=user.full_name, race=race_name, balance=str(user.balance)
                 )
             )

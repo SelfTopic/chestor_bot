@@ -1,6 +1,12 @@
 import logging
 import random
 
+from ...exceptions import (
+    BetOutOfRange,
+    LotteryPlayerMissing,
+    NotEnoughMoneyForBet,
+    UnknownLotteryColor,
+)
 from ...game_configs import LOTTERY_CONFIG
 from ...repositories.lottery import LotteryRepository
 from ...services.cooldown import CooldownService
@@ -36,17 +42,15 @@ class LotteryService:
         self, user_id: int, chosen_color: DepColor, bet_amount: int
     ) -> DepResult:
         if bet_amount < LOTTERY_CONFIG.min_bet or bet_amount > LOTTERY_CONFIG.max_bet:
-            raise ValueError(
-                f"Сумма ставки должна быть от {LOTTERY_CONFIG.min_bet} до {LOTTERY_CONFIG.max_bet}"
-            )
+            raise BetOutOfRange(LOTTERY_CONFIG.min_bet, LOTTERY_CONFIG.max_bet)
 
         user = await self.user_service.get(find_by=user_id)
 
         if not user:
-            raise ValueError("Пользователь не найден")
+            raise LotteryPlayerMissing()
 
         if user.balance < bet_amount:
-            raise ValueError("Недостаточно денег для такой ставки")
+            raise NotEnoughMoneyForBet()
 
         winning_color = self._get_random_color_by_chance()
 
@@ -89,7 +93,7 @@ class LotteryService:
     def _get_random_color_by_chance(self) -> DepColor:
         colors = LOTTERY_CONFIG.colors
         if not colors:
-            raise ValueError("Список цветов для лотереи не может быть пустым")
+            raise ValueError("LOTTERY_CONFIG.colors is empty")
         chances = [LOTTERY_CONFIG.get_chance(color) for color in colors]
 
         chosen_color_str = random.choices(colors, weights=chances, k=1)[0]
@@ -102,9 +106,7 @@ class LotteryService:
             if color.value in color_str:
                 return color
 
-        raise ValueError(
-            f"Неизвестный цвет '{color_str}'. Используйте: {', '.join(c.value for c in DepColor)}"
-        )
+        raise UnknownLotteryColor(color_str)
 
 
 __all__ = ["LotteryService"]

@@ -54,12 +54,8 @@ class TestStartAndHelp:
     async def test_help(self, send):
         (reply,) = await send("/help")
 
-        assert reply == send.dispatcher.dialog_service.text(
-            Dialogs.help(
-                commands_link="https://t.me/CheStorCommands",
-                lore_link="Временно отсутствует",
-            )
-        )
+        assert reply == send.dispatcher.dialog_service.text(Dialogs.help())
+        assert "https://t.me/CheStorCommands" in reply
 
     @pytest.mark.parametrize("text", ["старт", "/starts", "/helper"])
     async def test_ignores_other_text(self, send, text):
@@ -77,7 +73,7 @@ class TestTops:
         (reply,) = await send("топ бал", uid=50)
 
         lines = reply.splitlines()
-        assert lines[0] == "Топ 20 самых богатих гулий: "
+        assert lines[0] == "Топ 20 самых богатих гулий:"
         assert lines[2:5] == [
             "1. Альфа - 300 CheSton",
             "2. Бета - 200 CheSton",
@@ -322,7 +318,7 @@ class TestRolePlay:
             "Установлена Role-Play команда погладить с действием погладила по головке"
         ]
         assert await send("/all_rp", uid=42) == [
-            "Список всех Role-Play команд чата: \n\n1. погладить - погладила по головке\n"
+            "Список всех Role-Play команд чата:\n\n1. погладить - погладила по головке"
         ]
 
         # в ответ на сообщение и по @username
@@ -369,6 +365,11 @@ class TestRolePlay:
         (reply,) = await send("погладить @ghost", uid=42)
 
         assert "ghost" in reply and "не найден" in reply
+
+    async def test_deleting_unknown_command(self, send):
+        assert await send("/del_rp обнять", uid=42) == [
+            "Ошибка: Такой Role-Play команды не существует"
+        ]
 
     @pytest.mark.parametrize("text", ["/set_rp", "/set_rp одно", "/del_rp"])
     async def test_bad_arguments_go_to_on_error(self, send, text):
