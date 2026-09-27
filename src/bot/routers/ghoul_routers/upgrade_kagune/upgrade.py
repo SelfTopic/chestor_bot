@@ -22,11 +22,11 @@ async def do_upgrade(
 
     ghoul = await ghoul_service.get(find_by=telegram_id)
     if ghoul is None:
-        return False, "Гуль не найден."
+        return False, ctx.text(Dialogs.kagune.upgrade.no_ghoul())
 
     current_strength = ghoul_service.get_kagune_strength(ghoul, kagune_type)
     if current_strength is None:
-        return False, "Этот тип кагуне у тебя не открыт."
+        return False, ctx.text(Dialogs.kagune.upgrade.not_owned())
 
     user_cooldown = await ctx.cooldown_service.get_active_cooldown(
         telegram_id, "KAGUNE_UPGRADE"
@@ -43,7 +43,7 @@ async def do_upgrade(
     price = ghoul_service.calculate_price_upgrade_kagune(current_strength)
     user = await ctx.user_service.get(find_by=telegram_id)
     if user is None:
-        return False, "Пользователь не найден."
+        return False, ctx.text(Dialogs.kagune.upgrade.no_user())
 
     if user.balance < price:
         return False, ctx.text(
@@ -67,19 +67,20 @@ def build_choice_keyboard(
     ctx: AppContext[Any], ghoul: Ghoul, owned: list[KaguneType], invoker_id: int
 ) -> tuple[str, InlineKeyboardMarkup]:
     ghoul_service = ctx.ghoul_service
-    lines = ["Какое кагуне усилить?"]
+    choice = Dialogs.kagune.upgrade.choice
+    rows: list[str] = []
     keyboard = InlineKeyboard()
 
     for kagune_type in owned:
         strength = ghoul_service.get_kagune_strength(ghoul, kagune_type)
         price = ghoul_service.calculate_price_upgrade_kagune(strength or 0)
-        label = f"{kagune_type.value['name']} - {price} CheSton"
-        lines.append(f"{kagune_type.value['name']} (сила {strength}) - {price} CheSton")
+        name = kagune_type.value["name"]
+        rows.append(ctx.text(choice.row(kagune=name, strength=strength, price=price)))
         keyboard.button(
-            label,
+            ctx.text(choice.button(kagune=name, price=price)),
             KaguneUpgradePress(
                 invoker_id=invoker_id, name_english=kagune_type.value["name_english"]
             ),
         )
 
-    return "\n".join(lines), keyboard.markup()
+    return ctx.text(choice.text(rows="\n".join(rows))), keyboard.markup()

@@ -133,7 +133,7 @@ class KaguneChoiceHandler(CallbackQueryHandler[AppContext[DataMessageCallbackQue
             None,
         )
         if kagune_type is None:
-            await callback.answer("Неверный тип кагуне")
+            await callback.answer(ctx.text(Dialogs.kagune.upgrade.unknown_type()))
             return
 
         telegram_id = callback.user.id

@@ -18,6 +18,7 @@ profile:
     Для открытия расового профиля используйте команду /race_profile или 'распрофиль'
 errors:
   unexpected: 'Ошибка: {error}'
+  cannot_process: Невозможно обработать запрос
   user_not_found: '❌ Пользователь не найден: {query}'
   username_not_found: 'Ошибка: Пользователь с username {username} не найден'
   chat_not_found: 'Ошибка: Чат не найден в базе данных'

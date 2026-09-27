@@ -193,6 +193,9 @@ class _EatHumanDialogs:
 
 
 class _ErrorsDialogs:
+    def cannot_process(self) -> Line:
+        return Line("errors.cannot_process", {})
+
     def chat_not_found(self) -> Line:
         return Line("errors.chat_not_found", {})
 
@@ -388,7 +391,27 @@ class _KaguneGuideDialogs:
         return Line("kagune.guide.table_title", {})
 
 
+class _KaguneUpgradeChoiceDialogs:
+    def button(self, *, kagune: object, price: object) -> Line:
+        return Line("kagune.upgrade.choice.button", {"kagune": kagune, "price": price})
+
+    def row(self, *, kagune: object, price: object, strength: object) -> Line:
+        return Line(
+            "kagune.upgrade.choice.row",
+            {
+                "kagune": kagune,
+                "price": price,
+                "strength": strength,
+            },
+        )
+
+    def text(self, *, rows: object) -> Line:
+        return Line("kagune.upgrade.choice.text", {"rows": rows})
+
+
 class _KaguneUpgradeDialogs:
+    choice = _KaguneUpgradeChoiceDialogs()
+
     def cooldown(self, *, minutes: object, seconds: object) -> Line:
         return Line("kagune.upgrade.cooldown", {"minutes": minutes, "seconds": seconds})
 
@@ -400,6 +423,18 @@ class _KaguneUpgradeDialogs:
                 "money": money,
             },
         )
+
+    def no_ghoul(self) -> Line:
+        return Line("kagune.upgrade.no_ghoul", {})
+
+    def no_user(self) -> Line:
+        return Line("kagune.upgrade.no_user", {})
+
+    def not_owned(self) -> Line:
+        return Line("kagune.upgrade.not_owned", {})
+
+    def unknown_type(self) -> Line:
+        return Line("kagune.upgrade.unknown_type", {})
 
 
 class _KaguneDialogs:
@@ -639,6 +674,41 @@ class _SnapDialogs:
 
     def done(self, *, count: object, money: object) -> Line:
         return Line("snap.done", {"count": count, "money": money})
+
+
+class _StatsShopDialogs:
+    def row(self, *, current: object, stat: object, x10: object, x5: object) -> Line:
+        return Line(
+            "stats.shop.row",
+            {
+                "current": current,
+                "stat": stat,
+                "x10": x10,
+                "x5": x5,
+            },
+        )
+
+    def text(self, *, balance: object, rows: object) -> Line:
+        return Line("stats.shop.text", {"balance": balance, "rows": rows})
+
+
+class _StatsDialogs:
+    shop = _StatsShopDialogs()
+
+    def bought(self, *, count: object, price: object, stat: object) -> Line:
+        return Line("stats.bought", {"count": count, "price": price, "stat": stat})
+
+    def limit(self) -> Line:
+        return Line("stats.limit", {})
+
+    def no_money(self) -> Line:
+        return Line("stats.no_money", {})
+
+    def private_only(self) -> Line:
+        return Line("stats.private_only", {})
+
+    def private_only_action(self) -> Line:
+        return Line("stats.private_only_action", {})
 
 
 class _StatusDialogs:
@@ -915,6 +985,7 @@ class _Dialogs:
     rp = _RpDialogs()
     rules = _RulesDialogs()
     snap = _SnapDialogs()
+    stats = _StatsDialogs()
     status = _StatusDialogs()
     tops = _TopsDialogs()
     transfer = _TransferDialogs()
@@ -984,6 +1055,7 @@ PLACEHOLDERS: dict[str, frozenset[str]] = {
     "eat_human.ambush.won": frozenset({"rewards"}),
     "eat_human.cooldown": frozenset({"hours", "minutes", "seconds"}),
     "eat_human.done": frozenset({"count", "hunger", "restored"}),
+    "errors.cannot_process": frozenset(),
     "errors.chat_not_found": frozenset(),
     "errors.media_not_found": frozenset(),
     "errors.not_enough_money": frozenset({"money"}),
@@ -1054,8 +1126,15 @@ PLACEHOLDERS: dict[str, frozenset[str]] = {
     "kagune.guide.table_notes": frozenset(),
     "kagune.guide.table_title": frozenset(),
     "kagune.info": frozenset(),
+    "kagune.upgrade.choice.button": frozenset({"kagune", "price"}),
+    "kagune.upgrade.choice.row": frozenset({"kagune", "price", "strength"}),
+    "kagune.upgrade.choice.text": frozenset({"rows"}),
     "kagune.upgrade.cooldown": frozenset({"minutes", "seconds"}),
     "kagune.upgrade.done": frozenset({"kagune_strength", "money"}),
+    "kagune.upgrade.no_ghoul": frozenset(),
+    "kagune.upgrade.no_user": frozenset(),
+    "kagune.upgrade.not_owned": frozenset(),
+    "kagune.upgrade.unknown_type": frozenset(),
     "lottery.bet_out_of_range": frozenset({"max_bet", "min_bet"}),
     "lottery.failed": frozenset(),
     "lottery.lose": frozenset({"balance", "bet", "chosen_color", "winning_color"}),
@@ -1105,6 +1184,13 @@ PLACEHOLDERS: dict[str, frozenset[str]] = {
     "snap.cooldown": frozenset({"minutes", "seconds"}),
     "snap.done": frozenset({"count", "money"}),
     "start": frozenset({"name"}),
+    "stats.bought": frozenset({"count", "price", "stat"}),
+    "stats.limit": frozenset(),
+    "stats.no_money": frozenset(),
+    "stats.private_only": frozenset(),
+    "stats.private_only_action": frozenset(),
+    "stats.shop.row": frozenset({"current", "stat", "x10", "x5"}),
+    "stats.shop.text": frozenset({"balance", "rows"}),
     "status.healthy": frozenset(),
     "status.hunger": frozenset(
         {

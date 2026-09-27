@@ -5,6 +5,7 @@ from selfrot.filter import HasMessageCallbackQuery, HasUser, Text
 from selfrot.handlers import CallbackQueryHandler
 from selfrot.types import InlineKeyboardMarkup, Message
 
+from src.bot.dialogs import Dialogs
 from src.bot.game_configs import STAT_UPGRADE_CONFIG, STATS, stat_cap_for_level
 from src.database.models import Ghoul, User
 
@@ -24,8 +25,12 @@ class StatBuy(CallbackPayload, prefix="stat_buy"):
 
 class StatNop(CallbackPayload, prefix="stat_nop"):
     pass
-def build_shop(ghoul: Ghoul, user: User | None) -> tuple[str, InlineKeyboardMarkup]:
-    lines = [f"Баланс: {user.balance if user else 0}", ""]
+
+
+def build_shop(
+    ctx: AppContext[Any], ghoul: Ghoul, user: User | None
+) -> tuple[str, InlineKeyboardMarkup]:
+    rows: list[str] = []
     keyboard = InlineKeyboard()
 
     for label, key, emoji in STATS:
@@ -51,11 +56,19 @@ def build_shop(ghoul: Ghoul, user: User | None) -> tuple[str, InlineKeyboardMark
                 )
             )
 
-        lines.append(f"{emoji}{label}: {current}  х5: {prices[1]} х10: {prices[2]}")
+        rows.append(
+            ctx.text(
+                Dialogs.stats.shop.row(
+                    stat=f"{emoji}{label}", current=current, x5=prices[1], x10=prices[2]
+                )
+            )
+        )
         keyboard.row(*buttons)
 
-    lines.append("")
-    return "\n".join(lines), keyboard.markup()
+    text = Dialogs.stats.shop.text(
+        balance=user.balance if user else 0, rows="\n".join(rows)
+    )
+    return ctx.text(text), keyboard.markup()
 
 
 class UpgradeStatHandler(MessageHandler[AppContext[TextUserMessage]]):
@@ -66,14 +79,12 @@ class UpgradeStatHandler(MessageHandler[AppContext[TextUserMessage]]):
         message = ctx.message
 
         if message.chat.type != "private":
-            await message.reply(
-                "Эта команда работает только в личных сообщениях с ботом."
-            )
+            await message.reply(ctx.text(Dialogs.stats.private_only()))
             return
 
         ghoul = await ctx.db_ghoul()
         user = await ctx.user_service.get(find_by=message.user.id)
-        text, keyboard = build_shop(ghoul, user)
+        text, keyboard = build_shop(ctx, ghoul, user)
         await message.reply(text, reply_markup=keyboard)
 
 
@@ -82,11 +93,11 @@ async def _private_message(ctx: AppContext[Any]) -> Message | None:
     message = callback.message
 
     if not isinstance(message, Message):
-        await callback.answer("Невозможно обработать запрос")
+        await callback.answer(ctx.text(Dialogs.errors.cannot_process()))
         return None
 
     if message.chat.type != "private":
-        await callback.answer("Эта операция доступна только в личных сообщениях.")
+        await callback.answer(ctx.text(Dialogs.stats.private_only_action()))
         return None
 
     return message
@@ -99,9 +110,7 @@ class StatNopHandler(CallbackQueryHandler[AppContext[DataMessageCallbackQuery]])
         if await _private_message(self.ctx) is None:
             return
 
-        await self.ctx.callback_query.answer(
-            "Достигнут предел прокачки для этого стата."
-        )
+        await self.ctx.callback_query.answer(self.ctx.text(Dialogs.stats.limit()))
 
 
 class StatBuyHandler(CallbackQueryHandler[AppContext[DataMessageCallbackQuery]]):
@@ -122,17 +131,21 @@ class StatBuyHandler(CallbackQueryHandler[AppContext[DataMessageCallbackQuery]])
         )
 
         if bought == 0 and price > 0:
-            await callback.answer("Недостаточно средств")
+            await callback.answer(ctx.text(Dialogs.stats.no_money()))
             return
 
         if bought == 0 and price == 0:
-            await callback.answer("Достигнут предел прокачки для этого стата.")
+            await callback.answer(ctx.text(Dialogs.stats.limit()))
             return
 
-        text, keyboard = build_shop(new_ghoul, new_user)
+        text, keyboard = build_shop(ctx, new_ghoul, new_user)
         await message.edit_text(text, reply_markup=keyboard)
         await callback.answer(
-            f"Прокачано {STAT_LABELS[payload.stat]} +{bought}. Потрачено: {price}"
+            ctx.text(
+                Dialogs.stats.bought(
+                    stat=STAT_LABELS[payload.stat], count=bought, price=price
+                )
+            )
         )
 
 

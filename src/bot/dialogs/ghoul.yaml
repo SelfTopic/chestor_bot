@@ -85,6 +85,16 @@ kagune:
 
     Сила кагуне (сумма силы всех открытых типов) сама по себе НЕ множится типом кагуне - только голодом и какуджей.
   upgrade:
+    no_ghoul: Гуль не найден.
+    no_user: Пользователь не найден.
+    not_owned: Этот тип кагуне у тебя не открыт.
+    unknown_type: Неверный тип кагуне
+    choice:
+      text: |-
+        Какое кагуне усилить?
+        {rows}
+      row: '{kagune} (сила {strength}) - {price} CheSton'
+      button: '{kagune} - {price} CheSton'
     done: |-
       ✅ Ты успешно усилил свое кагуне.
 
@@ -232,3 +242,15 @@ quiz:
   wrong: 'Статус: неверно'
   play_again: Play Again
   not_active: Quiz is not active.
+stats:
+  shop:
+    text: |-
+      Баланс: {balance}
+
+      {rows}
+    row: '{stat}: {current}  х5: {x5} х10: {x10}'
+  private_only: Эта команда работает только в личных сообщениях с ботом.
+  private_only_action: Эта операция доступна только в личных сообщениях.
+  limit: Достигнут предел прокачки для этого стата.
+  no_money: Недостаточно средств
+  bought: 'Прокачано {stat} +{count}. Потрачено: {price}'
