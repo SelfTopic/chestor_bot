@@ -6,17 +6,23 @@ from selfrot.handlers import CallbackQueryHandler
 from selfrot.keyboard import button
 from selfrot.types import DataCallbackQuery, InlineKeyboardMarkup, Message, TextMessage
 
+from src.bot.dialogs import Dialogs
 from src.bot.types import KaguneType
 
 from ....context import AppContext
 from .callback_data import TopKaguneView, ViewName
-from .count import GhoulTopHandler, top_command
+from .count import GhoulTopHandler, top_command, top_row, top_text
 
 _VIEWS: tuple[ViewName, ...] = get_args(ViewName)
-_VIEW_LABELS: dict[ViewName, str] = {
-    "sum": "Сумма",
-    **{kt.value["name_english"]: kt.value["name"] for kt in KaguneType},
+_KAGUNE_LABELS: dict[ViewName, str] = {
+    kt.value["name_english"]: kt.value["name"] for kt in KaguneType
 }
+
+
+def _view_label(ctx: AppContext[Any], view: ViewName) -> str:
+    if view == "sum":
+        return ctx.text(Dialogs.tops.kagune.sum_button())
+    return _KAGUNE_LABELS[view]
 
 
 def _kagune_type_for_view(view: ViewName) -> KaguneType | None:
@@ -26,13 +32,13 @@ def _kagune_type_for_view(view: ViewName) -> KaguneType | None:
 
 
 def _build_keyboard(
-    current: ViewName, previous: ViewName | None, count: int
+    ctx: AppContext[Any], current: ViewName, previous: ViewName | None, count: int
 ) -> InlineKeyboardMarkup:
     buttons = []
     for view in _VIEWS:
         if view == current:
             continue
-        label = _VIEW_LABELS[view]
+        label = _view_label(ctx, view)
         if view == previous:
             label = f"⬅️ {label}"
         buttons.append(
@@ -49,29 +55,29 @@ async def _render(
     kagune_type = _kagune_type_for_view(current)
     top = await ghoul_service.get_top_kagune(count, kagune_type)
 
-    label = _VIEW_LABELS[current]
     heading = (
-        f"Топ {count} самых сильных кагуне в сумме"
+        Dialogs.tops.kagune.sum_title(count=count)
         if kagune_type is None
-        else f"Топ {count} самых сильных кагуне: {label}"
+        else Dialogs.tops.kagune.type_title(
+            count=count, kagune=_view_label(ctx, current)
+        )
     )
 
-    if not top:
-        text = f"{heading}\n\nА нету топа прикинь нахуй."
-    else:
-        names = await ctx.first_names([ghoul.telegram_id for ghoul in top])
-        lines = [heading, ""]
-        for place, ghoul in enumerate(top, start=1):
-            name = names.get(ghoul.telegram_id, "Unknown")
-            value = (
-                ghoul_service.total_kagune_strength(ghoul)
-                if kagune_type is None
-                else ghoul_service.get_kagune_strength(ghoul, kagune_type)
-            )
-            lines.append(f"{place}. {name} - {value}")
-        text = "\n".join(lines)
+    names = await ctx.first_names([ghoul.telegram_id for ghoul in top])
+    rows = [
+        top_row(
+            ctx,
+            place,
+            names.get(ghoul.telegram_id),
+            ghoul_service.total_kagune_strength(ghoul)
+            if kagune_type is None
+            else ghoul_service.get_kagune_strength(ghoul, kagune_type),
+        )
+        for place, ghoul in enumerate(top, start=1)
+    ]
+    text = top_text(ctx, ctx.text(heading), rows)
 
-    return text, _build_keyboard(current=current, previous=previous, count=count)
+    return text, _build_keyboard(ctx, current=current, previous=previous, count=count)
 
 
 class TopKaguneHandler(GhoulTopHandler, MessageHandler[AppContext[TextMessage]]):
@@ -79,7 +85,9 @@ class TopKaguneHandler(GhoulTopHandler, MessageHandler[AppContext[TextMessage]])
     query = cmd
 
     async def show(self, count: int) -> None:
-        body, keyboard = await _render(self.ctx, current="sum", previous=None, count=count)
+        body, keyboard = await _render(
+            self.ctx, current="sum", previous=None, count=count
+        )
         await self.ctx.message.answer(body, reply_markup=keyboard)
 
 
@@ -92,7 +100,7 @@ class TopKaguneViewHandler(CallbackQueryHandler[AppContext[DataCallbackQuery]]):
         message = ctx.callback_query.message
 
         if not isinstance(message, Message):
-            await ctx.callback_query.answer("Невозможно обработать запрос")
+            await ctx.callback_query.answer(ctx.text(Dialogs.errors.cannot_process()))
             return
 
         payload = self.press.parse(ctx)
@@ -111,7 +119,9 @@ class TopKaguneBadDataHandler(CallbackQueryHandler[AppContext[DataCallbackQuery]
     query = CallbackDataStartswith("topkagune")
 
     async def handle(self) -> None:
-        await self.ctx.callback_query.answer("Неверные данные кнопки")
+        await self.ctx.callback_query.answer(
+            self.ctx.text(Dialogs.tops.kagune.bad_button())
+        )
 
 
 class TopKaguneRouter(BaseRouter[AppContext]):

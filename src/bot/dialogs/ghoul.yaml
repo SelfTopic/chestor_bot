@@ -254,3 +254,19 @@ stats:
   limit: Достигнут предел прокачки для этого стата.
   no_money: Недостаточно средств
   bought: 'Прокачано {stat} +{count}. Потрачено: {price}'
+tops:
+  not_a_number: Топ нужно указывать положительной цифрой
+  out_of_range: Топ не может выходить за пределы значений 1-50
+  empty: А нету топа прикинь нахуй.
+  unknown_name: Unknown
+  list: |-
+    {title}
+
+    {rows}
+  row: '{place}. {name} - {value}'
+  snap_title: Топ {count} самых сломанных пальцев
+  kagune:
+    sum_title: Топ {count} самых сильных кагуне в сумме
+    type_title: 'Топ {count} самых сильных кагуне: {kagune}'
+    sum_button: Сумма
+    bad_button: Неверные данные кнопки

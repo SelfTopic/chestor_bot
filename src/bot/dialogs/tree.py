@@ -796,8 +796,44 @@ class _TopsBalanceDialogs:
         return Line("tops.balance.text", {"count": count, "rows": rows})
 
 
+class _TopsKaguneDialogs:
+    def bad_button(self) -> Line:
+        return Line("tops.kagune.bad_button", {})
+
+    def sum_button(self) -> Line:
+        return Line("tops.kagune.sum_button", {})
+
+    def sum_title(self, *, count: object) -> Line:
+        return Line("tops.kagune.sum_title", {"count": count})
+
+    def type_title(self, *, count: object, kagune: object) -> Line:
+        return Line("tops.kagune.type_title", {"count": count, "kagune": kagune})
+
+
 class _TopsDialogs:
     balance = _TopsBalanceDialogs()
+    kagune = _TopsKaguneDialogs()
+
+    def empty(self) -> Line:
+        return Line("tops.empty", {})
+
+    def list(self, *, rows: object, title: object) -> Line:
+        return Line("tops.list", {"rows": rows, "title": title})
+
+    def not_a_number(self) -> Line:
+        return Line("tops.not_a_number", {})
+
+    def out_of_range(self) -> Line:
+        return Line("tops.out_of_range", {})
+
+    def row(self, *, name: object, place: object, value: object) -> Line:
+        return Line("tops.row", {"name": name, "place": place, "value": value})
+
+    def snap_title(self, *, count: object) -> Line:
+        return Line("tops.snap_title", {"count": count})
+
+    def unknown_name(self) -> Line:
+        return Line("tops.unknown_name", {})
 
 
 class _TransferButtonsDialogs:
@@ -1215,6 +1251,17 @@ PLACEHOLDERS: dict[str, frozenset[str]] = {
     "tops.balance.bad_count": frozenset(),
     "tops.balance.row": frozenset({"balance", "name", "place"}),
     "tops.balance.text": frozenset({"count", "rows"}),
+    "tops.empty": frozenset(),
+    "tops.kagune.bad_button": frozenset(),
+    "tops.kagune.sum_button": frozenset(),
+    "tops.kagune.sum_title": frozenset({"count"}),
+    "tops.kagune.type_title": frozenset({"count", "kagune"}),
+    "tops.list": frozenset({"rows", "title"}),
+    "tops.not_a_number": frozenset(),
+    "tops.out_of_range": frozenset(),
+    "tops.row": frozenset({"name", "place", "value"}),
+    "tops.snap_title": frozenset({"count"}),
+    "tops.unknown_name": frozenset(),
     "transfer.ask": frozenset({"amount", "confirm", "receiver"}),
     "transfer.ask_again": frozenset({"amount", "confirm"}),
     "transfer.buttons.confirm": frozenset(),
