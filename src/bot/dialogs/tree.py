@@ -264,7 +264,26 @@ class _FunDialogs:
         return Line("fun.who", {"mention": mention, "question": question})
 
 
+class _GhoulRichProfileDialogs:
+    def kagune_types(self) -> Line:
+        return Line("ghoul.rich_profile.kagune_types", {})
+
+    def stats(self) -> Line:
+        return Line("ghoul.rich_profile.stats", {})
+
+    def title(self, *, danger_rank: object, name: object) -> Line:
+        return Line(
+            "ghoul.rich_profile.title",
+            {
+                "danger_rank": danger_rank,
+                "name": name,
+            },
+        )
+
+
 class _GhoulDialogs:
+    rich_profile = _GhoulRichProfileDialogs()
+
     def dead(self) -> Line:
         return Line("ghoul.dead", {})
 
@@ -336,6 +355,20 @@ class _GhoulDialogs:
         return Line("ghoul.reborn", {"kagune_type": kagune_type})
 
 
+class _KaguneGuideDialogs:
+    def general(self) -> Line:
+        return Line("kagune.guide.general", {})
+
+    def general_title(self) -> Line:
+        return Line("kagune.guide.general_title", {})
+
+    def table_notes(self) -> Line:
+        return Line("kagune.guide.table_notes", {})
+
+    def table_title(self) -> Line:
+        return Line("kagune.guide.table_title", {})
+
+
 class _KaguneUpgradeDialogs:
     def cooldown(self, *, minutes: object, seconds: object) -> Line:
         return Line("kagune.upgrade.cooldown", {"minutes": minutes, "seconds": seconds})
@@ -351,6 +384,7 @@ class _KaguneUpgradeDialogs:
 
 
 class _KaguneDialogs:
+    guide = _KaguneGuideDialogs()
     upgrade = _KaguneUpgradeDialogs()
 
     def info(self) -> Line:
@@ -900,7 +934,14 @@ PLACEHOLDERS: dict[str, frozenset[str]] = {
         }
     ),
     "ghoul.reborn": frozenset({"kagune_type"}),
+    "ghoul.rich_profile.kagune_types": frozenset(),
+    "ghoul.rich_profile.stats": frozenset(),
+    "ghoul.rich_profile.title": frozenset({"danger_rank", "name"}),
     "help": frozenset(),
+    "kagune.guide.general": frozenset(),
+    "kagune.guide.general_title": frozenset(),
+    "kagune.guide.table_notes": frozenset(),
+    "kagune.guide.table_title": frozenset(),
     "kagune.info": frozenset(),
     "kagune.upgrade.cooldown": frozenset({"minutes", "seconds"}),
     "kagune.upgrade.done": frozenset({"kagune_strength", "money"}),

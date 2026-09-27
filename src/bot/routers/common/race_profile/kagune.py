@@ -9,7 +9,7 @@ from selfrot.types import (
     InputRichMessage,
 )
 
-from src.bot.dialogs import Dialogs
+from src.bot.dialogs import Dialogs, Line
 from src.bot.services.battle_engine.core import (
     KAGUNE_TYPE_MULTIPLIERS,
     KAGUNE_TYPE_PRIORITY_STAT,
@@ -32,6 +32,9 @@ class KaguneInfoHandler(MessageHandler[AppContext[TextMessage]]):
         ("regeneration", "Регенерация"),
     ]
 
+    def paragraphs(self, line: Line) -> list[Any]:
+        return [paragraph(text) for text in self.ctx.text(line).split("\n\n")]
+
     def build_message(self) -> InputRichMessage:
         header_row = [table_cell("Тип", header=True)] + [
             table_cell(label, header=True) for _, label in self.stat_labels
@@ -51,70 +54,19 @@ class KaguneInfoHandler(MessageHandler[AppContext[TextMessage]]):
 
         table = InputRichBlockTable(cells=rows, is_bordered=True, is_striped=True)
 
+        guide = Dialogs.kagune.guide
         general_info = InputRichBlockDetails(
-            summary="📖 Общая информация о кагуне",
-            blocks=[
-                paragraph(
-                    "Какухо - орган в теле гуля, управляющий RC-клетками: "
-                    "регенерация, усиление тела и кагуне вне тела. Его "
-                    "расположение определяет боевой стиль каждого типа."
-                ),
-                paragraph(
-                    "🔸 Укаку (плечи): приток RC в мозг и руки - высокая "
-                    "скорость, частые лёгкие удары. Минус - низкая выносливость, "
-                    "однообразие легко пережидается."
-                ),
-                paragraph(
-                    "🔸 Коукаку (лопатки): RC усиливает мышцы спины и рук - "
-                    "мощный физический удар. Минус - низкая скорость, ловкий "
-                    "противник уворачивается и контратакует."
-                ),
-                paragraph(
-                    "🔸 Ринкаку (поясница): RC равномерно расходится по телу - "
-                    "высокая выносливость и регенерация. Явных слабостей почти "
-                    "нет."
-                ),
-                paragraph(
-                    "🔸 Бикаку (копчик): RC концентрируется в корпусе и ногах - "
-                    "понемногу всех усилений сразу, универсал без выраженного "
-                    "минуса."
-                ),
-                paragraph(
-                    "Как это влияет на урон: каждый удар решается монеткой "
-                    "«физический / кагуне» - первый удар боя всегда физический, "
-                    "дальше шанс физического падает на 10 п.п. за каждый "
-                    "нанесённый физический удар (бой постепенно скатывается в "
-                    "удары кагуне). Урон кагуне обычно выше - считается от силы "
-                    "И силы кагуне вместе, физический - только от силы."
-                ),
-                paragraph(
-                    "Защита: если кагуне поднято - блокирует 45-75% физической "
-                    "атаки, а против чужого удара кагуне - 10-20% (если своя "
-                    "сила кагуне не меньше чужой) либо 0%. Без поднятого кагуне "
-                    "- голое тело блокирует физику на 10-20% (если здоровье не "
-                    "меньше, чем у атакующего) и вообще не блокирует удары "
-                    "кагуне. Шанс успеть поднять кагуне под конкретный удар "
-                    "зависит от ловкости и скорости - при равных статах 50/50."
-                ),
-            ],
+            summary=self.ctx.text(guide.general_title()),
+            blocks=self.paragraphs(guide.general()),
         )
 
         blocks: list[Any] = [
             general_info,
             InputRichBlockSectionHeading(
-                text="♦️ Влияние типов кагуне на статы", size=3
+                text=self.ctx.text(guide.table_title()), size=3
             ),
             table,
-            paragraph(
-                "★ - приоритетный стат типа: если открыто несколько типов, "
-                "трогающих один стат, побеждает «хозяин» (★), иначе берётся "
-                "наименьший из множителей (правило стаков, см. BATTLE_DESIGN.md)."
-            ),
-            paragraph(
-                "Сила кагуне (сумма силы всех открытых типов) сама по себе НЕ "
-                "множится типом кагуне - только голодом (растущий стат) и "
-                "какуджей."
-            ),
+            *self.paragraphs(guide.table_notes()),
         ]
 
         return InputRichMessage(blocks=blocks)

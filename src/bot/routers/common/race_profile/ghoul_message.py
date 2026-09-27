@@ -13,10 +13,10 @@ from selfrot.types import (
 from src.bot.dialogs import Dialogs
 from src.bot.game_configs import STATS
 from src.bot.services import GhoulService
-from src.bot.services.dialog import DialogService
 from src.bot.utils import calculate_kagune, get_hunger_tier, level_progress_bar
 from src.database.models import Ghoul, User
 
+from ....context import AppContext
 from ...rich import paragraph
 
 
@@ -31,6 +31,7 @@ class BattleStats:
 
 
 def rich_profile(
+    ctx: AppContext[Any],
     user: User,
     ghoul: Ghoul,
     ghoul_service: GhoulService,
@@ -60,7 +61,12 @@ def rich_profile(
 
     blocks: list[Any] = [
         InputRichBlockSectionHeading(
-            text=f"👤 Профиль гуля {danger_rank} ранга {user.full_name}", size=3
+            text=ctx.text(
+                Dialogs.ghoul.rich_profile.title(
+                    danger_rank=danger_rank, name=user.full_name
+                )
+            ),
+            size=3,
         ),
         paragraph(f"📈 Уровень: {ghoul.level}"),
         paragraph(
@@ -69,14 +75,14 @@ def rich_profile(
         paragraph(f"🍖 Голод: {ghoul.hunger}% ({tier.name})"),
         paragraph(f"♦️ RC-клеток: {ghoul.rc_money}"),
         InputRichBlockDetails(
-            summary="👁‍🗨 Типы кагуне - сила",
+            summary=ctx.text(Dialogs.ghoul.rich_profile.kagune_types()),
             blocks=[InputRichBlockList(items=kagune_items)],
         ),
         paragraph(f"👌 Сломано пальцев: {ghoul.snap_count}"),
         paragraph(f"☕️ Выпито кофе: {ghoul.coffee_count}"),
         paragraph(f"🥩 Съедено людей: {ghoul.eat_humans}"),
         InputRichBlockDetails(
-            summary="Статы",
+            summary=ctx.text(Dialogs.ghoul.rich_profile.stats()),
             blocks=[
                 InputRichBlockList(items=stat_items),
                 paragraph(f"❤️ Здоровье: {ghoul.health}/{ghoul.max_health}"),
@@ -99,7 +105,7 @@ def rich_profile(
 
 
 def plain_profile(
-    dialog_service: DialogService,
+    ctx: AppContext[Any],
     user: User,
     ghoul: Ghoul,
     ghoul_service: GhoulService,
@@ -107,7 +113,7 @@ def plain_profile(
     power: int,
     stats: BattleStats,
 ) -> str:
-    return dialog_service.text(
+    return ctx.text(
         Dialogs.ghoul.profile(
             name=user.full_name,
             strength=ghoul.strength,

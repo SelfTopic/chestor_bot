@@ -31,12 +31,11 @@ class RaceProfileHandler(MessageHandler[AppContext[UserMessage]]):
         )
 
     async def send_ghoul_profile(self, user: User, ghoul: Ghoul) -> None:
-        dialog_service = self.ctx.dialog_service
         ghoul_service = self.ctx.ghoul_service
 
         if ghoul.is_dead:
             await self.ctx.message.answer(
-                dialog_service.text(Dialogs.ghoul.dead_profile(name=user.full_name))
+                self.ctx.text(Dialogs.ghoul.dead_profile(name=user.full_name))
             )
             return
 
@@ -46,9 +45,11 @@ class RaceProfileHandler(MessageHandler[AppContext[UserMessage]]):
 
         await answer_rich_or_text(
             self.ctx.message,
-            rich_profile(user, ghoul, ghoul_service, danger_rank, power, stats),
+            rich_profile(
+                self.ctx, user, ghoul, ghoul_service, danger_rank, power, stats
+            ),
             lambda: plain_profile(
-                dialog_service, user, ghoul, ghoul_service, danger_rank, power, stats
+                self.ctx, user, ghoul, ghoul_service, danger_rank, power, stats
             ),
             what="ghoul profile",
         )
