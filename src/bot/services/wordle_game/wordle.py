@@ -2,6 +2,7 @@ import logging
 import random
 from typing import Optional
 
+from src.bot.exceptions import WordleNotRussian, WordleWrongLength
 from src.bot.game_configs import WORDLE_CONFIG
 from src.bot.types.wordle import WordleGuessResult, _WordleGame
 
@@ -60,12 +61,10 @@ class WordleService:
         word = word.upper().strip()
 
         if len(word) != WORDLE_CONFIG.WORD_LENGTH:
-            raise ValueError(
-                f"Слово должно содержать {WORDLE_CONFIG.WORD_LENGTH} букв."
-            )
+            raise WordleWrongLength(WORDLE_CONFIG.WORD_LENGTH)
 
         if not all("А" <= ch <= "Я" or ch == "Ё" for ch in word):
-            raise ValueError("Используйте только русские буквы.")
+            raise WordleNotRussian()
 
         result = game.make_guess(word)
 

@@ -5,6 +5,8 @@ from selfrot.exceptions import TelegramBadRequest
 from selfrot.filter import TextRegexp
 from selfrot.types import InputFile
 
+from src.bot.dialogs import Dialogs, Line
+from src.bot.exceptions import WordleNotRussian, WordleWrongLength
 from src.bot.game_configs import WORDLE_CONFIG
 from src.bot.types.wordle import WordleGuessResult
 
@@ -40,9 +42,9 @@ class WordleGameHandler(MessageHandler[AppContext[TextUserMessage]]):
                 change_balance=award,
                 log="wordle win",
             )
-            text = win_text(result, award, summary)
+            text = win_text(self.ctx, result, award, summary)
         else:
-            text = lose_text(result, summary)
+            text = lose_text(self.ctx, result, summary)
 
         await self.ctx.message.answer(text, parse_mode="HTML")
 
@@ -68,8 +70,19 @@ class WordleGameHandler(MessageHandler[AppContext[TextUserMessage]]):
 
         sent = await message.answer_photo(
             photo=InputFile(result.png, "wordle.png"),
-            caption=guess_caption(result, word),
+            caption=guess_caption(self.ctx, result, word),
             parse_mode="HTML",
         )
         wordle_service.set_board_message_id(user_id, sent.message_id)
         await self.notify_finish(result)
+
+    async def on_error(self, exc: Exception) -> None:
+        line: Line
+        match exc:
+            case WordleWrongLength(length=length):
+                line = Dialogs.wordle.errors.wrong_length(length=length)
+            case WordleNotRussian():
+                line = Dialogs.wordle.errors.not_russian()
+            case _:
+                raise exc
+        await self.ctx.message.answer(self.ctx.text(line))

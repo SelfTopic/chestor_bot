@@ -671,6 +671,94 @@ class _TransferDialogs:
         return Line("transfer.usage", {})
 
 
+class _WordleErrorsDialogs:
+    def not_russian(self) -> Line:
+        return Line("wordle.errors.not_russian", {})
+
+    def wrong_length(self, *, length: object) -> Line:
+        return Line("wordle.errors.wrong_length", {"length": length})
+
+
+class _WordleGuessDialogs:
+    def lost(self, *, word: object) -> Line:
+        return Line("wordle.guess.lost", {"word": word})
+
+    def miss(
+        self,
+        *,
+        board: object,
+        left: object,
+        max_attempts: object,
+        used: object,
+        word: object,
+    ) -> Line:
+        return Line(
+            "wordle.guess.miss",
+            {
+                "board": board,
+                "left": left,
+                "max_attempts": max_attempts,
+                "used": used,
+                "word": word,
+            },
+        )
+
+    def won(
+        self,
+        *,
+        attempts: object,
+        attempts_word: object,
+        board: object,
+        word: object,
+    ) -> Line:
+        return Line(
+            "wordle.guess.won",
+            {
+                "attempts": attempts,
+                "attempts_word": attempts_word,
+                "board": board,
+                "word": word,
+            },
+        )
+
+
+class _WordleDialogs:
+    errors = _WordleErrorsDialogs()
+    guess = _WordleGuessDialogs()
+
+    def lose(self, *, wiki: object, word: object) -> Line:
+        return Line("wordle.lose", {"wiki": wiki, "word": word})
+
+    def new_game(self) -> Line:
+        return Line("wordle.new_game", {})
+
+    def resume(self) -> Line:
+        return Line("wordle.resume", {})
+
+    def wiki_extract(self, *, extract: object) -> Line:
+        return Line("wordle.wiki_extract", {"extract": extract})
+
+    def win(
+        self,
+        *,
+        attempts: object,
+        attempts_word: object,
+        award: object,
+        wiki: object,
+        word: object,
+    ) -> Line:
+        return Line(
+            "wordle.win",
+            {
+                "attempts": attempts,
+                "attempts_word": attempts_word,
+                "award": award,
+                "wiki": wiki,
+                "word": word,
+            },
+        )
+
+
 class _Dialogs:
     anime = _AnimeDialogs()
     coffee = _CoffeeDialogs()
@@ -690,6 +778,7 @@ class _Dialogs:
     status = _StatusDialogs()
     tops = _TopsDialogs()
     transfer = _TransferDialogs()
+    wordle = _WordleDialogs()
 
     def balance(self, *, balance: object, name: object) -> Line:
         return Line("balance", {"balance": balance, "name": name})
@@ -890,4 +979,14 @@ PLACEHOLDERS: dict[str, frozenset[str]] = {
     "transfer.errors.sender_too_new": frozenset({"days"}),
     "transfer.reply_usage": frozenset(),
     "transfer.usage": frozenset(),
+    "wordle.errors.not_russian": frozenset(),
+    "wordle.errors.wrong_length": frozenset({"length"}),
+    "wordle.guess.lost": frozenset({"word"}),
+    "wordle.guess.miss": frozenset({"board", "left", "max_attempts", "used", "word"}),
+    "wordle.guess.won": frozenset({"attempts", "attempts_word", "board", "word"}),
+    "wordle.lose": frozenset({"wiki", "word"}),
+    "wordle.new_game": frozenset(),
+    "wordle.resume": frozenset(),
+    "wordle.wiki_extract": frozenset({"extract"}),
+    "wordle.win": frozenset({"attempts", "attempts_word", "award", "wiki", "word"}),
 }

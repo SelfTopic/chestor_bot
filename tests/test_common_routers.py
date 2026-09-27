@@ -551,6 +551,13 @@ class TestWordle:
         (board,) = telegram.bodies("sendPhoto")
         assert "Попытка 1 из" in board["caption"]
 
+    async def test_latin_guess_is_rejected(self, feed, telegram):
+        await feed(message_update("вордли", uid=42))
+
+        await feed(message_update("house", uid=42))
+
+        assert telegram.sent == ["Ошибка: Используйте только русские буквы."]
+
     async def test_guess_from_other_user_is_ignored(self, feed, dispatcher, telegram):
         await feed(message_update("вордли", uid=42))
 

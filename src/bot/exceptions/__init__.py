@@ -35,6 +35,7 @@ from .transfer import (
     TransferError,
 )
 from .user_not_found import UserNotFound
+from .wordle import WordleGuessError, WordleNotRussian, WordleWrongLength
 
 __all__ = [
     "BattleError",
@@ -50,6 +51,9 @@ __all__ = [
     "MediaNotFoundError",
     "InvalidMediaRequestError",
     "UserNotFound",
+    "WordleGuessError",
+    "WordleNotRussian",
+    "WordleWrongLength",
     "CollectionNotFoundError",
     "ValidationMediaError",
     "MediaNotFoundInDatabase",
