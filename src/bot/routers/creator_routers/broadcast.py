@@ -2,6 +2,9 @@ from selfrot import BaseRouter, CommandArgs, MessageHandler, Rest
 from selfrot.exceptions import CommandArgsError
 from selfrot.filter import Command
 
+from src.bot.dialogs import Dialogs
+from src.bot.exceptions import UserNotFound
+
 from ...context import AppContext
 from ..types import TextMessage
 
@@ -13,22 +16,22 @@ class BroadcastTextArgs(CommandArgs):
 class BroadcastPrivateHandler(MessageHandler[AppContext[TextMessage]]):
     cmd = Command("broadcast_private", BroadcastTextArgs)
     query = cmd
-    usage = "Использование: /broadcast_private <текст>"
+    usage = Dialogs.admin.broadcast.private_usage()
 
     async def handle(self) -> None:
         text = self.cmd.parse(self.ctx).text
         message = self.ctx.message
 
-        await message.answer("📤 Рассылка запущена...")
+        await message.answer(self.ctx.text(Dialogs.admin.broadcast.started()))
         result = await self.ctx.broadcast_service.broadcast_to_private(text)
-        await message.answer(
-            f"✅ Рассылка завершена.\n"
-            f"Всего: {result.total} | Успешно: {result.success} | Ошибок: {result.failed}"
+        finished = Dialogs.admin.broadcast.finished(
+            total=result.total, success=result.success, failed=result.failed
         )
+        await message.answer(self.ctx.text(finished))
 
     async def on_error(self, exc: Exception) -> None:
         if isinstance(exc, CommandArgsError):
-            await self.ctx.message.reply(self.usage)
+            await self.ctx.message.reply(self.ctx.text(self.usage))
             return
 
         raise exc
@@ -37,22 +40,22 @@ class BroadcastPrivateHandler(MessageHandler[AppContext[TextMessage]]):
 class BroadcastChatsHandler(MessageHandler[AppContext[TextMessage]]):
     cmd = Command("broadcast_chats", BroadcastTextArgs)
     query = cmd
-    usage = "Использование: /broadcast_chats <текст>"
+    usage = Dialogs.admin.broadcast.chats_usage()
 
     async def handle(self) -> None:
         text = self.cmd.parse(self.ctx).text
         message = self.ctx.message
 
-        await message.answer("📤 Рассылка запущена...")
+        await message.answer(self.ctx.text(Dialogs.admin.broadcast.started()))
         result = await self.ctx.broadcast_service.broadcast_to_chats(text)
-        await message.answer(
-            f"✅ Рассылка завершена.\n"
-            f"Всего: {result.total} | Успешно: {result.success} | Ошибок: {result.failed}"
+        finished = Dialogs.admin.broadcast.finished(
+            total=result.total, success=result.success, failed=result.failed
         )
+        await message.answer(self.ctx.text(finished))
 
     async def on_error(self, exc: Exception) -> None:
         if isinstance(exc, CommandArgsError):
-            await self.ctx.message.reply(self.usage)
+            await self.ctx.message.reply(self.ctx.text(self.usage))
             return
 
         raise exc
@@ -61,22 +64,22 @@ class BroadcastChatsHandler(MessageHandler[AppContext[TextMessage]]):
 class BroadcastAllHandler(MessageHandler[AppContext[TextMessage]]):
     cmd = Command("broadcast_all", BroadcastTextArgs)
     query = cmd
-    usage = "Использование: /broadcast_all <текст>"
+    usage = Dialogs.admin.broadcast.all_usage()
 
     async def handle(self) -> None:
         text = self.cmd.parse(self.ctx).text
         message = self.ctx.message
 
-        await message.answer("📤 Рассылка запущена...")
+        await message.answer(self.ctx.text(Dialogs.admin.broadcast.started()))
         result = await self.ctx.broadcast_service.broadcast_to_all(text)
-        await message.answer(
-            f"✅ Рассылка завершена.\n"
-            f"Всего: {result.total} | Успешно: {result.success} | Ошибок: {result.failed}"
+        finished = Dialogs.admin.broadcast.finished(
+            total=result.total, success=result.success, failed=result.failed
         )
+        await message.answer(self.ctx.text(finished))
 
     async def on_error(self, exc: Exception) -> None:
         if isinstance(exc, CommandArgsError):
-            await self.ctx.message.reply(self.usage)
+            await self.ctx.message.reply(self.ctx.text(self.usage))
             return
 
         raise exc
@@ -90,7 +93,7 @@ class BroadcastUserArgs(CommandArgs):
 class BroadcastUserHandler(MessageHandler[AppContext[TextMessage]]):
     cmd = Command("broadcast_user", BroadcastUserArgs)
     query = cmd
-    usage = "Использование: /broadcast_user <id или @username> <текст>"
+    usage = Dialogs.admin.broadcast.user_usage()
 
     async def handle(self) -> None:
         args = self.cmd.parse(self.ctx)
@@ -98,20 +101,20 @@ class BroadcastUserHandler(MessageHandler[AppContext[TextMessage]]):
 
         try:
             ok = await self.ctx.broadcast_service.send_to_target(args.target, args.text)
-        except ValueError as e:
-            await message.answer(f"❌ {e}")
+        except UserNotFound as e:
+            await message.answer(
+                self.ctx.text(Dialogs.errors.user_not_found(query=e.query))
+            )
             return
 
-        if ok:
-            await message.answer("✅ Сообщение отправлено.")
-        else:
-            await message.answer(
-                "❌ Не удалось отправить — пользователь заблокировал бота."
-            )
+        broadcast = Dialogs.admin.broadcast
+        await message.answer(
+            self.ctx.text(broadcast.sent() if ok else broadcast.blocked())
+        )
 
     async def on_error(self, exc: Exception) -> None:
         if isinstance(exc, CommandArgsError):
-            await self.ctx.message.reply(self.usage)
+            await self.ctx.message.reply(self.ctx.text(self.usage))
             return
 
         raise exc

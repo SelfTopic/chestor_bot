@@ -3,6 +3,7 @@ import logging
 from collections.abc import Awaitable, Callable
 from dataclasses import dataclass
 
+from src.bot.exceptions import UserNotFound
 from src.bot.repositories.chat import ChatRepository
 from src.bot.repositories.user import UserRepository
 
@@ -71,7 +72,7 @@ class BroadcastService:
             username = query.lstrip("@")
             user = await self.user_repo.get(username)
             if not user:
-                raise ValueError(f"Пользователь не найден: {query}")
+                raise UserNotFound(query)
             target_id = user.telegram_id
 
         return await self.send_to_user(target_id, text)

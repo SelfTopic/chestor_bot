@@ -3,6 +3,371 @@
 from .line import Line
 
 
+class _AdminBanDialogs:
+    def already(self) -> Line:
+        return Line("admin.ban.already", {})
+
+    def done(self, *, id: object, name: object, reason: object, term: object) -> Line:
+        return Line(
+            "admin.ban.done",
+            {
+                "id": id,
+                "name": name,
+                "reason": reason,
+                "term": term,
+            },
+        )
+
+    def usage(self) -> Line:
+        return Line("admin.ban.usage", {})
+
+
+class _AdminBroadcastDialogs:
+    def all_usage(self) -> Line:
+        return Line("admin.broadcast.all_usage", {})
+
+    def blocked(self) -> Line:
+        return Line("admin.broadcast.blocked", {})
+
+    def chats_usage(self) -> Line:
+        return Line("admin.broadcast.chats_usage", {})
+
+    def finished(self, *, failed: object, success: object, total: object) -> Line:
+        return Line(
+            "admin.broadcast.finished",
+            {
+                "failed": failed,
+                "success": success,
+                "total": total,
+            },
+        )
+
+    def private_usage(self) -> Line:
+        return Line("admin.broadcast.private_usage", {})
+
+    def sent(self) -> Line:
+        return Line("admin.broadcast.sent", {})
+
+    def started(self) -> Line:
+        return Line("admin.broadcast.started", {})
+
+    def user_usage(self) -> Line:
+        return Line("admin.broadcast.user_usage", {})
+
+
+class _AdminCooldownDialogs:
+    def all_cleared(self, *, count: object) -> Line:
+        return Line("admin.cooldown.all_cleared", {"count": count})
+
+    def cleared(self, *, type: object) -> Line:
+        return Line("admin.cooldown.cleared", {"type": type})
+
+    def not_active(self, *, type: object) -> Line:
+        return Line("admin.cooldown.not_active", {"type": type})
+
+    def replied_usage(self) -> Line:
+        return Line("admin.cooldown.replied_usage", {})
+
+    def unknown_type(self, *, types: object) -> Line:
+        return Line("admin.cooldown.unknown_type", {"types": types})
+
+    def usage(self) -> Line:
+        return Line("admin.cooldown.usage", {})
+
+
+class _AdminKaguneDialogs:
+    def all_given(self, *, names: object) -> Line:
+        return Line("admin.kagune.all_given", {"names": names})
+
+    def give_replied_usage(self, *, types: object) -> Line:
+        return Line("admin.kagune.give_replied_usage", {"types": types})
+
+    def give_usage(self, *, types: object) -> Line:
+        return Line("admin.kagune.give_usage", {"types": types})
+
+    def given(self, *, kagune: object, strength: object) -> Line:
+        return Line("admin.kagune.given", {"kagune": kagune, "strength": strength})
+
+    def remove_replied_usage(self, *, types: object) -> Line:
+        return Line("admin.kagune.remove_replied_usage", {"types": types})
+
+    def remove_usage(self, *, types: object) -> Line:
+        return Line("admin.kagune.remove_usage", {"types": types})
+
+    def removed(self, *, kagune: object) -> Line:
+        return Line("admin.kagune.removed", {"kagune": kagune})
+
+    def unknown_type(self, *, types: object) -> Line:
+        return Line("admin.kagune.unknown_type", {"types": types})
+
+    def unknown_type_or_all(self, *, types: object) -> Line:
+        return Line("admin.kagune.unknown_type_or_all", {"types": types})
+
+
+class _AdminKillDialogs:
+    def done(self, *, cause: object, deaths: object, id: object) -> Line:
+        return Line("admin.kill.done", {"cause": cause, "deaths": deaths, "id": id})
+
+    def usage(self) -> Line:
+        return Line("admin.kill.usage", {})
+
+
+class _AdminLevelUpDialogs:
+    def done(
+        self,
+        *,
+        cheston: object,
+        level: object,
+        notified: object,
+        rc: object,
+    ) -> Line:
+        return Line(
+            "admin.level_up.done",
+            {
+                "cheston": cheston,
+                "level": level,
+                "notified": notified,
+                "rc": rc,
+            },
+        )
+
+    def usage(self) -> Line:
+        return Line("admin.level_up.usage", {})
+
+
+class _AdminMediaDialogs:
+    def exists(self) -> Line:
+        return Line("admin.media.exists", {})
+
+    def no_media(self) -> Line:
+        return Line("admin.media.no_media", {})
+
+    def saved(self, *, path: object) -> Line:
+        return Line("admin.media.saved", {"path": path})
+
+    def unknown_collection(self, *, collection: object, supported: object) -> Line:
+        return Line(
+            "admin.media.unknown_collection",
+            {
+                "collection": collection,
+                "supported": supported,
+            },
+        )
+
+    def usage(self) -> Line:
+        return Line("admin.media.usage", {})
+
+
+class _AdminProfileDialogs:
+    def active(self) -> Line:
+        return Line("admin.profile.active", {})
+
+    def ban(self, *, reason: object, term: object) -> Line:
+        return Line("admin.profile.ban", {"reason": reason, "term": term})
+
+    def banned(self) -> Line:
+        return Line("admin.profile.banned", {})
+
+    def card(
+        self,
+        *,
+        balance: object,
+        ban: object,
+        ghoul: object,
+        id: object,
+        name: object,
+        status: object,
+        username: object,
+    ) -> Line:
+        return Line(
+            "admin.profile.card",
+            {
+                "balance": balance,
+                "ban": ban,
+                "ghoul": ghoul,
+                "id": id,
+                "name": name,
+                "status": status,
+                "username": username,
+            },
+        )
+
+    def ghoul(
+        self,
+        *,
+        dexterity: object,
+        health: object,
+        hunger: object,
+        kakuja: object,
+        level: object,
+        max_health: object,
+        rc: object,
+        regeneration: object,
+        speed: object,
+        strength: object,
+    ) -> Line:
+        return Line(
+            "admin.profile.ghoul",
+            {
+                "dexterity": dexterity,
+                "health": health,
+                "hunger": hunger,
+                "kakuja": kakuja,
+                "level": level,
+                "max_health": max_health,
+                "rc": rc,
+                "regeneration": regeneration,
+                "speed": speed,
+                "strength": strength,
+            },
+        )
+
+    def not_found(self) -> Line:
+        return Line("admin.profile.not_found", {})
+
+    def usage(self) -> Line:
+        return Line("admin.profile.usage", {})
+
+
+class _AdminProgressDialogs:
+    def delta_range(self) -> Line:
+        return Line("admin.progress.delta_range", {})
+
+    def done(self, *, levels: object, progress: object) -> Line:
+        return Line("admin.progress.done", {"levels": levels, "progress": progress})
+
+    def level(
+        self,
+        *,
+        cheston: object,
+        level: object,
+        notified: object,
+        rc: object,
+    ) -> Line:
+        return Line(
+            "admin.progress.level",
+            {
+                "cheston": cheston,
+                "level": level,
+                "notified": notified,
+                "rc": rc,
+            },
+        )
+
+    def replied_usage(self) -> Line:
+        return Line("admin.progress.replied_usage", {})
+
+    def usage(self) -> Line:
+        return Line("admin.progress.usage", {})
+
+
+class _AdminResetDialogs:
+    def ghoul_deleted(self) -> Line:
+        return Line("admin.reset.ghoul_deleted", {})
+
+    def ghoul_done(self, *, id: object) -> Line:
+        return Line("admin.reset.ghoul_done", {"id": id})
+
+    def ghoul_missing(self) -> Line:
+        return Line("admin.reset.ghoul_missing", {})
+
+    def ghoul_usage(self) -> Line:
+        return Line("admin.reset.ghoul_usage", {})
+
+    def no_ghoul(self) -> Line:
+        return Line("admin.reset.no_ghoul", {})
+
+    def user_done(self, *, ghoul_deleted: object, id: object) -> Line:
+        return Line("admin.reset.user_done", {"ghoul_deleted": ghoul_deleted, "id": id})
+
+    def user_usage(self) -> Line:
+        return Line("admin.reset.user_usage", {})
+
+
+class _AdminStatsDialogs:
+    def done(self, *, field: object, target: object, value: object) -> Line:
+        return Line(
+            "admin.stats.done",
+            {
+                "field": field,
+                "target": target,
+                "value": value,
+            },
+        )
+
+    def no_ghoul(self) -> Line:
+        return Line("admin.stats.no_ghoul", {})
+
+    def target_ghoul(self) -> Line:
+        return Line("admin.stats.target_ghoul", {})
+
+    def target_user(self) -> Line:
+        return Line("admin.stats.target_user", {})
+
+    def unknown_field(self, *, field: object) -> Line:
+        return Line("admin.stats.unknown_field", {"field": field})
+
+    def usage(
+        self,
+        *,
+        ghoul_fields: object,
+        time_fields: object,
+        user_fields: object,
+    ) -> Line:
+        return Line(
+            "admin.stats.usage",
+            {
+                "ghoul_fields": ghoul_fields,
+                "time_fields": time_fields,
+                "user_fields": user_fields,
+            },
+        )
+
+
+class _AdminUnbanDialogs:
+    def done(self, *, id: object, name: object) -> Line:
+        return Line("admin.unban.done", {"id": id, "name": name})
+
+    def not_banned(self) -> Line:
+        return Line("admin.unban.not_banned", {})
+
+    def usage(self) -> Line:
+        return Line("admin.unban.usage", {})
+
+
+class _AdminDialogs:
+    ban = _AdminBanDialogs()
+    broadcast = _AdminBroadcastDialogs()
+    cooldown = _AdminCooldownDialogs()
+    kagune = _AdminKaguneDialogs()
+    kill = _AdminKillDialogs()
+    level_up = _AdminLevelUpDialogs()
+    media = _AdminMediaDialogs()
+    profile = _AdminProfileDialogs()
+    progress = _AdminProgressDialogs()
+    reset = _AdminResetDialogs()
+    stats = _AdminStatsDialogs()
+    unban = _AdminUnbanDialogs()
+
+    def flag_no(self) -> Line:
+        return Line("admin.flag_no", {})
+
+    def flag_yes(self) -> Line:
+        return Line("admin.flag_yes", {})
+
+    def ghoul_not_found(self) -> Line:
+        return Line("admin.ghoul_not_found", {})
+
+    def kagune_already_owned(self, *, kagune: object) -> Line:
+        return Line("admin.kagune_already_owned", {"kagune": kagune})
+
+    def kagune_not_owned(self, *, kagune: object) -> Line:
+        return Line("admin.kagune_not_owned", {"kagune": kagune})
+
+    def last_kagune(self) -> Line:
+        return Line("admin.last_kagune", {})
+
+
 class _AnimeDialogs:
     def bad_end(self) -> Line:
         return Line("anime.bad_end", {})
@@ -83,6 +448,20 @@ class _AnimeDialogs:
         return Line("anime.video", {"caption": caption})
 
 
+class _BannedDialogs:
+    def forever(self) -> Line:
+        return Line("banned.forever", {})
+
+    def no_reason(self) -> Line:
+        return Line("banned.no_reason", {})
+
+    def notice(self, *, reason: object, term: object) -> Line:
+        return Line("banned.notice", {"reason": reason, "term": term})
+
+    def until(self, *, date: object) -> Line:
+        return Line("banned.until", {"date": date})
+
+
 class _CoffeeDialogs:
     def cooldown(self, *, hours: object, minutes: object, seconds: object) -> Line:
         return Line(
@@ -154,6 +533,14 @@ class _CombatPowerDialogs:
         )
 
 
+class _DuelDialogs:
+    def usage(self) -> Line:
+        return Line("duel.usage", {})
+
+    def user_not_found(self, *, target: object) -> Line:
+        return Line("duel.user_not_found", {"target": target})
+
+
 class _EatHumanAmbushDialogs:
     def draw(self) -> Line:
         return Line("eat_human.ambush.draw", {})
@@ -198,6 +585,9 @@ class _ErrorsDialogs:
 
     def chat_not_found(self) -> Line:
         return Line("errors.chat_not_found", {})
+
+    def ghoul_not_found(self) -> Line:
+        return Line("errors.ghoul_not_found", {})
 
     def media_not_found(self) -> Line:
         return Line("errors.media_not_found", {})
@@ -1004,9 +1394,12 @@ class _WordleDialogs:
 
 
 class _Dialogs:
+    admin = _AdminDialogs()
     anime = _AnimeDialogs()
+    banned = _BannedDialogs()
     coffee = _CoffeeDialogs()
     combat_power = _CombatPowerDialogs()
+    duel = _DuelDialogs()
     eat_human = _EatHumanDialogs()
     errors = _ErrorsDialogs()
     fight = _FightDialogs()
@@ -1043,6 +1436,98 @@ class _Dialogs:
 Dialogs = _Dialogs()
 
 PLACEHOLDERS: dict[str, frozenset[str]] = {
+    "admin.ban.already": frozenset(),
+    "admin.ban.done": frozenset({"id", "name", "reason", "term"}),
+    "admin.ban.usage": frozenset(),
+    "admin.broadcast.all_usage": frozenset(),
+    "admin.broadcast.blocked": frozenset(),
+    "admin.broadcast.chats_usage": frozenset(),
+    "admin.broadcast.finished": frozenset({"failed", "success", "total"}),
+    "admin.broadcast.private_usage": frozenset(),
+    "admin.broadcast.sent": frozenset(),
+    "admin.broadcast.started": frozenset(),
+    "admin.broadcast.user_usage": frozenset(),
+    "admin.cooldown.all_cleared": frozenset({"count"}),
+    "admin.cooldown.cleared": frozenset({"type"}),
+    "admin.cooldown.not_active": frozenset({"type"}),
+    "admin.cooldown.replied_usage": frozenset(),
+    "admin.cooldown.unknown_type": frozenset({"types"}),
+    "admin.cooldown.usage": frozenset(),
+    "admin.flag_no": frozenset(),
+    "admin.flag_yes": frozenset(),
+    "admin.ghoul_not_found": frozenset(),
+    "admin.kagune.all_given": frozenset({"names"}),
+    "admin.kagune.give_replied_usage": frozenset({"types"}),
+    "admin.kagune.give_usage": frozenset({"types"}),
+    "admin.kagune.given": frozenset({"kagune", "strength"}),
+    "admin.kagune.remove_replied_usage": frozenset({"types"}),
+    "admin.kagune.remove_usage": frozenset({"types"}),
+    "admin.kagune.removed": frozenset({"kagune"}),
+    "admin.kagune.unknown_type": frozenset({"types"}),
+    "admin.kagune.unknown_type_or_all": frozenset({"types"}),
+    "admin.kagune_already_owned": frozenset({"kagune"}),
+    "admin.kagune_not_owned": frozenset({"kagune"}),
+    "admin.kill.done": frozenset({"cause", "deaths", "id"}),
+    "admin.kill.usage": frozenset(),
+    "admin.last_kagune": frozenset(),
+    "admin.level_up.done": frozenset({"cheston", "level", "notified", "rc"}),
+    "admin.level_up.usage": frozenset(),
+    "admin.media.exists": frozenset(),
+    "admin.media.no_media": frozenset(),
+    "admin.media.saved": frozenset({"path"}),
+    "admin.media.unknown_collection": frozenset({"collection", "supported"}),
+    "admin.media.usage": frozenset(),
+    "admin.profile.active": frozenset(),
+    "admin.profile.ban": frozenset({"reason", "term"}),
+    "admin.profile.banned": frozenset(),
+    "admin.profile.card": frozenset(
+        {
+            "balance",
+            "ban",
+            "ghoul",
+            "id",
+            "name",
+            "status",
+            "username",
+        }
+    ),
+    "admin.profile.ghoul": frozenset(
+        {
+            "dexterity",
+            "health",
+            "hunger",
+            "kakuja",
+            "level",
+            "max_health",
+            "rc",
+            "regeneration",
+            "speed",
+            "strength",
+        }
+    ),
+    "admin.profile.not_found": frozenset(),
+    "admin.profile.usage": frozenset(),
+    "admin.progress.delta_range": frozenset(),
+    "admin.progress.done": frozenset({"levels", "progress"}),
+    "admin.progress.level": frozenset({"cheston", "level", "notified", "rc"}),
+    "admin.progress.replied_usage": frozenset(),
+    "admin.progress.usage": frozenset(),
+    "admin.reset.ghoul_deleted": frozenset(),
+    "admin.reset.ghoul_done": frozenset({"id"}),
+    "admin.reset.ghoul_missing": frozenset(),
+    "admin.reset.ghoul_usage": frozenset(),
+    "admin.reset.no_ghoul": frozenset(),
+    "admin.reset.user_done": frozenset({"ghoul_deleted", "id"}),
+    "admin.reset.user_usage": frozenset(),
+    "admin.stats.done": frozenset({"field", "target", "value"}),
+    "admin.stats.no_ghoul": frozenset(),
+    "admin.stats.target_ghoul": frozenset(),
+    "admin.stats.target_user": frozenset(),
+    "admin.stats.unknown_field": frozenset({"field"}),
+    "admin.stats.usage": frozenset({"ghoul_fields", "time_fields", "user_fields"}),
+    "admin.unban.done": frozenset({"id", "name"}),
+    "admin.unban.not_banned": frozenset(),
+    "admin.unban.usage": frozenset(),
     "anime.bad_end": frozenset(),
     "anime.bad_format": frozenset(),
     "anime.bad_start": frozenset(),
@@ -1060,6 +1545,10 @@ PLACEHOLDERS: dict[str, frozenset[str]] = {
     "anime.usage": frozenset(),
     "anime.video": frozenset({"caption"}),
     "balance": frozenset({"balance", "name"}),
+    "banned.forever": frozenset(),
+    "banned.no_reason": frozenset(),
+    "banned.notice": frozenset({"reason", "term"}),
+    "banned.until": frozenset({"date"}),
     "bot": frozenset(),
     "coffee.cooldown": frozenset({"hours", "minutes", "seconds"}),
     "coffee.done": frozenset({"count", "money"}),
@@ -1085,6 +1574,8 @@ PLACEHOLDERS: dict[str, frozenset[str]] = {
         }
     ),
     "combat_power.short": frozenset({"effective_power", "vacuum_power"}),
+    "duel.usage": frozenset(),
+    "duel.user_not_found": frozenset({"target"}),
     "eat_human.ambush.draw": frozenset(),
     "eat_human.ambush.lost": frozenset(),
     "eat_human.ambush.started": frozenset(),
@@ -1093,6 +1584,7 @@ PLACEHOLDERS: dict[str, frozenset[str]] = {
     "eat_human.done": frozenset({"count", "hunger", "restored"}),
     "errors.cannot_process": frozenset(),
     "errors.chat_not_found": frozenset(),
+    "errors.ghoul_not_found": frozenset(),
     "errors.media_not_found": frozenset(),
     "errors.not_enough_money": frozenset({"money"}),
     "errors.unexpected": frozenset({"error"}),

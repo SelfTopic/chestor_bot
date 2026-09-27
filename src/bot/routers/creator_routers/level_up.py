@@ -2,25 +2,32 @@ from selfrot import BaseRouter, CommandArgs, MessageHandler, Rest
 from selfrot.filter import Command, HasReplyUser
 from selfrot.types import Message
 
+from src.bot.dialogs import Dialogs
+from src.bot.exceptions import GhoulNotFound
+
 from ...context import AppContext
 from ..targeting import ExplicitTargetHandler, RepliedTargetHandler, TargetArgs
 from ..types import ReplyUserMessage, TextMessage
 
-DELTA_RANGE_ERROR = "❌ Дельта должна быть в диапазоне от -100 до 100."
+
+def _flag(ctx: AppContext[Message], value: bool) -> str:
+    return ctx.text(Dialogs.admin.flag_yes() if value else Dialogs.admin.flag_no())
 
 
 async def _perform_level_up(ctx: AppContext[Message], telegram_id: int) -> None:
     try:
         result = await ctx.level_up_service.level_up(telegram_id)
-    except ValueError as e:
-        await ctx.message.answer(f"❌ {e}")
+    except GhoulNotFound:
+        await ctx.message.answer(ctx.text(Dialogs.admin.ghoul_not_found()))
         return
 
-    await ctx.message.answer(
-        f"✅ Уровень: {result.ghoul.level}. "
-        f"CheSton: {result.cheston_reward}, RC: {result.rc_reward}. "
-        f"ЛС доставлено: {'да' if result.notified else 'нет'}."
+    done = Dialogs.admin.level_up.done(
+        level=result.ghoul.level,
+        cheston=result.cheston_reward,
+        rc=result.rc_reward,
+        notified=_flag(ctx, result.notified),
     )
+    await ctx.message.answer(ctx.text(done))
 
 
 class ForceLevelupRepliedArgs(CommandArgs):
@@ -43,7 +50,7 @@ class ForceLevelupHandler(
 ):
     cmd = Command("force_levelup", TargetArgs)
     query = cmd & ~HasReplyUser()
-    usage = "Использование: /force_levelup <id или @username>"
+    usage = Dialogs.admin.level_up.usage()
 
     async def perform(self, telegram_id: int, args: TargetArgs) -> None:
         await _perform_level_up(self.ctx, telegram_id)
@@ -52,28 +59,31 @@ class ForceLevelupHandler(
 async def _perform_add_progress(
     ctx: AppContext[Message], telegram_id: int, delta: float
 ) -> None:
+    progress = Dialogs.admin.progress
     if not -100 <= delta <= 100:
-        await ctx.message.answer(DELTA_RANGE_ERROR)
+        await ctx.message.answer(ctx.text(progress.delta_range()))
         return
 
     try:
         result = await ctx.level_up_service.add_progress(telegram_id, delta)
-    except ValueError as e:
-        await ctx.message.answer(f"❌ {e}")
+    except GhoulNotFound:
+        await ctx.message.answer(ctx.text(Dialogs.admin.ghoul_not_found()))
         return
 
     lines = [
-        f"✅ level_progress: {result.progress:.2f}%. "
-        f"Уровней получено: {result.levels_gained}."
+        progress.done(progress=f"{result.progress:.2f}", levels=result.levels_gained)
     ]
-    for lvl_result in result.level_up_results:
-        lines.append(
-            f"  → уровень {lvl_result.ghoul.level}: "
-            f"CheSton {lvl_result.cheston_reward}, RC {lvl_result.rc_reward}, "
-            f"ЛС доставлено: {'да' if lvl_result.notified else 'нет'}"
+    lines += [
+        progress.level(
+            level=level.ghoul.level,
+            cheston=level.cheston_reward,
+            rc=level.rc_reward,
+            notified=_flag(ctx, level.notified),
         )
+        for level in result.level_up_results
+    ]
 
-    await ctx.message.answer("\n".join(lines))
+    await ctx.message.answer("\n".join(ctx.text(line) for line in lines))
 
 
 class AddProgressRepliedArgs(CommandArgs):
@@ -86,7 +96,7 @@ class AddProgressRepliedHandler(
 ):
     cmd = Command("add_progress", AddProgressRepliedArgs)
     query = cmd & HasReplyUser()
-    usage = "Использование (реплаем на сообщение цели): /add_progress <дельта от -100 до 100>"
+    usage = Dialogs.admin.progress.replied_usage()
 
     async def perform(self, telegram_id: int, args: AddProgressRepliedArgs) -> None:
         await _perform_add_progress(self.ctx, telegram_id, args.delta)
@@ -101,7 +111,7 @@ class AddProgressHandler(
 ):
     cmd = Command("add_progress", AddProgressArgs)
     query = cmd & ~HasReplyUser()
-    usage = "Использование: /add_progress <id или @username> <дельта от -100 до 100>"
+    usage = Dialogs.admin.progress.usage()
 
     async def perform(self, telegram_id: int, args: AddProgressArgs) -> None:
         await _perform_add_progress(self.ctx, telegram_id, args.delta)

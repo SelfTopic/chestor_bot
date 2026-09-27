@@ -1,3 +1,4 @@
+from .admin import UnknownStatField
 from .battle import (
     BattleError,
     FighterHasPendingBattleError,
@@ -13,6 +14,7 @@ from .media_download import (
     MediaNotFoundError,
     ValidationMediaError,
 )
+from .ghoul import GhoulNotFound, KaguneAlreadyOwned, KaguneNotOwned, LastKaguneType
 from .lottery import (
     BetOutOfRange,
     LotteryError,
@@ -51,6 +53,7 @@ __all__ = [
     "MediaNotFoundError",
     "InvalidMediaRequestError",
     "UserNotFound",
+    "UnknownStatField",
     "WordleGuessError",
     "WordleNotRussian",
     "WordleWrongLength",
@@ -62,6 +65,10 @@ __all__ = [
     "RpCommandNotFound",
     "RpCommandError",
     "DurationParseError",
+    "GhoulNotFound",
+    "KaguneAlreadyOwned",
+    "KaguneNotOwned",
+    "LastKaguneType",
     "LotteryError",
     "BetOutOfRange",
     "NotEnoughMoneyForBet",

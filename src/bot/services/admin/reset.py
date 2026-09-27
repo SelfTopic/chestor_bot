@@ -1,6 +1,7 @@
 import logging
 from dataclasses import dataclass
 
+from src.bot.exceptions import UserNotFound
 from src.bot.repositories.ghoul import GhoulRepository
 from src.bot.repositories.user import UserRepository
 
@@ -45,5 +46,5 @@ class ResetService:
         search = int(query) if query.lstrip("-").isdigit() else query.lstrip("@")
         user = await self.user_repo.get(search)
         if not user:
-            raise ValueError(f"Пользователь не найден: {query}")
+            raise UserNotFound(query)
         return user

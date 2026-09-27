@@ -5,6 +5,7 @@ from selfrot.exceptions import CommandArgsError, ContextError
 from selfrot.filter import Command, HasReplyToMessage, HasUser
 from selfrot.types import InputFile
 
+from src.bot.dialogs import Dialogs
 from src.bot.exceptions import CollectionNotFoundError
 from src.bot.services.media import CollectionParser
 from src.bot.types import MediaCollection, MediaDownloadType
@@ -14,7 +15,7 @@ from ...context import AppContext
 from ...services.media_paths import EXTENSION, collection_folder
 from ..types import TextUserReplyToMessage
 
-USAGE = "Эта команда используется в ответ на гиф или видео: /add_gif <коллекция>"
+USAGE = Dialogs.admin.media.usage()
 
 
 def target_path(
@@ -46,13 +47,16 @@ class AddGifHandler(MessageHandler[AppContext[TextUserReplyToMessage]]):
         elif reply.animation:
             type_media, file_id = MediaDownloadType.ANIMATION, reply.animation.file_id
         else:
-            await message.reply("В выбранном вами сообщении отсутствует гиф или видео")
+            await message.reply(self.ctx.text(Dialogs.admin.media.no_media()))
             return
 
         try:
             collection = CollectionParser.parse(args.collection)
         except CollectionNotFoundError as e:
-            await message.reply(str(e))
+            unknown = Dialogs.admin.media.unknown_collection(
+                collection=e.collection, supported=e.supported
+            )
+            await message.reply(self.ctx.text(unknown))
             return
 
         destination = target_path(type_media, collection, file_id)
@@ -61,11 +65,11 @@ class AddGifHandler(MessageHandler[AppContext[TextUserReplyToMessage]]):
         try:
             path = await self.ctx.download(destination)
         except ContextError:
-            await message.reply(USAGE)
+            await message.reply(self.ctx.text(USAGE))
             return
 
         if await self.ctx.media_repository.exists_by_path(str(path)):
-            await message.reply("Запись в базе данных с таким файлом уже существует")
+            await message.reply(self.ctx.text(Dialogs.admin.media.exists()))
             return
 
         await self.ctx.media_repository.insert(
@@ -78,7 +82,7 @@ class AddGifHandler(MessageHandler[AppContext[TextUserReplyToMessage]]):
             )
         )
 
-        caption = f"Это медиа успешно скачано в путь {path}"
+        caption = self.ctx.text(Dialogs.admin.media.saved(path=path))
         if type_media == MediaDownloadType.VIDEO:
             await message.answer_video(video=InputFile.from_path(path), caption=caption)
         else:
@@ -88,7 +92,7 @@ class AddGifHandler(MessageHandler[AppContext[TextUserReplyToMessage]]):
 
     async def on_error(self, exc: Exception) -> None:
         if isinstance(exc, CommandArgsError):
-            await self.ctx.message.reply(USAGE)
+            await self.ctx.message.reply(self.ctx.text(USAGE))
             return
 
         raise exc

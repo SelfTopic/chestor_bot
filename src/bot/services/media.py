@@ -34,9 +34,7 @@ class CollectionParser:
         if args in cls.MAP:
             return cls.MAP[args]
 
-        raise CollectionNotFoundError(
-            f"Коллекция {args} не найдена. Список поддерживаемых коллекций: {[i for i in cls.MAP.keys()]}"
-        )
+        raise CollectionNotFoundError(args, list(cls.MAP))
 
 
 class MediaService:

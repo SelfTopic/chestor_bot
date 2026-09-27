@@ -2,6 +2,7 @@ import logging
 from dataclasses import dataclass, field
 
 from src.bot.dialogs import Dialogs
+from src.bot.exceptions import GhoulNotFound
 from src.bot.game_configs import LEVEL_UP_CONFIG, STATS, stat_cap_for_level
 from src.bot.services import DialogService, GhoulService, UserService
 from src.bot.utils import apply_level_progress
@@ -44,13 +45,13 @@ class LevelUpService:
     async def level_up(self, telegram_id: int) -> LevelUpResult:
         old_ghoul = await self.ghoul_service.get(telegram_id)
         if not old_ghoul:
-            raise ValueError("Ghoul not found")
+            raise GhoulNotFound(telegram_id)
 
         old_level = old_ghoul.level
 
         new_ghoul = await self.ghoul_service.increment_fields(telegram_id, level=1)
         if not new_ghoul:
-            raise ValueError("Ghoul not found during level up")
+            raise GhoulNotFound(telegram_id)
 
         new_level = new_ghoul.level
 
@@ -68,7 +69,7 @@ class LevelUpService:
             telegram_id, rc_money=rc_reward, lifetime_rc_earned=rc_reward
         )
         if not final_ghoul:
-            raise ValueError("Ghoul not found while granting RC reward")
+            raise GhoulNotFound(telegram_id)
 
         notified = await self._notify(
             telegram_id, old_level, new_level, cheston_reward, rc_reward
@@ -84,7 +85,7 @@ class LevelUpService:
     async def add_progress(self, telegram_id: int, delta: float) -> ProgressResult:
         ghoul = await self.ghoul_service.get(telegram_id)
         if not ghoul:
-            raise ValueError("Ghoul not found")
+            raise GhoulNotFound(telegram_id)
 
         new_progress, levels_gained = apply_level_progress(ghoul.level_progress, delta)
 

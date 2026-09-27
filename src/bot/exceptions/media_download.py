@@ -7,7 +7,10 @@ class MediaNotFoundError(MediaError):
 
 
 class CollectionNotFoundError(MediaError):
-    pass
+    def __init__(self, collection: str, supported: list[str]) -> None:
+        super().__init__(collection)
+        self.collection = collection
+        self.supported = supported
 
 
 class InvalidMediaRequestError(MediaError):

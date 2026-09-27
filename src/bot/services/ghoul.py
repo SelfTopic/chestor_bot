@@ -5,6 +5,7 @@ from typing import Any, List, Optional, Tuple
 
 from src.database.models import Ghoul
 
+from ..exceptions import GhoulNotFound, KaguneAlreadyOwned, KaguneNotOwned, LastKaguneType
 from ..game_configs import EAT_HUMAN_CONFIG, KAGUNE_CONFIG
 from ..repositories import DeathLogRepository, ScheduledNotificationRepository
 from ..types import KaguneType, NotificationType, Race, RegisterGhoulType
@@ -131,7 +132,7 @@ class GhoulService(Base):
         # так по кругу.
         ghoul = await self.ghoul_repository.get(telegram_id)
         if not ghoul:
-            raise ValueError("Ghoul not found")
+            raise GhoulNotFound(telegram_id)
 
         if self.death_log_repository is not None:
             await self.death_log_repository.insert(
@@ -163,7 +164,7 @@ class GhoulService(Base):
     async def reset_for_rebirth(self, telegram_id: int) -> Ghoul:
         ghoul = await self.get(telegram_id)
         if not ghoul:
-            raise ValueError("Ghoul not found")
+            raise GhoulNotFound(telegram_id)
 
         values = self._rebirth_reset_values()
         now = utcnow_naive()
@@ -227,7 +228,7 @@ class GhoulService(Base):
 
         if not ghoul:
             logger.error("Ghoul not found for restore_hunger_from_eating operation")
-            raise ValueError("Ghoul not found")
+            raise GhoulNotFound(telegram_id)
 
         restore = EAT_HUMAN_CONFIG.hunger_restore
         new_hunger = apply_hunger_restore(ghoul.hunger, restore)
@@ -254,7 +255,7 @@ class GhoulService(Base):
 
         if not ghoul:
             logger.error("Ghoul not found for eat_human operation")
-            raise ValueError("Ghoul not found")
+            raise GhoulNotFound(telegram_id)
 
         return await self.restore_hunger_from_eating(
             telegram_id, eat_humans=ghoul.eat_humans + 1
@@ -267,7 +268,7 @@ class GhoulService(Base):
 
         if not ghoul:
             logger.error("Ghoul not found for snap_finger operation")
-            raise ValueError("Ghoul not found")
+            raise GhoulNotFound(telegram_id)
 
         logger.debug(f"Current snap count: {ghoul.snap_count}. Incrementing...")
 
@@ -289,7 +290,7 @@ class GhoulService(Base):
 
         if not ghoul:
             logger.error("Ghoul not found for coffee operation")
-            raise ValueError("Ghoul not found")
+            raise GhoulNotFound(telegram_id)
 
         ghoul = await self.ghoul_repository.upsert(
             telegram_id=telegram_id, coffee_count=ghoul.coffee_count + change
@@ -312,7 +313,7 @@ class GhoulService(Base):
 
         if not ghoul:
             logger.error("Ghoul not found for upgrade_kagune operation")
-            raise ValueError("Ghoul not found")
+            raise GhoulNotFound(telegram_id)
 
         if kagune_type is None:
             owned = self.owned_kagune_types(ghoul)
@@ -325,13 +326,13 @@ class GhoulService(Base):
 
         column = kagune_type.value["strength_column"]
         if getattr(ghoul, column) is None:
-            raise ValueError(f"Ghoul does not own kagune type {kagune_type.value['name']}")
+            raise KaguneNotOwned(kagune_type)
 
         updated = await self.ghoul_repository.increment_fields(
             telegram_id, **{column: change}
         )
         if not updated:
-            raise ValueError("Ghoul not found during upgrade_kagune")
+            raise GhoulNotFound(telegram_id)
 
         return updated
 
@@ -356,13 +357,11 @@ class GhoulService(Base):
     ) -> Ghoul:
         ghoul = await self.get(telegram_id)
         if not ghoul:
-            raise ValueError("Ghoul not found")
+            raise GhoulNotFound(telegram_id)
 
         column = kagune_type.value["strength_column"]
         if getattr(ghoul, column) is not None:
-            raise ValueError(
-                f"Ghoul already owns kagune type {kagune_type.value['name']}"
-            )
+            raise KaguneAlreadyOwned(kagune_type)
 
         new_bit = (ghoul.kagune_type_bit or 0) | kagune_type.value["bit"]
         return await self.set_fields(
@@ -374,7 +373,7 @@ class GhoulService(Base):
     ) -> Ghoul:
         ghoul = await self.get(telegram_id)
         if not ghoul:
-            raise ValueError("Ghoul not found")
+            raise GhoulNotFound(telegram_id)
 
         updates: dict = {
             kagune_type.value["strength_column"]: initial_strength
@@ -388,14 +387,14 @@ class GhoulService(Base):
     async def revoke_kagune_type(self, telegram_id: int, kagune_type: KaguneType) -> Ghoul:
         ghoul = await self.get(telegram_id)
         if not ghoul:
-            raise ValueError("Ghoul not found")
+            raise GhoulNotFound(telegram_id)
 
         column = kagune_type.value["strength_column"]
         if getattr(ghoul, column) is None:
-            raise ValueError(f"Ghoul does not own kagune type {kagune_type.value['name']}")
+            raise KaguneNotOwned(kagune_type)
 
         if len(self.owned_kagune_types(ghoul)) <= 1:
-            raise ValueError("Cannot remove the last remaining kagune type")
+            raise LastKaguneType()
 
         new_bit = (ghoul.kagune_type_bit or 0) & ~kagune_type.value["bit"]
         return await self.set_fields(telegram_id, kagune_type_bit=new_bit, **{column: None})

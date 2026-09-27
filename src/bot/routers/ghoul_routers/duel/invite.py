@@ -5,6 +5,7 @@ from selfrot import CommandArgs, MessageHandler, Rest
 from selfrot.exceptions import TelegramAPIError
 from selfrot.filter import Command, HasReplyUser, HasUser
 
+from src.bot.dialogs import Dialogs, Line
 from src.bot.game_configs import DUEL_CONFIG
 
 from ....context import AppContext
@@ -83,9 +84,13 @@ class DuelInvite:
 
         for chat_id in (session.initiator_telegram_id, session.target_telegram_id):
             try:
-                await ctx.bot.send_message(chat_id=chat_id, text=text, reply_markup=keyboard)
+                await ctx.bot.send_message(
+                    chat_id=chat_id, text=text, reply_markup=keyboard
+                )
             except TelegramAPIError:
-                logger.warning("duel %s: failed to deliver invite to %s", session.id, chat_id)
+                logger.warning(
+                    "duel %s: failed to deliver invite to %s", session.id, chat_id
+                )
 
 
 class DuelRepliedArgs(CommandArgs):
@@ -112,6 +117,8 @@ class DuelHandler(
 ):
     cmd = Command("дуэль", DuelArgs, prefixes="", ignore_case=True)
     query = cmd & HasUser() & ~HasReplyUser()
-    usage = "Вызови реплаем на сообщение соперника, либо «дуэль @username» / «дуэль <id>»."
-    not_found_text = "Пользователь не найден: {target}"
+    usage = Dialogs.duel.usage()
     reply_errors = True
+
+    def not_found(self, target: str) -> Line:
+        return Dialogs.duel.user_not_found(target=target)

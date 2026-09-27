@@ -2,18 +2,13 @@ from selfrot import BaseRouter, CommandArgs, MessageHandler, Rest
 from selfrot.filter import Command, HasReplyUser
 from selfrot.types import Message
 
+from src.bot.dialogs import Dialogs
+from src.bot.exceptions import UserNotFound
+
 from ...context import AppContext
 from ..targeting import ExplicitTargetHandler, RepliedTargetHandler, TargetArgs
 from ..types import ReplyUserMessage, TextMessage
-
-USAGE = (
-    "Использование: /ban <id или @username> [длительность] [причина]\n\n"
-    "Длительность: 30m, 24h, 7d (без неё — перманентно)\n"
-    "Примеры:\n"
-    "/ban @username\n"
-    "/ban 123456789 7d читерство\n"
-    "/ban @username 24h флуд"
-)
+from .ban_term import ban_term
 
 
 async def _perform_ban(
@@ -23,16 +18,22 @@ async def _perform_ban(
 
     try:
         user = await ban_service._resolve_user(target)  # noqa: SLF001
-    except ValueError as e:
-        await ctx.message.reply(f"❌ {e}")
+    except UserNotFound as e:
+        await ctx.message.reply(ctx.text(Dialogs.errors.user_not_found(query=e.query)))
         return
 
     if user.is_banned:
-        await ctx.message.reply("⚠️ Пользователь уже забанен.")
+        await ctx.message.reply(ctx.text(Dialogs.admin.ban.already()))
         return
 
     result = await ban_service.ban(target, duration_str=duration, reason=reason)
-    await ctx.message.reply(ban_service.format_ban_result(result), parse_mode="HTML")
+    done = Dialogs.admin.ban.done(
+        id=result.user.telegram_id,
+        name=result.user.full_name,
+        term=ban_term(ctx, result.banned_until),
+        reason=result.reason or "—",
+    )
+    await ctx.message.reply(ctx.text(done), parse_mode="HTML")
 
 
 class BanRepliedArgs(CommandArgs):
@@ -60,7 +61,7 @@ class BanHandler(
 ):
     cmd = Command("ban_bot", BanArgs)
     query = cmd & ~HasReplyUser()
-    usage = USAGE
+    usage = Dialogs.admin.ban.usage()
 
     async def perform(self, telegram_id: int, args: BanArgs) -> None:
         await _perform_ban(self.ctx, str(telegram_id), args.duration, args.reason)
@@ -71,19 +72,17 @@ async def _perform_unban(ctx: AppContext[Message], target: str) -> None:
 
     try:
         user = await ban_service._resolve_user(target)  # noqa: SLF001
-    except ValueError as e:
-        await ctx.message.reply(f"❌ {e}")
+    except UserNotFound as e:
+        await ctx.message.reply(ctx.text(Dialogs.errors.user_not_found(query=e.query)))
         return
 
     if not user.is_banned:
-        await ctx.message.reply("⚠️ Пользователь не забанен.")
+        await ctx.message.reply(ctx.text(Dialogs.admin.unban.not_banned()))
         return
 
     unbanned = await ban_service.unban(target)
-    await ctx.message.reply(
-        f"✅ Пользователь <code>{unbanned.telegram_id}</code> ({unbanned.full_name}) разблокирован.",
-        parse_mode="HTML",
-    )
+    done = Dialogs.admin.unban.done(id=unbanned.telegram_id, name=unbanned.full_name)
+    await ctx.message.reply(ctx.text(done), parse_mode="HTML")
 
 
 class UnbanRepliedArgs(CommandArgs):
@@ -110,7 +109,7 @@ class UnbanHandler(
 ):
     cmd = Command("unban", UnbanArgs)
     query = cmd & ~HasReplyUser()
-    usage = "Использование: /unban <id или @username>"
+    usage = Dialogs.admin.unban.usage()
 
     async def perform(self, telegram_id: int, args: UnbanArgs) -> None:
         await _perform_unban(self.ctx, str(telegram_id))

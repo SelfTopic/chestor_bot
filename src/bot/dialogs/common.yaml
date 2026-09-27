@@ -3,6 +3,11 @@ help: |-
   Список на статью с командами: https://t.me/CheStorCommands
 
   Список на статью с лором: Временно отсутствует
+banned:
+  notice: '🚫 Вы заблокированы ({term}). Причина: {reason}'
+  until: до {date} UTC
+  forever: навсегда
+  no_reason: причина не указана
 rules:
   missing: В этом чате правила отсутствуют. Чтобы указать новые правила используйте команду 'новые правила'
 balance: '{name}, твой баланс составляет {balance} CheSton.'
@@ -22,6 +27,7 @@ errors:
   user_not_found: '❌ Пользователь не найден: {query}'
   username_not_found: 'Ошибка: Пользователь с username {username} не найден'
   chat_not_found: 'Ошибка: Чат не найден в базе данных'
+  ghoul_not_found: 'Ошибка: Ghoul not found'
   media_not_found: 'Ошибка: Медиа не найдено в базе данных'
   not_enough_money: Ты успокойся нахуй. Ты ебаная бомжиха. На твоем балансе не хватает {money} CheSton для покупки.
 tops:

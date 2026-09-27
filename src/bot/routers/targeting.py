@@ -4,6 +4,8 @@ from selfrot import CommandArgs
 from selfrot.exceptions import CommandArgsError
 from selfrot.filter import Command
 
+from src.bot.dialogs import Dialogs, Line
+
 from ..context import AppContext
 from ..services.lookup import find_user
 
@@ -11,16 +13,17 @@ TArgs = TypeVar("TArgs", bound=CommandArgs)
 
 
 class _TargetErrors:
-    usage: str = ""
+    usage: Line | None = None
     reply_errors: bool = False
     ctx: AppContext[Any]
 
-    async def say(self, text: str) -> None:
+    async def say(self, line: Line) -> None:
         message = self.ctx.message
+        text = self.ctx.text(line)
         await (message.reply(text) if self.reply_errors else message.answer(text))
 
     async def on_error(self, exc: Exception) -> None:
-        if isinstance(exc, CommandArgsError):
+        if isinstance(exc, CommandArgsError) and self.usage is not None:
             await self.say(self.usage)
             return
 
@@ -50,14 +53,16 @@ TTargetArgs = TypeVar("TTargetArgs", bound=TargetArgs)
 
 class ExplicitTargetHandler(_TargetErrors, Generic[TTargetArgs]):
     cmd: Command[TTargetArgs]
-    not_found_text: str = "❌ Пользователь не найден: {target}"
+
+    def not_found(self, target: str) -> Line:
+        return Dialogs.errors.user_not_found(query=target)
 
     async def handle(self) -> None:
         args = self.cmd.parse(self.ctx)
 
         user = await find_user(self.ctx.user_service, args.target)
         if user is None:
-            await self.say(self.not_found_text.format(target=args.target))
+            await self.say(self.not_found(args.target))
             return
 
         await self.perform(user.telegram_id, args)

@@ -3,6 +3,7 @@ from dataclasses import dataclass
 from datetime import datetime, timedelta, timezone
 from typing import Optional
 
+from src.bot.exceptions import UserNotFound
 from src.bot.repositories.user import UserRepository
 from src.database.models import User
 
@@ -55,18 +56,6 @@ class BanService:
         user = await self.user_repo.get(search)
 
         if not user:
-            raise ValueError(f"Пользователь не найден: {query}")
+            raise UserNotFound(query)
 
         return user
-
-    def format_ban_result(self, result: BanResult) -> str:
-        until_str = (
-            f"до {result.banned_until.strftime('%d.%m.%Y %H:%M')} UTC"
-            if result.banned_until
-            else "навсегда"
-        )
-        return (
-            f"🚫 Пользователь <code>{result.user.telegram_id}</code> "
-            f"({result.user.full_name}) заблокирован {until_str}.\n"
-            f"Причина: {result.reason or '—'}"
-        )

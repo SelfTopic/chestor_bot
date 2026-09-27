@@ -1,5 +1,6 @@
 import pytest
 
+from src.bot.exceptions import UserNotFound
 from src.bot.repositories.ghoul import GhoulRepository
 from src.bot.repositories.user import UserRepository
 from src.bot.services.admin.reset import ResetService
@@ -27,7 +28,7 @@ async def test_reset_user_deletes_both(reset_service, make_user, make_ghoul, ses
 
 
 async def test_reset_unknown_user_raises(reset_service):
-    with pytest.raises(ValueError, match="не найден"):
+    with pytest.raises(UserNotFound):
         await reset_service.reset_user("999999888")
 
 

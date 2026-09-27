@@ -5,6 +5,7 @@ from selfrot import BaseMiddleware
 from selfrot.types import CallbackQuery, Message
 
 from ..context import AppContext
+from ..dialogs import Dialogs
 
 logger = logging.getLogger(__name__)
 
@@ -30,17 +31,17 @@ class BanMiddleware(BaseMiddleware[AppContext]):
             await user_service.user_repository.unban(event.user.id)
             return True
 
-        reason = db_user.ban_reason or "причина не указана"
+        ctx = self.ctx
+        reason = db_user.ban_reason or ctx.text(Dialogs.banned.no_reason())
         until = (
-            f"до {banned_until.strftime('%d.%m.%Y %H:%M')} UTC"
+            ctx.text(Dialogs.banned.until(date=banned_until.strftime("%d.%m.%Y %H:%M")))
             if banned_until
-            else "навсегда"
+            else ctx.text(Dialogs.banned.forever())
         )
 
         if isinstance(event, CallbackQuery):
-            await event.answer(
-                f"🚫 Вы заблокированы ({until}). Причина: {reason}", show_alert=True
-            )
+            notice = Dialogs.banned.notice(term=until, reason=reason)
+            await event.answer(ctx.text(notice), show_alert=True)
 
         logger.info(
             "User %s is banned until %s. Reason: %s", event.user.id, until, reason

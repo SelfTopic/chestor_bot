@@ -10,7 +10,7 @@ from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 
 from src.bot.containers import Container
 from src.bot.dialogs import Dialogs, Line
-from src.bot.exceptions import ChatNotFound, MediaNotFound, UserNotFound
+from src.bot.exceptions import ChatNotFound, GhoulNotFound, MediaNotFound, UserNotFound
 from src.bot.services.dialog import DialogService
 from src.config import settings
 from src.database import session_factory as default_session_factory
@@ -32,10 +32,12 @@ WEBHOOK_PORT = 8999
 
 def error_line(exc: Exception) -> Line:
     match exc:
-        case UserNotFound(username=username):
-            return Dialogs.errors.username_not_found(username=username)
+        case UserNotFound(query=query):
+            return Dialogs.errors.username_not_found(username=query)
         case ChatNotFound():
             return Dialogs.errors.chat_not_found()
+        case GhoulNotFound():
+            return Dialogs.errors.ghoul_not_found()
         case MediaNotFound():
             return Dialogs.errors.media_not_found()
         case _:

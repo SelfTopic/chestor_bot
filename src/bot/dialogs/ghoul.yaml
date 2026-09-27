@@ -270,3 +270,6 @@ tops:
     type_title: 'Топ {count} самых сильных кагуне: {kagune}'
     sum_button: Сумма
     bad_button: Неверные данные кнопки
+duel:
+  usage: Вызови реплаем на сообщение соперника, либо «дуэль @username» / «дуэль <id>».
+  user_not_found: 'Пользователь не найден: {target}'

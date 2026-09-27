@@ -2,6 +2,8 @@ from selfrot import BaseRouter, CommandArgs, MessageHandler
 from selfrot.filter import Command, HasReplyUser, HasUser
 from selfrot.types import Message
 
+from src.bot.dialogs import Dialogs
+from src.bot.exceptions import GhoulNotFound, UnknownStatField, UserNotFound
 from src.bot.services.admin.stats_edit import (
     ALLOWED_GHOUL_FIELDS,
     ALLOWED_GHOUL_TIME_FIELDS,
@@ -12,34 +14,38 @@ from ...context import AppContext
 from ..targeting import ExplicitTargetHandler, RepliedTargetHandler, TargetArgs
 from ..types import TextUserMessage, TextUserReplyMessage
 
-# Подсказка — константа модуля: в on_error сессия уже закрыта, сервисы из контекста
-# недоступны.
-USAGE = (
-    "Использование: /set_stat <id или @username> <поле> <значение>\n\n"
-    f"Поля пользователя: {', '.join(sorted(ALLOWED_USER_FIELDS))}\n"
-    f"Поля гуля: {', '.join(sorted(ALLOWED_GHOUL_FIELDS))}\n"
-    f"Служебные поля гуля (сдвиг снапшота назад на N часов, для теста "
-    f"голода/регена): {', '.join(sorted(ALLOWED_GHOUL_TIME_FIELDS))}"
+USAGE = Dialogs.admin.stats.usage(
+    user_fields=", ".join(sorted(ALLOWED_USER_FIELDS)),
+    ghoul_fields=", ".join(sorted(ALLOWED_GHOUL_FIELDS)),
+    time_fields=", ".join(sorted(ALLOWED_GHOUL_TIME_FIELDS)),
 )
 
 
 async def _perform_set_stat(
     ctx: AppContext[Message], target: str, field: str, value: int, admin_id: int
 ) -> None:
+    stats = Dialogs.admin.stats
     try:
         result = await ctx.stats_edit_service.set_stat(
             target, field, value, admin_id=admin_id
         )
-    except ValueError as e:
-        await ctx.message.answer(f"❌ {e}")
+    except UserNotFound as e:
+        await ctx.message.answer(ctx.text(Dialogs.errors.user_not_found(query=e.query)))
+        return
+    except UnknownStatField as e:
+        await ctx.message.answer(ctx.text(stats.unknown_field(field=e.field)))
+        return
+    except GhoulNotFound:
+        await ctx.message.answer(ctx.text(stats.no_ghoul()))
         return
 
-    target_label = "гуля" if result.is_ghoul_field else "пользователя"
-    await ctx.message.answer(
-        f"✅ Поле <code>{result.field}</code> {target_label} установлено в "
-        f"<code>{result.value}</code>.",
-        parse_mode="HTML",
+    target_label = (
+        stats.target_ghoul() if result.is_ghoul_field else stats.target_user()
     )
+    done = stats.done(
+        field=result.field, target=ctx.text(target_label), value=result.value
+    )
+    await ctx.message.answer(ctx.text(done), parse_mode="HTML")
 
 
 class SetStatRepliedArgs(CommandArgs):

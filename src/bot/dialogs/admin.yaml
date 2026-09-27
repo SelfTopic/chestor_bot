@@ -1,0 +1,107 @@
+admin:
+  flag_yes: да
+  flag_no: нет
+  ghoul_not_found: '❌ Ghoul not found'
+  kagune_not_owned: '❌ Ghoul does not own kagune type {kagune}'
+  kagune_already_owned: '❌ Ghoul already owns kagune type {kagune}'
+  last_kagune: '❌ Cannot remove the last remaining kagune type'
+  ban:
+    usage: |-
+      Использование: /ban <id или @username> [длительность] [причина]
+
+      Длительность: 30m, 24h, 7d (без неё — перманентно)
+      Примеры:
+      /ban @username
+      /ban 123456789 7d читерство
+      /ban @username 24h флуд
+    already: ⚠️ Пользователь уже забанен.
+    done: |-
+      🚫 Пользователь <code>{id}</code> ({name}) заблокирован {term}.
+      Причина: {reason}
+  unban:
+    usage: 'Использование: /unban <id или @username>'
+    not_banned: ⚠️ Пользователь не забанен.
+    done: ✅ Пользователь <code>{id}</code> ({name}) разблокирован.
+  kill:
+    usage: 'Использование: /kill_ghoul <id или @username> [причина]'
+    done: '💀 Гуль <code>{id}</code> убит (причина: {cause}). Смертей: {deaths}. Некролог придёт с ближайшим тиком (≤30с).'
+  reset:
+    ghoul_usage: 'Использование: /reset_ghoul <id или @username>'
+    user_usage: 'Использование: /reset_user <id или @username>'
+    no_ghoul: ⚠️ Профиль гуля не найден.
+    ghoul_done: ✅ Профиль гуля пользователя <code>{id}</code> удалён.
+    user_done: |-
+      ✅ Пользователь <code>{id}</code> полностью удалён.
+      Гуль удалён: {ghoul_deleted}
+    ghoul_deleted: да
+    ghoul_missing: не было
+  level_up:
+    usage: 'Использование: /force_levelup <id или @username>'
+    done: '✅ Уровень: {level}. CheSton: {cheston}, RC: {rc}. ЛС доставлено: {notified}.'
+  progress:
+    replied_usage: 'Использование (реплаем на сообщение цели): /add_progress <дельта от -100 до 100>'
+    usage: 'Использование: /add_progress <id или @username> <дельта от -100 до 100>'
+    delta_range: ❌ Дельта должна быть в диапазоне от -100 до 100.
+    done: '✅ level_progress: {progress}%. Уровней получено: {levels}.'
+    level: '  → уровень {level}: CheSton {cheston}, RC {rc}, ЛС доставлено: {notified}'
+  stats:
+    usage: |-
+      Использование: /set_stat <id или @username> <поле> <значение>
+
+      Поля пользователя: {user_fields}
+      Поля гуля: {ghoul_fields}
+      Служебные поля гуля (сдвиг снапшота назад на N часов, для теста голода/регена): {time_fields}
+    unknown_field: '❌ Неизвестное поле: {field}'
+    no_ghoul: ❌ У пользователя нет профиля гуля.
+    done: ✅ Поле <code>{field}</code> {target} установлено в <code>{value}</code>.
+    target_ghoul: гуля
+    target_user: пользователя
+  cooldown:
+    replied_usage: 'Использование (реплаем): /clear_cooldown <тип|all>'
+    usage: 'Использование: /clear_cooldown <id или @username> <тип|all>'
+    all_cleared: '✅ Сброшено кулдаунов: {count}.'
+    unknown_type: '❌ Неизвестный тип кулдауна. Доступны: {types}, all.'
+    not_active: ℹ️ У пользователя не было активного кулдауна {type}.
+    cleared: ✅ Кулдаун {type} сброшен.
+  kagune:
+    give_replied_usage: 'Использование (реплаем): /give_kagune <{types}|all>'
+    give_usage: 'Использование: /give_kagune <id или @username> <{types}|all>'
+    remove_replied_usage: 'Использование (реплаем): /remove_kagune <{types}>'
+    remove_usage: 'Использование: /remove_kagune <id или @username> <{types}>'
+    all_given: '✅ Выданы все типы кагуне. Открыто: {names}.'
+    unknown_type_or_all: '❌ Неизвестный тип. Доступны: {types}, all.'
+    unknown_type: '❌ Неизвестный тип. Доступны: {types}.'
+    given: ✅ Выдан тип {kagune} (сила {strength}).
+    removed: ✅ Тип {kagune} убран.
+  broadcast:
+    private_usage: 'Использование: /broadcast_private <текст>'
+    chats_usage: 'Использование: /broadcast_chats <текст>'
+    all_usage: 'Использование: /broadcast_all <текст>'
+    user_usage: 'Использование: /broadcast_user <id или @username> <текст>'
+    started: 📤 Рассылка запущена...
+    finished: |-
+      ✅ Рассылка завершена.
+      Всего: {total} | Успешно: {success} | Ошибок: {failed}
+    sent: ✅ Сообщение отправлено.
+    blocked: ❌ Не удалось отправить — пользователь заблокировал бота.
+  media:
+    usage: 'Эта команда используется в ответ на гиф или видео: /add_gif <коллекция>'
+    no_media: В выбранном вами сообщении отсутствует гиф или видео
+    unknown_collection: 'Коллекция {collection} не найдена. Список поддерживаемых коллекций: {supported}'
+    exists: Запись в базе данных с таким файлом уже существует
+    saved: Это медиа успешно скачано в путь {path}
+  profile:
+    usage: 'Использование: /admin_profile <telegram_id или @username>'
+    not_found: ❌ Пользователь не найден.
+    card: |-
+      <b>Профиль игрока</b>
+      ID: <code>{id}</code>
+      Имя: {name}
+      Username: @{username}
+      Баланс: {balance}
+      Статус: {status}{ban}{ghoul}
+    banned: 🚫 Забанен
+    active: ✅ Активен
+    # подставляются в {ban} и {ghoul} выше, поэтому начинаются с переноса строки
+    ban: "\nПричина: {reason}\nСрок: {term}"
+    ghoul: "\n\n<b>Гуль:</b>\nУровень: {level}\nRC-деньги: {rc}\nСила: {strength} | Ловкость: {dexterity} | Скорость: {speed}\nЗдоровье: {health}/{max_health}\nРегенерация: {regeneration}\nГолод: {hunger}\nKakuja: {kakuja}"

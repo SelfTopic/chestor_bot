@@ -2,6 +2,7 @@ import logging
 from dataclasses import dataclass
 from datetime import timedelta
 
+from src.bot.exceptions import GhoulNotFound, UnknownStatField, UserNotFound
 from src.bot.repositories.balances_log import BalancesLogRepository
 from src.bot.repositories.ghoul import GhoulRepository
 from src.bot.repositories.user import UserRepository
@@ -72,11 +73,11 @@ class StatsEditService:
         user = await self.user_repo.get(search)
 
         if not user:
-            raise ValueError(f"Пользователь не найден: {query}")
+            raise UserNotFound(query)
 
         is_valid, is_ghoul_field = self.resolve_field(field)
         if not is_valid:
-            raise ValueError(f"Неизвестное поле: {field}")
+            raise UnknownStatField(field)
 
         if not is_ghoul_field:
             if field == "balance":
@@ -101,7 +102,7 @@ class StatsEditService:
 
         ghoul = await self.ghoul_repo.get(user.telegram_id)
         if not ghoul:
-            raise ValueError("У пользователя нет профиля гуля.")
+            raise GhoulNotFound(user.telegram_id)
 
         if field in ALLOWED_GHOUL_TIME_FIELDS:
             column = ALLOWED_GHOUL_TIME_FIELDS[field]

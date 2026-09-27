@@ -100,6 +100,14 @@ class TestPlayersLookup:
 
         (reply,) = await send("/admin_profile 42", uid=ADMIN)
         assert "Вася" in reply and "500" in reply
+        assert "✅ Активен" in reply and "Причина" not in reply
+
+    async def test_banned_profile_shows_reason_and_term(self, send, session_factory):
+        await seed(session_factory, 42, "Вася")
+        await send("/ban_bot 42 читерство", uid=ADMIN)
+
+        (reply,) = await send("/admin_profile 42", uid=ADMIN)
+        assert "🚫 Забанен\nПричина: читерство\nСрок: навсегда" in reply
 
     async def test_profile_not_found(self, send):
         assert await send("/admin_profile @nobody", uid=ADMIN) == [
@@ -446,7 +454,7 @@ class TestMedia:
     async def test_missing_collection_argument(self, send):
         assert await send(
             "/add_gif", uid=ADMIN, reply_to_uid=42, reply_extra=self.animation_reply()
-        ) == [ADD_GIF_USAGE]
+        ) == [send.dispatcher.dialog_service.text(ADD_GIF_USAGE)]
 
     async def test_no_reply_is_ignored(self, send):
         assert await send("/add_gif snap", uid=ADMIN) == []

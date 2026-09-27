@@ -27,21 +27,3 @@ async def test_lookup_includes_ghoul(lookup_service, make_user, make_ghoul):
     assert result is not None
     assert result.ghoul is not None
 
-
-async def test_format_profile_banned_user(lookup_service, make_user):
-    user = await make_user(telegram_id=500_000_004)
-    # Баним напрямую через репо
-    repo = lookup_service.user_repo
-    await repo.ban(user.telegram_id, reason="тест", banned_until=None)
-    profile = await lookup_service.get_profile("500000004")
-    text = lookup_service.format_profile(profile)
-    assert "Забанен" in text
-    assert "тест" in text
-
-
-async def test_format_profile_active_user(lookup_service, make_user):
-    await make_user(telegram_id=500_000_005, username="activeuser")
-    profile = await lookup_service.get_profile("500000005")
-    text = lookup_service.format_profile(profile)
-    assert "Активен" in text
-    assert "activeuser" in text

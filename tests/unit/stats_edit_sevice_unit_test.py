@@ -1,5 +1,6 @@
 import pytest
 
+from src.bot.exceptions import GhoulNotFound, UserNotFound
 from src.bot.repositories.balances_log import BalancesLogRepository
 from src.bot.repositories.ghoul import GhoulRepository
 from src.bot.repositories.user import UserRepository
@@ -18,13 +19,13 @@ def stats_service(session):
 
 
 async def test_set_stat_unknown_user_raises(stats_service):
-    with pytest.raises(ValueError, match="не найден"):
+    with pytest.raises(UserNotFound):
         await stats_service.set_stat("999999999", "balance", 100, admin_id=ADMIN_ID)
 
 
 async def test_set_ghoul_stat_without_ghoul_raises(stats_service, make_user):
     await make_user(telegram_id=400_000_004)
-    with pytest.raises(ValueError, match="профиля гуля"):
+    with pytest.raises(GhoulNotFound):
         await stats_service.set_stat("400000004", "strength", 10, admin_id=ADMIN_ID)
 
 

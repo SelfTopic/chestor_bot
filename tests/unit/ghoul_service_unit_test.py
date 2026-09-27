@@ -1,5 +1,11 @@
 import pytest
 
+from src.bot.exceptions import (
+    GhoulNotFound,
+    KaguneAlreadyOwned,
+    KaguneNotOwned,
+    LastKaguneType,
+)
 from src.bot.repositories.chat import ChatRepository
 from src.bot.repositories.ghoul import GhoulRepository
 from src.bot.repositories.user import UserRepository
@@ -39,7 +45,7 @@ async def test_snap_finger_increments(ghoul_service, make_user, make_ghoul):
 
 
 async def test_snap_finger_raises_for_unknown(ghoul_service):
-    with pytest.raises(ValueError):
+    with pytest.raises(GhoulNotFound):
         await ghoul_service.snap_finger(telegram_id=999_999_002)
 
 
@@ -99,7 +105,7 @@ async def test_upgrade_kagune_rejects_unowned_type(ghoul_service, make_user, mak
         kagune_type_bit=KaguneType.UKAKU.value["bit"],
         kagune_strength_ukaku=1,
     )
-    with pytest.raises(ValueError, match="does not own"):
+    with pytest.raises(KaguneNotOwned):
         await ghoul_service.upgrade_kagune(
             telegram_id=200_000_303, kagune_type=KaguneType.BIKAKU
         )
@@ -245,7 +251,7 @@ async def test_grant_kagune_type_rejects_already_owned(
         kagune_strength_ukaku=1,
     )
 
-    with pytest.raises(ValueError, match="already owns"):
+    with pytest.raises(KaguneAlreadyOwned):
         await ghoul_service.grant_kagune_type(200_000_311, KaguneType.UKAKU)
 
 
@@ -295,7 +301,7 @@ async def test_revoke_kagune_type_rejects_unowned(ghoul_service, make_user, make
         kagune_strength_ukaku=1,
     )
 
-    with pytest.raises(ValueError, match="does not own"):
+    with pytest.raises(KaguneNotOwned):
         await ghoul_service.revoke_kagune_type(200_000_314, KaguneType.BIKAKU)
 
 
@@ -309,7 +315,7 @@ async def test_revoke_kagune_type_rejects_removing_the_last_one(
         kagune_strength_ukaku=1,
     )
 
-    with pytest.raises(ValueError, match="last remaining"):
+    with pytest.raises(LastKaguneType):
         await ghoul_service.revoke_kagune_type(200_000_315, KaguneType.UKAKU)
 
 

@@ -3,6 +3,7 @@ from pathlib import Path
 import pytest
 from sqlalchemy import select
 
+from src.bot.exceptions import GhoulNotFound
 from src.bot.repositories.balances_log import BalancesLogRepository
 from src.bot.repositories.chat import ChatRepository
 from src.bot.repositories.ghoul import GhoulRepository
@@ -10,10 +11,10 @@ from src.bot.repositories.user import UserRepository
 from src.bot.repositories.user_coldown import UserCooldownRepository
 from src.bot.services.dialog import DialogService
 from src.bot.services.ghoul import GhoulService
-from src.bot.services.user import UserService
-from src.database.models import User
 from src.bot.services.level_up import LevelUpService
 from src.bot.services.notify import NotifyError
+from src.bot.services.user import UserService
+from src.database.models import User
 
 
 class FakeBot:
@@ -149,7 +150,7 @@ async def test_level_up_notified_true_on_success(make_user, make_ghoul, session)
 
 async def test_level_up_raises_for_unknown_ghoul(session):
     service = _make_level_up_service(session, FakeBot())
-    with pytest.raises(ValueError, match="Ghoul not found"):
+    with pytest.raises(GhoulNotFound):
         await service.level_up(999_999_999)
 
 
@@ -273,5 +274,5 @@ async def test_add_progress_grants_reward_for_each_levelup_even_if_dm_fails(
 
 async def test_add_progress_raises_for_unknown_ghoul(session):
     service = _make_level_up_service(session, FakeBot())
-    with pytest.raises(ValueError, match="Ghoul not found"):
+    with pytest.raises(GhoulNotFound):
         await service.add_progress(999_999_998, 10.0)
