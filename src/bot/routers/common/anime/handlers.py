@@ -91,13 +91,15 @@ class AnimeHandler(MessageHandler[AppContext[TextMessage]]):
 
         # Занять место до первого await: иначе два быстрых /anime подряд пройдут проверку
         # оба.
+        is_gif = args.gif is not None
         cut_guard.occupy(user_id)
         try:
             job = VideoCutJob(
                 input_file_path=input_path,
                 output_file_path=video_cutter.generate_output_path(
-                    input_path.name, is_gif=args.gif is not None
+                    input_path.name, is_gif=is_gif
                 ),
+                as_animation=is_gif,
                 start_time=args.start,
                 end_time=args.end,
                 chat_id=message.chat.id,
@@ -127,7 +129,7 @@ class AnimeHandler(MessageHandler[AppContext[TextMessage]]):
             raise
 
         self.job = job
-        self.is_gif = args.gif is not None
+        self.is_gif = is_gif
         self.user_id = user_id
 
     async def after_handle(self) -> None:

@@ -70,6 +70,7 @@ class VideoWorker:
                     output_file_path=job.output_file_path,
                     start_time=job.start_time,
                     end_time=job.end_time,
+                    as_animation=job.as_animation,
                 )
 
                 job.result.set_result(result_path)

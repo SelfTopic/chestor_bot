@@ -50,6 +50,7 @@ class VideoCutJob:
 
     chat_id: Optional[int] = None
     caption: Optional[str] = None
+    as_animation: bool = False
 
     def cancel(self) -> bool:
         if not self.result.done():

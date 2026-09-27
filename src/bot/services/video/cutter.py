@@ -47,10 +47,10 @@ class VideoCutterService:
     def generate_output_path(
         self, input_filename: str | Path, is_gif: bool = False
     ) -> Path:
-        return self.PATH_TO_CUTTED / (
-            Path(input_filename).stem + "_" + str(uuid.uuid4()) + ".gif"
-            if is_gif
-            else ".mp4"
+        kind = "gif" if is_gif else "video"
+        return (
+            self.PATH_TO_CUTTED
+            / f"{Path(input_filename).stem}_{kind}_{uuid.uuid4()}.mp4"
         )
 
     async def cut_video_async(
@@ -59,21 +59,31 @@ class VideoCutterService:
         output_file_path: str | Path,
         start_time: str,
         end_time: str,
+        as_animation: bool = False,
     ) -> Path:
         logger.info(
             f"Starting async video cut: {input_file_path} -> {output_file_path}"
         )
 
         duration = self.parse_duration(start_time, end_time)
+        options: dict[str, object] = {"t": duration, "threads": self._encode_threads}
+        if as_animation:
+            # Telegram хранит «гифки» как MP4 без звука; настоящий GIF ограничен 256 цветами
+            # на кадр и выходит мыльным, а H.264 сохраняет исходное качество.
+            options |= {
+                "an": None,
+                "vcodec": "libx264",
+                "preset": "veryfast",
+                "crf": 18,
+                "pix_fmt": "yuv420p",
+                "movflags": "+faststart",
+            }
+        else:
+            options["preset"] = "ultrafast"
 
         cmd = (
             ffmpeg.input(str(input_file_path), ss=start_time)
-            .output(
-                str(output_file_path),
-                t=duration,
-                preset="ultrafast",
-                threads=self._encode_threads,
-            )
+            .output(str(output_file_path), **options)
             .overwrite_output()
             .compile()
         )
