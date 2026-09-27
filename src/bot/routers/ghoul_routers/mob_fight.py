@@ -18,7 +18,7 @@ COOLDOWN_NAME = "MOB_FIGHT"
 class MobFightHandler(MessageHandler[AppContext[TextUserMessage]]):
     query = Text("бить моба", ignore_case=True) & HasUser()
 
-    busy_text = "Ты сейчас занят другим боем."
+    busy_text = Dialogs.mob.busy()
 
     async def handle(self) -> None:
         ctx = self.ctx
@@ -44,19 +44,23 @@ class MobFightHandler(MessageHandler[AppContext[TextUserMessage]]):
             )
             return
         except FighterHasPendingBattleError:
-            await message.reply(self.busy_text)
+            await message.reply(ctx.text(self.busy_text))
             return
 
         remaining = await ctx.cooldown_remaining(telegram_id, COOLDOWN_NAME)
         if remaining is not None:
             await message.reply(
-                "Рано - ты недавно уже дрался с мобом. Попробуй через "
-                f"{remaining.minutes_remaining}м {remaining.seconds_remaining}с."
+                ctx.text(
+                    Dialogs.mob.cooldown(
+                        minutes=remaining.minutes_remaining,
+                        seconds=remaining.seconds_remaining,
+                    )
+                )
             )
             return
 
         if not await battles.try_claim_mob_fight(telegram_id):
-            await message.reply(self.busy_text)
+            await message.reply(ctx.text(self.busy_text))
             return
 
         battle = await ctx.battle_service.fight_mob(
@@ -67,19 +71,23 @@ class MobFightHandler(MessageHandler[AppContext[TextUserMessage]]):
         await answer_mob_battle(ctx, message, battle, what="mob fight")
 
         if battle.report.winner == "a":
-            summary = rewards_text(battle)
+            outcome = rewards_text(ctx, battle)
         elif battle.report.winner == "b":
-            summary = "Моб оказался сильнее в этот раз."
+            outcome = ctx.text(Dialogs.mob.lost())
         else:
-            summary = "Ничья - силы примерно равны."
+            outcome = ctx.text(Dialogs.mob.draw())
 
         score = await ctx.battle_service.score(telegram_id, "mob")
-        summary += (
-            f"\n📊 Боёв с мобами: {score.total} "
-            f"({score.wins} побед / {score.losses} поражений)"
+        await message.answer(
+            ctx.text(
+                Dialogs.mob.summary(
+                    outcome=outcome,
+                    total=score.total,
+                    wins=score.wins,
+                    losses=score.losses,
+                )
+            )
         )
-
-        await message.answer(summary)
 
 
 class MobFightRouter(BaseRouter[AppContext]):

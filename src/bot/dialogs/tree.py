@@ -154,7 +154,23 @@ class _CombatPowerDialogs:
         )
 
 
+class _EatHumanAmbushDialogs:
+    def draw(self) -> Line:
+        return Line("eat_human.ambush.draw", {})
+
+    def lost(self) -> Line:
+        return Line("eat_human.ambush.lost", {})
+
+    def started(self) -> Line:
+        return Line("eat_human.ambush.started", {})
+
+    def won(self, *, rewards: object) -> Line:
+        return Line("eat_human.ambush.won", {"rewards": rewards})
+
+
 class _EatHumanDialogs:
+    ambush = _EatHumanAmbushDialogs()
+
     def cooldown(self, *, hours: object, minutes: object, seconds: object) -> Line:
         return Line(
             "eat_human.cooldown",
@@ -292,6 +308,9 @@ class _GhoulDialogs:
 
     def new(self, *, kagune_type: object, name: object) -> Line:
         return Line("ghoul.new", {"kagune_type": kagune_type, "name": name})
+
+    def not_a_ghoul(self) -> Line:
+        return Line("ghoul.not_a_ghoul", {})
 
     def profile(
         self,
@@ -457,6 +476,44 @@ class _LotteryDialogs:
         )
 
 
+class _MobDialogs:
+    def busy(self) -> Line:
+        return Line("mob.busy", {})
+
+    def cooldown(self, *, minutes: object, seconds: object) -> Line:
+        return Line("mob.cooldown", {"minutes": minutes, "seconds": seconds})
+
+    def draw(self) -> Line:
+        return Line("mob.draw", {})
+
+    def lost(self) -> Line:
+        return Line("mob.lost", {})
+
+    def rc_found(self, *, rc: object) -> Line:
+        return Line("mob.rc_found", {"rc": rc})
+
+    def rewards(self, *, cheston: object, progress: object) -> Line:
+        return Line("mob.rewards", {"cheston": cheston, "progress": progress})
+
+    def summary(
+        self,
+        *,
+        losses: object,
+        outcome: object,
+        total: object,
+        wins: object,
+    ) -> Line:
+        return Line(
+            "mob.summary",
+            {
+                "losses": losses,
+                "outcome": outcome,
+                "total": total,
+                "wins": wins,
+            },
+        )
+
+
 class _NotifyDialogs:
     def death(
         self,
@@ -507,6 +564,38 @@ class _ProfileDialogs:
         return Line("profile.unknown_race", {})
 
 
+class _QuizDialogs:
+    def correct(self, *, award: object) -> Line:
+        return Line("quiz.correct", {"award": award})
+
+    def not_active(self) -> Line:
+        return Line("quiz.not_active", {})
+
+    def play_again(self) -> Line:
+        return Line("quiz.play_again", {})
+
+    def result(
+        self,
+        *,
+        answer: object,
+        choice: object,
+        question: object,
+        status: object,
+    ) -> Line:
+        return Line(
+            "quiz.result",
+            {
+                "answer": answer,
+                "choice": choice,
+                "question": question,
+                "status": status,
+            },
+        )
+
+    def wrong(self) -> Line:
+        return Line("quiz.wrong", {})
+
+
 class _RpDialogs:
     def created(self, *, action: object, command: object) -> Line:
         return Line("rp.created", {"action": action, "command": command})
@@ -553,6 +642,9 @@ class _SnapDialogs:
 
 
 class _StatusDialogs:
+    def healthy(self) -> Line:
+        return Line("status.healthy", {})
+
     def hunger(
         self,
         *,
@@ -585,6 +677,9 @@ class _StatusDialogs:
             },
         )
 
+    def no_regen(self) -> Line:
+        return Line("status.no_regen", {})
+
     def regen(
         self,
         *,
@@ -602,6 +697,15 @@ class _StatusDialogs:
                 "time_left": time_left,
             },
         )
+
+    def starved(self) -> Line:
+        return Line("status.starved", {})
+
+    def until_healthy(self, *, duration: object) -> Line:
+        return Line("status.until_healthy", {"duration": duration})
+
+    def until_starved(self, *, duration: object) -> Line:
+        return Line("status.until_starved", {"duration": duration})
 
 
 class _TopsBalanceDialogs:
@@ -804,8 +908,10 @@ class _Dialogs:
     ghoul = _GhoulDialogs()
     kagune = _KaguneDialogs()
     lottery = _LotteryDialogs()
+    mob = _MobDialogs()
     notify = _NotifyDialogs()
     profile = _ProfileDialogs()
+    quiz = _QuizDialogs()
     rp = _RpDialogs()
     rules = _RulesDialogs()
     snap = _SnapDialogs()
@@ -872,6 +978,10 @@ PLACEHOLDERS: dict[str, frozenset[str]] = {
         }
     ),
     "combat_power.short": frozenset({"effective_power", "vacuum_power"}),
+    "eat_human.ambush.draw": frozenset(),
+    "eat_human.ambush.lost": frozenset(),
+    "eat_human.ambush.started": frozenset(),
+    "eat_human.ambush.won": frozenset({"rewards"}),
     "eat_human.cooldown": frozenset({"hours", "minutes", "seconds"}),
     "eat_human.done": frozenset({"count", "hunger", "restored"}),
     "errors.chat_not_found": frozenset(),
@@ -905,6 +1015,7 @@ PLACEHOLDERS: dict[str, frozenset[str]] = {
     "ghoul.dead": frozenset(),
     "ghoul.dead_profile": frozenset({"name"}),
     "ghoul.new": frozenset({"kagune_type", "name"}),
+    "ghoul.not_a_ghoul": frozenset(),
     "ghoul.profile": frozenset(
         {
             "coffee_count",
@@ -962,12 +1073,24 @@ PLACEHOLDERS: dict[str, frozenset[str]] = {
             "winning_color",
         }
     ),
+    "mob.busy": frozenset(),
+    "mob.cooldown": frozenset({"minutes", "seconds"}),
+    "mob.draw": frozenset(),
+    "mob.lost": frozenset(),
+    "mob.rc_found": frozenset({"rc"}),
+    "mob.rewards": frozenset({"cheston", "progress"}),
+    "mob.summary": frozenset({"losses", "outcome", "total", "wins"}),
     "notify.death": frozenset({"cause", "level", "lifetime_rc_earned"}),
     "notify.health_full": frozenset(),
     "notify.hunger": frozenset({"threshold"}),
     "notify.level_up": frozenset({"cheston", "level", "rc", "stat_changes"}),
     "profile.card": frozenset({"balance", "name", "race"}),
     "profile.unknown_race": frozenset(),
+    "quiz.correct": frozenset({"award"}),
+    "quiz.not_active": frozenset(),
+    "quiz.play_again": frozenset(),
+    "quiz.result": frozenset({"answer", "choice", "question", "status"}),
+    "quiz.wrong": frozenset(),
     "rp.created": frozenset({"action", "command"}),
     "rp.delete_usage": frozenset(),
     "rp.deleted": frozenset({"command"}),
@@ -982,6 +1105,7 @@ PLACEHOLDERS: dict[str, frozenset[str]] = {
     "snap.cooldown": frozenset({"minutes", "seconds"}),
     "snap.done": frozenset({"count", "money"}),
     "start": frozenset({"name"}),
+    "status.healthy": frozenset(),
     "status.hunger": frozenset(
         {
             "effective_dexterity",
@@ -997,7 +1121,11 @@ PLACEHOLDERS: dict[str, frozenset[str]] = {
             "time_left",
         }
     ),
+    "status.no_regen": frozenset(),
     "status.regen": frozenset({"health", "hp_per_hour", "max_health", "time_left"}),
+    "status.starved": frozenset(),
+    "status.until_healthy": frozenset({"duration"}),
+    "status.until_starved": frozenset({"duration"}),
     "tops.balance.bad_count": frozenset(),
     "tops.balance.row": frozenset({"balance", "name", "place"}),
     "tops.balance.text": frozenset({"count", "rows"}),

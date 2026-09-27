@@ -33,14 +33,12 @@ class RegenStatusHandler(MessageHandler[AppContext[TextUserMessage]]):
         )
 
         if hours_left == 0.0:
-            time_left = "Уже полностью здоров(а)."
+            time_left = Dialogs.status.healthy()
         elif hours_left is None:
-            time_left = (
-                "При текущей скорости регенерации здоровье само не восстановится."
-            )
+            time_left = Dialogs.status.no_regen()
         else:
-            time_left = (
-                f"До полного здоровья: {format_duration(int(hours_left * 3600))}"
+            time_left = Dialogs.status.until_healthy(
+                duration=format_duration(int(hours_left * 3600))
             )
 
         await ctx.message.answer(
@@ -49,7 +47,7 @@ class RegenStatusHandler(MessageHandler[AppContext[TextUserMessage]]):
                     health=ghoul.health,
                     max_health=ghoul.max_health,
                     hp_per_hour=round(hp_per_hour, 2),
-                    time_left=time_left,
+                    time_left=ctx.text(time_left),
                 )
             )
         )
@@ -66,9 +64,11 @@ class HungerStatusHandler(MessageHandler[AppContext[TextUserMessage]]):
         tier = get_hunger_tier(ghoul.hunger)
 
         if hours_left <= 0:
-            time_left = "Голод уже на нуле."
+            time_left = Dialogs.status.starved()
         else:
-            time_left = f"До истощения: {format_duration(int(hours_left * 3600))}"
+            time_left = Dialogs.status.until_starved(
+                duration=format_duration(int(hours_left * 3600))
+            )
 
         fighter = ctx.battle_engine.ghoul_to_fighter(
             ghoul, full_name(ctx.message.user), ctx.ghoul_service
@@ -80,7 +80,7 @@ class HungerStatusHandler(MessageHandler[AppContext[TextUserMessage]]):
                 Dialogs.status.hunger(
                     hunger=ghoul.hunger,
                     tier=tier.name,
-                    time_left=time_left,
+                    time_left=ctx.text(time_left),
                     falling_multiplier=tier.falling_multiplier,
                     rising_multiplier=tier.rising_multiplier,
                     effective_strength=round(stats.strength, 1),

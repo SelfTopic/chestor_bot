@@ -27,9 +27,7 @@ class GhoulMiddleware(BaseMiddleware[AppContext]):
 
         ghoul = await self.ctx.ghoul_service.get(find_by=user.id)
         if ghoul is None:
-            await event.answer(
-                "Ты не гуль. Используй команду 'Растить кагуне' чтобы стать гулем."
-            )
+            await event.answer(self.ctx.text(Dialogs.ghoul.not_a_ghoul()))
             return False
 
         if ghoul.is_dead:

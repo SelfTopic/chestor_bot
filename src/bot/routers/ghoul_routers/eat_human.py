@@ -18,11 +18,6 @@ COOLDOWN_NAME = "EAT_HUMAN"
 class EatHumanHandler(MessageHandler[AppContext[TextUserMessage]]):
     query = Text("сожрать человека", ignore_case=True) & HasUser()
 
-    ambush_text = (
-        "🐺 Пока ты подкрадывался к добыче, из темноты выскочил другой "
-        "гуль, тоже претендующий на человека - придётся драться!"
-    )
-
     async def survive_ambush(self) -> bool:
         ctx = self.ctx
         message = ctx.message
@@ -34,22 +29,20 @@ class EatHumanHandler(MessageHandler[AppContext[TextUserMessage]]):
             reward_log="mob ambush during eat_human reward",
         )
 
-        await message.reply(self.ambush_text)
+        await message.reply(ctx.text(Dialogs.eat_human.ambush.started()))
         await answer_mob_battle(
             ctx, message, battle, what="mob ambush during eat_human"
         )
 
+        ambush = Dialogs.eat_human.ambush
         if battle.report.winner == "a":
-            await message.answer(
-                rewards_text(battle) + "\n\n🍽 Соперник повержен - человек твой."
-            )
+            rewards = rewards_text(ctx, battle)
+            await message.answer(ctx.text(ambush.won(rewards=rewards)))
             return True
 
-        if battle.report.winner == "b":
-            await message.answer("Моб оказался сильнее - человек достался ему.")
-        else:
-            await message.answer("Ничья - в суматохе добыча сбежала, поесть не вышло.")
-
+        await message.answer(
+            ctx.text(ambush.lost() if battle.report.winner == "b" else ambush.draw())
+        )
         return False
 
     async def handle(self) -> None:

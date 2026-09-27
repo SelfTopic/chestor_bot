@@ -13,6 +13,7 @@ from selfrot.filter import Command, InState
 from selfrot.handlers import CallbackQueryHandler
 from selfrot.types import DataCallbackQuery, InlineKeyboardMarkup, Message
 
+from src.bot.dialogs import Dialogs
 from src.bot.game_configs import QUIZ_CONFIG
 
 from ...context import AppContext
@@ -31,6 +32,8 @@ class QuizAnswer(CallbackPayload, prefix="quiz_answer"):
 
 class QuizRestart(CallbackPayload, prefix="quiz_restart"):
     pass
+
+
 async def new_question(ctx: AppContext[Any]) -> tuple[str, InlineKeyboardMarkup]:
     question = await ctx.ghoul_quiz_service.get_random_quiz()
     options = random.sample(question.answer_options, k=4)
@@ -79,11 +82,8 @@ class QuizAnswerHandler(CallbackQueryHandler[AppContext[DataCallbackQuery]]):
             question_id=payload.question_id
         )
 
-        restart = InlineKeyboard().button("Play Again", QuizRestart()).markup()
-        text = (
-            f"Вопрос: {correct.question} \nОтвет: {correct.answer}.\n"
-            f"Твой выбор: {selected_option}\n"
-        )
+        play_again = ctx.text(Dialogs.quiz.play_again())
+        restart = InlineKeyboard().button(play_again, QuizRestart()).markup()
 
         if selected_option == correct.answer:
             award = QUIZ_CONFIG.award
@@ -92,10 +92,18 @@ class QuizAnswerHandler(CallbackQueryHandler[AppContext[DataCallbackQuery]]):
                 change_balance=award,
                 log="ghoul quiz win",
             )
-            text += f"Статус: верно\n\nПолучено CheSton: {award}"
+            status = Dialogs.quiz.correct(award=award)
         else:
-            text += "Статус: неверно"
+            status = Dialogs.quiz.wrong()
 
+        text = ctx.text(
+            Dialogs.quiz.result(
+                question=correct.question,
+                answer=correct.answer,
+                choice=selected_option,
+                status=ctx.text(status),
+            )
+        )
         await message.edit_text(text, reply_markup=restart)
 
 
@@ -103,7 +111,7 @@ class QuizNotActiveHandler(CallbackQueryHandler[AppContext[DataCallbackQuery]]):
     query = QuizAnswer.filter()
 
     async def handle(self) -> None:
-        await self.ctx.callback_query.answer("Quiz is not active.")
+        await self.ctx.callback_query.answer(self.ctx.text(Dialogs.quiz.not_active()))
 
 
 class QuizRestartHandler(CallbackQueryHandler[AppContext[DataCallbackQuery]]):

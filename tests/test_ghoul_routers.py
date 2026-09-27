@@ -824,7 +824,7 @@ class TestQuiz:
         (edited,) = telegram.bodies("editMessageText")
         head, award = edited["text"].split("Получено CheSton: ")
         assert head == (
-            "Вопрос: Кто? \nОтвет: Канеки.\nТвой выбор: Канеки\nСтатус: верно\n\n"
+            "Вопрос: Кто?\nОтвет: Канеки.\nТвой выбор: Канеки\nСтатус: верно\n\n"
         )
         assert await balance_of(session_factory, UID) == int(award)
         assert button_data(edited, "Play Again") == "quiz_restart"
@@ -838,7 +838,7 @@ class TestQuiz:
 
         (edited,) = telegram.bodies("editMessageText")
         assert edited["text"] == (
-            "Вопрос: Кто? \nОтвет: Канеки.\nТвой выбор: Тоука\nСтатус: неверно"
+            "Вопрос: Кто?\nОтвет: Канеки.\nТвой выбор: Тоука\nСтатус: неверно"
         )
         assert await balance_of(session_factory, UID) == 0
 
