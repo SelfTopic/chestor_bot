@@ -9,6 +9,7 @@ from ...context import AppContext
 
 
 class ChatTextArgs(CommandArgs):
+    # Пустой текст должен отвергнуть ChatService своей ошибкой, а не разбор аргументов.
     value: Rest = ""
 
 

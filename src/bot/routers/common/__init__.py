@@ -1,3 +1,5 @@
+# Роутеры по отдельности, а не одним CommonRouter: RootRouter ставит их вперемешку с
+# другими областями, а порядок решает, какой хендлер сработает первым.
 from .anime import AnimeRouter
 from .bot_router import BotRouter
 from .check_balance import BalanceRouter

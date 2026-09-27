@@ -48,6 +48,7 @@ def setup_logging() -> None:
     file.setFormatter(logging.Formatter(FORMAT))
 
     root = logging.getLogger()
+    # Модуль мог вызвать basicConfig ещё при импорте: без сброса строки дублировались бы.
     for handler in root.handlers[:]:
         root.removeHandler(handler)
         handler.close()
