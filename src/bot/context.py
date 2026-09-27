@@ -293,13 +293,15 @@ class AppContext(BaseContext[TEvent]):
         except TelegramBadRequest:
             sent = await send(animation=InputFile.from_path(media.path), **options)
         else:
-            if media.telegram_file_id:
+            if media.telegram_file_id and media.file_unique_id:
                 return sent
 
         if sent.animation is not None:
             async with self.session_factory() as session:
                 await MediaRepository(session).update_file_id(
-                    path=media.path, new_file_id=sent.animation.file_id
+                    path=media.path,
+                    new_file_id=sent.animation.file_id,
+                    file_unique_id=sent.animation.file_unique_id,
                 )
                 await session.commit()
         return sent

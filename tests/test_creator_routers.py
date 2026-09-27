@@ -6,11 +6,17 @@ from pathlib import Path
 
 import pytest
 
-from src.bot.dialogs import Dialogs, Line
-from src.bot.repositories import ChatRepository, GhoulRepository, UserRepository
+from src.bot.config import game_config
+from src.bot.dialogs import Dialogs, Line, load_texts
+from src.bot.repositories import (
+    ChatRepository,
+    GhoulRepository,
+    MediaRepository,
+    UserRepository,
+)
 from src.bot.types import KaguneType
 from src.config import settings
-from src.database.models import Cooldown
+from src.database.models import Cooldown, Media
 from src.bot.routers.creator_routers.media import USAGE as ADD_GIF_USAGE
 from src.bot.routers.creator_routers.stats_edits import USAGE as SET_STAT_USAGE
 from src.bot.services.broadcast import BroadcastService
@@ -398,9 +404,13 @@ class TestMedia:
         (sent,) = telegram.bodies("sendAnimation")
         assert matches_phrase(sent["caption"], "admin.media.saved")
 
+        # ответ — та же гифка по file_id, без повторной загрузки: один file_unique_id
+        assert sent["animation"] == self.FILE_ID
+
         row = await self.get_media_row(session_factory, str(path))
         assert row is not None
         assert row.telegram_file_id == self.FILE_ID
+        assert row.file_unique_id == "u"
         assert row.collection == "snap.done"
         assert row.uploaded_by == ADMIN
 
@@ -441,6 +451,60 @@ class TestMedia:
             Dialogs.admin.media.missing_param(key="kagune.upgrade.done", name="kagune")
         )
         assert telegram.downloads == []
+
+    async def test_section_lists_its_phrases(self, send, telegram):
+        (reply,) = await send(
+            "/add_gif coffee",
+            uid=ADMIN,
+            reply_to_uid=42,
+            reply_extra=self.animation_reply(),
+        )
+
+        keys = "\n".join(key for key in sorted(load_texts()) if key.startswith("coffee."))
+        assert reply == only_text(Dialogs.admin.media.section(section="coffee", keys=keys))
+        assert telegram.downloads == []
+
+    async def test_typo_suggests_the_phrase(self, send):
+        (reply,) = await send(
+            "/add_gif coffee.don",
+            uid=ADMIN,
+            reply_to_uid=42,
+            reply_extra=self.animation_reply(),
+        )
+
+        assert matches_phrase(reply, "admin.media.did_you_mean")
+        assert "coffee.done" in reply
+
+    async def test_new_placeholder_value_needs_confirmation(
+        self, send, feed, telegram, monkeypatch, tmp_path
+    ):
+        monkeypatch.setattr(game_config, "path_to_assets", str(tmp_path))
+        (tmp_path / "animation" / "upgrade_kagune" / "ukaku").mkdir(parents=True)
+        self.mock_download(telegram, self.FILE_ID)
+
+        (reply,) = await send(
+            "/add_gif kagune.upgrade.done kagune=ukku",
+            uid=ADMIN,
+            reply_to_uid=42,
+            reply_extra=self.animation_reply(),
+        )
+
+        unknown = Dialogs.admin.media.unknown_value(
+            key="kagune.upgrade.done", name="kagune", value="ukku", known="ukaku"
+        )
+        assert reply == only_text(unknown)
+        assert telegram.downloads == []
+
+        await feed(
+            message_update(
+                "/add_gif kagune.upgrade.done kagune=koukaku!",
+                uid=ADMIN,
+                reply_to_uid=42,
+                reply_extra=self.animation_reply(),
+            )
+        )
+        saved = tmp_path / "animation" / "upgrade_kagune" / "koukaku"
+        assert (saved / f"animation_{self.FILE_ID}.mp4").exists()
 
     async def test_unknown_collection(self, feed, telegram):
         telegram_response = await feed(
@@ -486,6 +550,64 @@ class TestMedia:
         await feed(raw)
 
         assert telegram.sent == [only_text(Dialogs.admin.media.exists())]
+
+
+class TestRemoveGif:
+    async def stored_gif(self, session_factory, tmp_path) -> Path:
+        path = tmp_path / "animation_OLD.mp4"
+        path.write_bytes(b"gif-bytes")
+        async with session_factory() as session:
+            session.add(
+                Media(
+                    media_type="animation",
+                    telegram_file_id="OLD_FILE_ID",
+                    file_unique_id="UNIQUE",
+                    collection="coffee.done",
+                    path=str(path),
+                    uploaded_by=ADMIN,
+                )
+            )
+            await session.commit()
+        return path
+
+    def gif(self, file_unique_id: str) -> dict:
+        # file_id у одного файла в разных сообщениях разный, file_unique_id — тот же
+        return {
+            "animation": {
+                "file_id": "ANOTHER_FILE_ID",
+                "file_unique_id": file_unique_id,
+                "width": 1,
+                "height": 1,
+                "duration": 1,
+            }
+        }
+
+    async def test_removes_file_and_row(self, send, session_factory, tmp_path):
+        path = await self.stored_gif(session_factory, tmp_path)
+
+        (reply,) = await send(
+            "/remove_gif", uid=ADMIN, reply_to_uid=42, reply_extra=self.gif("UNIQUE")
+        )
+
+        assert reply == only_text(Dialogs.admin.media.removed(paths=str(path)))
+        assert not path.exists()
+        async with session_factory() as session:
+            assert await MediaRepository(session).get_by_path(str(path)) is None
+
+    async def test_unknown_gif(self, send, session_factory, tmp_path):
+        path = await self.stored_gif(session_factory, tmp_path)
+
+        (reply,) = await send(
+            "/remove_gif", uid=ADMIN, reply_to_uid=42, reply_extra=self.gif("OTHER")
+        )
+
+        assert reply == only_text(Dialogs.admin.media.remove_not_found())
+        assert path.exists()
+
+    async def test_without_reply_shows_usage(self, send):
+        assert await send("/remove_gif", uid=ADMIN) == [
+            only_text(Dialogs.admin.media.remove_usage())
+        ]
 
 
 class TestBroadcast:

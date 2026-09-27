@@ -88,12 +88,28 @@ admin:
     usage: |-
       Эта команда используется в ответ на гиф или видео: /add_gif <фраза или коллекция>
 
-      Фраза — ключ из src/bot/dialogs, например coffee.done. Если в папке гифок фразы есть подстановка, укажи её: /add_gif kagune.upgrade.done kagune=ukaku
+      Фраза — ключ из src/bot/dialogs, например coffee.done. Не помнишь ключ — напиши раздел, и бот покажет его фразы: /add_gif coffee
+      Если в папке гифок фразы есть подстановка, укажи её: /add_gif kagune.upgrade.done kagune=ukaku
+      Удалить гифку: ответь /remove_gif на сообщение с ней.
+    section: |-
+      Фразы раздела {section}:
+      {keys}
+
+      Выбери одну: /add_gif <фраза>
+    did_you_mean: 'Фразы {target} нет. Может, {options}?'
+    unknown_value: |-
+      Папки для {name}={value} у фразы {key} ещё нет. Уже есть: {known}.
+      Если это новое значение, а не опечатка, поставь «!» в конце: /add_gif {key} {name}={value}!
     missing_param: 'Для папки гифок фразы {key} нужна подстановка {name}: /add_gif {key} {name}=<значение>'
     no_media: В выбранном вами сообщении отсутствует гиф или видео
     unknown_collection: 'Фраза или коллекция {collection} не найдена. Фразы — ключи из src/bot/dialogs (например coffee.done), отдельные коллекции: {supported}'
     exists: Запись в базе данных с таким файлом уже существует
     saved: Это медиа успешно скачано в путь {path}
+    remove_usage: 'Ответь /remove_gif на сообщение с гифкой или видео, которое нужно удалить.'
+    remove_not_found: Этой гифки нет среди сохранённых. Если бот слал её давно, пусть пришлёт ещё раз, и ответь на новое сообщение.
+    removed: |-
+      🗑 Удалено:
+      {paths}
   profile:
     usage: 'Использование: /admin_profile <telegram_id или @username>'
     not_found: ❌ Пользователь не найден.

@@ -1,5 +1,6 @@
 import logging
 import random
+import re
 from dataclasses import dataclass
 from pathlib import Path
 
@@ -22,6 +23,8 @@ logger = logging.getLogger(__name__)
 class Gifs:
     folder: Path
     chance: float
+    # Подстановка, которая целиком задаёт последнюю папку (upgrade_kagune/{kagune}).
+    varying: str | None = None
 
 
 class DialogService:
@@ -50,11 +53,16 @@ class DialogService:
         # Значение подстановки могло бы увести путь из папки анимаций («..», «/»).
         if not folder.resolve().is_relative_to(root.resolve()):
             raise ValueError(f"{line.key}: папка гифок {folder} вне {root}")
-        return Gifs(folder, phrase.gif_chance)
+        last = re.fullmatch(r"\{(\w+)\}", phrase.gifs.rsplit("/", 1)[-1])
+        return Gifs(folder, phrase.gif_chance, last.group(1) if last else None)
 
     def has_phrase(self, key: str) -> bool:
         self._reload_if_changed()
         return key in self._phrases
+
+    def keys(self) -> list[str]:
+        self._reload_if_changed()
+        return sorted(self._phrases)
 
     def _phrase(self, line: Line) -> Phrase:
         self._reload_if_changed()

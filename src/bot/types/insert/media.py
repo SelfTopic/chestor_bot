@@ -8,3 +8,4 @@ class MediaInsert:
     collection: str
     path: str
     uploaded_by: int
+    file_unique_id: str | None = None

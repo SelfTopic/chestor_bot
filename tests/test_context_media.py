@@ -73,6 +73,7 @@ class TestAnswerAndReplyGif:
         _GIF = Media(
             media_type="animation",
             telegram_file_id="CACHED_ID",
+            file_unique_id="u",
             collection="test",
             path=str(gif_file),
             uploaded_by=1,
@@ -156,6 +157,7 @@ class TestAnswerAndReplyGif:
         _GIF = Media(
             media_type="animation",
             telegram_file_id="CACHED_ID",
+            file_unique_id="u",
             collection="test",
             path=str(gif_file),
             uploaded_by=1,

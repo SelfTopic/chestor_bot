@@ -15,6 +15,10 @@ class Media(Base):
 
     telegram_file_id: Mapped[str] = mapped_column(nullable=True)
 
+    # file_id одного файла в разных сообщениях бывает разным, file_unique_id постоянен:
+    # по нему /remove_gif находит гифку из ответа.
+    file_unique_id: Mapped[str | None] = mapped_column(nullable=True, index=True)
+
     collection: Mapped[str] = mapped_column(nullable=False)
 
     path: Mapped[str] = mapped_column(nullable=False)

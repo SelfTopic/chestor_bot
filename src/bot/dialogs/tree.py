@@ -136,6 +136,9 @@ class _AdminLevelUpDialogs:
 
 
 class _AdminMediaDialogs:
+    def did_you_mean(self, *, options: object, target: object) -> Line:
+        return Line("admin.media.did_you_mean", {"options": options, "target": target})
+
     def exists(self) -> Line:
         return Line("admin.media.exists", {})
 
@@ -145,8 +148,20 @@ class _AdminMediaDialogs:
     def no_media(self) -> Line:
         return Line("admin.media.no_media", {})
 
+    def remove_not_found(self) -> Line:
+        return Line("admin.media.remove_not_found", {})
+
+    def remove_usage(self) -> Line:
+        return Line("admin.media.remove_usage", {})
+
+    def removed(self, *, paths: object) -> Line:
+        return Line("admin.media.removed", {"paths": paths})
+
     def saved(self, *, path: object) -> Line:
         return Line("admin.media.saved", {"path": path})
+
+    def section(self, *, keys: object, section: object) -> Line:
+        return Line("admin.media.section", {"keys": keys, "section": section})
 
     def unknown_collection(self, *, collection: object, supported: object) -> Line:
         return Line(
@@ -154,6 +169,24 @@ class _AdminMediaDialogs:
             {
                 "collection": collection,
                 "supported": supported,
+            },
+        )
+
+    def unknown_value(
+        self,
+        *,
+        key: object,
+        known: object,
+        name: object,
+        value: object,
+    ) -> Line:
+        return Line(
+            "admin.media.unknown_value",
+            {
+                "key": key,
+                "known": known,
+                "name": name,
+                "value": value,
             },
         )
 
@@ -1792,11 +1825,17 @@ PLACEHOLDERS: dict[str, frozenset[str]] = {
     "admin.last_kagune": frozenset(),
     "admin.level_up.done": frozenset({"cheston", "level", "notified", "rc"}),
     "admin.level_up.usage": frozenset(),
+    "admin.media.did_you_mean": frozenset({"options", "target"}),
     "admin.media.exists": frozenset(),
     "admin.media.missing_param": frozenset({"key", "name"}),
     "admin.media.no_media": frozenset(),
+    "admin.media.remove_not_found": frozenset(),
+    "admin.media.remove_usage": frozenset(),
+    "admin.media.removed": frozenset({"paths"}),
     "admin.media.saved": frozenset({"path"}),
+    "admin.media.section": frozenset({"keys", "section"}),
     "admin.media.unknown_collection": frozenset({"collection", "supported"}),
+    "admin.media.unknown_value": frozenset({"key", "known", "name", "value"}),
     "admin.media.usage": frozenset(),
     "admin.profile.active": frozenset(),
     "admin.profile.ban": frozenset({"reason", "term"}),

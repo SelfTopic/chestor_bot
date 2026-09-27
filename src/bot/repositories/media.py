@@ -25,6 +25,7 @@ class MediaRepository(Base):
             .values(
                 media_type=media_insert.media_type,
                 telegram_file_id=media_insert.telegram_file_id,
+                file_unique_id=media_insert.file_unique_id,
                 collection=media_insert.collection,
                 path=media_insert.path,
                 uploaded_by=media_insert.uploaded_by,
@@ -34,6 +35,7 @@ class MediaRepository(Base):
                 set_={
                     "media_type": media_insert.media_type,
                     "telegram_file_id": media_insert.telegram_file_id,
+                    "file_unique_id": media_insert.file_unique_id,
                     "collection": media_insert.collection,
                     "path": media_insert.path,
                 },
@@ -81,15 +83,26 @@ class MediaRepository(Base):
 
         return result
 
-    async def update_file_id(self, path: str, new_file_id: str) -> Media:
-        stmt = (
-            update(Media)
-            .filter(Media.path == path)
-            .values({Media.telegram_file_id: new_file_id})
-        ).returning(Media)
+    async def update_file_id(
+        self, path: str, new_file_id: str, file_unique_id: str | None = None
+    ) -> Media:
+        values: dict[object, str] = {Media.telegram_file_id: new_file_id}
+        if file_unique_id is not None:
+            values[Media.file_unique_id] = file_unique_id
+        stmt = update(Media).filter(Media.path == path).values(values).returning(Media)
         media = await self.session.scalar(stmt)
 
         if not media:
             raise MediaNotFoundInDatabase()
 
         return media
+
+    async def find_by_file(self, file_unique_id: str, file_id: str) -> list[Media]:
+        stmt = select(Media).filter(
+            (Media.file_unique_id == file_unique_id)
+            | (Media.telegram_file_id == file_id)
+        )
+        return list(await self.session.scalars(stmt))
+
+    async def delete_by_ids(self, ids: list[int]) -> None:
+        await self.session.execute(delete(Media).filter(Media.id.in_(ids)))
