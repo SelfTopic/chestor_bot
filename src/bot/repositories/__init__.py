@@ -13,6 +13,7 @@ from .scheduled_notification import ScheduledNotificationRepository
 from .transfer import TransferRepository
 from .user import UserRepository
 from .user_coldown import UserCooldownRepository
+from .roast import PlayerFacts, RoastRepository
 from .rp_commands import RpCommandsRepository
 
 __all__ = [
@@ -32,4 +33,6 @@ __all__ = [
     "ScheduledNotificationRepository",
     "DeathLogRepository",
     "DuelSessionRepository",
+    "PlayerFacts",
+    "RoastRepository",
 ]

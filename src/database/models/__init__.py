@@ -14,6 +14,7 @@ from .scheduled_notification import ScheduledNotification
 from .transfer import Transfer
 from .user import User
 from .user_cooldowns import UserCooldown
+from .roast_log import RoastLog
 from .rp_commands import Rp
 
 __all__ = [
@@ -29,6 +30,7 @@ __all__ = [
     "Media",
     "Lottery",
     "Rp",
+    "RoastLog",
     "BalancesLog",
     "Transfer",
     "ScheduledNotification",
