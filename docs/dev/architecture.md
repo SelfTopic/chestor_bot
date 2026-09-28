@@ -44,7 +44,8 @@
   `SyncEntitiesMiddleware` (апсерт `User`/`Chat` в отдельной сессии), `BanMiddleware`.
 - **`routers/`** — только приём апдейтов и ответы. `RootRouter` в `routers/__init__.py`.
   - `common/` — команды, не завязанные на расу (профиль, баланс, переводы, вордли, RP,
-    лотерея, аниме, `fun/`: «бот выбери/кто/число», калькулятор).
+    лотерея, аниме, `fun/`: «бот выбери/кто/число», калькулятор). `roast_router.py` стоит
+    последним в `RootRouter`: огрызается нейросетью на то, что не забрала ни одна команда.
   - `ghoul_routers/` — механика гуля: голод, статы, кагуне, бои с мобами, дуэли (`duel/`),
     показ боя (`battle_text.py`, `battle_text_generator.py`).
   - `creator_routers/` — админ-команды (`ADMIN_IDS` проверяет middleware пакета).
@@ -64,6 +65,9 @@
   - Заметные одиночные файлы: `ghoul.py` (статы/голод/смерть/поедание), `level_up.py`,
     `battle_record.py` (история боёв и `ActiveBattle`-лок), `notification_ticker.py`
     (уведомления о голоде/здоровье), `broadcast.py`, `quiz.py`.
+  - `roast/` — огрызания через нейросеть (Cloud.ru Foundation Models): клиент `llm.py`,
+    `RoastService` (состояние споров, лимиты, фильтр, журнал `roast_log`) и `prompts/` —
+    характер, примеры и обращения в файлах, которые правятся без кода.
 - **`repositories/`** — только SQLAlchemy-запросы. Атомарные операции (`try_claim`,
   `atomic_update` с условным `WHERE ... RETURNING`) — устоявшийся паттерн вместо
   «прочитать, потом записать» везде, где есть риск гонки. `fight.py`, `user_names.py` —
