@@ -33,6 +33,7 @@ from .routers.ghoul_routers.duel import DuelTicker
 from .services.notification_ticker import NotificationTicker
 from .services.notify import NotifyError, SelfrotBotNotifier
 from .services.quiz import QuizService
+from .services.roast import LlmClient, RoastPrompts, RoastService
 
 logger = logging.getLogger(__name__)
 
@@ -98,6 +99,18 @@ class Dispatcher(BaseDispatcher[AppContext]):
             email=os.environ.get("GHOUL_QUIZ_EMAIL"),
             base_url=os.environ.get("GHOUL_QUIZ_API_URL", DEFAULT_QUIZ_URL),
         )
+        api_key = settings.LLM_API_KEY.get_secret_value()
+        self.llm = LlmClient(settings.LLM_BASE_URL, api_key)
+        self.roast_service = RoastService(
+            session_factory,
+            self.llm,
+            RoastPrompts(),
+            enabled=settings.ROAST_ENABLED and bool(api_key),
+            model=settings.ROAST_MODEL,
+            classifier_model=settings.ROAST_CLASSIFIER_MODEL,
+            daily_limit=settings.ROAST_DAILY_LIMIT,
+            timeout=settings.ROAST_TIMEOUT,
+        )
         self.duel_ticker = DuelTicker(
             session_factory=session_factory,
             bot=self.api,
@@ -130,6 +143,7 @@ class Dispatcher(BaseDispatcher[AppContext]):
             self.container,
             self.session_factory,
             self.quiz_service,
+            self.roast_service,
         )
 
     async def on_startup(self) -> None:
@@ -139,12 +153,15 @@ class Dispatcher(BaseDispatcher[AppContext]):
         await self.container.video_worker().start()
         await self.notification_ticker.start()
         await self.duel_ticker.start()
+        self.roast_service.bot_id = (await self.api.get_me()).id
+        await self.roast_service.cleanup()
 
     async def on_shutdown(self) -> None:
         await self.container.video_worker().stop()
         await self.notification_ticker.stop()
         await self.duel_ticker.stop()
         await self.quiz_service.close()
+        await self.llm.close()
 
     async def on_error(self, ctx: AppContext, exc: Exception) -> None:
         await super().on_error(ctx, exc)

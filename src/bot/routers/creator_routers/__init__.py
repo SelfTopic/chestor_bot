@@ -11,6 +11,7 @@ from .media import MediaRouter
 from .middleware import CreatorMiddleware
 from .players_lookup import PlayersLookupRouter
 from .reset import ResetRouter
+from .roast_rating import RoastRatingRouter
 from .stats_edits import StatsEditRouter
 
 
@@ -27,4 +28,5 @@ class CreatorRouter(BaseRouter[AppContext]):
         CooldownAdminRouter,
         BroadcastRouter,
         LevelUpRouter,
+        RoastRatingRouter,
     )

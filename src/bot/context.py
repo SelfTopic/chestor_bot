@@ -50,6 +50,7 @@ from .services.lookup import find_user
 from .services.media_paths import media_for, random_file
 from .services.notify import Notifier, SelfrotBotNotifier
 from .services.quiz import QuizService
+from .services.roast import RoastService
 
 logger = logging.getLogger(__name__)
 
@@ -72,6 +73,7 @@ class AppContext(BaseContext[TEvent]):
     container: Container
     session_factory: async_sessionmaker[AsyncSession]
     ghoul_quiz_service: QuizService
+    roast_service: RoastService
 
     @cached_property
     def user_service(self) -> UserService:
@@ -249,10 +251,21 @@ class AppContext(BaseContext[TEvent]):
         media = await self._phrase_gif(line) if len(text) <= CAPTION_LIMIT else None
         if media is not None:
             send_gif = self.reply_animation if reply else self.answer_animation
-            return await self._send_gif(send_gif, media, text, parse_mode=parse_mode)
+            return self._remember_addressee(
+                await self._send_gif(send_gif, media, text, parse_mode=parse_mode)
+            )
 
         send = self.reply_message if reply else self.answer_message
-        return await send(text, parse_mode=parse_mode)
+        return self._remember_addressee(await send(text, parse_mode=parse_mode))
+
+    # Огрызалке нужно знать, кому бот ответил: во вложенном реплае Telegram этого не пришлёт.
+    def _remember_addressee(self, sent: Message) -> Message:
+        event = self.event
+        if isinstance(event, Message) and event.user is not None:
+            self.roast_service.remember_bot_message(
+                event.chat.id, sent.message_id, event.user.first_name
+            )
+        return sent
 
     # Своя сессия: say() зовут и из on_error / defer, где сессии апдейта уже нет.
     async def _phrase_gif(self, line: Line) -> Media | None:

@@ -320,6 +320,20 @@ class _AdminResetDialogs:
         return Line("admin.reset.user_usage", {})
 
 
+class _AdminRoastDialogs:
+    def bad(self) -> Line:
+        return Line("admin.roast.bad", {})
+
+    def good(self) -> Line:
+        return Line("admin.roast.good", {})
+
+    def not_found(self) -> Line:
+        return Line("admin.roast.not_found", {})
+
+    def usage(self) -> Line:
+        return Line("admin.roast.usage", {})
+
+
 class _AdminStatsDialogs:
     def done(self, *, field: object, target: object, value: object) -> Line:
         return Line(
@@ -382,6 +396,7 @@ class _AdminDialogs:
     profile = _AdminProfileDialogs()
     progress = _AdminProgressDialogs()
     reset = _AdminResetDialogs()
+    roast = _AdminRoastDialogs()
     stats = _AdminStatsDialogs()
     unban = _AdminUnbanDialogs()
 
@@ -1376,6 +1391,11 @@ class _QuizDialogs:
         return Line("quiz.wrong", {})
 
 
+class _RoastDialogs:
+    def bored(self) -> Line:
+        return Line("roast.bored", {})
+
+
 class _RpDialogs:
     def created(self, *, action: object, command: object) -> Line:
         return Line("rp.created", {"action": action, "command": command})
@@ -1767,6 +1787,7 @@ class _Dialogs:
     notify = _NotifyDialogs()
     profile = _ProfileDialogs()
     quiz = _QuizDialogs()
+    roast = _RoastDialogs()
     rp = _RpDialogs()
     rules = _RulesDialogs()
     snap = _SnapDialogs()
@@ -1882,6 +1903,10 @@ PLACEHOLDERS: dict[str, frozenset[str]] = {
     "admin.reset.no_ghoul": frozenset(),
     "admin.reset.user_done": frozenset({"ghoul_deleted", "id"}),
     "admin.reset.user_usage": frozenset(),
+    "admin.roast.bad": frozenset(),
+    "admin.roast.good": frozenset(),
+    "admin.roast.not_found": frozenset(),
+    "admin.roast.usage": frozenset(),
     "admin.stats.done": frozenset({"field", "target", "value"}),
     "admin.stats.no_ghoul": frozenset(),
     "admin.stats.target_ghoul": frozenset(),
@@ -2141,6 +2166,7 @@ PLACEHOLDERS: dict[str, frozenset[str]] = {
     "quiz.play_again": frozenset(),
     "quiz.result": frozenset({"answer", "choice", "question", "status"}),
     "quiz.wrong": frozenset(),
+    "roast.bored": frozenset(),
     "rp.created": frozenset({"action", "command"}),
     "rp.delete_usage": frozenset(),
     "rp.deleted": frozenset({"command"}),
