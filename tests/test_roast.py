@@ -31,6 +31,7 @@ class FakeLlm:
         self.verdict = "да"
         self.reply = "Ага, поплачь. Только клаву не залей."
         self.fail_generation = False
+        self.busy_once = False
         self.requests: list[dict[str, Any]] = []
 
     def asked(self, model: str) -> list[str]:
@@ -41,6 +42,9 @@ class FakeLlm:
         self.requests.append(body)
         if body["model"] == GENERATOR and self.fail_generation:
             return web.json_response({"error": "boom"}, status=500)
+        if body["model"] == GENERATOR and self.busy_once:
+            self.busy_once = False
+            return web.json_response({"error": "TPM limit"}, status=429)
         content = self.verdict if body["model"] == CLASSIFIER else self.reply
         return web.json_response({"choices": [{"message": {"content": content}}]})
 
@@ -56,7 +60,7 @@ async def llm(dispatcher, session_factory, telegram) -> AsyncIterator[FakeLlm]:
     await site.start()
     port = runner.addresses[0][1]
 
-    client = LlmClient(f"http://127.0.0.1:{port}/v1", "key")
+    client = LlmClient(f"http://127.0.0.1:{port}/v1", "key", retry_delay=0)
     dispatcher.roast_service = RoastService(
         session_factory,
         client,
@@ -95,6 +99,16 @@ async def test_reply_to_bot_gets_generated_answer_and_is_logged(
     (row,) = await logged(session_factory)
     assert (row.message, row.reply, row.bot_message_id) == ("сам ты бомжиха", sent["text"], 100)
     assert "[в ответ боту]: сам ты бомжиха" in llm.asked(CLASSIFIER)[0]
+
+
+async def test_busy_provider_is_retried(feed, settle, telegram, llm):
+    llm.busy_once = True
+
+    await feed(insult("сам ты бомжиха"))
+    await settle()
+
+    assert telegram.sent == ["ага поплачь только клаву не залей"]
+    assert len(llm.asked(GENERATOR)) == 2
 
 
 async def test_message_to_someone_else_is_silent_and_not_logged(
