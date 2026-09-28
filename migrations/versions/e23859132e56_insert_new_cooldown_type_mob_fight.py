@@ -21,7 +21,7 @@ depends_on: Union[str, Sequence[str], None] = None
 
 
 def upgrade() -> None:
-    # 10 минут - BATTLE_DESIGN.md "Формула левел-апа" ("Фарм мобов (раз в
+    # 10 минут - docs/design/battle-design.md "Формула левел-апа" ("Фарм мобов (раз в
     # 10 минут...)").
     op.execute(
         insert(Cooldown)

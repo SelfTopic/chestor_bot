@@ -26,7 +26,7 @@ def test_apply_level_progress_overflow_discards_excess_not_carries():
 def test_apply_level_progress_huge_gain_still_gives_only_one_levelup():
     """Принятая эмерджентная механика - большой k за один бой может дать
     прирост намного выше 100%, но уровень всё равно поднимается максимум на
-    1 за раз, весь излишек просто теряется. См. BATTLE_DESIGN.md."""
+    1 за раз, весь излишек просто теряется. См. docs/design/battle-design.md."""
     progress, levels = apply_level_progress(current_progress=0.0, delta=250.0)
     assert progress == 0.0
     assert levels == 1

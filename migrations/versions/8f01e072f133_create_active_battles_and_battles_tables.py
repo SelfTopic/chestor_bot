@@ -22,7 +22,7 @@ def upgrade() -> None:
     """Upgrade schema."""
     # active_battles - эфемерный лок "занят прямо сейчас" (PK = telegram_id,
     # не отдельный id) - не даёт гулю оказаться в двух боях одновременно
-    # (см. BATTLE_ENGINE.md, чат про эксплойт "твинк + бой с мобом
+    # (см. docs/design/battle-engine.md, чат про эксплойт "твинк + бой с мобом
     # одновременно"). Строки удаляются, когда бой разрешён.
     op.create_table(
         "active_battles",
@@ -42,7 +42,7 @@ def upgrade() -> None:
         sa.PrimaryKeyConstraint("telegram_id"),
     )
 
-    # battles - постоянная история (BATTLE_ENGINE.md 5.1) - и дуэлей, и
+    # battles - постоянная история (docs/design/battle-engine.md 5.1) - и дуэлей, и
     # боёв с мобами. participant_b_telegram_id/mob_name взаимоисключающие
     # по смыслу (дуэль/моб).
     op.create_table(

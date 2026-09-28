@@ -75,7 +75,7 @@ def test_effective_stats_no_kagune_no_kakuja_full_hunger_is_unchanged():
 
 def test_effective_health_can_exceed_vacuum_max_health_when_kagune_boosts_it():
     # Бикаку 1.4x health - гуль 1000/1000 может честно начать бой с 1400
-    # эффективного HP, см. BATTLE_ENGINE.md 1.3.
+    # эффективного HP, см. docs/design/battle-engine.md 1.3.
     snapshot = make_snapshot(health=1000, kagune_strength={KaguneType.BIKAKU: 100}, hunger=100)
     stats = compute_effective_stats(snapshot)
     assert stats.health == pytest.approx(1400)

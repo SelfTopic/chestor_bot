@@ -151,7 +151,7 @@ async def test_record_mob_fight_persists_forced_flag_and_rewards(
     assert battle.is_forced is True
     assert battle.reward_level_progress == 0.2
     assert battle.reward_rc == 2
-    # reward_balance здесь - CheSton-награда за победу (ECONOMY.md часть 4),
+    # reward_balance здесь - CheSton-награда за победу (docs/design/economy.md часть 4),
     # НЕ "ограбление" (тому нечего отбирать - у моба нет строки User).
     assert battle.reward_balance == 1800
     assert battle.winner_choice is None
@@ -202,7 +202,7 @@ async def test_count_total_last_24h_is_zero_with_no_history(battle_record_servic
     assert await battle_record_service.count_total_last_24h(500_000_014) == 0
 
 
-# --- Счётчики побед/поражений для профиля (BATTLE_ENGINE.md 5.2) -----------
+# --- Счётчики побед/поражений для профиля (docs/design/battle-engine.md 5.2) -----------
 
 
 async def test_count_wins_losses_total_for_duels(battle_record_service, make_user):

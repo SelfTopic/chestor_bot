@@ -46,7 +46,7 @@ Postgres + SQLAlchemy (async), миграции Alembic, запуск в Docker 
 
 ## Устройство бота
 
-Карта папок — в `ARCHITECTURE.md`. Правила:
+Карта папок — в `docs/dev/architecture.md`. Правила:
 
 **Зависимости — через `AppContext`** (`context.py`). Сервисы там — типизированные ленивые
 `cached_property`, один экземпляр на апдейт: `self.ctx.transfer_service`, `self.ctx.ghoul_service`.
@@ -140,7 +140,7 @@ generic-миксин она молча отключилась бы.
 `BOT_TOKEN`. `ENV=DEV` — polling, иначе вебхук на 8999 (`WEBHOOK_URL`, `WEBHOOK_SECRET`).
 Тестовый стенд — тот же сервис в отдельном проекте (`docker compose -p chestor_test …`)
 со своим `.env`: токен тестового бота. Как поднять бота в облачной сессии и проверить
-изменения вживую — `docs/dev-session.md`.
+изменения вживую — `docs/dev/dev-session.md`.
 
 ## Проверки
 

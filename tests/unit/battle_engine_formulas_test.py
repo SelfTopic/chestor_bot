@@ -64,12 +64,12 @@ def test_dodge_chance_weaker_gets_base_stronger_gets_scaled():
 def test_extra_hit_percent_matches_worked_examples_from_battle_engine_doc(
     monkeypatch: pytest.MonkeyPatch,
 ):
-    # Значения из BATTLE_ENGINE.md 1.4 (50/100, 5/10) относятся к "сырому"
+    # Значения из docs/design/battle-engine.md 1.4 (50/100, 5/10) относятся к "сырому"
     # diff_ratio - exponent=1.0 (без сжатия под целевую кривую перевеса
     # силы, см. game_configs.py) воспроизводит их буквально.
     monkeypatch.setattr(BATTLE_CONFIG, "stat_sensitivity_exponent", 1.0)
 
-    # speed 10 vs 20 -> медленный 50%, быстрый 100% (BATTLE_ENGINE.md 1.4)
+    # speed 10 vs 20 -> медленный 50%, быстрый 100% (docs/design/battle-engine.md 1.4)
     assert extra_hit_percent(speed_defender=20, speed_attacker=10) == pytest.approx(50.0)
     assert extra_hit_percent(speed_defender=10, speed_attacker=20) == pytest.approx(100.0)
 

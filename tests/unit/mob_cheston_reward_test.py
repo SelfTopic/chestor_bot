@@ -21,7 +21,7 @@ def test_cheston_reward_for_mob_win_stays_within_the_configured_multiplier_range
 
 
 def test_cheston_reward_for_mob_win_grows_with_level():
-    # ECONOMY.md часть 4 - награда привязана к уровню (как LEVEL_UP_CONFIG),
+    # docs/design/economy.md часть 4 - награда привязана к уровню (как LEVEL_UP_CONFIG),
     # а не фиксированное число - выше уровень должен стабильно давать больше.
     low_level_rewards = [MOB_CONFIG.cheston_reward_for_mob_win(1) for _ in range(30)]
     high_level_rewards = [MOB_CONFIG.cheston_reward_for_mob_win(20) for _ in range(30)]
