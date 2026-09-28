@@ -37,5 +37,13 @@ class BadRoastHandler(RateRoastHandler, MessageHandler[AppContext[TextUserMessag
     done = Dialogs.admin.roast.bad()
 
 
+class RoastResetHandler(MessageHandler[AppContext[TextUserMessage]]):
+    query = Command("roast_reset") & HasUser()
+
+    async def handle(self) -> None:
+        count = self.ctx.roast_service.reset_chat(self.ctx.message.chat.id)
+        await self.ctx.say(Dialogs.admin.roast.reset(count=count), reply=True)
+
+
 class RoastRatingRouter(BaseRouter[AppContext]):
-    handlers = (GoodRoastHandler, BadRoastHandler)
+    handlers = (GoodRoastHandler, BadRoastHandler, RoastResetHandler)

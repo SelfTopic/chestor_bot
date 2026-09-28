@@ -149,6 +149,13 @@ async def test_long_argument_ends_with_bored_phrase_and_silence(
     assert answers[3] == []
     assert len(llm.asked(GENERATOR)) == 2
 
+    monkeypatch.setattr(settings, "ADMIN_IDS", [ADMIN])
+    await feed(message_update("/roast_reset", uid=ADMIN, chat=GROUP))
+    assert telegram.sent == [only_text(Dialogs.admin.roast.reset(count=1))]
+    await feed(insult("бот ты тупой"))
+    await settle()
+    assert telegram.sent == ["ага поплачь только клаву не залей"]
+
 
 async def test_admin_rates_a_roast(feed, settle, telegram, llm, session_factory, monkeypatch):
     monkeypatch.setattr(settings, "ADMIN_IDS", [ADMIN])

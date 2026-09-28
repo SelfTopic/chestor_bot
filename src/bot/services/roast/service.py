@@ -158,6 +158,12 @@ class RoastService:
         addressee, quarrel = self._bot_messages.get((chat_id, message_id), (None, False))
         return Replied(text=text, addressee=addressee, quarrel=quarrel)
 
+    def reset_chat(self, chat_id: int) -> int:
+        keys = [key for key in self._arguments if key[0] == chat_id]
+        for key in keys:
+            del self._arguments[key]
+        return len(keys)
+
     def is_bot(self, user_id: int) -> bool:
         return self.bot_id is not None and user_id == self.bot_id
 

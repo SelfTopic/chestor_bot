@@ -330,6 +330,9 @@ class _AdminRoastDialogs:
     def not_found(self) -> Line:
         return Line("admin.roast.not_found", {})
 
+    def reset(self, *, count: object) -> Line:
+        return Line("admin.roast.reset", {"count": count})
+
     def usage(self) -> Line:
         return Line("admin.roast.usage", {})
 
@@ -1906,6 +1909,7 @@ PLACEHOLDERS: dict[str, frozenset[str]] = {
     "admin.roast.bad": frozenset(),
     "admin.roast.good": frozenset(),
     "admin.roast.not_found": frozenset(),
+    "admin.roast.reset": frozenset({"count"}),
     "admin.roast.usage": frozenset(),
     "admin.stats.done": frozenset({"field", "target", "value"}),
     "admin.stats.no_ghoul": frozenset(),
