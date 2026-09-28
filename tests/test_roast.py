@@ -173,3 +173,13 @@ async def test_model_sees_whom_the_bot_answered(feed, settle, llm):
     await settle()
 
     assert "бот → Петя: чо надо" in llm.asked(CLASSIFIER)[0]
+
+
+async def test_reply_to_someone_elses_quarrel_is_marked(feed, settle, llm):
+    await feed(message_update("бот ты тупой", uid=8, first_name="Петя", chat=GROUP))
+    await settle()
+    comeback = {"message_id": 100, "text": llm.reply}
+    await feed(insult("хуйло алё", reply_extra=comeback))
+    await settle()
+
+    assert f"бот → Петя (перепалка): {llm.reply}" in llm.asked(CLASSIFIER)[1]

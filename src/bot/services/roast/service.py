@@ -25,7 +25,8 @@ HISTORY_LIMIT = 3
 EXAMPLES_PER_REQUEST = 4
 GOOD_EXAMPLES_PER_REQUEST = 2
 INSULTS_PER_REQUEST = 4
-FACTS_PER_REQUEST = 2
+NO_FACTS_CHANCE = 0.35
+TURNS_FACT_CHANCE = 0.2
 BOT_MESSAGES_KEPT = 5000
 LOG_RETENTION = timedelta(days=180)
 
@@ -34,7 +35,8 @@ NAME_CALL = re.compile(r"^\s*(бот|честор)\b", re.IGNORECASE)
 BANNED = re.compile(
     r"(?<!на )\bхуй\b|пид[оа]р|пидр|хох[оа]?л|чурк|жид|нигер|негр|хач|\bдаун|аутист|\bгей"
     r"|ебу тво|изнасил|опущ|дыряв|сдохни|убей себя|у\w{0,2}бейся|выпились|вскройся|повесься"
-    r"|суицид",
+    r"|суицид|украин|русск|москал|кацап|хохл|еврей|армян|грузин|таджик|узбек|чечен|цыган"
+    r"|крым|донбас|зеленск|путин|\bсво\b",
     re.IGNORECASE,
 )
 
@@ -43,6 +45,7 @@ BANNED = re.compile(
 class Replied:
     text: str
     addressee: str | None
+    quarrel: bool = False
 
 
 @dataclass(frozen=True)
@@ -89,9 +92,10 @@ def fact_lines(facts: PlayerFacts | None, turns: int) -> list[str]:
             lines.append(f"пил кофе {facts.coffee_count} раз")
         if facts.deaths:
             lines.append(f"умирал {facts.deaths} раз")
-    # Все факты разом делают ответы однообразными: каждый раз цепляется «уровень N».
-    picked = random.sample(lines, min(FACTS_PER_REQUEST, len(lines)))
-    if turns >= 2:
+    # С фактом в каждом запросе модель цепляется за одно и то же («первый уровень»,
+    # «N сообщений»), поэтому факт один, не всегда, а счётчик сообщений — изредка.
+    picked = random.sample(lines, 1) if lines and random.random() >= NO_FACTS_CHANCE else []
+    if turns >= 2 and random.random() < TURNS_FACT_CHANCE:
         picked.append(f"пишет тебе уже {turns + 1}-е сообщение в этом споре")
     return picked
 
@@ -104,6 +108,8 @@ def render_chat(incoming: Incoming, history: list[RoastLog]) -> str:
     replied = incoming.replied
     if replied is not None and not (history and history[-1].reply == replied.text):
         speaker = f"бот → {replied.addressee}" if replied.addressee else "бот"
+        if replied.quarrel:
+            speaker += " (перепалка)"
         lines.append(f"{speaker}: {replied.text}")
     suffix = " [в ответ боту]" if replied is not None else ""
     last = f"{incoming.first_name}{suffix}: {incoming.text}"
@@ -137,17 +143,20 @@ class RoastService:
         self._arguments: dict[tuple[int, int], Argument] = {}
         self._locks: dict[tuple[int, int], asyncio.Lock] = {}
         # Кому бот отвечал своим сообщением: Telegram не присылает вложенные реплаи.
-        self._bot_messages: OrderedDict[tuple[int, int], str] = OrderedDict()
+        self._bot_messages: OrderedDict[tuple[int, int], tuple[str, bool]] = OrderedDict()
         self._spent_on = date.today()
         self._spent = 0
 
-    def remember_bot_message(self, chat_id: int, message_id: int, addressee: str) -> None:
-        self._bot_messages[(chat_id, message_id)] = addressee
+    def remember_bot_message(
+        self, chat_id: int, message_id: int, addressee: str, *, quarrel: bool = False
+    ) -> None:
+        self._bot_messages[(chat_id, message_id)] = (addressee, quarrel)
         if len(self._bot_messages) > BOT_MESSAGES_KEPT:
             self._bot_messages.popitem(last=False)
 
-    def addressee_of(self, chat_id: int, message_id: int) -> str | None:
-        return self._bot_messages.get((chat_id, message_id))
+    def replied(self, chat_id: int, message_id: int, text: str) -> Replied:
+        addressee, quarrel = self._bot_messages.get((chat_id, message_id), (None, False))
+        return Replied(text=text, addressee=addressee, quarrel=quarrel)
 
     def is_bot(self, user_id: int) -> bool:
         return self.bot_id is not None and user_id == self.bot_id
@@ -236,7 +245,7 @@ class RoastService:
         return RoastOutcome(reply=reply, log_id=log_id)
 
     async def sent(self, chat_id: int, message_id: int, addressee: str, log_id: int) -> None:
-        self.remember_bot_message(chat_id, message_id, addressee)
+        self.remember_bot_message(chat_id, message_id, addressee, quarrel=True)
         async with self._session_factory() as session:
             await RoastRepository(session).set_bot_message(log_id, message_id)
             await session.commit()

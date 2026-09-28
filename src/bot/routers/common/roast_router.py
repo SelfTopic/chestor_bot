@@ -2,7 +2,7 @@ from selfrot import BaseRouter, MessageHandler
 from selfrot.filter import HasText, HasUser
 
 from src.bot.dialogs import Dialogs
-from src.bot.services.roast import Incoming, Replied
+from src.bot.services.roast import Incoming
 
 from ...context import AppContext
 from ..types import TextUserMessage
@@ -33,9 +33,8 @@ class RoastHandler(MessageHandler[AppContext[TextUserMessage]]):
             telegram_id=message.user.id,
             first_name=message.user.first_name,
             text=message.text,
-            replied=Replied(
-                text=replied.text or replied.caption or "",
-                addressee=roast.addressee_of(message.chat.id, replied.message_id),
+            replied=roast.replied(
+                message.chat.id, replied.message_id, replied.text or replied.caption or ""
             )
             if replied is not None and to_bot
             else None,
