@@ -121,6 +121,7 @@ async def test_message_to_someone_else_is_silent_and_not_logged(
 
     assert telegram.bodies("sendMessage") == []
     assert await logged(session_factory) == []
+    assert llm.asked(GENERATOR) == []
 
 
 async def test_plain_chat_does_not_reach_the_model(feed, settle, llm):
@@ -129,6 +130,17 @@ async def test_plain_chat_does_not_reach_the_model(feed, settle, llm):
     await settle()
 
     assert llm.requests == []
+
+
+async def test_laughter_in_an_argument_does_not_reach_the_model(feed, settle, llm):
+    await feed(insult("сам ты бомжиха"))
+    await settle()
+    asked = len(llm.requests)
+
+    await feed(message_update("ахахахаха", chat=GROUP))
+    await settle()
+
+    assert len(llm.requests) == asked
 
 
 @pytest.mark.parametrize("broken", ["filtered", "failed"])

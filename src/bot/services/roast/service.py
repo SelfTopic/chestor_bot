@@ -22,6 +22,7 @@ ARGUMENT_WINDOW = 180.0
 MAX_TURNS = 15
 SILENCE = 1800.0
 HISTORY_LIMIT = 3
+CLASSIFY_TIMEOUT = 8.0
 EXAMPLES_PER_REQUEST = 4
 GOOD_EXAMPLES_PER_REQUEST = 2
 INSULTS_PER_REQUEST = 4
@@ -31,6 +32,11 @@ BOT_MESSAGES_KEPT = 5000
 LOG_RETENTION = timedelta(days=180)
 
 NAME_CALL = re.compile(r"^\s*(бот|честор)\b", re.IGNORECASE)
+# Смех и междометия посреди спора: их не стоит даже классифицировать.
+TRIVIAL = re.compile(
+    r"^[\W\d_]*$|^\W*(?:[хаъ]{3,}|лол|кек|ору|бля|ну|пон|ок|жесть|а+|о+|э+|м+|чт?о+)[\W]*$",
+    re.IGNORECASE,
+)
 # Модель держит запреты не всегда: то, что она пропустила, режется здесь.
 BANNED = re.compile(
     r"(?<!на )\bхуй\b|пид[оа]р|пидр|хох[оа]?л|чурк|жид|нигер|негр|хач|\bдаун|аутист|\bгей"
@@ -174,8 +180,10 @@ class RoastService:
         now = self._clock()
         if argument is not None and argument.silent_until > now:
             return False
+        if replied_to_bot or NAME_CALL.match(text) is not None:
+            return True
         in_argument = argument is not None and now - argument.last_at < ARGUMENT_WINDOW
-        return replied_to_bot or in_argument or NAME_CALL.match(text) is not None
+        return in_argument and TRIVIAL.match(text) is None
 
     async def respond(self, incoming: Incoming) -> RoastOutcome:
         key = (incoming.chat_id, incoming.telegram_id)
@@ -195,8 +203,6 @@ class RoastService:
             argument.silent_until = now + SILENCE
             argument.turns = 0
             return RoastOutcome(bored=True)
-        if not self._spend():
-            return RoastOutcome()
 
         async with self._session_factory() as session:
             repository = RoastRepository(session)
@@ -216,10 +222,12 @@ class RoastService:
         facts_text = "; ".join(fact_lines(facts, argument.turns))
         request = self._request(chat, facts_text, good)
 
-        started = time.monotonic()
-        verdict, reply = await self._ask(chat, request)
-        if not verdict:
+        # Сначала бесплатный классификатор: генерация оплачивается целиком по входным токенам,
+        # даже если её отменить, а большинство сообщений в споре адресованы не боту.
+        if not await self._addressed_to_bot(chat) or not self._spend():
             return RoastOutcome()
+        started = time.monotonic()
+        reply = await self._generate(request)
         latency_ms = int((time.monotonic() - started) * 1000)
 
         reply = chat_style(reply) if reply else None
@@ -289,43 +297,26 @@ class RoastService:
             .replace("{facts}", f"Что ты знаешь о собеседнике: {facts}" if facts else "")
         )
 
-    async def _ask(self, chat: str, request: str) -> tuple[bool, str | None]:
-        # Ответ генерируется одновременно с решением «к боту ли это»: иначе ждать пришлось бы
-        # оба запроса подряд. Если сообщение не к боту, генерация отменяется.
-        classify = asyncio.create_task(
-            self._llm.complete(
-                self._classifier_model, self._prompts.classify, chat, max_tokens=3, temperature=0.0
-            )
-        )
-        generate = asyncio.create_task(
-            self._llm.complete(
-                self._model, self._prompts.persona, request, max_tokens=120, temperature=0.9
-            )
-        )
-        # Результат брошенной задачи никто не заберёт, а её ошибка иначе ушла бы в лог asyncio.
-        for task in (classify, generate):
-            task.add_done_callback(lambda t: t.cancelled() or t.exception())
+    async def _addressed_to_bot(self, chat: str) -> bool:
+        try:
+            async with asyncio.timeout(CLASSIFY_TIMEOUT):
+                verdict = await self._llm.complete(
+                    self._classifier_model, self._prompts.classify, chat, max_tokens=3, temperature=0.0
+                )
+        except (LlmError, TimeoutError):
+            logger.warning("Классификатор огрызаний не ответил", exc_info=True)
+            return False
+        return verdict.lower().startswith("да")
+
+    async def _generate(self, request: str) -> str | None:
         try:
             async with asyncio.timeout(self._timeout):
-                try:
-                    verdict = await classify
-                except LlmError:
-                    logger.warning("Классификатор огрызаний не ответил", exc_info=True)
-                    return False, None
-                if not verdict.lower().startswith("да"):
-                    return False, None
-                try:
-                    return True, await generate
-                except LlmError:
-                    logger.warning("Модель огрызаний не ответила", exc_info=True)
-                    return True, None
-        except TimeoutError:
-            logger.warning("Огрызание не уложилось в %s с", self._timeout)
-            return classify.done() and not classify.cancelled(), None
-        finally:
-            for task in (classify, generate):
-                task.cancel()
-
+                return await self._llm.complete(
+                    self._model, self._prompts.persona, request, max_tokens=120, temperature=0.9
+                )
+        except (LlmError, TimeoutError):
+            logger.warning("Модель огрызаний не ответила", exc_info=True)
+            return None
 
 __all__ = [
     "Incoming",
