@@ -4,12 +4,13 @@ import time
 
 import pytest
 from ghoul_quiz import Question, TokenManager, TokenPair
+from ghoul_quiz.errors import RateLimitError
 
 from src.bot.dialogs import Dialogs
-from src.bot.exceptions import QuizEmailMissing, QuizSessionMissing
+from src.bot.exceptions import QuizBusy, QuizEmailMissing, QuizSessionMissing
 from src.bot.services.quiz import QuizService
 
-from .conftest import only_text
+from .conftest import only_text, phrase_texts
 from .test_common_routers import seed
 from .test_ghoul_routers import seed_ghoul
 
@@ -117,3 +118,24 @@ async def test_quiz_without_session_answers_global_error(
     (error,) = dispatcher.errors
     assert isinstance(error, QuizEmailMissing)
     dispatcher.errors.clear()  # ошибка ожидаемая
+
+
+async def test_rate_limited_quiz_asks_to_wait(dispatcher, send, session_factory, monkeypatch):
+    save_session()
+    quiz = QuizService(email=EMAIL, base_url=URL)
+
+    async def limited() -> Question:
+        raise RateLimitError(429, "Слишком много запросов", headers={"Retry-After": "30"})
+
+    quiz._api.get_random_question = limited  # type: ignore[method-assign]
+    monkeypatch.setattr(dispatcher, "quiz_service", quiz)
+    await seed(session_factory, 700001)
+    await seed_ghoul(session_factory, 700001)
+
+    (reply,) = await send("/quiz", uid=700001)
+
+    assert reply in phrase_texts(Dialogs.errors.quiz.busy(seconds=30))
+    (error,) = dispatcher.errors
+    assert isinstance(error, QuizBusy)
+    dispatcher.errors.clear()  # ошибка ожидаемая
+    await quiz.close()

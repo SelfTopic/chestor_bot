@@ -831,6 +831,9 @@ class _ErrorsChatTextLengthDialogs:
 
 
 class _ErrorsQuizDialogs:
+    def busy(self, *, seconds: object) -> Line:
+        return Line("errors.quiz.busy", {"seconds": seconds})
+
     def email_missing(self) -> Line:
         return Line("errors.quiz.email_missing", {})
 
@@ -2026,6 +2029,7 @@ PLACEHOLDERS: dict[str, frozenset[str]] = {
     "errors.ghoul_not_found": frozenset(),
     "errors.media_not_found": frozenset(),
     "errors.not_enough_money": frozenset({"money"}),
+    "errors.quiz.busy": frozenset({"seconds"}),
     "errors.quiz.email_missing": frozenset(),
     "errors.quiz.session_missing": frozenset({"email"}),
     "errors.unexpected": frozenset({"error"}),

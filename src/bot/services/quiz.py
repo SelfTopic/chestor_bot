@@ -1,6 +1,13 @@
-from ghoul_quiz import DEFAULT_BASE_URL, Answer, GhoulQuizAPI, Question
+import logging
 
-from ..exceptions import QuizEmailMissing, QuizSessionMissing
+from ghoul_quiz import DEFAULT_BASE_URL, Answer, GhoulQuizAPI, Question
+from ghoul_quiz.errors import RateLimitError
+
+from ..exceptions import QuizBusy, QuizEmailMissing, QuizSessionMissing
+
+logger = logging.getLogger(__name__)
+
+DEFAULT_RETRY_AFTER = 60
 
 
 class QuizService:
@@ -20,11 +27,23 @@ class QuizService:
 
     async def get_random_quiz(self) -> Question:
         self._ensure_session()
-        return await self._api.get_random_question()
+        try:
+            return await self._api.get_random_question()
+        except RateLimitError as exc:
+            raise self._busy(exc) from exc
 
     async def get_answer_by_id(self, question_id: int) -> Answer:
         self._ensure_session()
-        return await self._api.get_answer(question_id=question_id)
+        try:
+            return await self._api.get_answer(question_id=question_id)
+        except RateLimitError as exc:
+            raise self._busy(exc) from exc
+
+    def _busy(self, exc: RateLimitError) -> QuizBusy:
+        # У API два лимита с одним текстом ошибки (на IP в минуту и на аккаунт в час):
+        # какой сработал, видно только по заголовку политики.
+        logger.warning("Квиз ответил 429, политика: %s", exc.headers.get("RateLimit-Policy"))
+        return QuizBusy(exc.retry_after or DEFAULT_RETRY_AFTER)
 
     async def close(self) -> None:
         await self._api.close()
