@@ -263,7 +263,7 @@ class AppContext(BaseContext[TEvent]):
         event = self.event
         if isinstance(event, Message) and event.user is not None:
             self.roast_service.remember_bot_message(
-                event.chat.id, sent.message_id, event.user.first_name
+                event.chat.id, sent.message_id, event.user.id, event.user.first_name
             )
         return sent
 

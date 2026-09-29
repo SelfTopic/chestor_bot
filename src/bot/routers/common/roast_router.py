@@ -54,7 +54,7 @@ class RoastHandler(MessageHandler[AppContext[TextUserMessage]]):
             return
 
         sent = await self.ctx.message.reply(outcome.reply)
-        await roast.sent(incoming.chat_id, sent.message_id, incoming.first_name, outcome.log_id)
+        await roast.sent(incoming.chat_id, sent.message_id, incoming, outcome.log_id)
 
 
 class RoastRouter(BaseRouter[AppContext]):

@@ -48,10 +48,18 @@ BANNED = re.compile(
 
 
 @dataclass(frozen=True)
+class BotMessage:
+    addressee_id: int
+    addressee: str
+    quarrel: bool
+
+
+@dataclass(frozen=True)
 class Replied:
     text: str
     addressee: str | None
     quarrel: bool = False
+    addressee_id: int | None = None
 
 
 @dataclass(frozen=True)
@@ -106,6 +114,14 @@ def fact_lines(facts: PlayerFacts | None, turns: int) -> list[str]:
     return picked
 
 
+def obviously_to_bot(incoming: Incoming) -> bool:
+    replied = incoming.replied
+    own_quarrel = (
+        replied is not None and replied.quarrel and replied.addressee_id == incoming.telegram_id
+    )
+    return own_quarrel or NAME_CALL.match(incoming.text) is not None
+
+
 def render_chat(incoming: Incoming, history: list[RoastLog]) -> str:
     lines: list[str] = []
     for row in history:
@@ -149,20 +165,28 @@ class RoastService:
         self._arguments: dict[tuple[int, int], Argument] = {}
         self._locks: dict[tuple[int, int], asyncio.Lock] = {}
         # Кому бот отвечал своим сообщением: Telegram не присылает вложенные реплаи.
-        self._bot_messages: OrderedDict[tuple[int, int], tuple[str, bool]] = OrderedDict()
+        self._bot_messages: OrderedDict[tuple[int, int], BotMessage] = OrderedDict()
         self._spent_on = date.today()
         self._spent = 0
 
     def remember_bot_message(
-        self, chat_id: int, message_id: int, addressee: str, *, quarrel: bool = False
+        self,
+        chat_id: int,
+        message_id: int,
+        addressee_id: int,
+        addressee: str,
+        *,
+        quarrel: bool = False,
     ) -> None:
-        self._bot_messages[(chat_id, message_id)] = (addressee, quarrel)
+        self._bot_messages[(chat_id, message_id)] = BotMessage(addressee_id, addressee, quarrel)
         if len(self._bot_messages) > BOT_MESSAGES_KEPT:
             self._bot_messages.popitem(last=False)
 
     def replied(self, chat_id: int, message_id: int, text: str) -> Replied:
-        addressee, quarrel = self._bot_messages.get((chat_id, message_id), (None, False))
-        return Replied(text=text, addressee=addressee, quarrel=quarrel)
+        known = self._bot_messages.get((chat_id, message_id))
+        if known is None:
+            return Replied(text=text, addressee=None)
+        return Replied(text, known.addressee, known.quarrel, known.addressee_id)
 
     def reset_chat(self, chat_id: int) -> int:
         keys = [key for key in self._arguments if key[0] == chat_id]
@@ -222,9 +246,12 @@ class RoastService:
         facts_text = "; ".join(fact_lines(facts, argument.turns))
         request = self._request(chat, facts_text, good)
 
-        # Сначала бесплатный классификатор: генерация оплачивается целиком по входным токенам,
-        # даже если её отменить, а большинство сообщений в споре адресованы не боту.
-        if not await self._addressed_to_bot(chat) or not self._spend():
+        # Сначала классификатор (в десятки раз дешевле генерации): генерация оплачивается по
+        # входным токенам, даже если её отменить, а большинство сообщений в споре — не боту.
+        # Когда адресат очевиден, классификатор не нужен вовсе.
+        if not (obviously_to_bot(incoming) or await self._addressed_to_bot(chat)):
+            return RoastOutcome()
+        if not self._spend():
             return RoastOutcome()
         started = time.monotonic()
         reply = await self._generate(request)
@@ -258,8 +285,10 @@ class RoastService:
         argument.last_log_id = log_id
         return RoastOutcome(reply=reply, log_id=log_id)
 
-    async def sent(self, chat_id: int, message_id: int, addressee: str, log_id: int) -> None:
-        self.remember_bot_message(chat_id, message_id, addressee, quarrel=True)
+    async def sent(self, chat_id: int, message_id: int, incoming: Incoming, log_id: int) -> None:
+        self.remember_bot_message(
+            chat_id, message_id, incoming.telegram_id, incoming.first_name, quarrel=True
+        )
         async with self._session_factory() as session:
             await RoastRepository(session).set_bot_message(log_id, message_id)
             await session.commit()

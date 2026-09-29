@@ -208,11 +208,17 @@ async def test_model_sees_whom_the_bot_answered(feed, settle, llm):
     assert "бот → Петя: чо надо" in llm.asked(CLASSIFIER)[0]
 
 
-async def test_reply_to_someone_elses_quarrel_is_marked(feed, settle, llm):
+async def test_only_unclear_messages_go_to_the_classifier(feed, settle, llm):
+    # «бот …» и ответ на огрызание, адресованное тебе же, — к боту без вопросов;
+    # ответ третьего человека на чужую перепалку — спорный, его решает классификатор.
     await feed(message_update("бот ты тупой", uid=8, first_name="Петя", chat=GROUP))
     await settle()
     comeback = {"message_id": 100, "text": llm.reply}
+    await feed(insult("а ты кто", uid=8, first_name="Петя", reply_extra=comeback))
+    await settle()
     await feed(insult("хуйло алё", reply_extra=comeback))
     await settle()
 
-    assert f"бот → Петя (перепалка): {llm.reply}" in llm.asked(CLASSIFIER)[1]
+    (asked,) = llm.asked(CLASSIFIER)
+    assert f"бот → Петя (перепалка): {llm.reply}" in asked
+    assert len(llm.asked(GENERATOR)) == 3
