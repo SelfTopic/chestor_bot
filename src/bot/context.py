@@ -2,12 +2,12 @@ import logging
 import random
 import time
 from collections.abc import Awaitable, Callable, Collection
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from functools import cached_property
 
 from selfrot import BaseContext, TEvent
 from selfrot.exceptions import TelegramBadRequest
-from selfrot.types import InputFile, Message
+from selfrot.types import ChatMember, InputFile, Message
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 
 from src.bot.containers import Container
@@ -75,6 +75,9 @@ class AppContext(BaseContext[TEvent]):
     session_factory: async_sessionmaker[AsyncSession]
     ghoul_quiz_service: QuizService
     roast_service: RoastService
+    _administrators: list[ChatMember] | None = field(
+        default=None, init=False, repr=False, compare=False
+    )
 
     @cached_property
     def user_service(self) -> UserService:
@@ -199,6 +202,15 @@ class AppContext(BaseContext[TEvent]):
 
     def text(self, line: Line) -> str:
         return self.dialog_service.text(line)
+
+    # Список админов нужен и фильтру, и хендлеру одного апдейта: запрос к Telegram один.
+    async def chat_administrators(self) -> list[ChatMember]:
+        if self._administrators is None:
+            chat = self.chat
+            if chat is None:
+                raise ValueError("У апдейта нет чата")
+            self._administrators = await self.bot.get_chat_administrators(chat.id)
+        return self._administrators
 
     async def db_user(self) -> User:
         sender = self.user

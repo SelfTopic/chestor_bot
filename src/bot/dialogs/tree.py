@@ -1288,7 +1288,127 @@ class _MobDialogs:
         )
 
 
+class _ModerationNeutralDialogs:
+    def anonymous(self) -> Line:
+        return Line("moderation.neutral.anonymous", {})
+
+    def bot_lacks_right(self, *, right: object) -> Line:
+        return Line("moderation.neutral.bot_lacks_right", {"right": right})
+
+    def moderator_lacks_right(self, *, right: object) -> Line:
+        return Line("moderation.neutral.moderator_lacks_right", {"right": right})
+
+    def mute_usage(self) -> Line:
+        return Line("moderation.neutral.mute_usage", {})
+
+    def muted(self, *, name: object, term: object) -> Line:
+        return Line("moderation.neutral.muted", {"name": name, "term": term})
+
+    def muted_for(self, *, name: object, reason: object, term: object) -> Line:
+        return Line(
+            "moderation.neutral.muted_for",
+            {
+                "name": name,
+                "reason": reason,
+                "term": term,
+            },
+        )
+
+    def not_muted(self, *, name: object) -> Line:
+        return Line("moderation.neutral.not_muted", {"name": name})
+
+    def target_is_admin(self, *, name: object) -> Line:
+        return Line("moderation.neutral.target_is_admin", {"name": name})
+
+    def term_out_of_range(self, *, max: object, min: object) -> Line:
+        return Line("moderation.neutral.term_out_of_range", {"max": max, "min": min})
+
+    def unmute_usage(self) -> Line:
+        return Line("moderation.neutral.unmute_usage", {})
+
+    def unmuted(self, *, name: object) -> Line:
+        return Line("moderation.neutral.unmuted", {"name": name})
+
+    def user_not_found(self, *, query: object) -> Line:
+        return Line("moderation.neutral.user_not_found", {"query": query})
+
+
+class _ModerationRightDialogs:
+    def restrict_members(self) -> Line:
+        return Line("moderation.right.restrict_members", {})
+
+
+class _ModerationRoughDialogs:
+    def anonymous(self) -> Line:
+        return Line("moderation.rough.anonymous", {})
+
+    def bot_lacks_right(self, *, right: object) -> Line:
+        return Line("moderation.rough.bot_lacks_right", {"right": right})
+
+    def moderator_lacks_right(self, *, right: object) -> Line:
+        return Line("moderation.rough.moderator_lacks_right", {"right": right})
+
+    def mute_usage(self) -> Line:
+        return Line("moderation.rough.mute_usage", {})
+
+    def muted(self, *, name: object, term: object) -> Line:
+        return Line("moderation.rough.muted", {"name": name, "term": term})
+
+    def muted_for(self, *, name: object, reason: object, term: object) -> Line:
+        return Line(
+            "moderation.rough.muted_for",
+            {
+                "name": name,
+                "reason": reason,
+                "term": term,
+            },
+        )
+
+    def not_muted(self, *, name: object) -> Line:
+        return Line("moderation.rough.not_muted", {"name": name})
+
+    def target_is_admin(self, *, name: object) -> Line:
+        return Line("moderation.rough.target_is_admin", {"name": name})
+
+    def term_out_of_range(self, *, max: object, min: object) -> Line:
+        return Line("moderation.rough.term_out_of_range", {"max": max, "min": min})
+
+    def unmute_usage(self) -> Line:
+        return Line("moderation.rough.unmute_usage", {})
+
+    def unmuted(self, *, name: object) -> Line:
+        return Line("moderation.rough.unmuted", {"name": name})
+
+    def user_not_found(self, *, query: object) -> Line:
+        return Line("moderation.rough.user_not_found", {"query": query})
+
+
+class _ModerationTermDialogs:
+    def days(self, *, count: object) -> Line:
+        return Line("moderation.term.days", {"count": count})
+
+    def forever(self) -> Line:
+        return Line("moderation.term.forever", {})
+
+    def hours(self, *, count: object) -> Line:
+        return Line("moderation.term.hours", {"count": count})
+
+    def limited(self, *, duration: object) -> Line:
+        return Line("moderation.term.limited", {"duration": duration})
+
+    def minutes(self, *, count: object) -> Line:
+        return Line("moderation.term.minutes", {"count": count})
+
+    def seconds(self, *, count: object) -> Line:
+        return Line("moderation.term.seconds", {"count": count})
+
+
 class _ModerationDialogs:
+    neutral = _ModerationNeutralDialogs()
+    right = _ModerationRightDialogs()
+    rough = _ModerationRoughDialogs()
+    term = _ModerationTermDialogs()
+
     def bot_added(self) -> Line:
         return Line("moderation.bot_added", {})
 
@@ -2158,7 +2278,38 @@ PLACEHOLDERS: dict[str, frozenset[str]] = {
     "mob.summary": frozenset({"losses", "outcome", "total", "wins"}),
     "moderation.bot_added": frozenset(),
     "moderation.goodbye_updated": frozenset({"text"}),
+    "moderation.neutral.anonymous": frozenset(),
+    "moderation.neutral.bot_lacks_right": frozenset({"right"}),
+    "moderation.neutral.moderator_lacks_right": frozenset({"right"}),
+    "moderation.neutral.mute_usage": frozenset(),
+    "moderation.neutral.muted": frozenset({"name", "term"}),
+    "moderation.neutral.muted_for": frozenset({"name", "reason", "term"}),
+    "moderation.neutral.not_muted": frozenset({"name"}),
+    "moderation.neutral.target_is_admin": frozenset({"name"}),
+    "moderation.neutral.term_out_of_range": frozenset({"max", "min"}),
+    "moderation.neutral.unmute_usage": frozenset(),
+    "moderation.neutral.unmuted": frozenset({"name"}),
+    "moderation.neutral.user_not_found": frozenset({"query"}),
+    "moderation.right.restrict_members": frozenset(),
+    "moderation.rough.anonymous": frozenset(),
+    "moderation.rough.bot_lacks_right": frozenset({"right"}),
+    "moderation.rough.moderator_lacks_right": frozenset({"right"}),
+    "moderation.rough.mute_usage": frozenset(),
+    "moderation.rough.muted": frozenset({"name", "term"}),
+    "moderation.rough.muted_for": frozenset({"name", "reason", "term"}),
+    "moderation.rough.not_muted": frozenset({"name"}),
+    "moderation.rough.target_is_admin": frozenset({"name"}),
+    "moderation.rough.term_out_of_range": frozenset({"max", "min"}),
+    "moderation.rough.unmute_usage": frozenset(),
+    "moderation.rough.unmuted": frozenset({"name"}),
+    "moderation.rough.user_not_found": frozenset({"query"}),
     "moderation.rules_updated": frozenset({"rules"}),
+    "moderation.term.days": frozenset({"count"}),
+    "moderation.term.forever": frozenset(),
+    "moderation.term.hours": frozenset({"count"}),
+    "moderation.term.limited": frozenset({"duration"}),
+    "moderation.term.minutes": frozenset({"count"}),
+    "moderation.term.seconds": frozenset({"count"}),
     "moderation.welcome_updated": frozenset({"text"}),
     "notify.death": frozenset({"cause", "level", "lifetime_rc_earned"}),
     "notify.death_cause.admin": frozenset(),

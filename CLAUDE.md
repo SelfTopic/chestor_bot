@@ -197,9 +197,9 @@ JSON, `.get()`) сужай через `isinstance` / `assert`, прежде че
 
 - `dependency-injector`: после ухода aiogram контейнер — просто список фабрик под
   `AppContext`. Можно собирать сервисы прямо в `AppContext` и убрать зависимость.
-- `services/duration_parser.py` (`DurationParser`: «30 мин», `2h`, `1d` → `Duration`) пока
-  никто не вызывает: оставлен для длительностей в `/ban_bot` и будущем модуле модерации
-  (муты, баны). `utils/generate_lottery_video.py` тоже не импортируется, но это скрипт
+- `/ban_bot` разбирает срок своим `BanService.parse_duration` (`7d`), а не `DurationParser`,
+  которым сроки читает модерация чатов («30 мин», `2h`, `1d`).
+- `utils/generate_lottery_video.py` не импортируется, но это скрипт
   (`python -m src.bot.utils.generate_lottery_video`), генерирует видео для лотереи
   через `services/lottery_video_genertor.py`.
 

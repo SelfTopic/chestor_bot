@@ -23,6 +23,15 @@ from .lottery import (
     UnknownLotteryColor,
 )
 from .media_not_found import MediaNotFound, MediaNotFoundInDatabase
+from .moderation import (
+    AnonymousModerator,
+    BotLacksRight,
+    ModerationError,
+    ModeratorLacksRight,
+    TargetIsAdmin,
+    TargetNotMuted,
+    TermOutOfRange,
+)
 from .quiz import QuizBusy, QuizEmailMissing, QuizSessionMissing, QuizUnavailable
 from .rp_commands import RpCommandError, RpCommandLimitReached, RpCommandNotFound
 from .time import DurationParseError
@@ -87,4 +96,11 @@ __all__ = [
     "ReceiverMissingError",
     "ReceiverVanishedError",
     "SenderMissingError",
+    "ModerationError",
+    "AnonymousModerator",
+    "ModeratorLacksRight",
+    "BotLacksRight",
+    "TargetIsAdmin",
+    "TargetNotMuted",
+    "TermOutOfRange",
 ]

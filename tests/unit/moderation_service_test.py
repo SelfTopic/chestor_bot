@@ -1,9 +1,10 @@
 import pytest
 from sqlalchemy import select, update
 
+from src.bot.exceptions import TermOutOfRange
 from src.bot.repositories import ChatRepository, ModerationRepository
 from src.bot.services.moderation import ModerationService
-from src.bot.types import ModerationActionType, ModerationVoice
+from src.bot.types import ModerationActionType, ModerationVoice, Punishment
 from src.bot.types.insert import ChatInsert
 from src.database.models import ModerationAction, ModerationSettings
 
@@ -60,3 +61,31 @@ async def test_record_writes_journal(moderation, session):
         (CHAT, 1, 2, ModerationActionType.MUTE, 600, "флуд"),
         (CHAT, 1, 2, ModerationActionType.UNMUTE, None, None),
     ]
+
+
+DEFAULT = 1800
+
+
+@pytest.mark.parametrize(
+    ("text", "seconds", "reason"),
+    [
+        ("30м флуд", 1800, "флуд"),
+        ("1 час 30 мин спам и\nмат", 5400, "спам и\nмат"),
+        ("флуд 30м", DEFAULT, "флуд 30м"),
+        ("30 флуд", DEFAULT, "30 флуд"),
+        ("", DEFAULT, None),
+        ("навсегда за всё", None, "за всё"),
+        ("30с", 30, None),
+        ("366д", 366 * 24 * 3600, None),
+    ],
+)
+async def test_punishment_takes_longest_leading_term(moderation, text, seconds, reason):
+    assert moderation.punishment(text, DEFAULT) == Punishment(seconds, reason)
+
+
+@pytest.mark.parametrize("text", ["29с", "367д", "0.1с"])
+async def test_punishment_outside_telegram_limits(moderation, text):
+    with pytest.raises(TermOutOfRange) as caught:
+        moderation.punishment(text, DEFAULT)
+
+    assert (caught.value.min_seconds, caught.value.max_seconds) == (30, 366 * 24 * 3600)
