@@ -65,6 +65,8 @@
   - Заметные одиночные файлы: `ghoul.py` (статы/голод/смерть/поедание), `level_up.py`,
     `battle_record.py` (история боёв и `ActiveBattle`-лок), `notification_ticker.py`
     (уведомления о голоде/здоровье), `broadcast.py`, `quiz.py`.
+  - `moderation/` — модерация чатов: настройки чата (`moderation_settings`) и журнал
+    действий (`moderation_actions`). Сам Telegram (мут, бан) зовут роутеры.
   - `roast/` — огрызания через нейросеть (Cloud.ru Foundation Models): клиент `llm.py`,
     `RoastService` (состояние споров, лимиты, фильтр, журнал `roast_log`) и `prompts/` —
     характер, примеры и обращения в файлах, которые правятся без кода.

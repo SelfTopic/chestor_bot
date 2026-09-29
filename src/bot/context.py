@@ -48,6 +48,7 @@ from .services.broadcast import BroadcastService
 from .services.level_up import LevelUpService
 from .services.lookup import find_user
 from .services.media_paths import media_for, random_file
+from .services.moderation import ModerationService
 from .services.notify import Notifier, SelfrotBotNotifier
 from .services.quiz import QuizService
 from .services.roast import RoastService
@@ -168,6 +169,10 @@ class AppContext(BaseContext[TEvent]):
     @cached_property
     def cooldown_service(self) -> CooldownService:
         return self.container.cooldown_service()
+
+    @cached_property
+    def moderation_service(self) -> ModerationService:
+        return self.container.moderation_service()
 
     @cached_property
     def media_repository(self) -> MediaRepository:

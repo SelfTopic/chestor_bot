@@ -14,6 +14,7 @@ from .repositories import (
     GhoulRepository,
     LotteryRepository,
     MediaRepository,
+    ModerationRepository,
     RpCommandsRepository,
     ScheduledNotificationRepository,
     TransferRepository,
@@ -40,6 +41,7 @@ from .services import (
     WordleService,
 )
 from .services.ghoul_game import CoffeeService, LotteryService
+from .services.moderation import ModerationService
 from .services.stat_upgrade import StatUpgradeService
 from .services.video import VideoCutterService, VideoWorker
 
@@ -63,6 +65,8 @@ class Container(containers.DeclarativeContainer):
     )
 
     media_repository = providers.Factory(MediaRepository, session=db_session)
+
+    moderation_repository = providers.Factory(ModerationRepository, session=db_session)
 
     lottery_repository = providers.Factory(LotteryRepository, session=db_session)
 
@@ -177,6 +181,10 @@ class Container(containers.DeclarativeContainer):
         ResetService,
         user_repo=user_repository,
         ghoul_repo=ghoul_repository,
+    )
+
+    moderation_service = providers.Factory(
+        ModerationService, moderation_repository=moderation_repository
     )
 
     rp_commands_repository = providers.Factory(RpCommandsRepository, session=db_session)
