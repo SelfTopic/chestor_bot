@@ -36,11 +36,15 @@ class KickFlow(PunishmentFlow):
             chat_id, moderator_id, telegram_id, ModerationActionType.KICK, reason=reason
         )
 
+        who = dict(chat=self.chat_title, moderator=self.moderator_name, id=telegram_id)
         if reason is None:
             line = self.phrases.kicked(name=name)
+            log = self.phrases.log_kicked(name=name, **who)
         else:
             line = self.phrases.kicked_for(name=name, reason=reason)
+            log = self.phrases.log_kicked_for(name=name, reason=reason, **who)
         await self.ctx.say(line, reply=True)
+        self.report(log)
 
 
 class KickRepliedArgs(CommandArgs):

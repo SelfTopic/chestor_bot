@@ -1289,6 +1289,39 @@ class _MobDialogs:
 
 
 class _ModerationNeutralDialogs:
+    def admin_chat_current(self, *, chat: object) -> Line:
+        return Line("moderation.neutral.admin_chat_current", {"chat": chat})
+
+    def admin_chat_linked(self, *, chat: object) -> Line:
+        return Line("moderation.neutral.admin_chat_linked", {"chat": chat})
+
+    def admin_chat_none(self) -> Line:
+        return Line("moderation.neutral.admin_chat_none", {})
+
+    def admin_chat_not_found(self, *, query: object) -> Line:
+        return Line("moderation.neutral.admin_chat_not_found", {"query": query})
+
+    def admin_chat_not_linked(self) -> Line:
+        return Line("moderation.neutral.admin_chat_not_linked", {})
+
+    def admin_chat_requested(self, *, chat: object, command: object) -> Line:
+        return Line(
+            "moderation.neutral.admin_chat_requested",
+            {
+                "chat": chat,
+                "command": command,
+            },
+        )
+
+    def admin_chat_self(self) -> Line:
+        return Line("moderation.neutral.admin_chat_self", {})
+
+    def admin_chat_taken(self) -> Line:
+        return Line("moderation.neutral.admin_chat_taken", {})
+
+    def admin_chat_unlinked(self, *, chat: object) -> Line:
+        return Line("moderation.neutral.admin_chat_unlinked", {"chat": chat})
+
     def anonymous(self) -> Line:
         return Line("moderation.neutral.anonymous", {})
 
@@ -1326,6 +1359,208 @@ class _ModerationNeutralDialogs:
     def kicked_for(self, *, name: object, reason: object) -> Line:
         return Line("moderation.neutral.kicked_for", {"name": name, "reason": reason})
 
+    def log_ban_default(self, *, chat: object, moderator: object, term: object) -> Line:
+        return Line(
+            "moderation.neutral.log_ban_default",
+            {
+                "chat": chat,
+                "moderator": moderator,
+                "term": term,
+            },
+        )
+
+    def log_banned(
+        self,
+        *,
+        chat: object,
+        id: object,
+        moderator: object,
+        name: object,
+        term: object,
+    ) -> Line:
+        return Line(
+            "moderation.neutral.log_banned",
+            {
+                "chat": chat,
+                "id": id,
+                "moderator": moderator,
+                "name": name,
+                "term": term,
+            },
+        )
+
+    def log_banned_for(
+        self,
+        *,
+        chat: object,
+        id: object,
+        moderator: object,
+        name: object,
+        reason: object,
+        term: object,
+    ) -> Line:
+        return Line(
+            "moderation.neutral.log_banned_for",
+            {
+                "chat": chat,
+                "id": id,
+                "moderator": moderator,
+                "name": name,
+                "reason": reason,
+                "term": term,
+            },
+        )
+
+    def log_kicked(
+        self,
+        *,
+        chat: object,
+        id: object,
+        moderator: object,
+        name: object,
+    ) -> Line:
+        return Line(
+            "moderation.neutral.log_kicked",
+            {
+                "chat": chat,
+                "id": id,
+                "moderator": moderator,
+                "name": name,
+            },
+        )
+
+    def log_kicked_for(
+        self,
+        *,
+        chat: object,
+        id: object,
+        moderator: object,
+        name: object,
+        reason: object,
+    ) -> Line:
+        return Line(
+            "moderation.neutral.log_kicked_for",
+            {
+                "chat": chat,
+                "id": id,
+                "moderator": moderator,
+                "name": name,
+                "reason": reason,
+            },
+        )
+
+    def log_mute_default(
+        self,
+        *,
+        chat: object,
+        moderator: object,
+        term: object,
+    ) -> Line:
+        return Line(
+            "moderation.neutral.log_mute_default",
+            {
+                "chat": chat,
+                "moderator": moderator,
+                "term": term,
+            },
+        )
+
+    def log_muted(
+        self,
+        *,
+        chat: object,
+        id: object,
+        moderator: object,
+        name: object,
+        term: object,
+    ) -> Line:
+        return Line(
+            "moderation.neutral.log_muted",
+            {
+                "chat": chat,
+                "id": id,
+                "moderator": moderator,
+                "name": name,
+                "term": term,
+            },
+        )
+
+    def log_muted_for(
+        self,
+        *,
+        chat: object,
+        id: object,
+        moderator: object,
+        name: object,
+        reason: object,
+        term: object,
+    ) -> Line:
+        return Line(
+            "moderation.neutral.log_muted_for",
+            {
+                "chat": chat,
+                "id": id,
+                "moderator": moderator,
+                "name": name,
+                "reason": reason,
+                "term": term,
+            },
+        )
+
+    def log_unbanned(
+        self,
+        *,
+        chat: object,
+        id: object,
+        moderator: object,
+        name: object,
+    ) -> Line:
+        return Line(
+            "moderation.neutral.log_unbanned",
+            {
+                "chat": chat,
+                "id": id,
+                "moderator": moderator,
+                "name": name,
+            },
+        )
+
+    def log_unlinked(self, *, chat: object, moderator: object) -> Line:
+        return Line(
+            "moderation.neutral.log_unlinked",
+            {
+                "chat": chat,
+                "moderator": moderator,
+            },
+        )
+
+    def log_unmuted(
+        self,
+        *,
+        chat: object,
+        id: object,
+        moderator: object,
+        name: object,
+    ) -> Line:
+        return Line(
+            "moderation.neutral.log_unmuted",
+            {
+                "chat": chat,
+                "id": id,
+                "moderator": moderator,
+                "name": name,
+            },
+        )
+
+    def log_voice(self, *, chat: object, moderator: object) -> Line:
+        return Line(
+            "moderation.neutral.log_voice",
+            {
+                "chat": chat,
+                "moderator": moderator,
+            },
+        )
+
     def moderator_lacks_right(self, *, right: object) -> Line:
         return Line("moderation.neutral.moderator_lacks_right", {"right": right})
 
@@ -1356,6 +1591,9 @@ class _ModerationNeutralDialogs:
 
     def not_muted(self, *, name: object) -> Line:
         return Line("moderation.neutral.not_muted", {"name": name})
+
+    def owner_only(self) -> Line:
+        return Line("moderation.neutral.owner_only", {})
 
     def target_absent(self, *, name: object) -> Line:
         return Line("moderation.neutral.target_absent", {"name": name})
@@ -1397,6 +1635,39 @@ class _ModerationRightDialogs:
 
 
 class _ModerationRoughDialogs:
+    def admin_chat_current(self, *, chat: object) -> Line:
+        return Line("moderation.rough.admin_chat_current", {"chat": chat})
+
+    def admin_chat_linked(self, *, chat: object) -> Line:
+        return Line("moderation.rough.admin_chat_linked", {"chat": chat})
+
+    def admin_chat_none(self) -> Line:
+        return Line("moderation.rough.admin_chat_none", {})
+
+    def admin_chat_not_found(self, *, query: object) -> Line:
+        return Line("moderation.rough.admin_chat_not_found", {"query": query})
+
+    def admin_chat_not_linked(self) -> Line:
+        return Line("moderation.rough.admin_chat_not_linked", {})
+
+    def admin_chat_requested(self, *, chat: object, command: object) -> Line:
+        return Line(
+            "moderation.rough.admin_chat_requested",
+            {
+                "chat": chat,
+                "command": command,
+            },
+        )
+
+    def admin_chat_self(self) -> Line:
+        return Line("moderation.rough.admin_chat_self", {})
+
+    def admin_chat_taken(self) -> Line:
+        return Line("moderation.rough.admin_chat_taken", {})
+
+    def admin_chat_unlinked(self, *, chat: object) -> Line:
+        return Line("moderation.rough.admin_chat_unlinked", {"chat": chat})
+
     def anonymous(self) -> Line:
         return Line("moderation.rough.anonymous", {})
 
@@ -1434,6 +1705,208 @@ class _ModerationRoughDialogs:
     def kicked_for(self, *, name: object, reason: object) -> Line:
         return Line("moderation.rough.kicked_for", {"name": name, "reason": reason})
 
+    def log_ban_default(self, *, chat: object, moderator: object, term: object) -> Line:
+        return Line(
+            "moderation.rough.log_ban_default",
+            {
+                "chat": chat,
+                "moderator": moderator,
+                "term": term,
+            },
+        )
+
+    def log_banned(
+        self,
+        *,
+        chat: object,
+        id: object,
+        moderator: object,
+        name: object,
+        term: object,
+    ) -> Line:
+        return Line(
+            "moderation.rough.log_banned",
+            {
+                "chat": chat,
+                "id": id,
+                "moderator": moderator,
+                "name": name,
+                "term": term,
+            },
+        )
+
+    def log_banned_for(
+        self,
+        *,
+        chat: object,
+        id: object,
+        moderator: object,
+        name: object,
+        reason: object,
+        term: object,
+    ) -> Line:
+        return Line(
+            "moderation.rough.log_banned_for",
+            {
+                "chat": chat,
+                "id": id,
+                "moderator": moderator,
+                "name": name,
+                "reason": reason,
+                "term": term,
+            },
+        )
+
+    def log_kicked(
+        self,
+        *,
+        chat: object,
+        id: object,
+        moderator: object,
+        name: object,
+    ) -> Line:
+        return Line(
+            "moderation.rough.log_kicked",
+            {
+                "chat": chat,
+                "id": id,
+                "moderator": moderator,
+                "name": name,
+            },
+        )
+
+    def log_kicked_for(
+        self,
+        *,
+        chat: object,
+        id: object,
+        moderator: object,
+        name: object,
+        reason: object,
+    ) -> Line:
+        return Line(
+            "moderation.rough.log_kicked_for",
+            {
+                "chat": chat,
+                "id": id,
+                "moderator": moderator,
+                "name": name,
+                "reason": reason,
+            },
+        )
+
+    def log_mute_default(
+        self,
+        *,
+        chat: object,
+        moderator: object,
+        term: object,
+    ) -> Line:
+        return Line(
+            "moderation.rough.log_mute_default",
+            {
+                "chat": chat,
+                "moderator": moderator,
+                "term": term,
+            },
+        )
+
+    def log_muted(
+        self,
+        *,
+        chat: object,
+        id: object,
+        moderator: object,
+        name: object,
+        term: object,
+    ) -> Line:
+        return Line(
+            "moderation.rough.log_muted",
+            {
+                "chat": chat,
+                "id": id,
+                "moderator": moderator,
+                "name": name,
+                "term": term,
+            },
+        )
+
+    def log_muted_for(
+        self,
+        *,
+        chat: object,
+        id: object,
+        moderator: object,
+        name: object,
+        reason: object,
+        term: object,
+    ) -> Line:
+        return Line(
+            "moderation.rough.log_muted_for",
+            {
+                "chat": chat,
+                "id": id,
+                "moderator": moderator,
+                "name": name,
+                "reason": reason,
+                "term": term,
+            },
+        )
+
+    def log_unbanned(
+        self,
+        *,
+        chat: object,
+        id: object,
+        moderator: object,
+        name: object,
+    ) -> Line:
+        return Line(
+            "moderation.rough.log_unbanned",
+            {
+                "chat": chat,
+                "id": id,
+                "moderator": moderator,
+                "name": name,
+            },
+        )
+
+    def log_unlinked(self, *, chat: object, moderator: object) -> Line:
+        return Line(
+            "moderation.rough.log_unlinked",
+            {
+                "chat": chat,
+                "moderator": moderator,
+            },
+        )
+
+    def log_unmuted(
+        self,
+        *,
+        chat: object,
+        id: object,
+        moderator: object,
+        name: object,
+    ) -> Line:
+        return Line(
+            "moderation.rough.log_unmuted",
+            {
+                "chat": chat,
+                "id": id,
+                "moderator": moderator,
+                "name": name,
+            },
+        )
+
+    def log_voice(self, *, chat: object, moderator: object) -> Line:
+        return Line(
+            "moderation.rough.log_voice",
+            {
+                "chat": chat,
+                "moderator": moderator,
+            },
+        )
+
     def moderator_lacks_right(self, *, right: object) -> Line:
         return Line("moderation.rough.moderator_lacks_right", {"right": right})
 
@@ -1464,6 +1937,9 @@ class _ModerationRoughDialogs:
 
     def not_muted(self, *, name: object) -> Line:
         return Line("moderation.rough.not_muted", {"name": name})
+
+    def owner_only(self) -> Line:
+        return Line("moderation.rough.owner_only", {})
 
     def target_absent(self, *, name: object) -> Line:
         return Line("moderation.rough.target_absent", {"name": name})
@@ -2391,6 +2867,15 @@ PLACEHOLDERS: dict[str, frozenset[str]] = {
     "mob.summary": frozenset({"losses", "outcome", "total", "wins"}),
     "moderation.bot_added": frozenset(),
     "moderation.goodbye_updated": frozenset({"text"}),
+    "moderation.neutral.admin_chat_current": frozenset({"chat"}),
+    "moderation.neutral.admin_chat_linked": frozenset({"chat"}),
+    "moderation.neutral.admin_chat_none": frozenset(),
+    "moderation.neutral.admin_chat_not_found": frozenset({"query"}),
+    "moderation.neutral.admin_chat_not_linked": frozenset(),
+    "moderation.neutral.admin_chat_requested": frozenset({"chat", "command"}),
+    "moderation.neutral.admin_chat_self": frozenset(),
+    "moderation.neutral.admin_chat_taken": frozenset(),
+    "moderation.neutral.admin_chat_unlinked": frozenset({"chat"}),
     "moderation.neutral.anonymous": frozenset(),
     "moderation.neutral.ban_default_current": frozenset({"term"}),
     "moderation.neutral.ban_default_set": frozenset({"term"}),
@@ -2401,6 +2886,60 @@ PLACEHOLDERS: dict[str, frozenset[str]] = {
     "moderation.neutral.kick_usage": frozenset(),
     "moderation.neutral.kicked": frozenset({"name"}),
     "moderation.neutral.kicked_for": frozenset({"name", "reason"}),
+    "moderation.neutral.log_ban_default": frozenset({"chat", "moderator", "term"}),
+    "moderation.neutral.log_banned": frozenset(
+        {
+            "chat",
+            "id",
+            "moderator",
+            "name",
+            "term",
+        }
+    ),
+    "moderation.neutral.log_banned_for": frozenset(
+        {
+            "chat",
+            "id",
+            "moderator",
+            "name",
+            "reason",
+            "term",
+        }
+    ),
+    "moderation.neutral.log_kicked": frozenset({"chat", "id", "moderator", "name"}),
+    "moderation.neutral.log_kicked_for": frozenset(
+        {
+            "chat",
+            "id",
+            "moderator",
+            "name",
+            "reason",
+        }
+    ),
+    "moderation.neutral.log_mute_default": frozenset({"chat", "moderator", "term"}),
+    "moderation.neutral.log_muted": frozenset(
+        {
+            "chat",
+            "id",
+            "moderator",
+            "name",
+            "term",
+        }
+    ),
+    "moderation.neutral.log_muted_for": frozenset(
+        {
+            "chat",
+            "id",
+            "moderator",
+            "name",
+            "reason",
+            "term",
+        }
+    ),
+    "moderation.neutral.log_unbanned": frozenset({"chat", "id", "moderator", "name"}),
+    "moderation.neutral.log_unlinked": frozenset({"chat", "moderator"}),
+    "moderation.neutral.log_unmuted": frozenset({"chat", "id", "moderator", "name"}),
+    "moderation.neutral.log_voice": frozenset({"chat", "moderator"}),
     "moderation.neutral.moderator_lacks_right": frozenset({"right"}),
     "moderation.neutral.mute_default_current": frozenset({"term"}),
     "moderation.neutral.mute_default_set": frozenset({"term"}),
@@ -2409,6 +2948,7 @@ PLACEHOLDERS: dict[str, frozenset[str]] = {
     "moderation.neutral.muted_for": frozenset({"name", "reason", "term"}),
     "moderation.neutral.not_banned": frozenset({"name"}),
     "moderation.neutral.not_muted": frozenset({"name"}),
+    "moderation.neutral.owner_only": frozenset(),
     "moderation.neutral.target_absent": frozenset({"name"}),
     "moderation.neutral.target_is_admin": frozenset({"name"}),
     "moderation.neutral.term_out_of_range": frozenset({"max", "min"}),
@@ -2421,6 +2961,15 @@ PLACEHOLDERS: dict[str, frozenset[str]] = {
     "moderation.neutral.voice_set": frozenset(),
     "moderation.right.change_info": frozenset(),
     "moderation.right.restrict_members": frozenset(),
+    "moderation.rough.admin_chat_current": frozenset({"chat"}),
+    "moderation.rough.admin_chat_linked": frozenset({"chat"}),
+    "moderation.rough.admin_chat_none": frozenset(),
+    "moderation.rough.admin_chat_not_found": frozenset({"query"}),
+    "moderation.rough.admin_chat_not_linked": frozenset(),
+    "moderation.rough.admin_chat_requested": frozenset({"chat", "command"}),
+    "moderation.rough.admin_chat_self": frozenset(),
+    "moderation.rough.admin_chat_taken": frozenset(),
+    "moderation.rough.admin_chat_unlinked": frozenset({"chat"}),
     "moderation.rough.anonymous": frozenset(),
     "moderation.rough.ban_default_current": frozenset({"term"}),
     "moderation.rough.ban_default_set": frozenset({"term"}),
@@ -2431,6 +2980,60 @@ PLACEHOLDERS: dict[str, frozenset[str]] = {
     "moderation.rough.kick_usage": frozenset(),
     "moderation.rough.kicked": frozenset({"name"}),
     "moderation.rough.kicked_for": frozenset({"name", "reason"}),
+    "moderation.rough.log_ban_default": frozenset({"chat", "moderator", "term"}),
+    "moderation.rough.log_banned": frozenset(
+        {
+            "chat",
+            "id",
+            "moderator",
+            "name",
+            "term",
+        }
+    ),
+    "moderation.rough.log_banned_for": frozenset(
+        {
+            "chat",
+            "id",
+            "moderator",
+            "name",
+            "reason",
+            "term",
+        }
+    ),
+    "moderation.rough.log_kicked": frozenset({"chat", "id", "moderator", "name"}),
+    "moderation.rough.log_kicked_for": frozenset(
+        {
+            "chat",
+            "id",
+            "moderator",
+            "name",
+            "reason",
+        }
+    ),
+    "moderation.rough.log_mute_default": frozenset({"chat", "moderator", "term"}),
+    "moderation.rough.log_muted": frozenset(
+        {
+            "chat",
+            "id",
+            "moderator",
+            "name",
+            "term",
+        }
+    ),
+    "moderation.rough.log_muted_for": frozenset(
+        {
+            "chat",
+            "id",
+            "moderator",
+            "name",
+            "reason",
+            "term",
+        }
+    ),
+    "moderation.rough.log_unbanned": frozenset({"chat", "id", "moderator", "name"}),
+    "moderation.rough.log_unlinked": frozenset({"chat", "moderator"}),
+    "moderation.rough.log_unmuted": frozenset({"chat", "id", "moderator", "name"}),
+    "moderation.rough.log_voice": frozenset({"chat", "moderator"}),
     "moderation.rough.moderator_lacks_right": frozenset({"right"}),
     "moderation.rough.mute_default_current": frozenset({"term"}),
     "moderation.rough.mute_default_set": frozenset({"term"}),
@@ -2439,6 +3042,7 @@ PLACEHOLDERS: dict[str, frozenset[str]] = {
     "moderation.rough.muted_for": frozenset({"name", "reason", "term"}),
     "moderation.rough.not_banned": frozenset({"name"}),
     "moderation.rough.not_muted": frozenset({"name"}),
+    "moderation.rough.owner_only": frozenset(),
     "moderation.rough.target_absent": frozenset({"name"}),
     "moderation.rough.target_is_admin": frozenset({"name"}),
     "moderation.rough.term_out_of_range": frozenset({"max", "min"}),

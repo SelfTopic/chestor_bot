@@ -23,6 +23,10 @@ def _string_enum(enum: type[Enum]) -> SqlEnum:
 
 class ModerationSettings(Base):
     __tablename__ = "moderation_settings"
+    # Чат админов служит только одному чату.
+    __table_args__ = (
+        Index("uq_moderation_settings_admin_chat", "admin_chat_id", unique=True),
+    )
 
     chat_id: Mapped[int] = mapped_column(
         BigInteger,
@@ -43,6 +47,8 @@ class ModerationSettings(Base):
         server_default=ModerationVoice.NEUTRAL.value,
     )
     admin_chat_id: Mapped[Optional[int]] = mapped_column(BigInteger, nullable=True)
+    # Запрошенный отсюда чат админов: привязка появится, когда его подтвердят там.
+    admin_chat_request: Mapped[Optional[int]] = mapped_column(BigInteger, nullable=True)
 
 
 class ModerationAction(Base):

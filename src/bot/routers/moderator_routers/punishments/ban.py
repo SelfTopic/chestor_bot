@@ -40,13 +40,19 @@ class BanFlow(PunishmentFlow):
 
         name = member.user.first_name
         term = self.term(punishment.seconds)
+        who = dict(chat=self.chat_title, moderator=self.moderator_name, id=telegram_id)
         if punishment.reason is None:
             line = self.phrases.banned(name=name, term=term)
+            log = self.phrases.log_banned(name=name, term=term, **who)
         else:
             line = self.phrases.banned_for(
                 name=name, term=term, reason=punishment.reason
             )
+            log = self.phrases.log_banned_for(
+                name=name, term=term, reason=punishment.reason, **who
+            )
         await self.ctx.say(line, reply=True)
+        self.report(log)
 
 
 class BanRepliedArgs(CommandArgs):
@@ -98,6 +104,14 @@ class UnbanFlow(PunishmentFlow):
             chat_id, moderator_id, telegram_id, ModerationActionType.UNBAN
         )
         await self.ctx.say(self.phrases.unbanned(name=name), reply=True)
+        self.report(
+            self.phrases.log_unbanned(
+                chat=self.chat_title,
+                moderator=self.moderator_name,
+                name=name,
+                id=telegram_id,
+            )
+        )
 
 
 class UnbanRepliedArgs(CommandArgs):

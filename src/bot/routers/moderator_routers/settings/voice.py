@@ -47,3 +47,6 @@ class VoiceHandler(ModerationFlow, MessageHandler[AppContext[TextUserMessage]]):
         await self.ctx.moderation_service.set_voice(self.ctx.message.chat.id, voice)
         self.voice = voice
         await self.ctx.say(self.phrases.voice_set(), reply=True)
+        self.report(
+            self.phrases.log_voice(chat=self.chat_title, moderator=self.moderator_name)
+        )

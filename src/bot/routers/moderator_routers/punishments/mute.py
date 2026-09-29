@@ -44,13 +44,19 @@ class MuteFlow(PunishmentFlow):
 
         name = member.user.first_name
         term = self.term(punishment.seconds)
+        who = dict(chat=self.chat_title, moderator=self.moderator_name, id=telegram_id)
         if punishment.reason is None:
             line = self.phrases.muted(name=name, term=term)
+            log = self.phrases.log_muted(name=name, term=term, **who)
         else:
             line = self.phrases.muted_for(
                 name=name, term=term, reason=punishment.reason
             )
+            log = self.phrases.log_muted_for(
+                name=name, term=term, reason=punishment.reason, **who
+            )
         await self.ctx.say(line, reply=True)
+        self.report(log)
 
 
 class MuteRepliedArgs(CommandArgs):
@@ -102,6 +108,14 @@ class UnmuteFlow(PunishmentFlow):
             chat_id, moderator_id, telegram_id, ModerationActionType.UNMUTE
         )
         await self.ctx.say(self.phrases.unmuted(name=name), reply=True)
+        self.report(
+            self.phrases.log_unmuted(
+                chat=self.chat_title,
+                moderator=self.moderator_name,
+                name=name,
+                id=telegram_id,
+            )
+        )
 
 
 class UnmuteRepliedArgs(CommandArgs):

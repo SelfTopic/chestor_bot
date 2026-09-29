@@ -49,6 +49,35 @@ moderation:
     voice_current: |-
       ⚙️ Голос модерации — нейтральный.
       Поменять: «Стиль модерации грубый» или /moderation_voice rough
+    admin_chat_none: |-
+      Чат админов не привязан.
+      Привязать: /set_admin_chat @чат_админов (или его id), потом подтвердить в том чате.
+    admin_chat_current: |-
+      Чат админов — «{chat}».
+      Отвязать: /set_admin_chat off
+    admin_chat_requested: |-
+      Запрос: сделать «{chat}» чатом админов этого чата.
+      Чтобы подтвердить, владелец этого чата пишет в «{chat}»:
+      {command}
+    admin_chat_linked: 'Готово: сюда будут приходить действия модерации и изменения настроек чата «{chat}».'
+    admin_chat_unlinked: Чат админов «{chat}» отвязан.
+    admin_chat_not_linked: Чат админов и так не привязан.
+    admin_chat_not_found: 'Не нашёл группу {query}. Укажите @username или id группы, где есть бот.'
+    admin_chat_self: Чат не может быть чатом админов сам для себя.
+    admin_chat_taken: Этот чат уже служит чатом админов другому чату.
+    owner_only: Привязывать и отвязывать чат админов может только владелец чата.
+    log_muted: '🔇 «{chat}» · мут {term}: {name} (id {id}). Модератор: {moderator}'
+    log_muted_for: '🔇 «{chat}» · мут {term}: {name} (id {id}). Модератор: {moderator}. Причина: {reason}'
+    log_unmuted: '🔊 «{chat}» · размут: {name} (id {id}). Модератор: {moderator}'
+    log_banned: '🚫 «{chat}» · бан {term}: {name} (id {id}). Модератор: {moderator}'
+    log_banned_for: '🚫 «{chat}» · бан {term}: {name} (id {id}). Модератор: {moderator}. Причина: {reason}'
+    log_unbanned: '✅ «{chat}» · разбан: {name} (id {id}). Модератор: {moderator}'
+    log_kicked: '👢 «{chat}» · кик: {name} (id {id}). Модератор: {moderator}'
+    log_kicked_for: '👢 «{chat}» · кик: {name} (id {id}). Модератор: {moderator}. Причина: {reason}'
+    log_mute_default: '⚙️ «{chat}» · мут без срока теперь {term}. Модератор: {moderator}'
+    log_ban_default: '⚙️ «{chat}» · бан без срока теперь {term}. Модератор: {moderator}'
+    log_voice: '⚙️ «{chat}» · голос модерации: нейтральный. Модератор: {moderator}'
+    log_unlinked: '⚙️ Чат «{chat}» отвязан от этого чата админов. Модератор: {moderator}'
     user_not_found: 'Не нашёл {query}. Ответь на сообщение этого человека или укажи его id.'
     anonymous: Анонимному админу модерация через бота недоступна — бот не видит, кто пишет.
     moderator_lacks_right: 'Для этого нужно право {right}.'
@@ -111,6 +140,34 @@ moderation:
     voice_current: |-
       ⚙️ Сейчас я грубый. И не проси по-хорошему.
       Смягчить: «Стиль модерации нейтральный» или /moderation_voice neutral
+    admin_chat_none: |-
+      Штаба у вас нет, докладывать некуда.
+      Завести: /set_admin_chat @чат_админов (или его id), потом подтвердить в том чате.
+    admin_chat_current: |-
+      Рапорты CCG уходят в «{chat}».
+      Разогнать штаб: /set_admin_chat off
+    admin_chat_requested: |-
+      Хотите штаб в «{chat}»? Пусть владелец этого чата подтвердит там:
+      {command}
+    admin_chat_linked: 'Штаб развёрнут. Сюда пойдут рапорты CCG и все перемены в «{chat}».'
+    admin_chat_unlinked: Штаб в «{chat}» разогнан, рапортов больше не будет.
+    admin_chat_not_linked: Штаба и так нет, разгонять некого.
+    admin_chat_not_found: 'Группа {query}? Не знаю такой. Дай @username или id, и чтобы я там был.'
+    admin_chat_self: Штаб сам в себе? Не выйдет.
+    admin_chat_taken: Этот чат уже штаб для другого чата. Ищите свой.
+    owner_only: Штаб заводит и разгоняет только владелец чата.
+    log_muted: '⛓ Рапорт CCG, «{chat}»: {name} (id {id}) в Кокурии {term}. Упаковка: {moderator}'
+    log_muted_for: '⛓ Рапорт CCG, «{chat}»: {name} (id {id}) в Кокурии {term}. Упаковка: {moderator}. Статья: {reason}'
+    log_unmuted: '🔓 Рапорт CCG, «{chat}»: {name} (id {id}) выходит из Кокурии. Выпуск: {moderator}'
+    log_banned: '🚷 Рапорт CCG, «{chat}»: {name} (id {id}) вылетает {term}. Изгнание: {moderator}'
+    log_banned_for: '🚷 Рапорт CCG, «{chat}»: {name} (id {id}) вылетает {term}. Изгнание: {moderator}. Статья: {reason}'
+    log_unbanned: '🚪 Рапорт CCG, «{chat}»: {name} (id {id}) снова может зайти. Прощение: {moderator}'
+    log_kicked: '🥾 Рапорт CCG, «{chat}»: {name} (id {id}) за дверью. Пинок: {moderator}'
+    log_kicked_for: '🥾 Рапорт CCG, «{chat}»: {name} (id {id}) за дверью. Пинок: {moderator}. Статья: {reason}'
+    log_mute_default: '⚙️ Рапорт CCG, «{chat}»: без срока теперь пакуем {term}. Приказ: {moderator}'
+    log_ban_default: '⚙️ Рапорт CCG, «{chat}»: без срока теперь выгоняем {term}. Приказ: {moderator}'
+    log_voice: '⚙️ Рапорт CCG, «{chat}»: вежливость кончилась, модерация по-грубому. Приказ: {moderator}'
+    log_unlinked: '⚙️ Рапорт CCG: штаб «{chat}» здесь разогнан. Приказ: {moderator}'
     user_not_found: 'Кто такой {query}? CCG про такого не слышала. Ответь на его сообщение или дай id.'
     anonymous: Сними маску, анонимус. Из-за угла тут не пакуют.
     moderator_lacks_right: 'Руки коротки. Нужно право {right}.'

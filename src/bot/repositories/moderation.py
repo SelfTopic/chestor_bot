@@ -1,5 +1,6 @@
 from typing import Any, Optional
 
+from sqlalchemy import select
 from sqlalchemy.dialects.postgresql import insert
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -26,6 +27,16 @@ class ModerationRepository(Base):
             raise ValueError(f"Нет настроек модерации чата {chat_id}")
 
         return settings
+
+    async def find_settings(self, chat_id: int) -> Optional[ModerationSettings]:
+        return await self.session.get(ModerationSettings, chat_id)
+
+    async def served_by(self, admin_chat_id: int) -> Optional[ModerationSettings]:
+        return await self.session.scalar(
+            select(ModerationSettings).where(
+                ModerationSettings.admin_chat_id == admin_chat_id
+            )
+        )
 
     async def update_settings(self, chat_id: int, **values: Any) -> ModerationSettings:
         stmt = (

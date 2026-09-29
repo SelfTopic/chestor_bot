@@ -25,3 +25,9 @@ class FromChatAdmin(BaseFilter[AppContext[Any]]):
 
         administrators = await ctx.chat_administrators()
         return any(admin.user.id == message.user.id for admin in administrators)
+
+
+class InGroup(BaseFilter[AppContext[Any]]):
+    async def check(self, ctx: BaseContext[Any]) -> bool:
+        chat = ctx.chat
+        return chat is not None and chat.type in ("group", "supergroup")

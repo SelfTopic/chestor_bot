@@ -1,7 +1,8 @@
+import logging
 from typing import Any, TypeVar
 
 from selfrot import CommandArgs
-from selfrot.exceptions import CommandArgsError
+from selfrot.exceptions import CommandArgsError, TelegramAPIError, TelegramNetworkError
 from selfrot.filter import AnyCommand, Command
 from selfrot.types import ChatMember, ChatMemberAdministrator, ChatMemberOwner
 
@@ -17,6 +18,8 @@ from src.bot.utils import parse_seconds
 
 from ...context import AppContext
 from .filters import is_anonymous_admin
+
+logger = logging.getLogger(__name__)
 
 TArgs = TypeVar("TArgs", bound=CommandArgs)
 
@@ -56,6 +59,7 @@ class ModerationFlow:
     right: ChatRight
     voice = ModerationVoice.NEUTRAL
     reply_errors = True
+    reports: list[tuple[int, Line]]
 
     @property
     def phrases(self):
@@ -70,6 +74,30 @@ class ModerationFlow:
         settings = await self.ctx.moderation_service.settings(self.ctx.message.chat.id)
         self.settings = settings
         self.voice = settings.voice
+        self.admin_chat_id = settings.admin_chat_id
+        self.reports = []
+
+    @property
+    def chat_title(self) -> str:
+        chat = self.ctx.message.chat
+        return chat.title or str(chat.id)
+
+    @property
+    def moderator_name(self) -> str:
+        return self.ctx.message.user.first_name
+
+    def report(self, line: Line, chat_id: int | None = None) -> None:
+        target = self.admin_chat_id if chat_id is None else chat_id
+        if target is not None:
+            self.reports.append((target, line))
+
+    # Действие уже сделано и записано: недоставленная запись не должна его ломать.
+    async def after_handle(self) -> None:
+        for chat_id, line in self.reports:
+            try:
+                await self.ctx.bot.send_message(chat_id, self.ctx.text(line))
+            except (TelegramAPIError, TelegramNetworkError):
+                logger.warning("Чат админов %s не получил запись модерации", chat_id)
 
     async def check_moderator(self) -> int:
         message = self.ctx.message

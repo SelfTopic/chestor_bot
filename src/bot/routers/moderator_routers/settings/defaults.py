@@ -33,6 +33,9 @@ class DefaultTermFlow(ModerationFlow):
     def changed(self, term: str) -> Line:
         raise NotImplementedError
 
+    def logged(self, term: str) -> Line:
+        raise NotImplementedError
+
     # on_error идёт после отката сессии: настройки из БД там уже не прочитать.
     async def pre_handle(self) -> None:
         await super().pre_handle()
@@ -50,7 +53,9 @@ class DefaultTermFlow(ModerationFlow):
         await self.check_moderator()
         seconds = self.ctx.moderation_service.term(text)
         await self.store(seconds)
-        await self.ctx.say(self.changed(self.term(seconds)), reply=True)
+        term = self.term(seconds)
+        await self.ctx.say(self.changed(term), reply=True)
+        self.report(self.logged(term))
 
     async def on_error(self, exc: Exception) -> None:
         if isinstance(exc, DurationParseError):
@@ -77,6 +82,11 @@ class MuteDefaultHandler(DefaultTermFlow, MessageHandler[AppContext[TextUserMess
     def changed(self, term: str) -> Line:
         return self.phrases.mute_default_set(term=term)
 
+    def logged(self, term: str) -> Line:
+        return self.phrases.log_mute_default(
+            chat=self.chat_title, moderator=self.moderator_name, term=term
+        )
+
 
 class BanDefaultHandler(DefaultTermFlow, MessageHandler[AppContext[TextUserMessage]]):
     cmd = command("ban_default", "бан дефолт", DefaultTermArgs)
@@ -94,3 +104,8 @@ class BanDefaultHandler(DefaultTermFlow, MessageHandler[AppContext[TextUserMessa
 
     def changed(self, term: str) -> Line:
         return self.phrases.ban_default_set(term=term)
+
+    def logged(self, term: str) -> Line:
+        return self.phrases.log_ban_default(
+            chat=self.chat_title, moderator=self.moderator_name, term=term
+        )

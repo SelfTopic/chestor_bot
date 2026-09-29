@@ -7,7 +7,7 @@ from typing import Any
 import pytest
 from sqlalchemy import select, update
 
-from selfrot.types import ChatMemberRestricted, ChatPermissions
+from selfrot.types import AcceptedGiftTypes, ChatMemberRestricted, ChatPermissions
 from src.bot.dialogs import Dialogs
 from src.bot.repositories import ChatRepository, ModerationRepository
 from src.bot.types import ModerationActionType, ModerationVoice
@@ -30,6 +30,7 @@ ADMIN = 501
 TARGET = 42
 BOT = 1
 ANONYMOUS_BOT = 1087968824
+ADMIN_CHAT = -100888
 
 term = Dialogs.moderation.term
 neutral = Dialogs.moderation.neutral
@@ -79,15 +80,19 @@ async def journal(session_factory) -> list[ModerationAction]:
         return list(rows)
 
 
-async def set_settings(session_factory, **values: Any) -> None:
+async def set_settings(session_factory, chat_id: int = GROUP, **values: Any) -> None:
     async with session_factory() as session:
         await ChatRepository(session).upsert(
             ChatInsert(
-                telegram_id=GROUP, title="группа", username=None, creator_id=ADMIN
+                telegram_id=chat_id, title="группа", username=None, creator_id=ADMIN
             )
         )
-        await ModerationRepository(session).settings(GROUP)
-        await session.execute(update(ModerationSettings).values(**values))
+        await ModerationRepository(session).settings(chat_id)
+        await session.execute(
+            update(ModerationSettings)
+            .where(ModerationSettings.chat_id == chat_id)
+            .values(**values)
+        )
         await session.commit()
 
 
@@ -416,3 +421,157 @@ class TestSettings:
         (reply,) = await send(text, uid=ADMIN, chat=GROUP)
 
         assert reply in phrase_texts(neutral.voice_current())
+
+
+def full_chat(chat_id: int, title: str) -> dict[str, Any]:
+    gifts = {
+        name: False
+        for name, field in AcceptedGiftTypes.model_fields.items()
+        if field.is_required()
+    }
+    return {
+        "id": chat_id,
+        "type": "supergroup",
+        "title": title,
+        "accent_color_id": 0,
+        "max_reaction_count": 0,
+        "accepted_gift_types": gifts,
+    }
+
+
+def sent_to(telegram, chat_id: int) -> list[str]:
+    return [
+        b["text"] for b in telegram.bodies("sendMessage") if b["chat_id"] == chat_id
+    ]
+
+
+class TestAdminChat:
+    async def test_link_needs_request_then_confirmation(
+        self, send, telegram, session_factory
+    ):
+        telegram.results["getChat"] = full_chat(ADMIN_CHAT, "Админка")
+
+        (reply,) = await send(f"/set_admin_chat {ADMIN_CHAT}", uid=ADMIN, chat=GROUP)
+
+        assert reply in phrase_texts(
+            neutral.admin_chat_requested(
+                chat="Админка", command=f"/set_admin_chat {GROUP}"
+            )
+        )
+        settings = await stored_settings(session_factory)
+        assert (settings.admin_chat_request, settings.admin_chat_id) == (
+            ADMIN_CHAT,
+            None,
+        )
+
+        telegram.results["getChat"] = full_chat(GROUP, "группа")
+        telegram.results["getChatMember"] = owner_dict(ADMIN)
+        (reply,) = await send(f"чат админов {GROUP}", uid=ADMIN, chat=ADMIN_CHAT)
+
+        assert reply in phrase_texts(neutral.admin_chat_linked(chat="группа"))
+        settings = await stored_settings(session_factory)
+        assert (settings.admin_chat_request, settings.admin_chat_id) == (
+            None,
+            ADMIN_CHAT,
+        )
+
+    async def test_actions_and_setting_changes_go_to_admin_chat(
+        self, send, telegram, session_factory, settle
+    ):
+        await set_settings(session_factory, admin_chat_id=ADMIN_CHAT)
+
+        await send("мут 30м флуд", uid=ADMIN, chat=GROUP, reply_to_uid=TARGET)
+        await settle()
+
+        (log,) = sent_to(telegram, ADMIN_CHAT)
+        assert log in phrase_texts(
+            neutral.log_muted_for(
+                chat="группа",
+                moderator="Вася",
+                name="Петя",
+                id=TARGET,
+                term=minutes(30),
+                reason="флуд",
+            )
+        )
+
+        await send("стиль модерации грубый", uid=ADMIN, chat=GROUP)
+        await settle()
+
+        (log,) = sent_to(telegram, ADMIN_CHAT)
+        assert log in phrase_texts(
+            Dialogs.moderation.rough.log_voice(chat="группа", moderator="Вася")
+        )
+
+    async def test_admin_chat_serves_one_chat(self, send, telegram, session_factory):
+        await set_settings(session_factory, chat_id=-100999, admin_chat_id=ADMIN_CHAT)
+        telegram.results["getChat"] = full_chat(ADMIN_CHAT, "Админка")
+
+        (reply,) = await send(f"/set_admin_chat {ADMIN_CHAT}", uid=ADMIN, chat=GROUP)
+
+        assert reply in phrase_texts(neutral.admin_chat_taken())
+
+    @pytest.mark.parametrize(
+        ("sender", "replies"),
+        [(admin_dict(ADMIN), 1), (member_dict("member", ADMIN), 0)],
+        ids=["admin", "member"],
+    )
+    async def test_only_owner_links(self, send, telegram, sender, replies):
+        admins = [owner_dict(99), bot_admin()]
+        telegram.results["getChatAdministrators"] = (
+            [*admins, sender] if replies else admins
+        )
+        telegram.results["getChat"] = full_chat(ADMIN_CHAT, "Админка")
+
+        sent = await send(f"/set_admin_chat {ADMIN_CHAT}", uid=ADMIN, chat=GROUP)
+
+        assert sent == [only_text(neutral.owner_only())] * replies
+
+    async def test_unlink_tells_the_old_admin_chat(
+        self, send, telegram, session_factory, settle
+    ):
+        await set_settings(session_factory, admin_chat_id=ADMIN_CHAT)
+        telegram.results["getChat"] = full_chat(ADMIN_CHAT, "Админка")
+
+        (reply,) = await send("чат админов off", uid=ADMIN, chat=GROUP)
+        await settle()
+
+        assert reply in phrase_texts(neutral.admin_chat_unlinked(chat="Админка"))
+        (log,) = sent_to(telegram, ADMIN_CHAT)
+        assert log in phrase_texts(
+            neutral.log_unlinked(chat="группа", moderator="Вася")
+        )
+        assert (await stored_settings(session_factory)).admin_chat_id is None
+
+    async def test_shows_current_link_to_any_admin(
+        self, send, telegram, session_factory
+    ):
+        await set_settings(session_factory, admin_chat_id=ADMIN_CHAT)
+        telegram.results["getChatAdministrators"] = [owner_dict(99), admin_dict(ADMIN)]
+        telegram.results["getChat"] = full_chat(ADMIN_CHAT, "Админка")
+
+        (reply,) = await send("чат админов", uid=ADMIN, chat=GROUP)
+
+        assert reply in phrase_texts(neutral.admin_chat_current(chat="Админка"))
+
+    @pytest.mark.parametrize(
+        ("admins", "replies"),
+        [([owner_dict(ADMIN)], 1), ([owner_dict(99)], 0)],
+        ids=["admin", "member"],
+    )
+    async def test_unknown_chat(self, send, telegram, admins, replies):
+        telegram.results["getChatAdministrators"] = admins
+        telegram.errors["getChat"] = (400, "Bad Request: chat not found")
+
+        sent = await send("/set_admin_chat @nope", uid=ADMIN, chat=GROUP)
+
+        assert (
+            sent == [only_text(neutral.admin_chat_not_found(query="@nope"))] * replies
+        )
+
+    async def test_chat_is_not_its_own_admin_chat(self, send, telegram):
+        telegram.results["getChat"] = full_chat(GROUP, "группа")
+
+        (reply,) = await send(f"/set_admin_chat {GROUP}", uid=ADMIN, chat=GROUP)
+
+        assert reply in phrase_texts(neutral.admin_chat_self())

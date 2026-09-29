@@ -48,3 +48,21 @@ class TargetAbsent(ModerationError):
     def __init__(self, name: str) -> None:
         super().__init__(name)
         self.name = name
+
+
+class NotChatOwner(ModerationError): ...
+
+
+class AdminChatNotFound(ModerationError):
+    def __init__(self, query: str) -> None:
+        super().__init__(query)
+        self.query = query
+
+
+class AdminChatIsSelf(ModerationError): ...
+
+
+class AdminChatTaken(ModerationError): ...
+
+
+class AdminChatNotLinked(ModerationError): ...

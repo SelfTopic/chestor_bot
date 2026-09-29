@@ -24,10 +24,15 @@ from .lottery import (
 )
 from .media_not_found import MediaNotFound, MediaNotFoundInDatabase
 from .moderation import (
+    AdminChatIsSelf,
+    AdminChatNotFound,
+    AdminChatNotLinked,
+    AdminChatTaken,
     AnonymousModerator,
     BotLacksRight,
     ModerationError,
     ModeratorLacksRight,
+    NotChatOwner,
     TargetAbsent,
     TargetIsAdmin,
     TargetNotBanned,
@@ -107,4 +112,9 @@ __all__ = [
     "TargetNotBanned",
     "TargetAbsent",
     "TermOutOfRange",
+    "NotChatOwner",
+    "AdminChatNotFound",
+    "AdminChatIsSelf",
+    "AdminChatTaken",
+    "AdminChatNotLinked",
 ]
