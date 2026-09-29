@@ -13,10 +13,6 @@ class RoastPrompts:
         return self._read("persona.md")
 
     @property
-    def classify(self) -> str:
-        return self._read("classify.md")
-
-    @property
     def request(self) -> str:
         return self._read("request.md")
 

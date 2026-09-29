@@ -110,7 +110,6 @@ class Dispatcher(BaseDispatcher[AppContext]):
             RoastPrompts(),
             enabled=settings.ROAST_ENABLED and bool(api_key),
             model=settings.ROAST_MODEL,
-            classifier_model=settings.ROAST_CLASSIFIER_MODEL,
             daily_limit=settings.ROAST_DAILY_LIMIT,
             timeout=settings.ROAST_TIMEOUT,
         )

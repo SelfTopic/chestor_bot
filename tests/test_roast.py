@@ -1,7 +1,7 @@
 """Огрызания бота через нейросеть: когда бот зовёт модель, что отправляет и что пишет в журнал.
 
-Вместо Cloud.ru — фейковый сервер с OpenAI-совместимым /chat/completions: классификатор
-отвечает заданным вердиктом, генератор — заданной репликой.
+Вместо Cloud.ru — фейковый сервер с OpenAI-совместимым /chat/completions, отвечающий заданной
+репликой. Модель зовётся только на явное обращение: реплай боту или «бот»/«честор» в тексте.
 """
 
 from collections.abc import AsyncIterator
@@ -22,13 +22,11 @@ from .conftest import message_update, only_text, owner_dict, phrase_texts
 GROUP = -100
 BOT_ID = 1  # getMe у FakeTelegram
 ADMIN = 999
-CLASSIFIER = "classifier"
 GENERATOR = "generator"
 
 
 class FakeLlm:
     def __init__(self) -> None:
-        self.verdict = "да"
         self.reply = "Ага, поплачь. Только клаву не залей."
         self.fail_generation = False
         self.busy_once = False
@@ -45,8 +43,7 @@ class FakeLlm:
         if body["model"] == GENERATOR and self.busy_once:
             self.busy_once = False
             return web.json_response({"error": "TPM limit"}, status=429)
-        content = self.verdict if body["model"] == CLASSIFIER else self.reply
-        return web.json_response({"choices": [{"message": {"content": content}}]})
+        return web.json_response({"choices": [{"message": {"content": self.reply}}]})
 
 
 @pytest.fixture
@@ -67,7 +64,6 @@ async def llm(dispatcher, session_factory, telegram) -> AsyncIterator[FakeLlm]:
         RoastPrompts(),
         enabled=True,
         model=GENERATOR,
-        classifier_model=CLASSIFIER,
         daily_limit=100,
         timeout=5,
     )
@@ -98,7 +94,7 @@ async def test_reply_to_bot_gets_generated_answer_and_is_logged(
     assert sent["reply_parameters"]
     (row,) = await logged(session_factory)
     assert (row.message, row.reply, row.bot_message_id) == ("сам ты бомжиха", sent["text"], 100)
-    assert "[в ответ боту]: сам ты бомжиха" in llm.asked(CLASSIFIER)[0]
+    assert "[в ответ боту]: сам ты бомжиха" in llm.asked(GENERATOR)[0]
 
 
 async def test_busy_provider_is_retried(feed, settle, telegram, llm):
@@ -111,36 +107,52 @@ async def test_busy_provider_is_retried(feed, settle, telegram, llm):
     assert len(llm.asked(GENERATOR)) == 2
 
 
-async def test_message_to_someone_else_is_silent_and_not_logged(
+async def test_reply_to_bots_message_about_another_player_needs_a_mention(
     feed, settle, telegram, llm, session_factory
 ):
-    llm.verdict = "нет"
+    await feed(message_update("бот", uid=8, first_name="Петя", chat=GROUP))
+    about_petya = {"message_id": 100, "text": "чо надо"}
 
-    await feed(insult("пиздец ты задрот"))
+    await feed(insult("пиздец ты задрот", reply_extra=about_petya))
     await settle()
-
-    assert telegram.bodies("sendMessage") == []
+    assert telegram.sent == []
     assert await logged(session_factory) == []
-    assert llm.asked(GENERATOR) == []
-
-
-async def test_plain_chat_does_not_reach_the_model(feed, settle, llm):
-    await feed(message_update("го в доту", chat=GROUP))
-    await feed(message_update("сам ты бомжиха", reply_to_uid=BOT_ID))  # личка
-    await settle()
-
     assert llm.requests == []
 
+    await feed(insult("бот ты тоже задрот", reply_extra=about_petya))
+    await settle()
+    assert telegram.sent == ["ага поплачь только клаву не залей"]
+    assert "бот → Петя: чо надо" in llm.asked(GENERATOR)[0]
 
-async def test_laughter_in_an_argument_does_not_reach_the_model(feed, settle, llm):
+
+async def test_only_an_explicit_address_reaches_the_model(feed, settle, llm):
     await feed(insult("сам ты бомжиха"))
     await settle()
-    asked = len(llm.requests)
 
-    await feed(message_update("ахахахаха", chat=GROUP))
+    for update in (
+        message_update("го в доту", chat=GROUP),
+        message_update("ты тупой", chat=GROUP),  # продолжение спора без реплая
+        insult("ахахахаха"),
+        message_update("сам ты бомжиха", reply_to_uid=BOT_ID),  # личка
+    ):
+        await feed(update)
+    await settle()
+    assert len(llm.requests) == 1
+
+    await feed(message_update("а честору слабо ответить", chat=GROUP))
+    await settle()
+    assert len(llm.requests) == 2
+
+
+async def test_reply_to_someone_elses_quarrel_counts(feed, settle, telegram, llm):
+    await feed(message_update("бот ты тупой", uid=8, first_name="Петя", chat=GROUP))
     await settle()
 
-    assert len(llm.requests) == asked
+    await feed(insult("хуйло алё", reply_extra={"message_id": 100, "text": llm.reply}))
+    await settle()
+
+    assert telegram.sent == ["ага поплачь только клаву не залей"]
+    assert f"бот → Петя: {llm.reply}" in llm.asked(GENERATOR)[1]
 
 
 @pytest.mark.parametrize("broken", ["filtered", "failed"])
@@ -163,10 +175,7 @@ async def test_long_argument_ends_with_bored_phrase_and_silence(
 ):
     monkeypatch.setattr(roast_module, "MAX_TURNS", 2)
     answers = []
-    # Первое — реплаем боту, дальше спор продолжается без реплаев.
-    for update in (insult("бот ты тупой"), *(
-        message_update(text, chat=GROUP) for text in ("ты тупой", "и вообще железка", "эй")
-    )):
+    for update in (insult(text) for text in ("бот ты тупой", "ты тупой", "железка", "эй")):
         await feed(update)
         await settle()
         answers.append(telegram.sent)
@@ -198,27 +207,3 @@ async def test_admin_rates_a_roast(feed, settle, telegram, llm, session_factory,
     assert row.rating == 1
     assert answer == only_text(Dialogs.admin.roast.good())
     assert unknown == only_text(Dialogs.admin.roast.not_found())
-
-
-async def test_model_sees_whom_the_bot_answered(feed, settle, llm):
-    await feed(message_update("бот", uid=8, first_name="Петя", chat=GROUP))
-    await feed(insult("пиздец ты задрот", reply_extra={"message_id": 100, "text": "чо надо"}))
-    await settle()
-
-    assert "бот → Петя: чо надо" in llm.asked(CLASSIFIER)[0]
-
-
-async def test_only_unclear_messages_go_to_the_classifier(feed, settle, llm):
-    # «бот …» и ответ на огрызание, адресованное тебе же, — к боту без вопросов;
-    # ответ третьего человека на чужую перепалку — спорный, его решает классификатор.
-    await feed(message_update("бот ты тупой", uid=8, first_name="Петя", chat=GROUP))
-    await settle()
-    comeback = {"message_id": 100, "text": llm.reply}
-    await feed(insult("а ты кто", uid=8, first_name="Петя", reply_extra=comeback))
-    await settle()
-    await feed(insult("хуйло алё", reply_extra=comeback))
-    await settle()
-
-    (asked,) = llm.asked(CLASSIFIER)
-    assert f"бот → Петя (перепалка): {llm.reply}" in asked
-    assert len(llm.asked(GENERATOR)) == 3

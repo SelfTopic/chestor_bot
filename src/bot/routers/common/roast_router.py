@@ -25,10 +25,7 @@ class RoastHandler(MessageHandler[AppContext[TextUserMessage]]):
 
         replied = message.reply_to_message
         to_bot = replied is not None and replied.user is not None and roast.is_bot(replied.user.id)
-        if not roast.wants(message.chat.id, message.user.id, message.text, replied_to_bot=to_bot):
-            return
-
-        self.incoming = Incoming(
+        incoming = Incoming(
             chat_id=message.chat.id,
             telegram_id=message.user.id,
             first_name=message.user.first_name,
@@ -39,6 +36,8 @@ class RoastHandler(MessageHandler[AppContext[TextUserMessage]]):
             if replied is not None and to_bot
             else None,
         )
+        if roast.wants(incoming):
+            self.incoming = incoming
 
     async def after_handle(self) -> None:
         incoming = self.incoming

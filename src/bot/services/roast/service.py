@@ -22,7 +22,6 @@ ARGUMENT_WINDOW = 180.0
 MAX_TURNS = 15
 SILENCE = 1800.0
 HISTORY_LIMIT = 3
-CLASSIFY_TIMEOUT = 8.0
 EXAMPLES_PER_REQUEST = 4
 GOOD_EXAMPLES_PER_REQUEST = 2
 INSULTS_PER_REQUEST = 4
@@ -31,8 +30,10 @@ TURNS_FACT_CHANCE = 0.2
 BOT_MESSAGES_KEPT = 5000
 LOG_RETENTION = timedelta(days=180)
 
-NAME_CALL = re.compile(r"^\s*(бот|честор)\b", re.IGNORECASE)
-# Смех и междометия посреди спора: их не стоит даже классифицировать.
+MENTION = re.compile(
+    r"\b(?:бот|честор)(?:а|у|ом|е|ы|ов|ам|ами|ах)?\b", re.IGNORECASE
+)
+# Смех и междометия в реплае боту: отвечать на них нечем.
 TRIVIAL = re.compile(
     r"^[\W\d_]*$|^\W*(?:[хаъ]{3,}|лол|кек|ору|бля|ну|пон|ок|жесть|а+|о+|э+|м+|чт?о+)[\W]*$",
     re.IGNORECASE,
@@ -114,14 +115,6 @@ def fact_lines(facts: PlayerFacts | None, turns: int) -> list[str]:
     return picked
 
 
-def obviously_to_bot(incoming: Incoming) -> bool:
-    replied = incoming.replied
-    own_quarrel = (
-        replied is not None and replied.quarrel and replied.addressee_id == incoming.telegram_id
-    )
-    return own_quarrel or NAME_CALL.match(incoming.text) is not None
-
-
 def render_chat(incoming: Incoming, history: list[RoastLog]) -> str:
     lines: list[str] = []
     for row in history:
@@ -130,8 +123,6 @@ def render_chat(incoming: Incoming, history: list[RoastLog]) -> str:
     replied = incoming.replied
     if replied is not None and not (history and history[-1].reply == replied.text):
         speaker = f"бот → {replied.addressee}" if replied.addressee else "бот"
-        if replied.quarrel:
-            speaker += " (перепалка)"
         lines.append(f"{speaker}: {replied.text}")
     suffix = " [в ответ боту]" if replied is not None else ""
     last = f"{incoming.first_name}{suffix}: {incoming.text}"
@@ -147,7 +138,6 @@ class RoastService:
         *,
         enabled: bool,
         model: str,
-        classifier_model: str,
         daily_limit: int,
         timeout: float,
         clock: Callable[[], float] = time.monotonic,
@@ -157,7 +147,6 @@ class RoastService:
         self._prompts = prompts
         self._enabled = enabled
         self._model = model
-        self._classifier_model = classifier_model
         self._daily_limit = daily_limit
         self._timeout = timeout
         self._clock = clock
@@ -197,17 +186,20 @@ class RoastService:
     def is_bot(self, user_id: int) -> bool:
         return self.bot_id is not None and user_id == self.bot_id
 
-    def wants(self, chat_id: int, telegram_id: int, text: str, *, replied_to_bot: bool) -> bool:
-        if not self._enabled:
+    def wants(self, incoming: Incoming) -> bool:
+        if not self._enabled or TRIVIAL.match(incoming.text) is not None:
             return False
-        argument = self._arguments.get((chat_id, telegram_id))
-        now = self._clock()
-        if argument is not None and argument.silent_until > now:
+        argument = self._arguments.get((incoming.chat_id, incoming.telegram_id))
+        if argument is not None and argument.silent_until > self._clock():
             return False
-        if replied_to_bot or NAME_CALL.match(text) is not None:
+        if MENTION.search(incoming.text) is not None:
             return True
-        in_argument = argument is not None and now - argument.last_at < ARGUMENT_WINDOW
-        return in_argument and TRIVIAL.match(text) is None
+        replied = incoming.replied
+        if replied is None:
+            return False
+        # Реплай на игровое сообщение бота, адресованное другому игроку, обычно обращён к
+        # этому игроку («ну ты и задрот»), а не к боту.
+        return replied.quarrel or replied.addressee_id in (None, incoming.telegram_id)
 
     async def respond(self, incoming: Incoming) -> RoastOutcome:
         key = (incoming.chat_id, incoming.telegram_id)
@@ -246,11 +238,6 @@ class RoastService:
         facts_text = "; ".join(fact_lines(facts, argument.turns))
         request = self._request(chat, facts_text, good)
 
-        # Сначала классификатор (в десятки раз дешевле генерации): генерация оплачивается по
-        # входным токенам, даже если её отменить, а большинство сообщений в споре — не боту.
-        # Когда адресат очевиден, классификатор не нужен вовсе.
-        if not (obviously_to_bot(incoming) or await self._addressed_to_bot(chat)):
-            return RoastOutcome()
         if not self._spend():
             return RoastOutcome()
         started = time.monotonic()
@@ -325,17 +312,6 @@ class RoastService:
             .replace("{chat}", chat)
             .replace("{facts}", f"Что ты знаешь о собеседнике: {facts}" if facts else "")
         )
-
-    async def _addressed_to_bot(self, chat: str) -> bool:
-        try:
-            async with asyncio.timeout(CLASSIFY_TIMEOUT):
-                verdict = await self._llm.complete(
-                    self._classifier_model, self._prompts.classify, chat, max_tokens=3, temperature=0.0
-                )
-        except (LlmError, TimeoutError):
-            logger.warning("Классификатор огрызаний не ответил", exc_info=True)
-            return False
-        return verdict.lower().startswith("да")
 
     async def _generate(self, request: str) -> str | None:
         try:
