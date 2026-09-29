@@ -1292,8 +1292,33 @@ class _ModerationNeutralDialogs:
     def anonymous(self) -> Line:
         return Line("moderation.neutral.anonymous", {})
 
+    def ban_usage(self) -> Line:
+        return Line("moderation.neutral.ban_usage", {})
+
+    def banned(self, *, name: object, term: object) -> Line:
+        return Line("moderation.neutral.banned", {"name": name, "term": term})
+
+    def banned_for(self, *, name: object, reason: object, term: object) -> Line:
+        return Line(
+            "moderation.neutral.banned_for",
+            {
+                "name": name,
+                "reason": reason,
+                "term": term,
+            },
+        )
+
     def bot_lacks_right(self, *, right: object) -> Line:
         return Line("moderation.neutral.bot_lacks_right", {"right": right})
+
+    def kick_usage(self) -> Line:
+        return Line("moderation.neutral.kick_usage", {})
+
+    def kicked(self, *, name: object) -> Line:
+        return Line("moderation.neutral.kicked", {"name": name})
+
+    def kicked_for(self, *, name: object, reason: object) -> Line:
+        return Line("moderation.neutral.kicked_for", {"name": name, "reason": reason})
 
     def moderator_lacks_right(self, *, right: object) -> Line:
         return Line("moderation.neutral.moderator_lacks_right", {"right": right})
@@ -1314,14 +1339,26 @@ class _ModerationNeutralDialogs:
             },
         )
 
+    def not_banned(self, *, name: object) -> Line:
+        return Line("moderation.neutral.not_banned", {"name": name})
+
     def not_muted(self, *, name: object) -> Line:
         return Line("moderation.neutral.not_muted", {"name": name})
+
+    def target_absent(self, *, name: object) -> Line:
+        return Line("moderation.neutral.target_absent", {"name": name})
 
     def target_is_admin(self, *, name: object) -> Line:
         return Line("moderation.neutral.target_is_admin", {"name": name})
 
     def term_out_of_range(self, *, max: object, min: object) -> Line:
         return Line("moderation.neutral.term_out_of_range", {"max": max, "min": min})
+
+    def unban_usage(self) -> Line:
+        return Line("moderation.neutral.unban_usage", {})
+
+    def unbanned(self, *, name: object) -> Line:
+        return Line("moderation.neutral.unbanned", {"name": name})
 
     def unmute_usage(self) -> Line:
         return Line("moderation.neutral.unmute_usage", {})
@@ -1342,8 +1379,33 @@ class _ModerationRoughDialogs:
     def anonymous(self) -> Line:
         return Line("moderation.rough.anonymous", {})
 
+    def ban_usage(self) -> Line:
+        return Line("moderation.rough.ban_usage", {})
+
+    def banned(self, *, name: object, term: object) -> Line:
+        return Line("moderation.rough.banned", {"name": name, "term": term})
+
+    def banned_for(self, *, name: object, reason: object, term: object) -> Line:
+        return Line(
+            "moderation.rough.banned_for",
+            {
+                "name": name,
+                "reason": reason,
+                "term": term,
+            },
+        )
+
     def bot_lacks_right(self, *, right: object) -> Line:
         return Line("moderation.rough.bot_lacks_right", {"right": right})
+
+    def kick_usage(self) -> Line:
+        return Line("moderation.rough.kick_usage", {})
+
+    def kicked(self, *, name: object) -> Line:
+        return Line("moderation.rough.kicked", {"name": name})
+
+    def kicked_for(self, *, name: object, reason: object) -> Line:
+        return Line("moderation.rough.kicked_for", {"name": name, "reason": reason})
 
     def moderator_lacks_right(self, *, right: object) -> Line:
         return Line("moderation.rough.moderator_lacks_right", {"right": right})
@@ -1364,14 +1426,26 @@ class _ModerationRoughDialogs:
             },
         )
 
+    def not_banned(self, *, name: object) -> Line:
+        return Line("moderation.rough.not_banned", {"name": name})
+
     def not_muted(self, *, name: object) -> Line:
         return Line("moderation.rough.not_muted", {"name": name})
+
+    def target_absent(self, *, name: object) -> Line:
+        return Line("moderation.rough.target_absent", {"name": name})
 
     def target_is_admin(self, *, name: object) -> Line:
         return Line("moderation.rough.target_is_admin", {"name": name})
 
     def term_out_of_range(self, *, max: object, min: object) -> Line:
         return Line("moderation.rough.term_out_of_range", {"max": max, "min": min})
+
+    def unban_usage(self) -> Line:
+        return Line("moderation.rough.unban_usage", {})
+
+    def unbanned(self, *, name: object) -> Line:
+        return Line("moderation.rough.unbanned", {"name": name})
 
     def unmute_usage(self) -> Line:
         return Line("moderation.rough.unmute_usage", {})
@@ -2279,27 +2353,47 @@ PLACEHOLDERS: dict[str, frozenset[str]] = {
     "moderation.bot_added": frozenset(),
     "moderation.goodbye_updated": frozenset({"text"}),
     "moderation.neutral.anonymous": frozenset(),
+    "moderation.neutral.ban_usage": frozenset(),
+    "moderation.neutral.banned": frozenset({"name", "term"}),
+    "moderation.neutral.banned_for": frozenset({"name", "reason", "term"}),
     "moderation.neutral.bot_lacks_right": frozenset({"right"}),
+    "moderation.neutral.kick_usage": frozenset(),
+    "moderation.neutral.kicked": frozenset({"name"}),
+    "moderation.neutral.kicked_for": frozenset({"name", "reason"}),
     "moderation.neutral.moderator_lacks_right": frozenset({"right"}),
     "moderation.neutral.mute_usage": frozenset(),
     "moderation.neutral.muted": frozenset({"name", "term"}),
     "moderation.neutral.muted_for": frozenset({"name", "reason", "term"}),
+    "moderation.neutral.not_banned": frozenset({"name"}),
     "moderation.neutral.not_muted": frozenset({"name"}),
+    "moderation.neutral.target_absent": frozenset({"name"}),
     "moderation.neutral.target_is_admin": frozenset({"name"}),
     "moderation.neutral.term_out_of_range": frozenset({"max", "min"}),
+    "moderation.neutral.unban_usage": frozenset(),
+    "moderation.neutral.unbanned": frozenset({"name"}),
     "moderation.neutral.unmute_usage": frozenset(),
     "moderation.neutral.unmuted": frozenset({"name"}),
     "moderation.neutral.user_not_found": frozenset({"query"}),
     "moderation.right.restrict_members": frozenset(),
     "moderation.rough.anonymous": frozenset(),
+    "moderation.rough.ban_usage": frozenset(),
+    "moderation.rough.banned": frozenset({"name", "term"}),
+    "moderation.rough.banned_for": frozenset({"name", "reason", "term"}),
     "moderation.rough.bot_lacks_right": frozenset({"right"}),
+    "moderation.rough.kick_usage": frozenset(),
+    "moderation.rough.kicked": frozenset({"name"}),
+    "moderation.rough.kicked_for": frozenset({"name", "reason"}),
     "moderation.rough.moderator_lacks_right": frozenset({"right"}),
     "moderation.rough.mute_usage": frozenset(),
     "moderation.rough.muted": frozenset({"name", "term"}),
     "moderation.rough.muted_for": frozenset({"name", "reason", "term"}),
+    "moderation.rough.not_banned": frozenset({"name"}),
     "moderation.rough.not_muted": frozenset({"name"}),
+    "moderation.rough.target_absent": frozenset({"name"}),
     "moderation.rough.target_is_admin": frozenset({"name"}),
     "moderation.rough.term_out_of_range": frozenset({"max", "min"}),
+    "moderation.rough.unban_usage": frozenset(),
+    "moderation.rough.unbanned": frozenset({"name"}),
     "moderation.rough.unmute_usage": frozenset(),
     "moderation.rough.unmuted": frozenset({"name"}),
     "moderation.rough.user_not_found": frozenset({"query"}),

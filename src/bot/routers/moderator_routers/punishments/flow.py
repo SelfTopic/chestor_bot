@@ -1,6 +1,9 @@
-from typing import Any
+import time
+from typing import Any, TypeVar
 
+from selfrot import CommandArgs
 from selfrot.exceptions import CommandArgsError
+from selfrot.filter import AnyCommand, Command
 from selfrot.types import ChatMember, ChatMemberAdministrator, ChatMemberOwner
 
 from src.bot.dialogs import Dialogs, Line
@@ -8,7 +11,9 @@ from src.bot.exceptions import (
     AnonymousModerator,
     BotLacksRight,
     ModeratorLacksRight,
+    TargetAbsent,
     TargetIsAdmin,
+    TargetNotBanned,
     TargetNotMuted,
     TermOutOfRange,
 )
@@ -17,6 +22,15 @@ from src.bot.utils import parse_seconds
 
 from ....context import AppContext
 from .filters import is_anonymous_admin
+
+TArgs = TypeVar("TArgs", bound=CommandArgs)
+
+
+def command(slash: str, text: str, args: type[TArgs]) -> AnyCommand[TArgs]:
+    return AnyCommand(
+        Command(slash, args, ignore_case=True),
+        Command(text, args, prefixes="", ignore_case=True),
+    )
 
 
 def has_right(member: ChatMember | None, right: ChatRight) -> bool:
@@ -89,6 +103,9 @@ class PunishmentFlow:
             raise TargetIsAdmin(member.user.first_name)
         return member
 
+    def until_date(self, seconds: int | None) -> int | None:
+        return None if seconds is None else int(time.time()) + seconds
+
     def duration(self, seconds: int) -> str:
         parts = parse_seconds(seconds)
         term = Dialogs.moderation.term
@@ -126,6 +143,10 @@ class PunishmentFlow:
                 line = phrases.target_is_admin(name=name)
             case TargetNotMuted(name=name):
                 line = phrases.not_muted(name=name)
+            case TargetNotBanned(name=name):
+                line = phrases.not_banned(name=name)
+            case TargetAbsent(name=name):
+                line = phrases.target_absent(name=name)
             case TermOutOfRange(min_seconds=shortest, max_seconds=longest):
                 line = phrases.term_out_of_range(
                     min=self.duration(shortest), max=self.duration(longest)

@@ -1,8 +1,5 @@
-import time
-from typing import TypeVar
-
 from selfrot import CommandArgs, MessageHandler, Rest
-from selfrot.filter import AnyCommand, Command, HasReplyUser, HasUser
+from selfrot.filter import HasReplyUser, HasUser
 from selfrot.types import ChatMemberRestricted, ChatPermissions
 
 from src.bot.dialogs import Line
@@ -13,20 +10,11 @@ from ....context import AppContext
 from ...targeting import ExplicitTargetHandler, RepliedTargetHandler, TargetArgs
 from ...types import TextUserMessage, TextUserReplyMessage
 from .filters import FromChatAdmin
-from .flow import PunishmentFlow
-
-TArgs = TypeVar("TArgs", bound=CommandArgs)
+from .flow import PunishmentFlow, command
 
 MUTED = ChatPermissions(**dict.fromkeys(ChatPermissions.model_fields, False))
 # Все права True — так Bot API снимает ограничения целиком.
 UNMUTED = ChatPermissions(**dict.fromkeys(ChatPermissions.model_fields, True))
-
-
-def command(slash: str, text: str, args: type[TArgs]) -> AnyCommand[TArgs]:
-    return AnyCommand(
-        Command(slash, args, ignore_case=True),
-        Command(text, args, prefixes="", ignore_case=True),
-    )
 
 
 class MuteFlow(PunishmentFlow):
@@ -41,13 +29,8 @@ class MuteFlow(PunishmentFlow):
         member = await self.punishable(telegram_id)
 
         chat_id = self.ctx.message.chat.id
-        until = (
-            None
-            if punishment.seconds is None
-            else int(time.time()) + punishment.seconds
-        )
         await self.ctx.bot.restrict_chat_member(
-            chat_id, telegram_id, MUTED, until_date=until
+            chat_id, telegram_id, MUTED, until_date=self.until_date(punishment.seconds)
         )
         await self.ctx.moderation_service.record(
             chat_id,

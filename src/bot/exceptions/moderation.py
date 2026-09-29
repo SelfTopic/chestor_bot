@@ -36,3 +36,15 @@ class TermOutOfRange(ModerationError):
         super().__init__(f"{min_seconds}..{max_seconds}")
         self.min_seconds = min_seconds
         self.max_seconds = max_seconds
+
+
+class TargetNotBanned(ModerationError):
+    def __init__(self, name: str) -> None:
+        super().__init__(name)
+        self.name = name
+
+
+class TargetAbsent(ModerationError):
+    def __init__(self, name: str) -> None:
+        super().__init__(name)
+        self.name = name

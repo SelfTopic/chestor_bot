@@ -28,7 +28,9 @@ from .moderation import (
     BotLacksRight,
     ModerationError,
     ModeratorLacksRight,
+    TargetAbsent,
     TargetIsAdmin,
+    TargetNotBanned,
     TargetNotMuted,
     TermOutOfRange,
 )
@@ -102,5 +104,7 @@ __all__ = [
     "BotLacksRight",
     "TargetIsAdmin",
     "TargetNotMuted",
+    "TargetNotBanned",
+    "TargetAbsent",
     "TermOutOfRange",
 ]

@@ -1,4 +1,4 @@
-"""routers/moderator_routers/punishments: мут и размут. Модератор — админ Telegram с нужным
+"""routers/moderator_routers/punishments: мут, бан, кик и их снятие. Модератор — админ Telegram с нужным
 правом; права, бот и цель берутся из getChatAdministrators / getChatMember."""
 
 import time
@@ -67,6 +67,8 @@ def chat_staff(telegram):
     telegram.results["getChatAdministrators"] = [owner_dict(ADMIN), bot_admin()]
     telegram.results["getChatMember"] = member_dict("member", TARGET, "Петя")
     telegram.results["restrictChatMember"] = True
+    telegram.results["banChatMember"] = True
+    telegram.results["unbanChatMember"] = True
 
 
 async def journal(session_factory) -> list[ModerationAction]:
@@ -259,4 +261,88 @@ class TestUnmute:
 
         assert reply in phrase_texts(neutral.not_muted(name="Петя"))
         assert telegram.bodies("restrictChatMember") == []
+        assert await journal(session_factory) == []
+
+
+class TestBan:
+    async def test_ban_uses_ban_default_and_keeps_reason(
+        self, send, telegram, session_factory
+    ):
+        await seed(session_factory, TARGET, "Петя", username="petya")
+        await set_settings(session_factory, ban_default_seconds=7200)
+
+        (reply,) = await send("/ban @petya реклама", uid=ADMIN, chat=GROUP)
+
+        assert reply in phrase_texts(
+            neutral.banned_for(
+                name="Петя",
+                term=term.limited(duration=term.hours(count=2)),
+                reason="реклама",
+            )
+        )
+        (body,) = telegram.bodies("banChatMember")
+        assert (body["chat_id"], body["user_id"]) == (GROUP, TARGET)
+        assert abs(body["until_date"] - (time.time() + 7200)) < 10
+        assert "revoke_messages" not in body
+        (row,) = await journal(session_factory)
+        assert (row.action, row.duration_seconds, row.reason) == (
+            ModerationActionType.BAN,
+            7200,
+            "реклама",
+        )
+
+    async def test_unban_lifts_ban_without_returning(
+        self, send, telegram, session_factory
+    ):
+        telegram.results["getChatMember"] = member_dict("kicked", TARGET, "Петя")
+
+        (reply,) = await send("разбан", uid=ADMIN, chat=GROUP, reply_to_uid=TARGET)
+
+        assert reply in phrase_texts(neutral.unbanned(name="Петя"))
+        (body,) = telegram.bodies("unbanChatMember")
+        assert (body["user_id"], body["only_if_banned"]) == (TARGET, True)
+        (row,) = await journal(session_factory)
+        assert row.action == ModerationActionType.UNBAN
+
+    async def test_unban_not_banned(self, send, telegram, session_factory):
+        (reply,) = await send("/unban", uid=ADMIN, chat=GROUP, reply_to_uid=TARGET)
+
+        assert reply in phrase_texts(neutral.not_banned(name="Петя"))
+        assert telegram.bodies("unbanChatMember") == []
+        assert await journal(session_factory) == []
+
+
+class TestKick:
+    async def test_kick_bans_then_unbans_and_all_text_is_reason(
+        self, send, telegram, session_factory
+    ):
+        (reply,) = await send(
+            "кик 30м флуд", uid=ADMIN, chat=GROUP, reply_to_uid=TARGET
+        )
+
+        assert reply in phrase_texts(neutral.kicked_for(name="Петя", reason="30м флуд"))
+        methods = [method for method, _ in telegram.calls]
+        assert methods.index("banChatMember") < methods.index("unbanChatMember")
+        (ban,) = telegram.bodies("banChatMember")
+        assert "until_date" not in ban
+        (unban,) = telegram.bodies("unbanChatMember")
+        assert unban["only_if_banned"] is True
+        (row,) = await journal(session_factory)
+        assert (row.action, row.duration_seconds, row.reason) == (
+            ModerationActionType.KICK,
+            None,
+            "30м флуд",
+        )
+
+    @pytest.mark.parametrize("status", ["left", "kicked"])
+    async def test_absent_member_is_not_kicked(
+        self, send, telegram, session_factory, status
+    ):
+        telegram.results["getChatMember"] = member_dict(status, TARGET, "Петя")
+
+        (reply,) = await send("кик", uid=ADMIN, chat=GROUP, reply_to_uid=TARGET)
+
+        assert reply in phrase_texts(neutral.target_absent(name="Петя"))
+        assert telegram.bodies("banChatMember") == []
+        assert telegram.bodies("unbanChatMember") == []
         assert await journal(session_factory) == []
