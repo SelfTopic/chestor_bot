@@ -71,3 +71,5 @@ poetry run pytest tests -q
   (формулы урона/уклонения, дуэли, бои с мобами).
 - [`regeneration.md`](docs/design/regeneration.md) - модель регенерации HP в бою.
 - [`economy.md`](docs/design/economy.md) - источники и стоки CheSton/RC-клеток.
+- [`moderation.md`](docs/design/moderation.md) - план модуля модерации чатов:
+  каталог возможностей, ограничения Telegram, открытые вопросы.
