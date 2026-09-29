@@ -92,7 +92,7 @@ class TestBan:
     async def test_unban_by_reply(self, feed, telegram, session_factory):
         await seed(session_factory, 42, "Вася", is_banned=True)
 
-        await feed(message_update("/unban", uid=ADMIN, reply_to_uid=42))
+        await feed(message_update("/unban_bot", uid=ADMIN, reply_to_uid=42))
 
         user = await get_user(session_factory, 42)
         assert user is not None and not user.is_banned
@@ -100,7 +100,7 @@ class TestBan:
     async def test_unban_explicit_not_banned(self, send, session_factory):
         await seed(session_factory, 42, "Вася", username="vasya")
 
-        assert await send("/unban @vasya", uid=ADMIN) == [
+        assert await send("/unban_bot @vasya", uid=ADMIN) == [
             only_text(Dialogs.admin.unban.not_banned())
         ]
 

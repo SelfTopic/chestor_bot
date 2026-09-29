@@ -93,7 +93,7 @@ class UnbanRepliedHandler(
     RepliedTargetHandler[UnbanRepliedArgs],
     MessageHandler[AppContext[ReplyUserMessage]],
 ):
-    cmd = Command("unban", UnbanRepliedArgs)
+    cmd = Command("unban_bot", UnbanRepliedArgs)
     query = cmd & HasReplyUser()
 
     async def perform(self, telegram_id: int, args: UnbanRepliedArgs) -> None:
@@ -107,7 +107,7 @@ class UnbanArgs(TargetArgs):
 class UnbanHandler(
     ExplicitTargetHandler[UnbanArgs], MessageHandler[AppContext[TextMessage]]
 ):
-    cmd = Command("unban", UnbanArgs)
+    cmd = Command("unban_bot", UnbanArgs)
     query = cmd & ~HasReplyUser()
     usage = Dialogs.admin.unban.usage()
 
