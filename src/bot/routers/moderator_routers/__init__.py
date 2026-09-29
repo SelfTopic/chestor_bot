@@ -6,6 +6,7 @@ from .punishments import PunishmentRouter
 from .set_goodbye import SetGoodbyeHandler
 from .set_rules import SetRulesHandler
 from .set_welcome import SetWelcomeHandler
+from .settings import SettingsRouter
 
 
 class ChatTextRouter(BaseRouter[AppContext]):
@@ -14,4 +15,5 @@ class ChatTextRouter(BaseRouter[AppContext]):
 
 
 class ModeratorRouter(BaseRouter[AppContext]):
-    routers = (PunishmentRouter, ChatTextRouter)
+    # Настройки раньше наказаний: «мут дефолт 1ч» иначе забрал бы «мут».
+    routers = (SettingsRouter, PunishmentRouter, ChatTextRouter)

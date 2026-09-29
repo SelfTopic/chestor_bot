@@ -1,7 +1,7 @@
 import pytest
-from sqlalchemy import select, update
+from sqlalchemy import select
 
-from src.bot.exceptions import TermOutOfRange
+from src.bot.exceptions import DurationParseError, TermOutOfRange
 from src.bot.repositories import ChatRepository, ModerationRepository
 from src.bot.services.moderation import ModerationService
 from src.bot.types import ModerationActionType, ModerationVoice, Punishment
@@ -32,17 +32,15 @@ async def test_new_chat_gets_default_settings(moderation, session):
 
 async def test_settings_keep_what_the_chat_changed(moderation, session):
     await moderation.settings(CHAT)
-    await session.execute(
-        update(ModerationSettings).values(
-            voice=ModerationVoice.ROUGH, mute_default_seconds=60
-        )
-    )
+    await moderation.set_voice(CHAT, ModerationVoice.ROUGH)
+    await moderation.set_mute_default(CHAT, 60)
+    await moderation.set_ban_default(CHAT, None)
     session.expire_all()
 
     settings = await moderation.settings(CHAT)
 
     assert settings.voice is ModerationVoice.ROUGH
-    assert settings.mute_default_seconds == 60
+    assert (settings.mute_default_seconds, settings.ban_default_seconds) == (60, None)
 
 
 async def test_record_writes_journal(moderation, session):
@@ -89,3 +87,11 @@ async def test_punishment_outside_telegram_limits(moderation, text):
         moderation.punishment(text, DEFAULT)
 
     assert (caught.value.min_seconds, caught.value.max_seconds) == (30, 366 * 24 * 3600)
+
+
+async def test_default_term_is_the_whole_text(moderation):
+    assert moderation.term("1 час 30 мин") == 5400
+    assert moderation.term("навсегда") is None
+
+    with pytest.raises(DurationParseError):
+        moderation.term("1ч флуд")

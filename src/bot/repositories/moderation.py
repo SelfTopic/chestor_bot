@@ -1,4 +1,4 @@
-from typing import Optional
+from typing import Any, Optional
 
 from sqlalchemy.dialects.postgresql import insert
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -24,6 +24,21 @@ class ModerationRepository(Base):
         settings = await self.session.get(ModerationSettings, chat_id)
         if settings is None:
             raise ValueError(f"Нет настроек модерации чата {chat_id}")
+
+        return settings
+
+    async def update_settings(self, chat_id: int, **values: Any) -> ModerationSettings:
+        stmt = (
+            insert(ModerationSettings)
+            .values(chat_id=chat_id, **values)
+            .on_conflict_do_update(index_elements=["chat_id"], set_=values)
+            .returning(ModerationSettings)
+            .execution_options(populate_existing=True)
+        )
+
+        settings = await self.session.scalar(stmt)
+        if settings is None:
+            raise ValueError(f"Не удалось сохранить настройки модерации чата {chat_id}")
 
         return settings
 

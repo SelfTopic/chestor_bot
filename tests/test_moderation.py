@@ -346,3 +346,73 @@ class TestKick:
         assert telegram.bodies("banChatMember") == []
         assert telegram.bodies("unbanChatMember") == []
         assert await journal(session_factory) == []
+
+
+async def stored_settings(session_factory) -> ModerationSettings:
+    async with session_factory() as session:
+        return await ModerationRepository(session).settings(GROUP)
+
+
+class TestSettings:
+    async def test_mute_default_changes_the_chat_setting(
+        self, send, telegram, session_factory
+    ):
+        (reply,) = await send(
+            "Мут дефолт 1ч", uid=ADMIN, chat=GROUP, reply_to_uid=TARGET
+        )
+
+        assert reply in phrase_texts(
+            neutral.mute_default_set(term=term.limited(duration=term.hours(count=1)))
+        )
+        assert (await stored_settings(session_factory)).mute_default_seconds == 3600
+        assert telegram.bodies("restrictChatMember") == []
+
+    async def test_forever_ban_default_makes_bans_without_term_forever(
+        self, send, telegram, session_factory
+    ):
+        (reply,) = await send("/ban_default навсегда", uid=ADMIN, chat=GROUP)
+        assert reply in phrase_texts(neutral.ban_default_set(term=term.forever()))
+
+        (reply,) = await send("бан", uid=ADMIN, chat=GROUP, reply_to_uid=TARGET)
+
+        assert reply in phrase_texts(neutral.banned(name="Петя", term=term.forever()))
+        (body,) = telegram.bodies("banChatMember")
+        assert "until_date" not in body
+
+    async def test_any_admin_sees_current_default(self, send, telegram):
+        telegram.results["getChatAdministrators"] = [owner_dict(99), admin_dict(ADMIN)]
+
+        (reply,) = await send("бан дефолт", uid=ADMIN, chat=GROUP)
+
+        assert reply in phrase_texts(neutral.ban_default_current(term=minutes(30)))
+
+    async def test_changing_needs_change_info_right(
+        self, send, telegram, session_factory
+    ):
+        telegram.results["getChatAdministrators"] = [
+            owner_dict(99),
+            {**admin_dict(ADMIN), "can_restrict_members": True},
+        ]
+
+        (reply,) = await send("мут дефолт 1ч", uid=ADMIN, chat=GROUP)
+
+        change_info = only_text(Dialogs.moderation.right.change_info())
+        assert reply in phrase_texts(neutral.moderator_lacks_right(right=change_info))
+        assert (await stored_settings(session_factory)).mute_default_seconds == 1800
+
+    async def test_unreadable_term_shows_current_default(self, send):
+        (reply,) = await send("мут дефолт полчаса", uid=ADMIN, chat=GROUP)
+
+        assert reply in phrase_texts(neutral.mute_default_current(term=minutes(30)))
+
+    async def test_voice_switch_answers_in_new_voice(self, send, session_factory):
+        (reply,) = await send("Стиль модерации Грубый", uid=ADMIN, chat=GROUP)
+
+        assert reply in phrase_texts(Dialogs.moderation.rough.voice_set())
+        assert (await stored_settings(session_factory)).voice is ModerationVoice.ROUGH
+
+    @pytest.mark.parametrize("text", ["/moderation_voice", "стиль модерации мягкий"])
+    async def test_voice_without_valid_word_shows_current(self, send, text):
+        (reply,) = await send(text, uid=ADMIN, chat=GROUP)
+
+        assert reply in phrase_texts(neutral.voice_current())

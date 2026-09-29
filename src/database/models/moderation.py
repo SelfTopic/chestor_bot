@@ -30,11 +30,12 @@ class ModerationSettings(Base):
         primary_key=True,
     )
 
-    mute_default_seconds: Mapped[int] = mapped_column(
-        nullable=False, server_default="1800"
+    # NULL — навсегда.
+    mute_default_seconds: Mapped[Optional[int]] = mapped_column(
+        nullable=True, server_default="1800"
     )
-    ban_default_seconds: Mapped[int] = mapped_column(
-        nullable=False, server_default="1800"
+    ban_default_seconds: Mapped[Optional[int]] = mapped_column(
+        nullable=True, server_default="1800"
     )
     voice: Mapped[ModerationVoice] = mapped_column(
         _string_enum(ModerationVoice),

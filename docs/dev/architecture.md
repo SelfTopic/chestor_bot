@@ -49,8 +49,9 @@
   - `ghoul_routers/` — механика гуля: голод, статы, кагуне, бои с мобами, дуэли (`duel/`),
     показ боя (`battle_text.py`, `battle_text_generator.py`).
   - `creator_routers/` — админ-команды (`ADMIN_IDS` проверяет middleware пакета).
-  - `moderator_routers/` — модерация чата: `punishments/` (мут, бан, кик и их снятие; модератор — админ
-    Telegram с нужным правом), приветствие/прощание/правила чата.
+  - `moderator_routers/` — модерация чата (модератор — админ Telegram с нужным правом):
+    `punishments/` — мут, бан, кик и их снятие, `settings/` — сроки по умолчанию и голос
+    модерации; приветствие/прощание/правила чата.
   - `chat_member_update_routers/` — вход и выход участников; ведут учёт участников чата
     (`ChatParticipant`, сообщения в группе считает `SyncEntitiesMiddleware`).
   - `rich.py`, `targeting.py`, `types.py`, `utils.py` — общее для нескольких областей.

@@ -9,8 +9,9 @@ from src.bot.types import ModerationActionType
 from ....context import AppContext
 from ...targeting import ExplicitTargetHandler, RepliedTargetHandler, TargetArgs
 from ...types import TextUserMessage, TextUserReplyMessage
-from .filters import FromChatAdmin
-from .flow import PunishmentFlow, command
+from ..filters import FromChatAdmin
+from ..flow import command
+from .flow import PunishmentFlow
 
 MUTED = ChatPermissions(**dict.fromkeys(ChatPermissions.model_fields, False))
 # Все права True — так Bot API снимает ограничения целиком.

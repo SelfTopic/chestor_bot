@@ -18,6 +18,7 @@ class ModerationActionType(str, Enum):
 
 class ChatRight(str, Enum):
     RESTRICT_MEMBERS = "can_restrict_members"
+    CHANGE_INFO = "can_change_info"
 
 
 @dataclass(frozen=True)

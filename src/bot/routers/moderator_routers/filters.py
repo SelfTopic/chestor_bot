@@ -4,7 +4,7 @@ from selfrot import BaseContext
 from selfrot.filter import BaseFilter
 from selfrot.types import Message
 
-from ....context import AppContext
+from ...context import AppContext
 
 
 def is_anonymous_admin(message: Message) -> bool:

@@ -1292,6 +1292,12 @@ class _ModerationNeutralDialogs:
     def anonymous(self) -> Line:
         return Line("moderation.neutral.anonymous", {})
 
+    def ban_default_current(self, *, term: object) -> Line:
+        return Line("moderation.neutral.ban_default_current", {"term": term})
+
+    def ban_default_set(self, *, term: object) -> Line:
+        return Line("moderation.neutral.ban_default_set", {"term": term})
+
     def ban_usage(self) -> Line:
         return Line("moderation.neutral.ban_usage", {})
 
@@ -1322,6 +1328,12 @@ class _ModerationNeutralDialogs:
 
     def moderator_lacks_right(self, *, right: object) -> Line:
         return Line("moderation.neutral.moderator_lacks_right", {"right": right})
+
+    def mute_default_current(self, *, term: object) -> Line:
+        return Line("moderation.neutral.mute_default_current", {"term": term})
+
+    def mute_default_set(self, *, term: object) -> Line:
+        return Line("moderation.neutral.mute_default_set", {"term": term})
 
     def mute_usage(self) -> Line:
         return Line("moderation.neutral.mute_usage", {})
@@ -1369,8 +1381,17 @@ class _ModerationNeutralDialogs:
     def user_not_found(self, *, query: object) -> Line:
         return Line("moderation.neutral.user_not_found", {"query": query})
 
+    def voice_current(self) -> Line:
+        return Line("moderation.neutral.voice_current", {})
+
+    def voice_set(self) -> Line:
+        return Line("moderation.neutral.voice_set", {})
+
 
 class _ModerationRightDialogs:
+    def change_info(self) -> Line:
+        return Line("moderation.right.change_info", {})
+
     def restrict_members(self) -> Line:
         return Line("moderation.right.restrict_members", {})
 
@@ -1378,6 +1399,12 @@ class _ModerationRightDialogs:
 class _ModerationRoughDialogs:
     def anonymous(self) -> Line:
         return Line("moderation.rough.anonymous", {})
+
+    def ban_default_current(self, *, term: object) -> Line:
+        return Line("moderation.rough.ban_default_current", {"term": term})
+
+    def ban_default_set(self, *, term: object) -> Line:
+        return Line("moderation.rough.ban_default_set", {"term": term})
 
     def ban_usage(self) -> Line:
         return Line("moderation.rough.ban_usage", {})
@@ -1409,6 +1436,12 @@ class _ModerationRoughDialogs:
 
     def moderator_lacks_right(self, *, right: object) -> Line:
         return Line("moderation.rough.moderator_lacks_right", {"right": right})
+
+    def mute_default_current(self, *, term: object) -> Line:
+        return Line("moderation.rough.mute_default_current", {"term": term})
+
+    def mute_default_set(self, *, term: object) -> Line:
+        return Line("moderation.rough.mute_default_set", {"term": term})
 
     def mute_usage(self) -> Line:
         return Line("moderation.rough.mute_usage", {})
@@ -1455,6 +1488,12 @@ class _ModerationRoughDialogs:
 
     def user_not_found(self, *, query: object) -> Line:
         return Line("moderation.rough.user_not_found", {"query": query})
+
+    def voice_current(self) -> Line:
+        return Line("moderation.rough.voice_current", {})
+
+    def voice_set(self) -> Line:
+        return Line("moderation.rough.voice_set", {})
 
 
 class _ModerationTermDialogs:
@@ -2353,6 +2392,8 @@ PLACEHOLDERS: dict[str, frozenset[str]] = {
     "moderation.bot_added": frozenset(),
     "moderation.goodbye_updated": frozenset({"text"}),
     "moderation.neutral.anonymous": frozenset(),
+    "moderation.neutral.ban_default_current": frozenset({"term"}),
+    "moderation.neutral.ban_default_set": frozenset({"term"}),
     "moderation.neutral.ban_usage": frozenset(),
     "moderation.neutral.banned": frozenset({"name", "term"}),
     "moderation.neutral.banned_for": frozenset({"name", "reason", "term"}),
@@ -2361,6 +2402,8 @@ PLACEHOLDERS: dict[str, frozenset[str]] = {
     "moderation.neutral.kicked": frozenset({"name"}),
     "moderation.neutral.kicked_for": frozenset({"name", "reason"}),
     "moderation.neutral.moderator_lacks_right": frozenset({"right"}),
+    "moderation.neutral.mute_default_current": frozenset({"term"}),
+    "moderation.neutral.mute_default_set": frozenset({"term"}),
     "moderation.neutral.mute_usage": frozenset(),
     "moderation.neutral.muted": frozenset({"name", "term"}),
     "moderation.neutral.muted_for": frozenset({"name", "reason", "term"}),
@@ -2374,8 +2417,13 @@ PLACEHOLDERS: dict[str, frozenset[str]] = {
     "moderation.neutral.unmute_usage": frozenset(),
     "moderation.neutral.unmuted": frozenset({"name"}),
     "moderation.neutral.user_not_found": frozenset({"query"}),
+    "moderation.neutral.voice_current": frozenset(),
+    "moderation.neutral.voice_set": frozenset(),
+    "moderation.right.change_info": frozenset(),
     "moderation.right.restrict_members": frozenset(),
     "moderation.rough.anonymous": frozenset(),
+    "moderation.rough.ban_default_current": frozenset({"term"}),
+    "moderation.rough.ban_default_set": frozenset({"term"}),
     "moderation.rough.ban_usage": frozenset(),
     "moderation.rough.banned": frozenset({"name", "term"}),
     "moderation.rough.banned_for": frozenset({"name", "reason", "term"}),
@@ -2384,6 +2432,8 @@ PLACEHOLDERS: dict[str, frozenset[str]] = {
     "moderation.rough.kicked": frozenset({"name"}),
     "moderation.rough.kicked_for": frozenset({"name", "reason"}),
     "moderation.rough.moderator_lacks_right": frozenset({"right"}),
+    "moderation.rough.mute_default_current": frozenset({"term"}),
+    "moderation.rough.mute_default_set": frozenset({"term"}),
     "moderation.rough.mute_usage": frozenset(),
     "moderation.rough.muted": frozenset({"name", "term"}),
     "moderation.rough.muted_for": frozenset({"name", "reason", "term"}),
@@ -2397,6 +2447,8 @@ PLACEHOLDERS: dict[str, frozenset[str]] = {
     "moderation.rough.unmute_usage": frozenset(),
     "moderation.rough.unmuted": frozenset({"name"}),
     "moderation.rough.user_not_found": frozenset({"query"}),
+    "moderation.rough.voice_current": frozenset(),
+    "moderation.rough.voice_set": frozenset(),
     "moderation.rules_updated": frozenset({"rules"}),
     "moderation.term.days": frozenset({"count"}),
     "moderation.term.forever": frozenset(),
