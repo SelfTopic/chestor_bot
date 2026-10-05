@@ -17,3 +17,4 @@ assets/
 
 # Сессия квиза (refresh-токены ghoul_quiz)
 .ghoul_quiz/
+/scripts
