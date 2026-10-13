@@ -1,6 +1,14 @@
 import time
 
-from selfrot.types import ChatMember, ChatMemberAdministrator, ChatMemberOwner
+from selfrot.types import (
+    ChatMember,
+    ChatMemberAdministrator,
+    ChatMemberBanned,
+    ChatMemberLeft,
+    ChatMemberOwner,
+    ChatMemberRestricted,
+    ChatPermissions,
+)
 
 from src.bot.dialogs import Line
 from src.bot.exceptions import (
@@ -13,6 +21,14 @@ from src.bot.exceptions import (
 from src.bot.types import ChatRight
 
 from ..flow import ModerationFlow, has_right
+
+MUTED = ChatPermissions(**dict.fromkeys(ChatPermissions.model_fields, False))
+
+
+def is_absent(member: ChatMember) -> bool:
+    return isinstance(member, (ChatMemberLeft, ChatMemberBanned)) or (
+        isinstance(member, ChatMemberRestricted) and not member.is_member
+    )
 
 
 class PunishmentFlow(ModerationFlow):
@@ -43,6 +59,21 @@ class PunishmentFlow(ModerationFlow):
 
     def until_date(self, seconds: int | None) -> int | None:
         return None if seconds is None else int(time.time()) + seconds
+
+    async def restrict(self, telegram_id: int, seconds: int | None) -> None:
+        await self.ctx.bot.restrict_chat_member(
+            self.ctx.message.chat.id, telegram_id, MUTED, until_date=self.until_date(seconds)
+        )
+
+    async def ban_member(self, telegram_id: int, seconds: int | None) -> None:
+        await self.ctx.bot.ban_chat_member(
+            self.ctx.message.chat.id, telegram_id, until_date=self.until_date(seconds)
+        )
+
+    async def kick_member(self, telegram_id: int) -> None:
+        chat_id = self.ctx.message.chat.id
+        await self.ctx.bot.ban_chat_member(chat_id, telegram_id)
+        await self.ctx.bot.unban_chat_member(chat_id, telegram_id, only_if_banned=True)
 
     async def on_error(self, exc: Exception) -> None:
         phrases = self.phrases

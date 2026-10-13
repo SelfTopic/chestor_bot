@@ -13,7 +13,6 @@ from ..filters import FromChatAdmin
 from ..flow import command
 from .flow import PunishmentFlow
 
-MUTED = ChatPermissions(**dict.fromkeys(ChatPermissions.model_fields, False))
 # Все права True — так Bot API снимает ограничения целиком.
 UNMUTED = ChatPermissions(**dict.fromkeys(ChatPermissions.model_fields, True))
 
@@ -29,12 +28,9 @@ class MuteFlow(PunishmentFlow):
         )
         member = await self.punishable(telegram_id)
 
-        chat_id = self.ctx.message.chat.id
-        await self.ctx.bot.restrict_chat_member(
-            chat_id, telegram_id, MUTED, until_date=self.until_date(punishment.seconds)
-        )
+        await self.restrict(telegram_id, punishment.seconds)
         await self.ctx.moderation_service.record(
-            chat_id,
+            self.ctx.message.chat.id,
             moderator_id,
             telegram_id,
             ModerationActionType.MUTE,

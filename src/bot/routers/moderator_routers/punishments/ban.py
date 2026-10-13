@@ -25,12 +25,9 @@ class BanFlow(PunishmentFlow):
         )
         member = await self.punishable(telegram_id)
 
-        chat_id = self.ctx.message.chat.id
-        await self.ctx.bot.ban_chat_member(
-            chat_id, telegram_id, until_date=self.until_date(punishment.seconds)
-        )
+        await self.ban_member(telegram_id, punishment.seconds)
         await self.ctx.moderation_service.record(
-            chat_id,
+            self.ctx.message.chat.id,
             moderator_id,
             telegram_id,
             ModerationActionType.BAN,

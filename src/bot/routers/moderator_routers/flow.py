@@ -24,10 +24,11 @@ logger = logging.getLogger(__name__)
 TArgs = TypeVar("TArgs", bound=CommandArgs)
 
 
-def command(slash: str, text: str, args: type[TArgs]) -> AnyCommand[TArgs]:
+def command(slash: str, text: str | tuple[str, ...], args: type[TArgs]) -> AnyCommand[TArgs]:
+    texts = (text,) if isinstance(text, str) else text
     return AnyCommand(
         Command(slash, args, ignore_case=True),
-        Command(text, args, prefixes="", ignore_case=True),
+        *(Command(word, args, prefixes="", ignore_case=True) for word in texts),
     )
 
 

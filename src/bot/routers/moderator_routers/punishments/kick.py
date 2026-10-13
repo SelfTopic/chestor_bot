@@ -1,6 +1,5 @@
 from selfrot import CommandArgs, MessageHandler, Rest
 from selfrot.filter import HasReplyUser, HasUser
-from selfrot.types import ChatMemberBanned, ChatMemberLeft, ChatMemberRestricted
 
 from src.bot.dialogs import Line
 from src.bot.exceptions import TargetAbsent
@@ -11,7 +10,7 @@ from ...targeting import ExplicitTargetHandler, RepliedTargetHandler, TargetArgs
 from ...types import TextUserMessage, TextUserReplyMessage
 from ..filters import FromChatAdmin
 from ..flow import command
-from .flow import PunishmentFlow
+from .flow import PunishmentFlow, is_absent
 
 
 class KickFlow(PunishmentFlow):
@@ -23,17 +22,13 @@ class KickFlow(PunishmentFlow):
         member = await self.punishable(telegram_id)
         name = member.user.first_name
         # Разбан после бана вернул бы забаненному вход, поэтому отсутствующих не трогаем.
-        if isinstance(member, (ChatMemberLeft, ChatMemberBanned)) or (
-            isinstance(member, ChatMemberRestricted) and not member.is_member
-        ):
+        if is_absent(member):
             raise TargetAbsent(name)
 
-        chat_id = self.ctx.message.chat.id
-        await self.ctx.bot.ban_chat_member(chat_id, telegram_id)
-        await self.ctx.bot.unban_chat_member(chat_id, telegram_id, only_if_banned=True)
+        await self.kick_member(telegram_id)
         reason = text.strip() or None
         await self.ctx.moderation_service.record(
-            chat_id, moderator_id, telegram_id, ModerationActionType.KICK, reason=reason
+            self.ctx.message.chat.id, moderator_id, telegram_id, ModerationActionType.KICK, reason=reason
         )
 
         who = dict(chat=self.chat_title, moderator=self.moderator_name, id=telegram_id)
