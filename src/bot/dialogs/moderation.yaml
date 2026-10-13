@@ -132,6 +132,11 @@ moderation:
     log_warn_limit: '⚙️ «{chat}» · наказание теперь на {limit}-м варне. Модератор: {moderator}'
     log_warn_penalty: '⚙️ «{chat}» · на лимите варнов теперь {penalty}. Модератор: {moderator}'
     log_warn_expiry: '⚙️ «{chat}» · варны сгорают {term}. Модератор: {moderator}'
+    mute_expired: '🔊 {name}, срок мута истёк — снова можно писать.'
+    warn_expired: '🕊 {name}, варн сгорел. Осталось {count} из {limit}.'
+    log_mute_expired: '🔊 «{chat}» · мут истёк: {name} (id {id})'
+    log_ban_expired: '✅ «{chat}» · бан истёк: {name} (id {id}) может вернуться по ссылке'
+    log_warn_expired: '🕊 «{chat}» · варн сгорел, осталось {count}/{limit}: {name} (id {id})'
   rough:
     muted:
       - '⛓ CCG пакует: {name} едет в Кокурию {term}. Посиди, подумай.'
@@ -268,3 +273,10 @@ moderation:
     log_warn_limit: '⚙️ Рапорт CCG, «{chat}»: пакуем на {limit}-й метке. Приказ: {moderator}'
     log_warn_penalty: '⚙️ Рапорт CCG, «{chat}»: за все метки теперь {penalty}. Приказ: {moderator}'
     log_warn_expiry: '⚙️ Рапорт CCG, «{chat}»: метки сгорают {term}. Приказ: {moderator}'
+    mute_expired:
+      - '🔓 {name}, срок в Кокурии вышел. Свободен, но CCG помнит.'
+      - '🔓 {name} отсидел своё. Можешь снова открывать рот.'
+    warn_expired: '🧽 {name}, одна метка CCG выцвела. Осталось {count} из {limit}.'
+    log_mute_expired: '🔓 Рапорт CCG, «{chat}»: {name} (id {id}) отсидел срок в Кокурии'
+    log_ban_expired: '🚪 Рапорт CCG, «{chat}»: срок изгнания {name} (id {id}) вышел, может вернуться по ссылке'
+    log_warn_expired: '🧽 Рапорт CCG, «{chat}»: у {name} (id {id}) выцвела метка, осталось {count}/{limit}'

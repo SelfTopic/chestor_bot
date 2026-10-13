@@ -1369,6 +1369,16 @@ class _ModerationNeutralDialogs:
             },
         )
 
+    def log_ban_expired(self, *, chat: object, id: object, name: object) -> Line:
+        return Line(
+            "moderation.neutral.log_ban_expired",
+            {
+                "chat": chat,
+                "id": id,
+                "name": name,
+            },
+        )
+
     def log_banned(
         self,
         *,
@@ -1462,6 +1472,16 @@ class _ModerationNeutralDialogs:
                 "chat": chat,
                 "moderator": moderator,
                 "term": term,
+            },
+        )
+
+    def log_mute_expired(self, *, chat: object, id: object, name: object) -> Line:
+        return Line(
+            "moderation.neutral.log_mute_expired",
+            {
+                "chat": chat,
+                "id": id,
+                "name": name,
             },
         )
 
@@ -1580,6 +1600,26 @@ class _ModerationNeutralDialogs:
             {
                 "chat": chat,
                 "moderator": moderator,
+            },
+        )
+
+    def log_warn_expired(
+        self,
+        *,
+        chat: object,
+        count: object,
+        id: object,
+        limit: object,
+        name: object,
+    ) -> Line:
+        return Line(
+            "moderation.neutral.log_warn_expired",
+            {
+                "chat": chat,
+                "count": count,
+                "id": id,
+                "limit": limit,
+                "name": name,
             },
         )
 
@@ -1738,6 +1778,9 @@ class _ModerationNeutralDialogs:
     def mute_default_set(self, *, term: object) -> Line:
         return Line("moderation.neutral.mute_default_set", {"term": term})
 
+    def mute_expired(self, *, name: object) -> Line:
+        return Line("moderation.neutral.mute_expired", {"name": name})
+
     def mute_usage(self) -> Line:
         return Line("moderation.neutral.mute_usage", {})
 
@@ -1811,6 +1854,16 @@ class _ModerationNeutralDialogs:
 
     def voice_set(self) -> Line:
         return Line("moderation.neutral.voice_set", {})
+
+    def warn_expired(self, *, count: object, limit: object, name: object) -> Line:
+        return Line(
+            "moderation.neutral.warn_expired",
+            {
+                "count": count,
+                "limit": limit,
+                "name": name,
+            },
+        )
 
     def warn_expiry_current(self, *, term: object) -> Line:
         return Line("moderation.neutral.warn_expiry_current", {"term": term})
@@ -2037,6 +2090,16 @@ class _ModerationRoughDialogs:
             },
         )
 
+    def log_ban_expired(self, *, chat: object, id: object, name: object) -> Line:
+        return Line(
+            "moderation.rough.log_ban_expired",
+            {
+                "chat": chat,
+                "id": id,
+                "name": name,
+            },
+        )
+
     def log_banned(
         self,
         *,
@@ -2130,6 +2193,16 @@ class _ModerationRoughDialogs:
                 "chat": chat,
                 "moderator": moderator,
                 "term": term,
+            },
+        )
+
+    def log_mute_expired(self, *, chat: object, id: object, name: object) -> Line:
+        return Line(
+            "moderation.rough.log_mute_expired",
+            {
+                "chat": chat,
+                "id": id,
+                "name": name,
             },
         )
 
@@ -2248,6 +2321,26 @@ class _ModerationRoughDialogs:
             {
                 "chat": chat,
                 "moderator": moderator,
+            },
+        )
+
+    def log_warn_expired(
+        self,
+        *,
+        chat: object,
+        count: object,
+        id: object,
+        limit: object,
+        name: object,
+    ) -> Line:
+        return Line(
+            "moderation.rough.log_warn_expired",
+            {
+                "chat": chat,
+                "count": count,
+                "id": id,
+                "limit": limit,
+                "name": name,
             },
         )
 
@@ -2406,6 +2499,9 @@ class _ModerationRoughDialogs:
     def mute_default_set(self, *, term: object) -> Line:
         return Line("moderation.rough.mute_default_set", {"term": term})
 
+    def mute_expired(self, *, name: object) -> Line:
+        return Line("moderation.rough.mute_expired", {"name": name})
+
     def mute_usage(self) -> Line:
         return Line("moderation.rough.mute_usage", {})
 
@@ -2479,6 +2575,16 @@ class _ModerationRoughDialogs:
 
     def voice_set(self) -> Line:
         return Line("moderation.rough.voice_set", {})
+
+    def warn_expired(self, *, count: object, limit: object, name: object) -> Line:
+        return Line(
+            "moderation.rough.warn_expired",
+            {
+                "count": count,
+                "limit": limit,
+                "name": name,
+            },
+        )
 
     def warn_expiry_current(self, *, term: object) -> Line:
         return Line("moderation.rough.warn_expiry_current", {"term": term})
@@ -3527,6 +3633,7 @@ PLACEHOLDERS: dict[str, frozenset[str]] = {
     "moderation.neutral.kicked": frozenset({"name"}),
     "moderation.neutral.kicked_for": frozenset({"name", "reason"}),
     "moderation.neutral.log_ban_default": frozenset({"chat", "moderator", "term"}),
+    "moderation.neutral.log_ban_expired": frozenset({"chat", "id", "name"}),
     "moderation.neutral.log_banned": frozenset(
         {
             "chat",
@@ -3557,6 +3664,7 @@ PLACEHOLDERS: dict[str, frozenset[str]] = {
         }
     ),
     "moderation.neutral.log_mute_default": frozenset({"chat", "moderator", "term"}),
+    "moderation.neutral.log_mute_expired": frozenset({"chat", "id", "name"}),
     "moderation.neutral.log_muted": frozenset(
         {
             "chat",
@@ -3590,6 +3698,15 @@ PLACEHOLDERS: dict[str, frozenset[str]] = {
         }
     ),
     "moderation.neutral.log_voice": frozenset({"chat", "moderator"}),
+    "moderation.neutral.log_warn_expired": frozenset(
+        {
+            "chat",
+            "count",
+            "id",
+            "limit",
+            "name",
+        }
+    ),
     "moderation.neutral.log_warn_expiry": frozenset({"chat", "moderator", "term"}),
     "moderation.neutral.log_warn_limit": frozenset({"chat", "limit", "moderator"}),
     "moderation.neutral.log_warn_penalty": frozenset({"chat", "moderator", "penalty"}),
@@ -3646,6 +3763,7 @@ PLACEHOLDERS: dict[str, frozenset[str]] = {
     "moderation.neutral.moderator_lacks_right": frozenset({"right"}),
     "moderation.neutral.mute_default_current": frozenset({"term"}),
     "moderation.neutral.mute_default_set": frozenset({"term"}),
+    "moderation.neutral.mute_expired": frozenset({"name"}),
     "moderation.neutral.mute_usage": frozenset(),
     "moderation.neutral.muted": frozenset({"name", "term"}),
     "moderation.neutral.muted_for": frozenset({"name", "reason", "term"}),
@@ -3666,6 +3784,7 @@ PLACEHOLDERS: dict[str, frozenset[str]] = {
     "moderation.neutral.user_not_found": frozenset({"query"}),
     "moderation.neutral.voice_current": frozenset(),
     "moderation.neutral.voice_set": frozenset(),
+    "moderation.neutral.warn_expired": frozenset({"count", "limit", "name"}),
     "moderation.neutral.warn_expiry_current": frozenset({"term"}),
     "moderation.neutral.warn_expiry_set": frozenset({"term"}),
     "moderation.neutral.warn_limit_current": frozenset({"limit", "max", "min"}),
@@ -3709,6 +3828,7 @@ PLACEHOLDERS: dict[str, frozenset[str]] = {
     "moderation.rough.kicked": frozenset({"name"}),
     "moderation.rough.kicked_for": frozenset({"name", "reason"}),
     "moderation.rough.log_ban_default": frozenset({"chat", "moderator", "term"}),
+    "moderation.rough.log_ban_expired": frozenset({"chat", "id", "name"}),
     "moderation.rough.log_banned": frozenset(
         {
             "chat",
@@ -3739,6 +3859,7 @@ PLACEHOLDERS: dict[str, frozenset[str]] = {
         }
     ),
     "moderation.rough.log_mute_default": frozenset({"chat", "moderator", "term"}),
+    "moderation.rough.log_mute_expired": frozenset({"chat", "id", "name"}),
     "moderation.rough.log_muted": frozenset(
         {
             "chat",
@@ -3772,6 +3893,15 @@ PLACEHOLDERS: dict[str, frozenset[str]] = {
         }
     ),
     "moderation.rough.log_voice": frozenset({"chat", "moderator"}),
+    "moderation.rough.log_warn_expired": frozenset(
+        {
+            "chat",
+            "count",
+            "id",
+            "limit",
+            "name",
+        }
+    ),
     "moderation.rough.log_warn_expiry": frozenset({"chat", "moderator", "term"}),
     "moderation.rough.log_warn_limit": frozenset({"chat", "limit", "moderator"}),
     "moderation.rough.log_warn_penalty": frozenset({"chat", "moderator", "penalty"}),
@@ -3828,6 +3958,7 @@ PLACEHOLDERS: dict[str, frozenset[str]] = {
     "moderation.rough.moderator_lacks_right": frozenset({"right"}),
     "moderation.rough.mute_default_current": frozenset({"term"}),
     "moderation.rough.mute_default_set": frozenset({"term"}),
+    "moderation.rough.mute_expired": frozenset({"name"}),
     "moderation.rough.mute_usage": frozenset(),
     "moderation.rough.muted": frozenset({"name", "term"}),
     "moderation.rough.muted_for": frozenset({"name", "reason", "term"}),
@@ -3848,6 +3979,7 @@ PLACEHOLDERS: dict[str, frozenset[str]] = {
     "moderation.rough.user_not_found": frozenset({"query"}),
     "moderation.rough.voice_current": frozenset(),
     "moderation.rough.voice_set": frozenset(),
+    "moderation.rough.warn_expired": frozenset({"count", "limit", "name"}),
     "moderation.rough.warn_expiry_current": frozenset({"term"}),
     "moderation.rough.warn_expiry_set": frozenset({"term"}),
     "moderation.rough.warn_limit_current": frozenset({"limit", "max", "min"}),

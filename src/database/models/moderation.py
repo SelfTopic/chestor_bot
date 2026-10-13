@@ -80,6 +80,9 @@ class ModerationAction(Base):
     created_at: Mapped[datetime] = mapped_column(
         nullable=False, server_default=func.now()
     )
+    # Конец мута или бана со сроком: его объявляет тикер.
+    expires_at: Mapped[Optional[datetime]] = mapped_column(nullable=True, index=True)
+    expiry_notified_at: Mapped[Optional[datetime]] = mapped_column(nullable=True)
 
 
 class ModerationWarning(Base):
@@ -99,3 +102,4 @@ class ModerationWarning(Base):
     expires_at: Mapped[Optional[datetime]] = mapped_column(nullable=True)
     # Снят вручную или сброшен наказанием на лимите.
     revoked_at: Mapped[Optional[datetime]] = mapped_column(nullable=True)
+    expiry_notified_at: Mapped[Optional[datetime]] = mapped_column(nullable=True)

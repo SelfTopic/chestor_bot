@@ -33,7 +33,7 @@
 ## `src/bot/`
 
 - **`__main__.py`** — `Dispatcher`: middlewares, корневой роутер, фоновые задачи
-  (`NotificationTicker`, `DuelTicker`, `VideoWorker`), polling (`ENV=DEV`) или вебхук.
+  (`NotificationTicker`, `DuelTicker`, `ModerationTicker`, `VideoWorker`), polling (`ENV=DEV`) или вебхук.
 - **`context.py`** — `AppContext`, контекст одного апдейта. Все зависимости хендлера —
   его типизированные ленивые свойства (`ctx.ghoul_service`, `ctx.transfer_service`, …),
   плюс общие хелперы (`ctx.say()`, `ctx.text()`, `ctx.db_user()`, `ctx.addressee()`, …).

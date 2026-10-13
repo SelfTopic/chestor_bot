@@ -31,6 +31,7 @@ from .logs import setup_logging
 from .middlewares import BanMiddleware, DatabaseMiddleware, SyncEntitiesMiddleware
 from .routers import RootRouter
 from .routers.ghoul_routers.duel import DuelTicker
+from .services.moderation import ModerationTicker
 from .services.notification_ticker import NotificationTicker
 from .services.notify import NotifyError, SelfrotBotNotifier
 from .services.quiz import QuizService
@@ -97,6 +98,11 @@ class Dispatcher(BaseDispatcher[AppContext]):
             notifier=SelfrotBotNotifier(self.api),
             dialog_service=self.dialog_service,
         )
+        self.moderation_ticker = ModerationTicker(
+            session_factory=session_factory,
+            notifier=SelfrotBotNotifier(self.api),
+            dialog_service=self.dialog_service,
+        )
         # Один клиент квиза на процесс: refresh-токены ghoul_quiz 0.2 одноразовые.
         self.quiz_service = QuizService(
             email=os.environ.get("GHOUL_QUIZ_EMAIL"),
@@ -154,6 +160,7 @@ class Dispatcher(BaseDispatcher[AppContext]):
         await self.api.delete_webhook(drop_pending_updates=True)
         await self.container.video_worker().start()
         await self.notification_ticker.start()
+        await self.moderation_ticker.start()
         await self.duel_ticker.start()
         self.roast_service.bot_id = (await self.api.get_me()).id
         await self.roast_service.cleanup()
@@ -161,6 +168,7 @@ class Dispatcher(BaseDispatcher[AppContext]):
     async def on_shutdown(self) -> None:
         await self.container.video_worker().stop()
         await self.notification_ticker.stop()
+        await self.moderation_ticker.stop()
         await self.duel_ticker.stop()
         await self.quiz_service.close()
         await self.llm.close()
