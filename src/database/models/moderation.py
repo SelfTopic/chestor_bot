@@ -60,6 +60,11 @@ class ModerationSettings(Base):
     warn_expiry_seconds: Mapped[Optional[int]] = mapped_column(
         nullable=True, server_default="604800"
     )
+    mute_enabled: Mapped[bool] = mapped_column(nullable=False, server_default="true")
+    ban_enabled: Mapped[bool] = mapped_column(nullable=False, server_default="true")
+    kick_enabled: Mapped[bool] = mapped_column(nullable=False, server_default="true")
+    warns_enabled: Mapped[bool] = mapped_column(nullable=False, server_default="true")
+    notices_enabled: Mapped[bool] = mapped_column(nullable=False, server_default="true")
     admin_chat_id: Mapped[Optional[int]] = mapped_column(BigInteger, nullable=True)
     # Запрошенный отсюда чат админов: привязка появится, когда его подтвердят там.
     admin_chat_request: Mapped[Optional[int]] = mapped_column(BigInteger, nullable=True)

@@ -3,7 +3,7 @@ from selfrot.filter import HasReplyUser, HasUser
 
 from src.bot.dialogs import Line
 from src.bot.exceptions import TargetHasNoWarnings
-from src.bot.types import ModerationActionType, WarnOutcome, WarnPenalty
+from src.bot.types import ModerationActionType, WarnOutcome, WarnPenalty, ModerationFeature
 
 from ....context import AppContext
 from ...targeting import RepliedTargetHandler
@@ -25,6 +25,7 @@ class WarnFlow(PunishmentFlow):
         return self.phrases.warn_usage()
 
     async def warn(self, telegram_id: int, text: str) -> None:
+        self.require(ModerationFeature.WARNS)
         moderator_id = await self.check_rights()
         member = await self.punishable(telegram_id)
         reason = text.strip() or None
@@ -148,6 +149,7 @@ class UnwarnFlow(PunishmentFlow):
         return self.phrases.unwarn_usage()
 
     async def unwarn(self, telegram_id: int) -> None:
+        self.require(ModerationFeature.WARNS)
         moderator_id = await self.check_moderator()
         member = await self.target_member(telegram_id)
         name = member.user.first_name

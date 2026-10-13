@@ -1,4 +1,4 @@
-from src.bot.types import ChatRight
+from src.bot.types import ChatRight, ModerationFeature
 
 
 class ModerationError(Exception): ...
@@ -8,6 +8,12 @@ class AnonymousModerator(ModerationError): ...
 
 
 class TargetMissing(ModerationError): ...
+
+
+class FeatureDisabled(ModerationError):
+    def __init__(self, feature: ModerationFeature) -> None:
+        super().__init__(feature.value)
+        self.feature = feature
 
 
 class ModeratorLacksRight(ModerationError):

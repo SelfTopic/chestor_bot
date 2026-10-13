@@ -4,7 +4,7 @@ from selfrot.types import ChatMemberBanned
 
 from src.bot.dialogs import Line
 from src.bot.exceptions import TargetNotBanned
-from src.bot.types import ModerationActionType
+from src.bot.types import ModerationActionType, ModerationFeature
 
 from ....context import AppContext
 from ...targeting import RepliedTargetHandler
@@ -20,6 +20,7 @@ class BanFlow(PunishmentFlow):
         return self.phrases.ban_usage()
 
     async def ban(self, telegram_id: int, text: str) -> None:
+        self.require(ModerationFeature.BAN)
         moderator_id = await self.check_rights()
         punishment = self.ctx.moderation_service.punishment(
             text, self.settings.ban_default_seconds
@@ -86,6 +87,7 @@ class UnbanFlow(PunishmentFlow):
         return self.phrases.unban_usage()
 
     async def unban(self, telegram_id: int) -> None:
+        self.require(ModerationFeature.BAN)
         moderator_id = await self.check_rights()
         member = await self.target_member(telegram_id)
         name = member.user.first_name

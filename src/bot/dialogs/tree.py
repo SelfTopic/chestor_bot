@@ -1288,6 +1288,23 @@ class _MobDialogs:
         )
 
 
+class _ModerationFeatureDialogs:
+    def ban(self) -> Line:
+        return Line("moderation.feature.ban", {})
+
+    def kick(self) -> Line:
+        return Line("moderation.feature.kick", {})
+
+    def mute(self) -> Line:
+        return Line("moderation.feature.mute", {})
+
+    def notices(self) -> Line:
+        return Line("moderation.feature.notices", {})
+
+    def warns(self) -> Line:
+        return Line("moderation.feature.warns", {})
+
+
 class _ModerationNeutralDialogs:
     def admin_chat_current(self, *, chat: object) -> Line:
         return Line("moderation.neutral.admin_chat_current", {"chat": chat})
@@ -1349,6 +1366,9 @@ class _ModerationNeutralDialogs:
 
     def bot_lacks_right(self, *, right: object) -> Line:
         return Line("moderation.neutral.bot_lacks_right", {"right": right})
+
+    def feature_disabled(self, *, feature: object) -> Line:
+        return Line("moderation.neutral.feature_disabled", {"feature": feature})
 
     def kick_usage(self) -> Line:
         return Line("moderation.neutral.kick_usage", {})
@@ -2074,6 +2094,9 @@ class _ModerationRoughDialogs:
     def bot_lacks_right(self, *, right: object) -> Line:
         return Line("moderation.rough.bot_lacks_right", {"right": right})
 
+    def feature_disabled(self, *, feature: object) -> Line:
+        return Line("moderation.rough.feature_disabled", {"feature": feature})
+
     def kick_usage(self) -> Line:
         return Line("moderation.rough.kick_usage", {})
 
@@ -2741,6 +2764,7 @@ class _ModerationTermDialogs:
 
 
 class _ModerationDialogs:
+    feature = _ModerationFeatureDialogs()
     neutral = _ModerationNeutralDialogs()
     penalty = _ModerationPenaltyDialogs()
     right = _ModerationRightDialogs()
@@ -3615,6 +3639,11 @@ PLACEHOLDERS: dict[str, frozenset[str]] = {
     "mob.rewards": frozenset({"cheston", "progress"}),
     "mob.summary": frozenset({"losses", "outcome", "total", "wins"}),
     "moderation.bot_added": frozenset(),
+    "moderation.feature.ban": frozenset(),
+    "moderation.feature.kick": frozenset(),
+    "moderation.feature.mute": frozenset(),
+    "moderation.feature.notices": frozenset(),
+    "moderation.feature.warns": frozenset(),
     "moderation.goodbye_updated": frozenset({"text"}),
     "moderation.neutral.admin_chat_current": frozenset({"chat"}),
     "moderation.neutral.admin_chat_linked": frozenset({"chat"}),
@@ -3632,6 +3661,7 @@ PLACEHOLDERS: dict[str, frozenset[str]] = {
     "moderation.neutral.banned": frozenset({"name", "term"}),
     "moderation.neutral.banned_for": frozenset({"name", "reason", "term"}),
     "moderation.neutral.bot_lacks_right": frozenset({"right"}),
+    "moderation.neutral.feature_disabled": frozenset({"feature"}),
     "moderation.neutral.kick_usage": frozenset(),
     "moderation.neutral.kicked": frozenset({"name"}),
     "moderation.neutral.kicked_for": frozenset({"name", "reason"}),
@@ -3828,6 +3858,7 @@ PLACEHOLDERS: dict[str, frozenset[str]] = {
     "moderation.rough.banned": frozenset({"name", "term"}),
     "moderation.rough.banned_for": frozenset({"name", "reason", "term"}),
     "moderation.rough.bot_lacks_right": frozenset({"right"}),
+    "moderation.rough.feature_disabled": frozenset({"feature"}),
     "moderation.rough.kick_usage": frozenset(),
     "moderation.rough.kicked": frozenset({"name"}),
     "moderation.rough.kicked_for": frozenset({"name", "reason"}),

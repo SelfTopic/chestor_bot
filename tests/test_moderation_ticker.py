@@ -128,3 +128,15 @@ async def test_expired_warnings_are_announced_once_per_member(session_factory, t
     assert logged in phrase_texts(
         neutral.log_warn_expired(chat="группа", name="Петя", id=TARGET, count=1, limit=3)
     )
+
+
+async def test_disabled_notices_are_not_sent(session_factory, ticker):
+    ticker_, notifier = ticker
+    await set_settings(session_factory, notices_enabled=False)
+    await punish(session_factory, ModerationActionType.MUTE)
+    await expire(session_factory, ModerationAction)
+
+    await ticker_.tick()
+
+    assert notifier.messages == []
+

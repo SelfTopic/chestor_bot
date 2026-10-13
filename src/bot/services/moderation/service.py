@@ -16,6 +16,7 @@ from ...types import (
     ChatModeration,
     Duration,
     ModerationActionType,
+    ModerationFeature,
     ModerationVoice,
     Punishment,
     WarnOutcome,
@@ -47,6 +48,11 @@ class ModerationService:
             warn_penalty=row.warn_penalty,
             warn_penalty_seconds=row.warn_penalty_seconds,
             warn_expiry_seconds=row.warn_expiry_seconds,
+            mute_enabled=row.mute_enabled,
+            ban_enabled=row.ban_enabled,
+            kick_enabled=row.kick_enabled,
+            warns_enabled=row.warns_enabled,
+            notices_enabled=row.notices_enabled,
         )
 
     async def set_mute_default(
@@ -67,6 +73,13 @@ class ModerationService:
         self, chat_id: int, voice: ModerationVoice
     ) -> ModerationSettings:
         return await self.moderation_repository.update_settings(chat_id, voice=voice)
+
+    async def set_feature(
+        self, chat_id: int, feature: ModerationFeature, enabled: bool
+    ) -> ModerationSettings:
+        return await self.moderation_repository.update_settings(
+            chat_id, **{f"{feature.value}_enabled": enabled}
+        )
 
     async def set_warn_limit(self, chat_id: int, limit: int) -> ModerationSettings:
         if not MIN_WARN_LIMIT <= limit <= MAX_WARN_LIMIT:

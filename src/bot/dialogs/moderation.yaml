@@ -13,6 +13,12 @@ moderation:
     ban: бан
     kick: кик
     timed: '{penalty} {term}'
+  feature:
+    mute: мут
+    ban: бан
+    kick: кик
+    warns: варны
+    notices: объявления о конце сроков
   right:
     restrict_members: «Блокировка пользователей»
     change_info: «Изменение профиля группы»
@@ -91,6 +97,7 @@ moderation:
     bot_lacks_right: 'Боту не хватает права {right}. Выдайте его в настройках администраторов.'
     target_is_admin: '{name} — администратор, его наказать нельзя.'
     term_out_of_range: 'Срок — от {min} до {max} или «навсегда».'
+    feature_disabled: 'Это выключено в настройках модерации чата: {feature}. Включить — «настройки модерации».'
     warned: '⚠️ {name} получает варн: {count} из {limit}.'
     warned_for: '⚠️ {name} получает варн: {count} из {limit}. Причина: {reason}'
     warn_penalty_muted: '🔇 {name} набирает {limit} из {limit} варнов и уходит в мут {term}.'
@@ -228,6 +235,7 @@ moderation:
     bot_lacks_right: 'Мне не дали право {right}. Без него я тут никого не упакую.'
     target_is_admin: '{name} — админ. Своих CCG не трогает.'
     term_out_of_range: 'Кокурия так не работает: от {min} до {max} или «навсегда».'
+    feature_disabled: 'CCG здесь это не делает: {feature} выключено в «настройках модерации».'
     warned:
       - '⚠️ CCG берёт {name} на карандаш: {count} из {limit}.'
       - '⚠️ {name}, это предупреждение. {count} из {limit}, дальше — Кокурия.'

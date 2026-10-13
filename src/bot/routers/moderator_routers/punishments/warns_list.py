@@ -4,7 +4,7 @@ from selfrot import CommandArgs, MessageHandler, Rest
 from selfrot.filter import AnyCommand, Command, HasReplyUser, HasUser
 
 from src.bot.dialogs import Dialogs, Line
-from src.bot.types import ChatRight
+from src.bot.types import ChatRight, ModerationFeature
 from src.database.models import ModerationWarning
 
 from ....context import AppContext
@@ -55,6 +55,7 @@ class WarnsListFlow(ModerationFlow):
         return self.phrases.warns_item(reason=reason, left=left)
 
     async def show_member(self, telegram_id: int) -> None:
+        self.require(ModerationFeature.WARNS)
         member = await self.ctx.bot.get_chat_member(self.ctx.message.chat.id, telegram_id)
         await self.show(telegram_id, member.user.first_name)
 
@@ -67,6 +68,8 @@ class OwnWarnsHandler(WarnsListFlow, MessageHandler[AppContext[TextUserMessage]]
     query = cmd & HasUser() & ~HasReplyUser() & InGroup()
 
     async def handle(self) -> None:
+        if not self.settings.enabled(ModerationFeature.WARNS):
+            return
         user = self.ctx.message.user
         await self.show(user.id, user.first_name)
 

@@ -10,11 +10,12 @@ from src.bot.dialogs import Dialogs, Line
 from src.bot.exceptions import (
     AnonymousModerator,
     BotLacksRight,
+    FeatureDisabled,
     ModeratorLacksRight,
     TargetMissing,
     TermOutOfRange,
 )
-from src.bot.types import ChatRight, ModerationVoice
+from src.bot.types import ChatRight, ModerationFeature, ModerationVoice
 from src.bot.utils import parse_seconds
 
 from ...context import AppContext
@@ -54,6 +55,21 @@ def right_name(right: ChatRight) -> Line:
             return Dialogs.moderation.right.change_info()
 
 
+def feature_name(feature: ModerationFeature) -> Line:
+    names = Dialogs.moderation.feature
+    match feature:
+        case ModerationFeature.MUTE:
+            return names.mute()
+        case ModerationFeature.BAN:
+            return names.ban()
+        case ModerationFeature.KICK:
+            return names.kick()
+        case ModerationFeature.WARNS:
+            return names.warns()
+        case ModerationFeature.NOTICES:
+            return names.notices()
+
+
 # Миксин ставится первым основанием: его on_error, not_found и reply_errors должны
 # перекрыть одноимённые у миксинов из routers/targeting.py.
 class ModerationFlow:
@@ -87,6 +103,10 @@ class ModerationFlow:
     @property
     def moderator_name(self) -> str:
         return self.ctx.message.user.first_name
+
+    def require(self, feature: ModerationFeature) -> None:
+        if not self.settings.enabled(feature):
+            raise FeatureDisabled(feature)
 
     def report(self, line: Line, chat_id: int | None = None) -> None:
         target = self.admin_chat_id if chat_id is None else chat_id
@@ -142,6 +162,8 @@ class ModerationFlow:
                 line = self.voiced_usage()
             case AnonymousModerator():
                 line = phrases.anonymous()
+            case FeatureDisabled(feature=feature):
+                line = phrases.feature_disabled(feature=self.ctx.text(feature_name(feature)))
             case ModeratorLacksRight(right=right):
                 line = phrases.moderator_lacks_right(
                     right=self.ctx.text(right_name(right))

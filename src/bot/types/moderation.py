@@ -24,6 +24,14 @@ class WarnPenalty(str, Enum):
     KICK = "kick"
 
 
+class ModerationFeature(str, Enum):
+    MUTE = "mute"
+    BAN = "ban"
+    KICK = "kick"
+    WARNS = "warns"
+    NOTICES = "notices"
+
+
 class ChatRight(str, Enum):
     RESTRICT_MEMBERS = "can_restrict_members"
     CHANGE_INFO = "can_change_info"
@@ -49,6 +57,14 @@ class ChatModeration:
     warn_penalty: WarnPenalty
     warn_penalty_seconds: Optional[int]
     warn_expiry_seconds: Optional[int]
+    mute_enabled: bool
+    ban_enabled: bool
+    kick_enabled: bool
+    warns_enabled: bool
+    notices_enabled: bool
+
+    def enabled(self, feature: ModerationFeature) -> bool:
+        return getattr(self, f"{feature.value}_enabled")
 
 
 @dataclass(frozen=True)

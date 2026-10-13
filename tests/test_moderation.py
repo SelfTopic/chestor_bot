@@ -732,3 +732,25 @@ class TestWarns:
         (reply,) = await send("/warn_action", uid=ADMIN, chat=GROUP)
         assert reply in phrase_texts(neutral.warn_penalty_current(penalty=ban))
 
+
+class TestFeatureToggles:
+    async def test_disabled_feature_tells_the_admin_and_does_nothing(
+        self, send, telegram, session_factory
+    ):
+        await set_settings(session_factory, mute_enabled=False)
+
+        (reply,) = await send("мут", uid=ADMIN, chat=GROUP, reply_to_uid=TARGET)
+
+        mute = only_text(Dialogs.moderation.feature.mute())
+        assert reply in phrase_texts(neutral.feature_disabled(feature=mute))
+        assert telegram.bodies("restrictChatMember") == []
+        assert await journal(session_factory) == []
+
+    async def test_disabled_warnings_stay_silent_for_members(self, send, session_factory):
+        await set_settings(session_factory, warns_enabled=False)
+
+        assert await send("варны", uid=TARGET, first_name="Петя", chat=GROUP) == []
+        (reply,) = await send("варн", uid=ADMIN, chat=GROUP, reply_to_uid=TARGET)
+        warns = only_text(Dialogs.moderation.feature.warns())
+        assert reply in phrase_texts(neutral.feature_disabled(feature=warns))
+

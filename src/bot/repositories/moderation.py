@@ -216,6 +216,7 @@ class ModerationRepository(Base):
                 action.expires_at <= func.now(),
                 action.expiry_notified_at.is_(None),
                 ~superseded,
+                func.coalesce(ModerationSettings.notices_enabled, True),
             )
             .order_by(action.expires_at)
         )
@@ -264,6 +265,7 @@ class ModerationRepository(Base):
                 warning.revoked_at.is_(None),
                 warning.expires_at <= func.now(),
                 warning.expiry_notified_at.is_(None),
+                func.coalesce(ModerationSettings.notices_enabled, True),
             )
             # Несколько варнов одного человека, сгоревших за один тик, — одно объявление.
             .group_by(

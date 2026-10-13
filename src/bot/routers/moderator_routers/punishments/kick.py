@@ -3,7 +3,7 @@ from selfrot.filter import HasReplyUser, HasUser
 
 from src.bot.dialogs import Line
 from src.bot.exceptions import TargetAbsent
-from src.bot.types import ModerationActionType
+from src.bot.types import ModerationActionType, ModerationFeature
 
 from ....context import AppContext
 from ...targeting import RepliedTargetHandler
@@ -19,6 +19,7 @@ class KickFlow(PunishmentFlow):
         return self.phrases.kick_usage()
 
     async def kick(self, telegram_id: int, text: str) -> None:
+        self.require(ModerationFeature.KICK)
         moderator_id = await self.check_rights()
         member = await self.punishable(telegram_id)
         name = member.user.first_name

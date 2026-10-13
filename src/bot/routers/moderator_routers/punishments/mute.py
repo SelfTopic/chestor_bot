@@ -4,7 +4,7 @@ from selfrot.types import ChatMemberRestricted, ChatPermissions
 
 from src.bot.dialogs import Line
 from src.bot.exceptions import TargetNotMuted
-from src.bot.types import ModerationActionType
+from src.bot.types import ModerationActionType, ModerationFeature
 
 from ....context import AppContext
 from ...targeting import RepliedTargetHandler
@@ -23,6 +23,7 @@ class MuteFlow(PunishmentFlow):
         return self.phrases.mute_usage()
 
     async def mute(self, telegram_id: int, text: str) -> None:
+        self.require(ModerationFeature.MUTE)
         moderator_id = await self.check_rights()
         punishment = self.ctx.moderation_service.punishment(
             text, self.settings.mute_default_seconds
@@ -89,6 +90,7 @@ class UnmuteFlow(PunishmentFlow):
         return self.phrases.unmute_usage()
 
     async def unmute(self, telegram_id: int) -> None:
+        self.require(ModerationFeature.MUTE)
         moderator_id = await self.check_rights()
         member = await self.target_member(telegram_id)
         name = member.user.first_name
