@@ -6,9 +6,10 @@ from src.bot.exceptions import TargetAbsent
 from src.bot.types import ModerationActionType
 
 from ....context import AppContext
-from ...targeting import ExplicitTargetHandler, RepliedTargetHandler, TargetArgs
+from ...targeting import RepliedTargetHandler
 from ...types import TextUserMessage, TextUserReplyMessage
 from ..filters import FromChatAdmin
+from .targets import AnywhereTargetHandler, TargetTextArgs
 from ..flow import command
 from .flow import PunishmentFlow, is_absent
 
@@ -58,17 +59,13 @@ class KickRepliedHandler(
         await self.kick(telegram_id, args.reason)
 
 
-class KickArgs(TargetArgs):
-    reason: Rest = ""
-
-
 class KickHandler(
     KickFlow,
-    ExplicitTargetHandler[KickArgs],
+    AnywhereTargetHandler,
     MessageHandler[AppContext[TextUserMessage]],
 ):
-    cmd = command("kick", "кик", KickArgs)
+    cmd = command("kick", "кик", TargetTextArgs)
     query = cmd & HasUser() & ~HasReplyUser() & FromChatAdmin()
 
-    async def perform(self, telegram_id: int, args: KickArgs) -> None:
-        await self.kick(telegram_id, args.reason)
+    async def perform(self, telegram_id: int, rest: str) -> None:
+        await self.kick(telegram_id, rest)

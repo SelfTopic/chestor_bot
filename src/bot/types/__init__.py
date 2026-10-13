@@ -3,6 +3,7 @@ from .dep import DepColor, DepResult
 from .kagune import KaguneType
 from .media import MediaCollection, MediaDownloadType, MediaSaveRequest, VideoCutJob
 from .moderation import (
+    ChatModeration,
     ChatRight,
     ModerationActionType,
     ModerationVoice,
@@ -29,6 +30,7 @@ __all__ = [
     "Duration",
     "VideoCutJob",
     "NotificationType",
+    "ChatModeration",
     "ChatRight",
     "ModerationActionType",
     "ModerationVoice",

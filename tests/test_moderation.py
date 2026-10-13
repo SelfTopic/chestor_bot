@@ -36,6 +36,7 @@ ADMIN_CHAT = -100888
 
 term = Dialogs.moderation.term
 neutral = Dialogs.moderation.neutral
+penalty = Dialogs.moderation.penalty
 RESTRICT_RIGHT = only_text(Dialogs.moderation.right.restrict_members())
 
 
@@ -599,6 +600,28 @@ class TestWarns:
         (warning,) = await active_warnings(session_factory)
         assert warning.expires_at is not None
 
+    async def test_penalty_has_its_own_term(self, send, telegram, session_factory):
+        await set_settings(session_factory, warn_limit=1, mute_default_seconds=60)
+        (reply,) = await send("варн наказание мут 1ч", uid=ADMIN, chat=GROUP)
+        hour = penalty.timed(
+            penalty=penalty.mute(), term=term.limited(duration=term.hours(count=1))
+        )
+        assert reply in phrase_texts(neutral.warn_penalty_set(penalty=hour))
+
+        await send("варн", uid=ADMIN, chat=GROUP, reply_to_uid=TARGET)
+
+        (body,) = telegram.bodies("restrictChatMember")
+        assert abs(body["until_date"] - (time.time() + 3600)) < 10
+
+    async def test_target_can_follow_the_reason(self, send, session_factory):
+        await seed(session_factory, TARGET, "Петя", username="petya")
+
+        (reply,) = await send("варн флуд @petya", uid=ADMIN, chat=GROUP)
+
+        assert reply in phrase_texts(
+            neutral.warned_for(name="Петя", count=1, limit=3, reason="флуд")
+        )
+
     @pytest.mark.parametrize(
         ("penalty", "method", "action"),
         [
@@ -679,6 +702,14 @@ class TestWarns:
         assert matches_phrase(reply, "moderation.neutral.warns_list")
         assert await send("варны", uid=7, chat=GROUP, reply_to_uid=TARGET) == []
 
+    async def test_unreadable_warn_setting_shows_current(self, send):
+        (reply,) = await send("варн наказание мут полчаса", uid=ADMIN, chat=GROUP)
+        mute = penalty.timed(penalty=penalty.mute(), term=minutes(30))
+        assert reply in phrase_texts(neutral.warn_penalty_current(penalty=mute))
+
+        (reply,) = await send("варн лимит много", uid=ADMIN, chat=GROUP)
+        assert reply in phrase_texts(neutral.warn_limit_current(limit=3, min=1, max=20))
+
     async def test_warn_settings(self, send, session_factory):
         (reply,) = await send("варн лимит 5", uid=ADMIN, chat=GROUP)
         assert reply in phrase_texts(neutral.warn_limit_set(limit=5))
@@ -686,7 +717,7 @@ class TestWarns:
         assert reply in phrase_texts(neutral.warn_limit_out_of_range(min=1, max=20))
 
         (reply,) = await send("пред наказание Бан", uid=ADMIN, chat=GROUP)
-        ban = only_text(Dialogs.moderation.penalty.ban())
+        ban = penalty.timed(penalty=penalty.ban(), term=minutes(30))
         assert reply in phrase_texts(neutral.warn_penalty_set(penalty=ban))
 
         (reply,) = await send("варн срок навсегда", uid=ADMIN, chat=GROUP)

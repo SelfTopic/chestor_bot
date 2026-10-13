@@ -6,9 +6,10 @@ from src.bot.exceptions import TargetHasNoWarnings
 from src.bot.types import ModerationActionType, WarnOutcome, WarnPenalty
 
 from ....context import AppContext
-from ...targeting import ExplicitTargetHandler, RepliedTargetHandler, TargetArgs
+from ...targeting import RepliedTargetHandler
 from ...types import TextUserMessage, TextUserReplyMessage
 from ..filters import FromChatAdmin
+from .targets import AnywhereTargetHandler, TargetTextArgs
 from ..flow import command
 from .flow import PunishmentFlow, is_absent
 
@@ -130,20 +131,16 @@ class WarnRepliedHandler(
         await self.warn(telegram_id, args.reason)
 
 
-class WarnArgs(TargetArgs):
-    reason: Rest = ""
-
-
 class WarnHandler(
     WarnFlow,
-    ExplicitTargetHandler[WarnArgs],
+    AnywhereTargetHandler,
     MessageHandler[AppContext[TextUserMessage]],
 ):
-    cmd = command("warn", WARN_WORDS, WarnArgs)
+    cmd = command("warn", WARN_WORDS, TargetTextArgs)
     query = cmd & HasUser() & ~HasReplyUser() & FromChatAdmin()
 
-    async def perform(self, telegram_id: int, args: WarnArgs) -> None:
-        await self.warn(telegram_id, args.reason)
+    async def perform(self, telegram_id: int, rest: str) -> None:
+        await self.warn(telegram_id, rest)
 
 
 class UnwarnFlow(PunishmentFlow):
@@ -198,17 +195,13 @@ class UnwarnRepliedHandler(
         await self.unwarn(telegram_id)
 
 
-class UnwarnArgs(TargetArgs):
-    pass
-
-
 class UnwarnHandler(
     UnwarnFlow,
-    ExplicitTargetHandler[UnwarnArgs],
+    AnywhereTargetHandler,
     MessageHandler[AppContext[TextUserMessage]],
 ):
-    cmd = command("unwarn", UNWARN_WORDS, UnwarnArgs)
+    cmd = command("unwarn", UNWARN_WORDS, TargetTextArgs)
     query = cmd & HasUser() & ~HasReplyUser() & FromChatAdmin()
 
-    async def perform(self, telegram_id: int, args: UnwarnArgs) -> None:
+    async def perform(self, telegram_id: int, rest: str) -> None:
         await self.unwarn(telegram_id)

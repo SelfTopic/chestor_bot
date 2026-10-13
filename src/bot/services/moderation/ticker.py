@@ -20,7 +20,7 @@ class ModerationTicker(Ticker):
         session_factory: async_sessionmaker[AsyncSession],
         notifier: Notifier,
         dialog_service: DialogService,
-        interval_seconds: float = 30.0,
+        interval_seconds: float = 10.0,
     ) -> None:
         super().__init__(interval_seconds)
         self._session_factory = session_factory
@@ -29,7 +29,7 @@ class ModerationTicker(Ticker):
 
     async def tick(self) -> None:
         # Отметка ставится до отправки: недоставленное объявление теряется, но не шлётся
-        # каждые 30 секунд заново.
+        # на каждом тике заново.
         async with self._session_factory() as session:
             repository = ModerationRepository(session)
             due = await repository.due_expirations()

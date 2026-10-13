@@ -7,9 +7,10 @@ from src.bot.exceptions import TargetNotMuted
 from src.bot.types import ModerationActionType
 
 from ....context import AppContext
-from ...targeting import ExplicitTargetHandler, RepliedTargetHandler, TargetArgs
+from ...targeting import RepliedTargetHandler
 from ...types import TextUserMessage, TextUserReplyMessage
 from ..filters import FromChatAdmin
+from .targets import AnywhereTargetHandler, TargetTextArgs
 from ..flow import command
 from .flow import PunishmentFlow
 
@@ -71,20 +72,16 @@ class MuteRepliedHandler(
         await self.mute(telegram_id, args.rest)
 
 
-class MuteArgs(TargetArgs):
-    rest: Rest = ""
-
-
 class MuteHandler(
     MuteFlow,
-    ExplicitTargetHandler[MuteArgs],
+    AnywhereTargetHandler,
     MessageHandler[AppContext[TextUserMessage]],
 ):
-    cmd = command("mute", "мут", MuteArgs)
+    cmd = command("mute", "мут", TargetTextArgs)
     query = cmd & HasUser() & ~HasReplyUser() & FromChatAdmin()
 
-    async def perform(self, telegram_id: int, args: MuteArgs) -> None:
-        await self.mute(telegram_id, args.rest)
+    async def perform(self, telegram_id: int, rest: str) -> None:
+        await self.mute(telegram_id, rest)
 
 
 class UnmuteFlow(PunishmentFlow):
@@ -130,17 +127,13 @@ class UnmuteRepliedHandler(
         await self.unmute(telegram_id)
 
 
-class UnmuteArgs(TargetArgs):
-    pass
-
-
 class UnmuteHandler(
     UnmuteFlow,
-    ExplicitTargetHandler[UnmuteArgs],
+    AnywhereTargetHandler,
     MessageHandler[AppContext[TextUserMessage]],
 ):
-    cmd = command("unmute", "размут", UnmuteArgs)
+    cmd = command("unmute", "размут", TargetTextArgs)
     query = cmd & HasUser() & ~HasReplyUser() & FromChatAdmin()
 
-    async def perform(self, telegram_id: int, args: UnmuteArgs) -> None:
+    async def perform(self, telegram_id: int, rest: str) -> None:
         await self.unmute(telegram_id)

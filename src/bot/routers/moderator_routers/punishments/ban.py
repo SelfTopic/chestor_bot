@@ -7,9 +7,10 @@ from src.bot.exceptions import TargetNotBanned
 from src.bot.types import ModerationActionType
 
 from ....context import AppContext
-from ...targeting import ExplicitTargetHandler, RepliedTargetHandler, TargetArgs
+from ...targeting import RepliedTargetHandler
 from ...types import TextUserMessage, TextUserReplyMessage
 from ..filters import FromChatAdmin
+from .targets import AnywhereTargetHandler, TargetTextArgs
 from ..flow import command
 from .flow import PunishmentFlow
 
@@ -68,20 +69,16 @@ class BanRepliedHandler(
         await self.ban(telegram_id, args.rest)
 
 
-class BanArgs(TargetArgs):
-    rest: Rest = ""
-
-
 class BanHandler(
     BanFlow,
-    ExplicitTargetHandler[BanArgs],
+    AnywhereTargetHandler,
     MessageHandler[AppContext[TextUserMessage]],
 ):
-    cmd = command("ban", "бан", BanArgs)
+    cmd = command("ban", "бан", TargetTextArgs)
     query = cmd & HasUser() & ~HasReplyUser() & FromChatAdmin()
 
-    async def perform(self, telegram_id: int, args: BanArgs) -> None:
-        await self.ban(telegram_id, args.rest)
+    async def perform(self, telegram_id: int, rest: str) -> None:
+        await self.ban(telegram_id, rest)
 
 
 class UnbanFlow(PunishmentFlow):
@@ -127,17 +124,13 @@ class UnbanRepliedHandler(
         await self.unban(telegram_id)
 
 
-class UnbanArgs(TargetArgs):
-    pass
-
-
 class UnbanHandler(
     UnbanFlow,
-    ExplicitTargetHandler[UnbanArgs],
+    AnywhereTargetHandler,
     MessageHandler[AppContext[TextUserMessage]],
 ):
-    cmd = command("unban", "разбан", UnbanArgs)
+    cmd = command("unban", "разбан", TargetTextArgs)
     query = cmd & HasUser() & ~HasReplyUser() & FromChatAdmin()
 
-    async def perform(self, telegram_id: int, args: UnbanArgs) -> None:
+    async def perform(self, telegram_id: int, rest: str) -> None:
         await self.unban(telegram_id)

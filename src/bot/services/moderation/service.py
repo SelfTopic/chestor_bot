@@ -13,6 +13,7 @@ from ...exceptions import (
 )
 from ...repositories import ModerationRepository
 from ...types import (
+    ChatModeration,
     Duration,
     ModerationActionType,
     ModerationVoice,
@@ -33,8 +34,20 @@ class ModerationService:
     def __init__(self, moderation_repository: ModerationRepository) -> None:
         self.moderation_repository = moderation_repository
 
-    async def settings(self, chat_id: int) -> ModerationSettings:
-        return await self.moderation_repository.settings(chat_id)
+    async def settings(self, chat_id: int) -> ChatModeration:
+        row = await self.moderation_repository.settings(chat_id)
+        return ChatModeration(
+            chat_id=row.chat_id,
+            mute_default_seconds=row.mute_default_seconds,
+            ban_default_seconds=row.ban_default_seconds,
+            voice=row.voice,
+            admin_chat_id=row.admin_chat_id,
+            admin_chat_request=row.admin_chat_request,
+            warn_limit=row.warn_limit,
+            warn_penalty=row.warn_penalty,
+            warn_penalty_seconds=row.warn_penalty_seconds,
+            warn_expiry_seconds=row.warn_expiry_seconds,
+        )
 
     async def set_mute_default(
         self, chat_id: int, seconds: Optional[int]
@@ -61,10 +74,10 @@ class ModerationService:
         return await self.moderation_repository.update_settings(chat_id, warn_limit=limit)
 
     async def set_warn_penalty(
-        self, chat_id: int, penalty: WarnPenalty
+        self, chat_id: int, penalty: WarnPenalty, seconds: Optional[int]
     ) -> ModerationSettings:
         return await self.moderation_repository.update_settings(
-            chat_id, warn_penalty=penalty
+            chat_id, warn_penalty=penalty, warn_penalty_seconds=seconds
         )
 
     async def set_warn_expiry(
@@ -76,7 +89,7 @@ class ModerationService:
 
     async def warn(
         self,
-        settings: ModerationSettings,
+        settings: ChatModeration,
         moderator_id: int,
         target_id: int,
         reason: Optional[str],
@@ -95,11 +108,7 @@ class ModerationService:
         # Наказание обнуляет счётчик: следующий круг варнов начинается с нуля.
         await self.moderation_repository.revoke_warnings([w.id for w in active])
         penalty = settings.warn_penalty
-        seconds = {
-            WarnPenalty.MUTE: settings.mute_default_seconds,
-            WarnPenalty.BAN: settings.ban_default_seconds,
-            WarnPenalty.KICK: None,
-        }[penalty]
+        seconds = None if penalty is WarnPenalty.KICK else settings.warn_penalty_seconds
         return WarnOutcome(len(active), settings.warn_limit, penalty, seconds)
 
     async def unwarn(

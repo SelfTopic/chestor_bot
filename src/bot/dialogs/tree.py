@@ -2000,6 +2000,9 @@ class _ModerationPenaltyDialogs:
     def mute(self) -> Line:
         return Line("moderation.penalty.mute", {})
 
+    def timed(self, *, penalty: object, term: object) -> Line:
+        return Line("moderation.penalty.timed", {"penalty": penalty, "term": term})
+
 
 class _ModerationRightDialogs:
     def change_info(self) -> Line:
@@ -3806,6 +3809,7 @@ PLACEHOLDERS: dict[str, frozenset[str]] = {
     "moderation.penalty.ban": frozenset(),
     "moderation.penalty.kick": frozenset(),
     "moderation.penalty.mute": frozenset(),
+    "moderation.penalty.timed": frozenset({"penalty", "term"}),
     "moderation.right.change_info": frozenset(),
     "moderation.right.restrict_members": frozenset(),
     "moderation.rough.admin_chat_current": frozenset({"chat"}),

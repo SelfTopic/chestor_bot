@@ -7,6 +7,9 @@ class ModerationError(Exception): ...
 class AnonymousModerator(ModerationError): ...
 
 
+class TargetMissing(ModerationError): ...
+
+
 class ModeratorLacksRight(ModerationError):
     def __init__(self, right: ChatRight) -> None:
         super().__init__(right.value)

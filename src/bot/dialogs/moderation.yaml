@@ -12,6 +12,7 @@ moderation:
     mute: мут
     ban: бан
     kick: кик
+    timed: '{penalty} {term}'
   right:
     restrict_members: «Блокировка пользователей»
     change_info: «Изменение профиля группы»
@@ -118,7 +119,7 @@ moderation:
     warn_penalty_set: '⚙️ На лимите варнов теперь {penalty}.'
     warn_penalty_current: |-
       ⚙️ На лимите варнов — {penalty}.
-      Поменять: «варн наказание бан» или /warn_action ban (мут, бан или кик).
+      Поменять: «варн наказание мут 1ч» или /warn_action ban 1d (мут, бан или кик; без срока — прежний срок).
     warn_expiry_set: '⚙️ Варны теперь сгорают {term}.'
     warn_expiry_current: |-
       ⚙️ Варны сгорают {term}.
@@ -259,7 +260,7 @@ moderation:
     warn_penalty_set: '⚙️ Понял. Кто соберёт все метки — получает {penalty}.'
     warn_penalty_current: |-
       ⚙️ Кто собрал все метки — получает {penalty}.
-      Поменять: «варн наказание бан» или /warn_action ban (мут, бан или кик).
+      Поменять: «варн наказание мут 1ч» или /warn_action ban 1d (мут, бан или кик; без срока — прежний срок).
     warn_expiry_set: '⚙️ Понял. Метки сгорают {term}.'
     warn_expiry_current: |-
       ⚙️ Метки сгорают {term}.

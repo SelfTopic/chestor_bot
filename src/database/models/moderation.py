@@ -52,6 +52,10 @@ class ModerationSettings(Base):
         nullable=False,
         server_default=WarnPenalty.MUTE.value,
     )
+    # Срок мута или бана на лимите варнов; NULL — навсегда.
+    warn_penalty_seconds: Mapped[Optional[int]] = mapped_column(
+        nullable=True, server_default="1800"
+    )
     # NULL — варны не сгорают.
     warn_expiry_seconds: Mapped[Optional[int]] = mapped_column(
         nullable=True, server_default="604800"

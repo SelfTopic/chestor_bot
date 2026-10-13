@@ -8,9 +8,10 @@ from src.bot.types import ChatRight
 from src.database.models import ModerationWarning
 
 from ....context import AppContext
-from ...targeting import ExplicitTargetHandler, RepliedTargetHandler, TargetArgs
+from ...targeting import RepliedTargetHandler
 from ...types import TextUserMessage, TextUserReplyMessage
 from ..filters import FromChatAdmin, InGroup
+from .targets import AnywhereTargetHandler, TargetTextArgs
 from ..flow import ModerationFlow, command
 
 LIST_WORDS = ("варны", "преды")
@@ -88,11 +89,11 @@ class WarnsRepliedHandler(
 
 class WarnsHandler(
     WarnsListFlow,
-    ExplicitTargetHandler[TargetArgs],
+    AnywhereTargetHandler,
     MessageHandler[AppContext[TextUserMessage]],
 ):
-    cmd = command("warns", LIST_WORDS, TargetArgs)
+    cmd = command("warns", LIST_WORDS, TargetTextArgs)
     query = cmd & HasUser() & ~HasReplyUser() & FromChatAdmin()
 
-    async def perform(self, telegram_id: int, args: TargetArgs) -> None:
+    async def perform(self, telegram_id: int, rest: str) -> None:
         await self.show_member(telegram_id)

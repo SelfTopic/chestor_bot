@@ -11,6 +11,7 @@ from src.bot.exceptions import (
     AnonymousModerator,
     BotLacksRight,
     ModeratorLacksRight,
+    TargetMissing,
     TermOutOfRange,
 )
 from src.bot.types import ChatRight, ModerationVoice
@@ -137,7 +138,7 @@ class ModerationFlow:
     async def on_error(self, exc: Exception) -> None:
         phrases = self.phrases
         match exc:
-            case CommandArgsError():
+            case CommandArgsError() | TargetMissing():
                 line = self.voiced_usage()
             case AnonymousModerator():
                 line = phrases.anonymous()

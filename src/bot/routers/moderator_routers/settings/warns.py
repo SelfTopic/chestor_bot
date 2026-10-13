@@ -1,11 +1,11 @@
 from typing import Annotated, Literal, Optional
 
 from pydantic import BeforeValidator
-from selfrot import CommandArgs, MessageHandler
+from selfrot import CommandArgs, MessageHandler, Rest
 from selfrot.filter import HasUser
 
 from src.bot.dialogs import Dialogs, Line
-from src.bot.exceptions import WarnLimitOutOfRange
+from src.bot.exceptions import DurationParseError, WarnLimitOutOfRange
 from src.bot.services.moderation import MAX_WARN_LIMIT, MIN_WARN_LIMIT
 from src.bot.types import ChatRight, WarnPenalty
 
@@ -82,6 +82,7 @@ def penalty_name(penalty: WarnPenalty) -> Line:
 
 class WarnPenaltyArgs(CommandArgs):
     penalty: Optional[PenaltyWord] = None
+    term: Rest = ""
 
 
 class WarnPenaltyHandler(ModerationFlow, MessageHandler[AppContext[TextUserMessage]]):
@@ -89,26 +90,49 @@ class WarnPenaltyHandler(ModerationFlow, MessageHandler[AppContext[TextUserMessa
     cmd = command("warn_action", ("варн наказание", "пред наказание"), WarnPenaltyArgs)
     query = cmd & HasUser() & FromChatAdmin()
 
+    def described(self, penalty: WarnPenalty, seconds: Optional[int]) -> str:
+        name = self.ctx.text(penalty_name(penalty))
+        if penalty is WarnPenalty.KICK:
+            return name
+        return self.ctx.text(
+            Dialogs.moderation.penalty.timed(penalty=name, term=self.term(seconds))
+        )
+
     def voiced_usage(self) -> Line:
-        name = self.ctx.text(penalty_name(self.settings.warn_penalty))
-        return self.phrases.warn_penalty_current(penalty=name)
+        settings = self.settings
+        current = self.described(settings.warn_penalty, settings.warn_penalty_seconds)
+        return self.phrases.warn_penalty_current(penalty=current)
 
     async def handle(self) -> None:
-        word = self.cmd.parse(self.ctx).penalty
-        if word is None:
+        args = self.cmd.parse(self.ctx)
+        if args.penalty is None:
             await self.ctx.say(self.voiced_usage(), reply=True)
             return
 
         await self.check_moderator()
-        penalty = PENALTIES[word]
-        await self.ctx.moderation_service.set_warn_penalty(self.ctx.message.chat.id, penalty)
-        name = self.ctx.text(penalty_name(penalty))
+        penalty = PENALTIES[args.penalty]
+        # Без срока меняется только вид наказания, срок остаётся прежним.
+        seconds = (
+            self.ctx.moderation_service.term(args.term)
+            if args.term
+            else self.settings.warn_penalty_seconds
+        )
+        chat_id = self.ctx.message.chat.id
+        await self.ctx.moderation_service.set_warn_penalty(chat_id, penalty, seconds)
+        name = self.described(penalty, seconds)
         await self.ctx.say(self.phrases.warn_penalty_set(penalty=name), reply=True)
         self.report(
             self.phrases.log_warn_penalty(
                 chat=self.chat_title, moderator=self.moderator_name, penalty=name
             )
         )
+
+    async def on_error(self, exc: Exception) -> None:
+        if isinstance(exc, DurationParseError):
+            await self.ctx.say(self.voiced_usage(), reply=True)
+            return
+
+        await super().on_error(exc)
 
 
 class WarnExpiryHandler(DefaultTermFlow, MessageHandler[AppContext[TextUserMessage]]):
