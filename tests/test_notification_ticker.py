@@ -84,7 +84,7 @@ class TestHealthFull:
         await seed_ghoul(session_factory, UID, health=100, max_health=100)
         await seed_due(session_factory, UID, NotificationType.HEALTH_FULL)
 
-        await notification_ticker._tick()
+        await notification_ticker.tick()
 
         (message,) = notifier.messages
         assert message[0] == UID
@@ -94,7 +94,7 @@ class TestHealthFull:
         await seed_ghoul(session_factory, UID, health=50, max_health=100)
         await seed_due(session_factory, UID, NotificationType.HEALTH_FULL)
 
-        await notification_ticker._tick()
+        await notification_ticker.tick()
 
         assert notifier.messages == []
 
@@ -108,7 +108,7 @@ class TestHungerThreshold:
             session_factory, UID, NotificationType.HUNGER_THRESHOLD, threshold=75
         )
 
-        await notification_ticker._tick()
+        await notification_ticker.tick()
 
         assert len(notifier.messages) == 1
 
@@ -120,7 +120,7 @@ class TestHungerThreshold:
             session_factory, UID, NotificationType.HUNGER_THRESHOLD, threshold=75
         )
 
-        await notification_ticker._tick()
+        await notification_ticker.tick()
 
         assert notifier.messages == []
 
@@ -132,7 +132,7 @@ class TestHungerThreshold:
             session_factory, UID, NotificationType.HUNGER_THRESHOLD, threshold=-1
         )
 
-        await notification_ticker._tick()
+        await notification_ticker.tick()
 
         assert notifier.messages == []
 
@@ -174,7 +174,7 @@ class TestDeath:
         await seed(session_factory, UID, "Вася")  # пользователь есть, гуля - нет
         await seed_due(session_factory, UID, NotificationType.DEATH)
 
-        await notification_ticker._tick()
+        await notification_ticker.tick()
 
         assert notifier.messages == notifier.videos == []
 
@@ -192,7 +192,7 @@ class TestDeath:
         await seed_ghoul(session_factory, UID, is_dead=False)  # успел возродиться
         await seed_due(session_factory, UID, NotificationType.DEATH)
 
-        await notification_ticker._tick()
+        await notification_ticker.tick()
 
         assert notifier.messages == [] and notifier.videos == []
 
@@ -204,7 +204,7 @@ class TestDeath:
         await self.seed_death(session_factory, UID)
         await seed_due(session_factory, UID, NotificationType.DEATH)
 
-        await notification_ticker._tick()
+        await notification_ticker.tick()
 
         # у прода без видео уходил текст с сырыми {cause}, {level}: подстановки терялись
         obituary = Dialogs.notify.death(
@@ -237,7 +237,7 @@ class TestDeath:
             session_factory, notifier, dialog_service
         )
 
-        await notification_ticker._tick()
+        await notification_ticker.tick()
 
         assert notifier.videos == [(UID, "CACHED_ID")]
 
@@ -265,7 +265,7 @@ class TestDeath:
             session_factory, notifier, dialog_service
         )
 
-        await notification_ticker._tick()
+        await notification_ticker.tick()
 
         assert notifier.videos == [(UID, str(video_file))]
         async with session_factory() as session:
@@ -304,7 +304,7 @@ class TestLifecycle:
         notification_ticker, _ = ticker
 
         await notification_ticker.start()
-        assert notification_ticker._running
+        assert notification_ticker.running
 
         await notification_ticker.stop()
-        assert not notification_ticker._running
+        assert not notification_ticker.running
