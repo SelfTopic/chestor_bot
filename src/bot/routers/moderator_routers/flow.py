@@ -55,6 +55,31 @@ def right_name(right: ChatRight) -> Line:
             return Dialogs.moderation.right.change_info()
 
 
+def duration_text(ctx: AppContext[Any], seconds: int) -> str:
+    parts = parse_seconds(seconds)
+    term = Dialogs.moderation.term
+    units = (
+        (parts.days, term.days),
+        (parts.hours_remaining, term.hours),
+        (parts.minutes_remaining, term.minutes),
+        (parts.seconds_remaining, term.seconds),
+    )
+    return " ".join(ctx.text(unit(count=count)) for count, unit in units if count)
+
+
+def term_text(ctx: AppContext[Any], seconds: int | None) -> str:
+    if seconds is None:
+        return ctx.text(Dialogs.moderation.term.forever())
+    return ctx.text(Dialogs.moderation.term.limited(duration=duration_text(ctx, seconds)))
+
+
+def expiry_text(ctx: AppContext[Any], seconds: int | None) -> str:
+    term = Dialogs.moderation.term
+    if seconds is None:
+        return ctx.text(term.never())
+    return ctx.text(term.after(duration=duration_text(ctx, seconds)))
+
+
 def feature_name(feature: ModerationFeature) -> Line:
     names = Dialogs.moderation.feature
     match feature:
@@ -136,24 +161,10 @@ class ModerationFlow:
         return message.user.id
 
     def duration(self, seconds: int) -> str:
-        parts = parse_seconds(seconds)
-        term = Dialogs.moderation.term
-        units = (
-            (parts.days, term.days),
-            (parts.hours_remaining, term.hours),
-            (parts.minutes_remaining, term.minutes),
-            (parts.seconds_remaining, term.seconds),
-        )
-        return " ".join(
-            self.ctx.text(unit(count=count)) for count, unit in units if count
-        )
+        return duration_text(self.ctx, seconds)
 
     def term(self, seconds: int | None) -> str:
-        if seconds is None:
-            return self.ctx.text(Dialogs.moderation.term.forever())
-        return self.ctx.text(
-            Dialogs.moderation.term.limited(duration=self.duration(seconds))
-        )
+        return term_text(self.ctx, seconds)
 
     async def on_error(self, exc: Exception) -> None:
         phrases = self.phrases

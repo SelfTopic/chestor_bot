@@ -22,6 +22,45 @@ moderation:
   right:
     restrict_members: «Блокировка пользователей»
     change_info: «Изменение профиля группы»
+  menu:
+    title: '⚙️ Модерация «{chat}»'
+    column_setting: Настройка
+    column_value: Значение
+    'on': вкл
+    'off': выкл
+    mute: Мут
+    ban: Бан
+    kick: Кик
+    warns: Варны
+    notices: Объявления о конце сроков
+    mute_default: Мут без срока
+    ban_default: Бан без срока
+    warn_limit: Лимит варнов
+    warn_penalty: Наказание на лимите
+    warn_expiry: Варны сгорают
+    voice: Голос
+    admin_chat: Чат админов
+    voice_neutral: нейтральный
+    voice_rough: грубый
+    admin_chat_none: не привязан
+    hint: 'Менять кнопками может админ с правом «Изменение профиля группы». Чат админов привязывает владелец: /set_admin_chat'
+    as_text: |-
+      {title}
+      {rows}
+
+      {hint}
+    row: '{name}: {value}'
+    button_on: '✅ {name}'
+    button_off: '❌ {name}'
+    button_value: '{name}: {value}'
+    button_prev: ◀
+    button_next: ▶
+    button_minus: −
+    button_plus: +
+    saved: Сохранено.
+    use_arrows: 'Значение меняется кнопками по бокам.'
+    no_right: 'Для этого нужно право {right}.'
+    not_admin: Менять настройки модерации могут только админы чата.
   neutral:
     muted: '🔇 {name} в муте {term}.'
     muted_for: '🔇 {name} в муте {term}. Причина: {reason}'
@@ -98,6 +137,7 @@ moderation:
     target_is_admin: '{name} — администратор, его наказать нельзя.'
     term_out_of_range: 'Срок — от {min} до {max} или «навсегда».'
     feature_disabled: 'Это выключено в настройках модерации чата: {feature}. Включить — «настройки модерации».'
+    log_feature: '⚙️ «{chat}» · {feature}: {state}. Модератор: {moderator}'
     warned: '⚠️ {name} получает варн: {count} из {limit}.'
     warned_for: '⚠️ {name} получает варн: {count} из {limit}. Причина: {reason}'
     warn_penalty_muted: '🔇 {name} набирает {limit} из {limit} варнов и уходит в мут {term}.'
@@ -236,6 +276,7 @@ moderation:
     target_is_admin: '{name} — админ. Своих CCG не трогает.'
     term_out_of_range: 'Кокурия так не работает: от {min} до {max} или «навсегда».'
     feature_disabled: 'CCG здесь это не делает: {feature} выключено в «настройках модерации».'
+    log_feature: '⚙️ Рапорт CCG, «{chat}»: {feature} — {state}. Приказ: {moderator}'
     warned:
       - '⚠️ CCG берёт {name} на карандаш: {count} из {limit}.'
       - '⚠️ {name}, это предупреждение. {count} из {limit}, дальше — Кокурия.'

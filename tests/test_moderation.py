@@ -17,12 +17,16 @@ from src.database.models import ModerationAction, ModerationSettings, Moderation
 
 from .conftest import (
     admin_dict,
+    button_data,
+    callback_update,
     chat_dict,
     matches_phrase,
     member_dict,
+    message_update,
     only_text,
     owner_dict,
     phrase_texts,
+    rich_texts,
     user_dict,
 )
 from .test_common_routers import seed
@@ -753,4 +757,70 @@ class TestFeatureToggles:
         (reply,) = await send("варн", uid=ADMIN, chat=GROUP, reply_to_uid=TARGET)
         warns = only_text(Dialogs.moderation.feature.warns())
         assert reply in phrase_texts(neutral.feature_disabled(feature=warns))
+
+
+menu = Dialogs.moderation.menu
+
+
+def press(data: str, uid: int = ADMIN) -> dict[str, Any]:
+    update = callback_update(data, uid)
+    update["callback_query"]["message"]["chat"] = chat_dict(GROUP)
+    return update
+
+
+async def open_menu(feed, telegram) -> dict[str, Any]:
+    await feed(message_update("настройки модерации", uid=ADMIN, chat=GROUP))
+    (body,) = telegram.bodies("sendRichMessage")
+    return body
+
+
+class TestMenu:
+    async def test_menu_is_a_rich_table_with_buttons(self, feed, telegram):
+        body = await open_menu(feed, telegram)
+
+        texts = rich_texts(body)
+        assert only_text(menu.mute()) in texts
+        assert only_text(menu.on()) in texts
+        assert only_text(term.forever()) not in texts
+        button_data(body, only_text(menu.button_on(name=menu.mute())))
+
+    async def test_button_changes_the_setting_edits_the_menu_and_reports(
+        self, feed, telegram, session_factory
+    ):
+        await set_settings(session_factory, admin_chat_id=ADMIN_CHAT)
+        body = await open_menu(feed, telegram)
+
+        await feed(press(button_data(body, only_text(menu.button_on(name=menu.mute())))))
+
+        assert (await stored_settings(session_factory)).mute_enabled is False
+        (edit,) = telegram.bodies("editMessageText")
+        assert only_text(menu.off()) in rich_texts(edit)
+        mute = only_text(Dialogs.moderation.feature.mute())
+        (log,) = sent_to(telegram, ADMIN_CHAT)
+        assert log in phrase_texts(
+            neutral.log_feature(
+                chat="группа", feature=mute, state=menu.off(), moderator="Вася"
+            )
+        )
+
+    async def test_term_arrows_step_through_presets(self, feed, telegram, session_factory):
+        body = await open_menu(feed, telegram)
+
+        await feed(press(button_data(body, only_text(menu.button_next()))))
+
+        assert (await stored_settings(session_factory)).mute_default_seconds == 3600
+
+    async def test_press_without_change_info_right_is_refused(
+        self, feed, telegram, session_factory
+    ):
+        body = await open_menu(feed, telegram)
+        telegram.results["getChatAdministrators"] = [owner_dict(99), admin_dict(ADMIN)]
+
+        await feed(press(button_data(body, only_text(menu.button_next()))))
+
+        (answer,) = telegram.bodies("answerCallbackQuery")
+        change_info = only_text(Dialogs.moderation.right.change_info())
+        assert answer["text"] == only_text(menu.no_right(right=change_info))
+        assert answer["show_alert"]
+        assert (await stored_settings(session_factory)).mute_default_seconds == 1800
 

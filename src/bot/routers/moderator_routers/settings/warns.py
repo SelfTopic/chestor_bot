@@ -1,4 +1,4 @@
-from typing import Annotated, Literal, Optional
+from typing import Annotated, Any, Literal, Optional
 
 from pydantic import BeforeValidator
 from selfrot import CommandArgs, MessageHandler, Rest
@@ -12,7 +12,7 @@ from src.bot.types import ChatRight, WarnPenalty
 from ....context import AppContext
 from ...types import TextUserMessage
 from ..filters import FromChatAdmin
-from ..flow import ModerationFlow, command
+from ..flow import ModerationFlow, command, expiry_text, term_text
 from .defaults import DefaultTermArgs, DefaultTermFlow
 
 
@@ -80,6 +80,13 @@ def penalty_name(penalty: WarnPenalty) -> Line:
             return Dialogs.moderation.penalty.kick()
 
 
+def penalty_text(ctx: AppContext[Any], penalty: WarnPenalty, seconds: Optional[int]) -> str:
+    name = ctx.text(penalty_name(penalty))
+    if penalty is WarnPenalty.KICK:
+        return name
+    return ctx.text(Dialogs.moderation.penalty.timed(penalty=name, term=term_text(ctx, seconds)))
+
+
 class WarnPenaltyArgs(CommandArgs):
     penalty: Optional[PenaltyWord] = None
     term: Rest = ""
@@ -91,12 +98,7 @@ class WarnPenaltyHandler(ModerationFlow, MessageHandler[AppContext[TextUserMessa
     query = cmd & HasUser() & FromChatAdmin()
 
     def described(self, penalty: WarnPenalty, seconds: Optional[int]) -> str:
-        name = self.ctx.text(penalty_name(penalty))
-        if penalty is WarnPenalty.KICK:
-            return name
-        return self.ctx.text(
-            Dialogs.moderation.penalty.timed(penalty=name, term=self.term(seconds))
-        )
+        return penalty_text(self.ctx, penalty, seconds)
 
     def voiced_usage(self) -> Line:
         settings = self.settings
@@ -140,10 +142,7 @@ class WarnExpiryHandler(DefaultTermFlow, MessageHandler[AppContext[TextUserMessa
     query = cmd & HasUser() & FromChatAdmin()
 
     def term(self, seconds: Optional[int]) -> str:
-        term = Dialogs.moderation.term
-        if seconds is None:
-            return self.ctx.text(term.never())
-        return self.ctx.text(term.after(duration=self.duration(seconds)))
+        return expiry_text(self.ctx, seconds)
 
     def stored(self) -> Optional[int]:
         return self.settings.warn_expiry_seconds

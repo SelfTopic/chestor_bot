@@ -1305,6 +1305,117 @@ class _ModerationFeatureDialogs:
         return Line("moderation.feature.warns", {})
 
 
+class _ModerationMenuDialogs:
+    def admin_chat(self) -> Line:
+        return Line("moderation.menu.admin_chat", {})
+
+    def admin_chat_none(self) -> Line:
+        return Line("moderation.menu.admin_chat_none", {})
+
+    def as_text(self, *, hint: object, rows: object, title: object) -> Line:
+        return Line(
+            "moderation.menu.as_text",
+            {
+                "hint": hint,
+                "rows": rows,
+                "title": title,
+            },
+        )
+
+    def ban(self) -> Line:
+        return Line("moderation.menu.ban", {})
+
+    def ban_default(self) -> Line:
+        return Line("moderation.menu.ban_default", {})
+
+    def button_minus(self) -> Line:
+        return Line("moderation.menu.button_minus", {})
+
+    def button_next(self) -> Line:
+        return Line("moderation.menu.button_next", {})
+
+    def button_off(self, *, name: object) -> Line:
+        return Line("moderation.menu.button_off", {"name": name})
+
+    def button_on(self, *, name: object) -> Line:
+        return Line("moderation.menu.button_on", {"name": name})
+
+    def button_plus(self) -> Line:
+        return Line("moderation.menu.button_plus", {})
+
+    def button_prev(self) -> Line:
+        return Line("moderation.menu.button_prev", {})
+
+    def button_value(self, *, name: object, value: object) -> Line:
+        return Line("moderation.menu.button_value", {"name": name, "value": value})
+
+    def column_setting(self) -> Line:
+        return Line("moderation.menu.column_setting", {})
+
+    def column_value(self) -> Line:
+        return Line("moderation.menu.column_value", {})
+
+    def hint(self) -> Line:
+        return Line("moderation.menu.hint", {})
+
+    def kick(self) -> Line:
+        return Line("moderation.menu.kick", {})
+
+    def mute(self) -> Line:
+        return Line("moderation.menu.mute", {})
+
+    def mute_default(self) -> Line:
+        return Line("moderation.menu.mute_default", {})
+
+    def no_right(self, *, right: object) -> Line:
+        return Line("moderation.menu.no_right", {"right": right})
+
+    def not_admin(self) -> Line:
+        return Line("moderation.menu.not_admin", {})
+
+    def notices(self) -> Line:
+        return Line("moderation.menu.notices", {})
+
+    def off(self) -> Line:
+        return Line("moderation.menu.off", {})
+
+    def on(self) -> Line:
+        return Line("moderation.menu.on", {})
+
+    def row(self, *, name: object, value: object) -> Line:
+        return Line("moderation.menu.row", {"name": name, "value": value})
+
+    def saved(self) -> Line:
+        return Line("moderation.menu.saved", {})
+
+    def title(self, *, chat: object) -> Line:
+        return Line("moderation.menu.title", {"chat": chat})
+
+    def use_arrows(self) -> Line:
+        return Line("moderation.menu.use_arrows", {})
+
+    def voice(self) -> Line:
+        return Line("moderation.menu.voice", {})
+
+    def voice_neutral(self) -> Line:
+        return Line("moderation.menu.voice_neutral", {})
+
+    def voice_rough(self) -> Line:
+        return Line("moderation.menu.voice_rough", {})
+
+    def warn_expiry(self) -> Line:
+        return Line("moderation.menu.warn_expiry", {})
+
+    def warn_limit(self) -> Line:
+        return Line("moderation.menu.warn_limit", {})
+
+    def warn_penalty(self) -> Line:
+        return Line("moderation.menu.warn_penalty", {})
+
+    def warns(self) -> Line:
+        return Line("moderation.menu.warns", {})
+
+
 class _ModerationNeutralDialogs:
     def admin_chat_current(self, *, chat: object) -> Line:
         return Line("moderation.neutral.admin_chat_current", {"chat": chat})
@@ -1438,6 +1549,24 @@ class _ModerationNeutralDialogs:
                 "name": name,
                 "reason": reason,
                 "term": term,
+            },
+        )
+
+    def log_feature(
+        self,
+        *,
+        chat: object,
+        feature: object,
+        moderator: object,
+        state: object,
+    ) -> Line:
+        return Line(
+            "moderation.neutral.log_feature",
+            {
+                "chat": chat,
+                "feature": feature,
+                "moderator": moderator,
+                "state": state,
             },
         )
 
@@ -2168,6 +2297,24 @@ class _ModerationRoughDialogs:
             },
         )
 
+    def log_feature(
+        self,
+        *,
+        chat: object,
+        feature: object,
+        moderator: object,
+        state: object,
+    ) -> Line:
+        return Line(
+            "moderation.rough.log_feature",
+            {
+                "chat": chat,
+                "feature": feature,
+                "moderator": moderator,
+                "state": state,
+            },
+        )
+
     def log_kicked(
         self,
         *,
@@ -2765,6 +2912,7 @@ class _ModerationTermDialogs:
 
 class _ModerationDialogs:
     feature = _ModerationFeatureDialogs()
+    menu = _ModerationMenuDialogs()
     neutral = _ModerationNeutralDialogs()
     penalty = _ModerationPenaltyDialogs()
     right = _ModerationRightDialogs()
@@ -3645,6 +3793,40 @@ PLACEHOLDERS: dict[str, frozenset[str]] = {
     "moderation.feature.notices": frozenset(),
     "moderation.feature.warns": frozenset(),
     "moderation.goodbye_updated": frozenset({"text"}),
+    "moderation.menu.admin_chat": frozenset(),
+    "moderation.menu.admin_chat_none": frozenset(),
+    "moderation.menu.as_text": frozenset({"hint", "rows", "title"}),
+    "moderation.menu.ban": frozenset(),
+    "moderation.menu.ban_default": frozenset(),
+    "moderation.menu.button_minus": frozenset(),
+    "moderation.menu.button_next": frozenset(),
+    "moderation.menu.button_off": frozenset({"name"}),
+    "moderation.menu.button_on": frozenset({"name"}),
+    "moderation.menu.button_plus": frozenset(),
+    "moderation.menu.button_prev": frozenset(),
+    "moderation.menu.button_value": frozenset({"name", "value"}),
+    "moderation.menu.column_setting": frozenset(),
+    "moderation.menu.column_value": frozenset(),
+    "moderation.menu.hint": frozenset(),
+    "moderation.menu.kick": frozenset(),
+    "moderation.menu.mute": frozenset(),
+    "moderation.menu.mute_default": frozenset(),
+    "moderation.menu.no_right": frozenset({"right"}),
+    "moderation.menu.not_admin": frozenset(),
+    "moderation.menu.notices": frozenset(),
+    "moderation.menu.off": frozenset(),
+    "moderation.menu.on": frozenset(),
+    "moderation.menu.row": frozenset({"name", "value"}),
+    "moderation.menu.saved": frozenset(),
+    "moderation.menu.title": frozenset({"chat"}),
+    "moderation.menu.use_arrows": frozenset(),
+    "moderation.menu.voice": frozenset(),
+    "moderation.menu.voice_neutral": frozenset(),
+    "moderation.menu.voice_rough": frozenset(),
+    "moderation.menu.warn_expiry": frozenset(),
+    "moderation.menu.warn_limit": frozenset(),
+    "moderation.menu.warn_penalty": frozenset(),
+    "moderation.menu.warns": frozenset(),
     "moderation.neutral.admin_chat_current": frozenset({"chat"}),
     "moderation.neutral.admin_chat_linked": frozenset({"chat"}),
     "moderation.neutral.admin_chat_none": frozenset(),
@@ -3684,6 +3866,14 @@ PLACEHOLDERS: dict[str, frozenset[str]] = {
             "name",
             "reason",
             "term",
+        }
+    ),
+    "moderation.neutral.log_feature": frozenset(
+        {
+            "chat",
+            "feature",
+            "moderator",
+            "state",
         }
     ),
     "moderation.neutral.log_kicked": frozenset({"chat", "id", "moderator", "name"}),
@@ -3881,6 +4071,14 @@ PLACEHOLDERS: dict[str, frozenset[str]] = {
             "name",
             "reason",
             "term",
+        }
+    ),
+    "moderation.rough.log_feature": frozenset(
+        {
+            "chat",
+            "feature",
+            "moderator",
+            "state",
         }
     ),
     "moderation.rough.log_kicked": frozenset({"chat", "id", "moderator", "name"}),
