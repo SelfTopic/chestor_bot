@@ -16,7 +16,7 @@ from .user import User
 from .user_cooldowns import UserCooldown
 from .roast_log import RoastLog
 from .rp_commands import Rp
-from .moderation import ModerationAction, ModerationSettings
+from .moderation import ModerationAction, ModerationSettings, ModerationWarning
 
 __all__ = [
     "ActiveBattle",
@@ -39,4 +39,5 @@ __all__ = [
     "DuelSession",
     "ModerationAction",
     "ModerationSettings",
+    "ModerationWarning",
 ]

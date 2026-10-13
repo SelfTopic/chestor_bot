@@ -2,6 +2,7 @@
 правом; права, бот и цель берутся из getChatAdministrators / getChatMember."""
 
 import time
+from datetime import datetime, timedelta, timezone
 from typing import Any
 
 import pytest
@@ -10,13 +11,14 @@ from sqlalchemy import select, update
 from selfrot.types import AcceptedGiftTypes, ChatMemberRestricted, ChatPermissions
 from src.bot.dialogs import Dialogs
 from src.bot.repositories import ChatRepository, ModerationRepository
-from src.bot.types import ModerationActionType, ModerationVoice
+from src.bot.types import ModerationActionType, ModerationVoice, WarnPenalty
 from src.bot.types.insert import ChatInsert
-from src.database.models import ModerationAction, ModerationSettings
+from src.database.models import ModerationAction, ModerationSettings, ModerationWarning
 
 from .conftest import (
     admin_dict,
     chat_dict,
+    matches_phrase,
     member_dict,
     only_text,
     owner_dict,
@@ -575,3 +577,127 @@ class TestAdminChat:
         (reply,) = await send(f"/set_admin_chat {GROUP}", uid=ADMIN, chat=GROUP)
 
         assert reply in phrase_texts(neutral.admin_chat_self())
+
+
+async def active_warnings(session_factory) -> list[ModerationWarning]:
+    async with session_factory() as session:
+        return await ModerationRepository(session).active_warnings(GROUP, TARGET)
+
+
+class TestWarns:
+    async def test_warn_counts_up_to_the_limit_and_is_journaled(
+        self, send, telegram, session_factory
+    ):
+        (reply,) = await send("варн флуд", uid=ADMIN, chat=GROUP, reply_to_uid=TARGET)
+
+        assert reply in phrase_texts(
+            neutral.warned_for(name="Петя", count=1, limit=3, reason="флуд")
+        )
+        assert telegram.bodies("restrictChatMember") == []
+        (row,) = await journal(session_factory)
+        assert (row.action, row.reason) == (ModerationActionType.WARN, "флуд")
+        (warning,) = await active_warnings(session_factory)
+        assert warning.expires_at is not None
+
+    @pytest.mark.parametrize(
+        ("penalty", "method", "action"),
+        [
+            (WarnPenalty.MUTE, "restrictChatMember", ModerationActionType.MUTE),
+            (WarnPenalty.BAN, "banChatMember", ModerationActionType.BAN),
+            (WarnPenalty.KICK, "unbanChatMember", ModerationActionType.KICK),
+        ],
+    )
+    async def test_limit_applies_the_chat_penalty_and_resets_the_count(
+        self, send, telegram, session_factory, penalty, method, action
+    ):
+        await set_settings(session_factory, warn_limit=2, warn_penalty=penalty)
+        await send("пред", uid=ADMIN, chat=GROUP, reply_to_uid=TARGET)
+
+        (reply,) = await send("/warn спам", uid=ADMIN, chat=GROUP, reply_to_uid=TARGET)
+
+        lines = {
+            WarnPenalty.MUTE: neutral.warn_penalty_muted(name="Петя", limit=2, term=minutes(30)),
+            WarnPenalty.BAN: neutral.warn_penalty_banned(name="Петя", limit=2, term=minutes(30)),
+            WarnPenalty.KICK: neutral.warn_penalty_kicked(name="Петя", limit=2),
+        }
+        assert reply in phrase_texts(lines[penalty])
+        (body,) = telegram.bodies(method)
+        assert body["user_id"] == TARGET
+        rows = await journal(session_factory)
+        assert [row.action for row in rows] == [
+            ModerationActionType.WARN,
+            ModerationActionType.WARN,
+            action,
+        ]
+        assert rows[-1].reason == "спам"
+        assert await active_warnings(session_factory) == []
+
+    async def test_expired_and_revoked_warnings_do_not_count(
+        self, send, session_factory
+    ):
+        await send("варн", uid=ADMIN, chat=GROUP, reply_to_uid=TARGET)
+        async with session_factory() as session:
+            await session.execute(
+                update(ModerationWarning).values(
+                    expires_at=datetime.now(timezone.utc).replace(tzinfo=None)
+                    - timedelta(minutes=1)
+                )
+            )
+            await session.commit()
+
+        (reply,) = await send("варн", uid=ADMIN, chat=GROUP, reply_to_uid=TARGET)
+
+        assert reply in phrase_texts(neutral.warned(name="Петя", count=1, limit=3))
+
+    async def test_unwarn_removes_the_latest_warning(self, send, session_factory):
+        for reason in ("флуд", "спам"):
+            await send(f"варн {reason}", uid=ADMIN, chat=GROUP, reply_to_uid=TARGET)
+
+        (reply,) = await send("снять варн", uid=ADMIN, chat=GROUP, reply_to_uid=TARGET)
+
+        assert reply in phrase_texts(neutral.unwarned(name="Петя", count=1, limit=3))
+        (warning,) = await active_warnings(session_factory)
+        assert warning.reason == "флуд"
+        assert (await journal(session_factory))[-1].action is ModerationActionType.UNWARN
+
+        await send("/unwarn", uid=ADMIN, chat=GROUP, reply_to_uid=TARGET)
+        (reply,) = await send("снять пред", uid=ADMIN, chat=GROUP, reply_to_uid=TARGET)
+        assert reply in phrase_texts(neutral.no_warnings(name="Петя"))
+
+    async def test_members_see_own_warnings_and_admins_see_anyones(
+        self, send, session_factory
+    ):
+        (reply,) = await send("варны", uid=TARGET, first_name="Петя", chat=GROUP)
+        assert reply in phrase_texts(neutral.warns_none(name="Петя"))
+
+        await send("варн флуд", uid=ADMIN, chat=GROUP, reply_to_uid=TARGET)
+
+        (reply,) = await send("преды", uid=TARGET, first_name="Петя", chat=GROUP)
+        assert matches_phrase(reply, "moderation.neutral.warns_list")
+        assert "флуд" in reply
+        (reply,) = await send("варны", uid=ADMIN, chat=GROUP, reply_to_uid=TARGET)
+        assert matches_phrase(reply, "moderation.neutral.warns_list")
+        assert await send("варны", uid=7, chat=GROUP, reply_to_uid=TARGET) == []
+
+    async def test_warn_settings(self, send, session_factory):
+        (reply,) = await send("варн лимит 5", uid=ADMIN, chat=GROUP)
+        assert reply in phrase_texts(neutral.warn_limit_set(limit=5))
+        (reply,) = await send("/warn_limit 0", uid=ADMIN, chat=GROUP)
+        assert reply in phrase_texts(neutral.warn_limit_out_of_range(min=1, max=20))
+
+        (reply,) = await send("пред наказание Бан", uid=ADMIN, chat=GROUP)
+        ban = only_text(Dialogs.moderation.penalty.ban())
+        assert reply in phrase_texts(neutral.warn_penalty_set(penalty=ban))
+
+        (reply,) = await send("варн срок навсегда", uid=ADMIN, chat=GROUP)
+        assert reply in phrase_texts(neutral.warn_expiry_set(term=term.never()))
+
+        settings = await stored_settings(session_factory)
+        assert (settings.warn_limit, settings.warn_penalty, settings.warn_expiry_seconds) == (
+            5,
+            WarnPenalty.BAN,
+            None,
+        )
+        (reply,) = await send("/warn_action", uid=ADMIN, chat=GROUP)
+        assert reply in phrase_texts(neutral.warn_penalty_current(penalty=ban))
+

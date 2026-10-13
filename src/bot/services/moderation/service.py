@@ -1,7 +1,7 @@
 import re
 from typing import Optional
 
-from src.database.models import ModerationAction, ModerationSettings
+from src.database.models import ModerationAction, ModerationSettings, ModerationWarning
 
 from ...exceptions import (
     AdminChatIsSelf,
@@ -9,14 +9,24 @@ from ...exceptions import (
     AdminChatTaken,
     DurationParseError,
     TermOutOfRange,
+    WarnLimitOutOfRange,
 )
 from ...repositories import ModerationRepository
-from ...types import Duration, ModerationActionType, ModerationVoice, Punishment
+from ...types import (
+    Duration,
+    ModerationActionType,
+    ModerationVoice,
+    Punishment,
+    WarnOutcome,
+    WarnPenalty,
+)
 from ..duration_parser import DurationParser
 
 # Срок короче или длиннее Telegram молча считает вечным.
 MIN_TERM_SECONDS = 30
 MAX_TERM_SECONDS = 366 * 24 * 3600
+MIN_WARN_LIMIT = 1
+MAX_WARN_LIMIT = 20
 
 
 class ModerationService:
@@ -44,6 +54,67 @@ class ModerationService:
         self, chat_id: int, voice: ModerationVoice
     ) -> ModerationSettings:
         return await self.moderation_repository.update_settings(chat_id, voice=voice)
+
+    async def set_warn_limit(self, chat_id: int, limit: int) -> ModerationSettings:
+        if not MIN_WARN_LIMIT <= limit <= MAX_WARN_LIMIT:
+            raise WarnLimitOutOfRange(MIN_WARN_LIMIT, MAX_WARN_LIMIT)
+        return await self.moderation_repository.update_settings(chat_id, warn_limit=limit)
+
+    async def set_warn_penalty(
+        self, chat_id: int, penalty: WarnPenalty
+    ) -> ModerationSettings:
+        return await self.moderation_repository.update_settings(
+            chat_id, warn_penalty=penalty
+        )
+
+    async def set_warn_expiry(
+        self, chat_id: int, seconds: Optional[int]
+    ) -> ModerationSettings:
+        return await self.moderation_repository.update_settings(
+            chat_id, warn_expiry_seconds=seconds
+        )
+
+    async def warn(
+        self,
+        settings: ModerationSettings,
+        moderator_id: int,
+        target_id: int,
+        reason: Optional[str],
+    ) -> WarnOutcome:
+        chat_id = settings.chat_id
+        await self.moderation_repository.add_warning(
+            chat_id, moderator_id, target_id, reason, settings.warn_expiry_seconds
+        )
+        await self.record(
+            chat_id, moderator_id, target_id, ModerationActionType.WARN, reason=reason
+        )
+        active = await self.moderation_repository.active_warnings(chat_id, target_id)
+        if len(active) < settings.warn_limit:
+            return WarnOutcome(len(active), settings.warn_limit, None, None)
+
+        # Наказание обнуляет счётчик: следующий круг варнов начинается с нуля.
+        await self.moderation_repository.revoke_warnings([w.id for w in active])
+        penalty = settings.warn_penalty
+        seconds = {
+            WarnPenalty.MUTE: settings.mute_default_seconds,
+            WarnPenalty.BAN: settings.ban_default_seconds,
+            WarnPenalty.KICK: None,
+        }[penalty]
+        return WarnOutcome(len(active), settings.warn_limit, penalty, seconds)
+
+    async def unwarn(
+        self, chat_id: int, moderator_id: int, target_id: int
+    ) -> Optional[int]:
+        active = await self.moderation_repository.active_warnings(chat_id, target_id)
+        if not active:
+            return None
+
+        await self.moderation_repository.revoke_warnings([active[-1].id])
+        await self.record(chat_id, moderator_id, target_id, ModerationActionType.UNWARN)
+        return len(active) - 1
+
+    async def warnings(self, chat_id: int, target_id: int) -> list[ModerationWarning]:
+        return await self.moderation_repository.active_warnings(chat_id, target_id)
 
     async def admin_chat_requested(self, chat_id: int, admin_chat_id: int) -> bool:
         settings = await self.moderation_repository.find_settings(chat_id)

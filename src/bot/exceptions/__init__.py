@@ -35,9 +35,11 @@ from .moderation import (
     NotChatOwner,
     TargetAbsent,
     TargetIsAdmin,
+    TargetHasNoWarnings,
     TargetNotBanned,
     TargetNotMuted,
     TermOutOfRange,
+    WarnLimitOutOfRange,
 )
 from .quiz import QuizBusy, QuizEmailMissing, QuizSessionMissing, QuizUnavailable
 from .rp_commands import RpCommandError, RpCommandLimitReached, RpCommandNotFound
@@ -109,9 +111,11 @@ __all__ = [
     "BotLacksRight",
     "TargetIsAdmin",
     "TargetNotMuted",
+    "TargetHasNoWarnings",
     "TargetNotBanned",
     "TargetAbsent",
     "TermOutOfRange",
+    "WarnLimitOutOfRange",
     "NotChatOwner",
     "AdminChatNotFound",
     "AdminChatIsSelf",

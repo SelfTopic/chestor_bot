@@ -6,7 +6,7 @@ from sqlalchemy import BigInteger, ForeignKey, Index, func
 from sqlalchemy import Enum as SqlEnum
 from sqlalchemy.orm import Mapped, mapped_column
 
-from src.bot.types.moderation import ModerationActionType, ModerationVoice
+from src.bot.types.moderation import ModerationActionType, ModerationVoice, WarnPenalty
 
 from .base import Base
 from .chat import Chat
@@ -46,6 +46,16 @@ class ModerationSettings(Base):
         nullable=False,
         server_default=ModerationVoice.NEUTRAL.value,
     )
+    warn_limit: Mapped[int] = mapped_column(nullable=False, server_default="3")
+    warn_penalty: Mapped[WarnPenalty] = mapped_column(
+        _string_enum(WarnPenalty),
+        nullable=False,
+        server_default=WarnPenalty.MUTE.value,
+    )
+    # NULL — варны не сгорают.
+    warn_expiry_seconds: Mapped[Optional[int]] = mapped_column(
+        nullable=True, server_default="604800"
+    )
     admin_chat_id: Mapped[Optional[int]] = mapped_column(BigInteger, nullable=True)
     # Запрошенный отсюда чат админов: привязка появится, когда его подтвердят там.
     admin_chat_request: Mapped[Optional[int]] = mapped_column(BigInteger, nullable=True)
@@ -70,3 +80,22 @@ class ModerationAction(Base):
     created_at: Mapped[datetime] = mapped_column(
         nullable=False, server_default=func.now()
     )
+
+
+class ModerationWarning(Base):
+    __tablename__ = "moderation_warnings"
+    __table_args__ = (Index("ix_moderation_warnings_target", "chat_id", "target_id"),)
+
+    id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
+    chat_id: Mapped[int] = mapped_column(BigInteger, nullable=False)
+    moderator_id: Mapped[int] = mapped_column(BigInteger, nullable=False)
+    target_id: Mapped[int] = mapped_column(BigInteger, nullable=False)
+    reason: Mapped[Optional[str]] = mapped_column(nullable=True)
+
+    created_at: Mapped[datetime] = mapped_column(
+        nullable=False, server_default=func.now()
+    )
+    # NULL — не сгорает.
+    expires_at: Mapped[Optional[datetime]] = mapped_column(nullable=True)
+    # Снят вручную или сброшен наказанием на лимите.
+    revoked_at: Mapped[Optional[datetime]] = mapped_column(nullable=True)

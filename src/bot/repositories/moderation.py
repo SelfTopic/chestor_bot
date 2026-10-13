@@ -1,10 +1,11 @@
+from datetime import timedelta
 from typing import Any, Optional
 
-from sqlalchemy import select
+from sqlalchemy import func, or_, select, update
 from sqlalchemy.dialects.postgresql import insert
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from ...database.models import ModerationAction, ModerationSettings
+from ...database.models import ModerationAction, ModerationSettings, ModerationWarning
 from ..types import ModerationActionType
 from .base import Base
 
@@ -80,3 +81,48 @@ class ModerationRepository(Base):
             raise ValueError("Не удалось записать действие модерации")
 
         return record
+
+    async def add_warning(
+        self,
+        chat_id: int,
+        moderator_id: int,
+        target_id: int,
+        reason: Optional[str],
+        expiry_seconds: Optional[int],
+    ) -> None:
+        # Срок считается от часов БД, как и created_at.
+        expires_at = (
+            None if expiry_seconds is None else func.now() + timedelta(seconds=expiry_seconds)
+        )
+        await self.session.execute(
+            insert(ModerationWarning).values(
+                chat_id=chat_id,
+                moderator_id=moderator_id,
+                target_id=target_id,
+                reason=reason,
+                expires_at=expires_at,
+            )
+        )
+
+    async def active_warnings(self, chat_id: int, target_id: int) -> list[ModerationWarning]:
+        stmt = (
+            select(ModerationWarning)
+            .where(
+                ModerationWarning.chat_id == chat_id,
+                ModerationWarning.target_id == target_id,
+                ModerationWarning.revoked_at.is_(None),
+                or_(
+                    ModerationWarning.expires_at.is_(None),
+                    ModerationWarning.expires_at > func.now(),
+                ),
+            )
+            .order_by(ModerationWarning.created_at, ModerationWarning.id)
+        )
+        return list(await self.session.scalars(stmt))
+
+    async def revoke_warnings(self, ids: list[int]) -> None:
+        await self.session.execute(
+            update(ModerationWarning)
+            .where(ModerationWarning.id.in_(ids))
+            .values(revoked_at=func.now())
+        )

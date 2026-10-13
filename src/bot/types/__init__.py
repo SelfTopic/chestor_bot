@@ -2,7 +2,14 @@ from .coffee import CoffeeResult
 from .dep import DepColor, DepResult
 from .kagune import KaguneType
 from .media import MediaCollection, MediaDownloadType, MediaSaveRequest, VideoCutJob
-from .moderation import ChatRight, ModerationActionType, ModerationVoice, Punishment
+from .moderation import (
+    ChatRight,
+    ModerationActionType,
+    ModerationVoice,
+    Punishment,
+    WarnOutcome,
+    WarnPenalty,
+)
 from .notification import NotificationType
 from .race import Race
 from .register_ghoul import RegisterGhoulType
@@ -26,4 +33,6 @@ __all__ = [
     "ModerationActionType",
     "ModerationVoice",
     "Punishment",
+    "WarnOutcome",
+    "WarnPenalty",
 ]

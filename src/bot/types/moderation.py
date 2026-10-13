@@ -14,6 +14,14 @@ class ModerationActionType(str, Enum):
     BAN = "ban"
     UNBAN = "unban"
     KICK = "kick"
+    WARN = "warn"
+    UNWARN = "unwarn"
+
+
+class WarnPenalty(str, Enum):
+    MUTE = "mute"
+    BAN = "ban"
+    KICK = "kick"
 
 
 class ChatRight(str, Enum):
@@ -25,3 +33,12 @@ class ChatRight(str, Enum):
 class Punishment:
     seconds: Optional[int]
     reason: Optional[str]
+
+
+@dataclass(frozen=True)
+class WarnOutcome:
+    count: int
+    limit: int
+    # Не None — лимит достигнут: наказание и его срок, варны уже сброшены.
+    penalty: Optional[WarnPenalty]
+    penalty_seconds: Optional[int]
