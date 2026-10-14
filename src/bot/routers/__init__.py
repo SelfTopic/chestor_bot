@@ -8,6 +8,7 @@ from .common import (
     CheckRulesRouter,
     CommonTopsRouter,
     DepRouter,
+    EditsRouter,
     FunRouter,
     HelpRouter,
     LinkMediaRouter,
@@ -17,6 +18,7 @@ from .common import (
     RolePlayRouter,
     StartRouter,
     TransferRouter,
+    UserbotInboxRouter,
     WordleRouter,
 )
 from .chat_member_update_routers import ChatMemberUpdateRouter
@@ -45,6 +47,9 @@ class RootRouter(BaseRouter[AppContext]):
         AnimeRouter,
         TransferRouter,
         DepRouter,
+        UserbotInboxRouter,
+        # Раньше FunRouter: иначе «1000-7» посчитал бы калькулятор.
+        EditsRouter,
         FunRouter,
         LinkMediaRouter,
         # Последним: огрызается только на то, что не забрала ни одна команда.

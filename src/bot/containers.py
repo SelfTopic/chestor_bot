@@ -5,12 +5,14 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from .repositories import (
     ActiveBattleRepository,
+    AnimeEpisodeRepository,
     BalancesLogRepository,
     BattleRepository,
     ChatParticipantRepository,
     ChatRepository,
     DeathLogRepository,
     DuelSessionRepository,
+    GhoulEditRepository,
     GhoulRepository,
     LotteryRepository,
     MediaRepository,
@@ -65,6 +67,8 @@ class Container(containers.DeclarativeContainer):
     )
 
     media_repository = providers.Factory(MediaRepository, session=db_session)
+    ghoul_edit_repository = providers.Factory(GhoulEditRepository, session=db_session)
+    anime_episode_repository = providers.Factory(AnimeEpisodeRepository, session=db_session)
 
     moderation_repository = providers.Factory(ModerationRepository, session=db_session)
 

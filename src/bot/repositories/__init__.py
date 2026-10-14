@@ -1,5 +1,6 @@
 from .active_battle import ActiveBattleRepository
 from .balances_log import BalancesLogRepository
+from .anime_episode import AnimeEpisodeRepository
 from .base import Base
 from .battle import BattleRepository
 from .chat import ChatRepository
@@ -7,6 +8,7 @@ from .chat_participant import ChatParticipantRepository
 from .death_log import DeathLogRepository
 from .duel_session import DuelSessionRepository
 from .ghoul import GhoulRepository
+from .ghoul_edit import GhoulEditRepository
 from .link_media import LinkMediaRepository
 from .lottery import LotteryRepository
 from .media import MediaRepository
@@ -21,9 +23,11 @@ from .rp_commands import RpCommandsRepository
 __all__ = [
     "ActiveBattleRepository",
     "BattleRepository",
+    "AnimeEpisodeRepository",
     "Base",
     "UserRepository",
     "GhoulRepository",
+    "GhoulEditRepository",
     "UserCooldownRepository",
     "ChatRepository",
     "ChatParticipantRepository",

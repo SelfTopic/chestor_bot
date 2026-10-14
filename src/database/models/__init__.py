@@ -14,6 +14,8 @@ from .scheduled_notification import ScheduledNotification
 from .transfer import Transfer
 from .user import User
 from .user_cooldowns import UserCooldown
+from .anime_episode import AnimeEpisode
+from .ghoul_edit import GhoulEdit
 from .link_media import LinkMediaCache
 from .roast_log import RoastLog
 from .rp_commands import Rp
@@ -21,7 +23,9 @@ from .moderation import ModerationAction, ModerationSettings, ModerationWarning
 
 __all__ = [
     "ActiveBattle",
+    "AnimeEpisode",
     "Base",
+    "GhoulEdit",
     "LinkMediaCache",
     "Battle",
     "Chat",
