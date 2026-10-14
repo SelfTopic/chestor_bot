@@ -31,6 +31,7 @@ class Settings(BaseSettings):
     MEDIA_TOOLS_DIR: str = Field(default="/opt/media-tools/bin")
     LINK_MEDIA_MAX_DURATION: int = Field(default=900)
     USERBOT_ID: int = Field(default=0)
+    MUSIC_MAX_DURATION: int = Field(default=900)
 
     HTTP_PROXY: str = Field(default="")
     HTTPS_PROXY: str = Field(default="")

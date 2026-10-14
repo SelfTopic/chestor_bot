@@ -1,4 +1,3 @@
-import asyncio
 import json
 import logging
 from dataclasses import dataclass
@@ -8,20 +7,18 @@ from urllib.parse import urlsplit
 
 import aiohttp
 
-from src.bot.exceptions import LinkMediaError, LinkMediaTooLarge
+from src.bot.exceptions import LinkMediaError, LinkMediaTooLarge, MediaToolError
 
+from ..media_tools import YTDLP_FLAGS, run
 from .formats import has_video, pick
 
 logger = logging.getLogger(__name__)
 
-TOOL_TIMEOUT = 180
 TIKWM_API = "https://www.tikwm.com/api/"
 BROWSER_UA = (
     "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 "
     "(KHTML, like Gecko) Chrome/140.0.0.0 Safari/537.36"
 )
-# --xff US обходит региональные блокировки постов TikTok с IP в Нидерландах.
-YTDLP_FLAGS = ("--no-warnings", "--no-playlist", "--xff", "US")
 # Обход через --xff срабатывает не каждый раз, поэтому при блокировке по IP повторяем.
 GEO_BLOCK_ATTEMPTS = 3
 GALLERY_FILE = 3
@@ -42,22 +39,6 @@ class Video:
 class Slideshow:
     images: tuple[str, ...]
     audio: str | None
-
-
-async def run(*args: str, timeout: float = TOOL_TIMEOUT) -> str:
-    process = await asyncio.create_subprocess_exec(
-        *args, stdout=asyncio.subprocess.PIPE, stderr=asyncio.subprocess.PIPE
-    )
-    try:
-        out, err = await asyncio.wait_for(process.communicate(), timeout)
-    except TimeoutError:
-        process.kill()
-        await process.wait()
-        raise LinkMediaError(f"timeout: {' '.join(args[:3])}") from None
-    if process.returncode != 0:
-        lines = err.decode(errors="replace").strip().splitlines()
-        raise LinkMediaError(lines[-1] if lines else f"exit code {process.returncode}")
-    return out.decode(errors="replace")
 
 
 class Downloader:
@@ -96,7 +77,7 @@ class Downloader:
                 return await self._ytdlp_video(info, workdir)
             except LinkMediaTooLarge:
                 raise
-            except LinkMediaError as exc:
+            except MediaToolError as exc:
                 if "tiktok.com" not in url:
                     raise
                 logger.warning("yt-dlp не скачал %s: %s; пробую tikwm", url, exc)
@@ -110,7 +91,7 @@ class Downloader:
         for attempt in range(1, GEO_BLOCK_ATTEMPTS + 1):
             try:
                 info = json.loads(await run(self._ytdlp, *YTDLP_FLAGS, "--dump-single-json", url))
-            except LinkMediaError as exc:
+            except MediaToolError as exc:
                 if "IP address is blocked" not in str(exc) or attempt == GEO_BLOCK_ATTEMPTS:
                     raise
                 logger.info("Гео-блок для %s, попытка %d", url, attempt)
@@ -229,7 +210,7 @@ async def probe(path: Path, workdir: Path) -> Video:
             "ffmpeg", "-v", "error", "-y", "-i", str(path), "-frames:v", "1",
             "-vf", "scale=320:320:force_original_aspect_ratio=decrease", str(thumbnail),
         )  # fmt: skip
-    except LinkMediaError as exc:
+    except MediaToolError as exc:
         logger.warning("Превью для %s не сделалось: %s", path, exc)
         thumbnail = None
 

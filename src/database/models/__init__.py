@@ -17,6 +17,7 @@ from .user_cooldowns import UserCooldown
 from .anime_episode import AnimeEpisode
 from .ghoul_edit import GhoulEdit
 from .link_media import LinkMediaCache
+from .music_track import MusicTrack
 from .roast_log import RoastLog
 from .rp_commands import Rp
 from .moderation import ModerationAction, ModerationSettings, ModerationWarning
@@ -27,6 +28,7 @@ __all__ = [
     "Base",
     "GhoulEdit",
     "LinkMediaCache",
+    "MusicTrack",
     "Battle",
     "Chat",
     "ChatParticipant",

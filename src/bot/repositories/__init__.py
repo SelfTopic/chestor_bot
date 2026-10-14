@@ -13,6 +13,7 @@ from .link_media import LinkMediaRepository
 from .lottery import LotteryRepository
 from .media import MediaRepository
 from .moderation import DueExpiration, ModerationRepository
+from .music_track import MusicTrackRepository
 from .scheduled_notification import ScheduledNotificationRepository
 from .transfer import TransferRepository
 from .user import UserRepository
@@ -32,6 +33,7 @@ __all__ = [
     "ChatRepository",
     "ChatParticipantRepository",
     "MediaRepository",
+    "MusicTrackRepository",
     "LinkMediaRepository",
     "DueExpiration",
     "ModerationRepository",

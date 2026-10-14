@@ -1,5 +1,4 @@
 import asyncio
-import logging
 import tempfile
 from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
@@ -10,13 +9,8 @@ from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 
 from ...repositories import LinkMediaRepository
 from ...types import CachedMedia
-from ..ticker import Ticker
-from .downloader import Slideshow, Video, run
+from .downloader import Slideshow, Video
 
-logger = logging.getLogger(__name__)
-
-TOOLS_UPDATE_INTERVAL = 24 * 3600
-TOOLS = ("yt-dlp[default,curl-cffi]", "gallery-dl")
 
 
 class MediaDownloader(Protocol):
@@ -63,17 +57,3 @@ class LinkMediaService:
         async with self._slots:
             with tempfile.TemporaryDirectory(prefix="link_media_") as workdir:
                 yield await self._downloader.download(url, Path(workdir))
-
-
-# yt-dlp и gallery-dl живут в своём venv и обновляются в нём: сайты ломают скачивание
-# чаще, чем выходит новый образ бота, а зависимости самого бота это не трогает.
-class MediaToolsUpdater(Ticker):
-    def __init__(self, tools: Path, interval_seconds: float = TOOLS_UPDATE_INTERVAL) -> None:
-        super().__init__(interval_seconds)
-        self._tools = tools
-
-    async def tick(self) -> None:
-        pip = str(self._tools / "pip")
-        await run(pip, "install", "-q", "-U", *TOOLS, timeout=600)
-        version = (await run(str(self._tools / "yt-dlp"), "--version")).strip()
-        logger.info("yt-dlp и gallery-dl обновлены (yt-dlp %s)", version)

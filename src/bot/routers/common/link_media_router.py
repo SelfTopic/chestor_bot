@@ -20,7 +20,7 @@ from selfrot.types import (
 )
 
 from src.bot.dialogs import Dialogs
-from src.bot.exceptions import LinkMediaError, LinkMediaTooLarge
+from src.bot.exceptions import LinkMediaTooLarge, MediaToolError
 from src.bot.services.link_media import LINK, Video, find_links, media_key
 from src.bot.types import CachedMedia, CachedSlideshow, CachedVideo
 
@@ -47,7 +47,7 @@ class LinkMediaHandler(MessageHandler[AppContext[TextUserMessage]]):
                 await self.send(link)
             except LinkMediaTooLarge:
                 await self.ctx.say(Dialogs.link_media.too_large(), reply=True)
-            except (LinkMediaError, TelegramAPIError, TelegramNetworkError):
+            except (MediaToolError, TelegramAPIError, TelegramNetworkError):
                 logger.warning("Медиа по ссылке %s не отправилось", link, exc_info=True)
 
     async def send(self, link: str) -> None:

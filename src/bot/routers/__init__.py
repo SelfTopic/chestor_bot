@@ -12,6 +12,7 @@ from .common import (
     FunRouter,
     HelpRouter,
     LinkMediaRouter,
+    MusicRouter,
     ProfileRouter,
     RaceProfileRouter,
     RoastRouter,
@@ -51,6 +52,7 @@ class RootRouter(BaseRouter[AppContext]):
         # Раньше FunRouter: иначе «1000-7» посчитал бы калькулятор.
         EditsRouter,
         FunRouter,
+        MusicRouter,
         LinkMediaRouter,
         # Последним: огрызается только на то, что не забрала ни одна команда.
         RoastRouter,

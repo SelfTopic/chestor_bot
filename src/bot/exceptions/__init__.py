@@ -16,6 +16,7 @@ from .media_download import (
 )
 from .ghoul import GhoulNotFound, KaguneAlreadyOwned, KaguneNotOwned, LastKaguneType
 from .link_media import LinkMediaError, LinkMediaTooLarge
+from .media_tools import MediaToolError
 from .lottery import (
     BetOutOfRange,
     LotteryError,
@@ -44,6 +45,7 @@ from .moderation import (
     TermOutOfRange,
     WarnLimitOutOfRange,
 )
+from .music import MusicError
 from .quiz import QuizBusy, QuizEmailMissing, QuizSessionMissing, QuizUnavailable
 from .rp_commands import RpCommandError, RpCommandLimitReached, RpCommandNotFound
 from .search import SearchCooldown, SearchError, SearchLimitReached, SearchUnavailable
@@ -87,6 +89,7 @@ __all__ = [
     "RpCommandNotFound",
     "RpCommandError",
     "DurationParseError",
+    "MusicError",
     "QuizBusy",
     "QuizEmailMissing",
     "QuizSessionMissing",
@@ -101,6 +104,7 @@ __all__ = [
     "LastKaguneType",
     "LinkMediaError",
     "LinkMediaTooLarge",
+    "MediaToolError",
     "LotteryError",
     "BetOutOfRange",
     "NotEnoughMoneyForBet",
