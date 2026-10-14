@@ -1,13 +1,15 @@
 """
 Тесты бота. Telegram здесь фейковый (HTTP-сервер на localhost), настоящий токен не
 используется. Postgres настоящий (Docker, случайный порт), поднимается один раз на
-запуск и только если тесту нужна БД; каждый тест получает чистую схему.
+процесс pytest (`-n auto` — свой на каждый) и только если тесту нужна БД; каждый тест
+получает чистую схему.
 
 tests/*.py — бот целиком (апдейт → ответы в Telegram), tests/unit/ — домен и сервисы
 на одной сессии (фикстуры session, make_user, make_ghoul), tests/integration/ —
 несколько сессий сразу (гонки).
 """
 
+import functools
 import json
 import os
 import re
@@ -53,7 +55,7 @@ REPO_ROOT = os.path.dirname(os.path.dirname(__file__))
 # Ошибки приложения, которые тесты вызывают намеренно (ответ на них даёт on_error)
 from src.bot.__main__ import Dispatcher  # noqa: E402
 from src.bot.context import AppContext  # noqa: E402
-from src.bot.dialogs import Line, load_texts  # noqa: E402
+from src.bot.dialogs import Line, Phrase, load_texts  # noqa: E402
 from src.bot.exceptions import (  # noqa: E402
     ChatNotFoundInDatabase,
     UserNotFound,
@@ -336,6 +338,13 @@ def make_ghoul(ghoul_repo: GhoulRepository) -> Callable[..., Awaitable[Ghoul]]:
     return _make
 
 
+@functools.cache
+def texts() -> dict[str, Phrase]:
+    """Тексты из YAML один раз на прогон: тесты их не правят, а разбор всех файлов на
+    каждую проверку ответа был заметной долей времени набора."""
+    return load_texts()
+
+
 def phrase_texts(line: Line) -> set[str]:
     """Все тексты, которыми бот может ответить фразой с этими подстановками.
 
@@ -348,7 +357,7 @@ def phrase_texts(line: Line) -> set[str]:
         expanded = [{**params, name: option} for params in expanded for option in options]
     return {
         variant.format_map(params)
-        for variant in load_texts()[line.key].variants
+        for variant in texts()[line.key].variants
         for params in expanded
     }
 
@@ -390,7 +399,7 @@ def rich_texts(body: dict[str, Any]) -> list[str]:
 def matches_phrase(text: str, key: str) -> bool:
     """Ответ — один из вариантов фразы key при любых значениях подстановок: варианты
     выбираются случайно, поэтому тест не знает, какой именно пришёл."""
-    for variant in load_texts()[key].variants:
+    for variant in texts()[key].variants:
         pattern = "".join(
             re.escape(literal) + (".*?" if field is not None else "")
             for literal, field, _, _ in string.Formatter().parse(variant)

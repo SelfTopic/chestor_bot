@@ -11,19 +11,19 @@ admin:
   last_kagune: '❌ Cannot remove the last remaining kagune type'
   ban:
     usage: |-
-      Использование: /ban <id или @username> [длительность] [причина]
+      Использование: /ban_bot <id или @username> [длительность] [причина]
 
       Длительность: 30m, 24h, 7d (без неё — перманентно)
       Примеры:
-      /ban @username
-      /ban 123456789 7d читерство
-      /ban @username 24h флуд
+      /ban_bot @username
+      /ban_bot 123456789 7d читерство
+      /ban_bot @username 24h флуд
     already: ⚠️ Пользователь уже забанен.
     done: |-
       🚫 Пользователь <code>{id}</code> ({name}) заблокирован {term}.
       Причина: {reason}
   unban:
-    usage: 'Использование: /unban <id или @username>'
+    usage: 'Использование: /unban_bot <id или @username>'
     not_banned: ⚠️ Пользователь не забанен.
     done: ✅ Пользователь <code>{id}</code> ({name}) разблокирован.
   kill:

@@ -2,7 +2,7 @@ from typing import Any, Generic, TypeVar
 
 from selfrot import CommandArgs
 from selfrot.exceptions import CommandArgsError
-from selfrot.filter import Command
+from selfrot.filter import AnyCommand, Command
 
 from src.bot.dialogs import Dialogs, Line
 
@@ -31,7 +31,7 @@ class _TargetErrors:
 # Миксины не наследуют MessageHandler: selfrot проверяет заголовок только на прямых базах,
 # поэтому хендлер сам пишет MessageHandler[...] вторым основанием.
 class RepliedTargetHandler(_TargetErrors, Generic[TArgs]):
-    cmd: Command[TArgs]
+    cmd: Command[TArgs] | AnyCommand[TArgs]
 
     async def handle(self) -> None:
         args = self.cmd.parse(self.ctx)
@@ -50,7 +50,7 @@ TTargetArgs = TypeVar("TTargetArgs", bound=TargetArgs)
 
 
 class ExplicitTargetHandler(_TargetErrors, Generic[TTargetArgs]):
-    cmd: Command[TTargetArgs]
+    cmd: Command[TTargetArgs] | AnyCommand[TTargetArgs]
 
     def not_found(self, target: str) -> Line:
         return Dialogs.errors.user_not_found(query=target)

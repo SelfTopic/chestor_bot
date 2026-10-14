@@ -1,4 +1,3 @@
-import asyncio
 import logging
 
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
@@ -21,6 +20,7 @@ from src.database.models import DeathLog, ScheduledNotification
 
 from .media_paths import random_media
 from .notify import NotifyError, Notifier
+from .ticker import Ticker
 
 logger = logging.getLogger(__name__)
 
@@ -31,7 +31,7 @@ _DEATH_CAUSES = {
 }
 
 
-class NotificationTicker:
+class NotificationTicker(Ticker):
     def __init__(
         self,
         session_factory: async_sessionmaker[AsyncSession],
@@ -39,52 +39,12 @@ class NotificationTicker:
         dialog_service: DialogService,
         interval_seconds: float = 30.0,
     ) -> None:
+        super().__init__(interval_seconds)
         self._session_factory = session_factory
         self._notifier = notifier
         self._dialog_service = dialog_service
-        self._interval = interval_seconds
-        self._task: asyncio.Task[None] | None = None
-        self._running = False
 
-    async def start(self) -> None:
-        if self._running:
-            logger.warning("NotificationTicker is already running")
-            return
-
-        logger.info(f"Starting NotificationTicker (interval={self._interval}s)")
-        self._running = True
-        self._task = asyncio.create_task(self._loop())
-
-    async def stop(self) -> None:
-        if not self._running:
-            return
-
-        logger.info("Stopping NotificationTicker...")
-        self._running = False
-
-        if self._task:
-            self._task.cancel()
-            try:
-                await self._task
-            except asyncio.CancelledError:
-                pass
-            self._task = None
-
-        logger.info("NotificationTicker stopped")
-
-    async def _loop(self) -> None:
-        while self._running:
-            try:
-                await self._tick()
-            except Exception:
-                logger.error("NotificationTicker tick failed", exc_info=True)
-
-            try:
-                await asyncio.sleep(self._interval)
-            except asyncio.CancelledError:
-                break
-
-    async def _tick(self) -> None:
+    async def tick(self) -> None:
         now = utcnow_naive()
 
         async with self._session_factory() as session:

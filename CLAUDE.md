@@ -160,11 +160,11 @@ generic-миксин она молча отключилась бы.
 ruff check src/bot tests
 pyright src/bot tests                      # режим standard
 selfrot check --strict src.bot.__main__:Dispatcher
-python -m pytest tests
+python -m pytest tests -n auto           # параллельно, ~1 мин
 ```
 
 - Тестам нужен Docker: общий `tests/conftest.py` поднимает `postgres:16-alpine` на
-  случайном порту (один на прогон, только если тесту нужна БД; без fsync, в памяти), а
+  случайном порту (один на процесс pytest, только если тесту нужна БД; без fsync, в памяти), а
   Telegram подменён фейковым HTTP-сервером (`FakeTelegram`). Схема создаётся один раз на
   прогон, перед каждым тестом таблицы очищаются `TRUNCATE … RESTART IDENTITY` — пустые
   таблицы и id с 1. Тест, которому нужна своя схема или своя база, создаёт отдельную базу
@@ -197,9 +197,9 @@ JSON, `.get()`) сужай через `isinstance` / `assert`, прежде че
 
 - `dependency-injector`: после ухода aiogram контейнер — просто список фабрик под
   `AppContext`. Можно собирать сервисы прямо в `AppContext` и убрать зависимость.
-- `services/duration_parser.py` (`DurationParser`: «30 мин», `2h`, `1d` → `Duration`) пока
-  никто не вызывает: оставлен для длительностей в `/ban_bot` и будущем модуле модерации
-  (муты, баны). `utils/generate_lottery_video.py` тоже не импортируется, но это скрипт
+- `/ban_bot` разбирает срок своим `BanService.parse_duration` (`7d`), а не `DurationParser`,
+  которым сроки читает модерация чатов («30 мин», `2h`, `1d`).
+- `utils/generate_lottery_video.py` не импортируется, но это скрипт
   (`python -m src.bot.utils.generate_lottery_video`), генерирует видео для лотереи
   через `services/lottery_video_genertor.py`.
 

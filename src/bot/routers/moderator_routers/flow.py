@@ -1,0 +1,190 @@
+import logging
+from typing import Any, TypeVar
+
+from selfrot import CommandArgs
+from selfrot.exceptions import CommandArgsError, TelegramAPIError, TelegramNetworkError
+from selfrot.filter import AnyCommand, Command
+from selfrot.types import ChatMember, ChatMemberAdministrator, ChatMemberOwner
+
+from src.bot.dialogs import Dialogs, Line
+from src.bot.exceptions import (
+    AnonymousModerator,
+    BotLacksRight,
+    FeatureDisabled,
+    ModeratorLacksRight,
+    TargetMissing,
+    TermOutOfRange,
+)
+from src.bot.types import ChatRight, ModerationFeature, ModerationVoice
+from src.bot.utils import parse_seconds
+
+from ...context import AppContext
+from .filters import is_anonymous_admin
+
+logger = logging.getLogger(__name__)
+
+TArgs = TypeVar("TArgs", bound=CommandArgs)
+
+
+def command(slash: str, text: str | tuple[str, ...], args: type[TArgs]) -> AnyCommand[TArgs]:
+    texts = (text,) if isinstance(text, str) else text
+    return AnyCommand(
+        Command(slash, args, ignore_case=True),
+        *(Command(word, args, prefixes="", ignore_case=True) for word in texts),
+    )
+
+
+def has_right(member: ChatMember | None, right: ChatRight) -> bool:
+    if isinstance(member, ChatMemberOwner):
+        return True
+    if not isinstance(member, ChatMemberAdministrator):
+        return False
+
+    match right:
+        case ChatRight.RESTRICT_MEMBERS:
+            return member.can_restrict_members
+        case ChatRight.CHANGE_INFO:
+            return member.can_change_info
+
+
+def right_name(right: ChatRight) -> Line:
+    match right:
+        case ChatRight.RESTRICT_MEMBERS:
+            return Dialogs.moderation.right.restrict_members()
+        case ChatRight.CHANGE_INFO:
+            return Dialogs.moderation.right.change_info()
+
+
+def duration_text(ctx: AppContext[Any], seconds: int) -> str:
+    parts = parse_seconds(seconds)
+    term = Dialogs.moderation.term
+    units = (
+        (parts.days, term.days),
+        (parts.hours_remaining, term.hours),
+        (parts.minutes_remaining, term.minutes),
+        (parts.seconds_remaining, term.seconds),
+    )
+    return " ".join(ctx.text(unit(count=count)) for count, unit in units if count)
+
+
+def term_text(ctx: AppContext[Any], seconds: int | None) -> str:
+    if seconds is None:
+        return ctx.text(Dialogs.moderation.term.forever())
+    return ctx.text(Dialogs.moderation.term.limited(duration=duration_text(ctx, seconds)))
+
+
+def expiry_text(ctx: AppContext[Any], seconds: int | None) -> str:
+    term = Dialogs.moderation.term
+    if seconds is None:
+        return ctx.text(term.never())
+    return ctx.text(term.after(duration=duration_text(ctx, seconds)))
+
+
+def feature_name(feature: ModerationFeature) -> Line:
+    names = Dialogs.moderation.feature
+    match feature:
+        case ModerationFeature.MUTE:
+            return names.mute()
+        case ModerationFeature.BAN:
+            return names.ban()
+        case ModerationFeature.KICK:
+            return names.kick()
+        case ModerationFeature.WARNS:
+            return names.warns()
+        case ModerationFeature.NOTICES:
+            return names.notices()
+
+
+# Миксин ставится первым основанием: его on_error, not_found и reply_errors должны
+# перекрыть одноимённые у миксинов из routers/targeting.py.
+class ModerationFlow:
+    ctx: AppContext[Any]
+    right: ChatRight
+    voice = ModerationVoice.NEUTRAL
+    reply_errors = True
+    reports: list[tuple[int, Line]]
+
+    @property
+    def phrases(self):
+        if self.voice is ModerationVoice.ROUGH:
+            return Dialogs.moderation.rough
+        return Dialogs.moderation.neutral
+
+    def voiced_usage(self) -> Line:
+        raise NotImplementedError
+
+    async def pre_handle(self) -> None:
+        settings = await self.ctx.moderation_service.settings(self.ctx.message.chat.id)
+        self.settings = settings
+        self.voice = settings.voice
+        self.admin_chat_id = settings.admin_chat_id
+        self.reports = []
+
+    @property
+    def chat_title(self) -> str:
+        chat = self.ctx.message.chat
+        return chat.title or str(chat.id)
+
+    @property
+    def moderator_name(self) -> str:
+        return self.ctx.message.user.first_name
+
+    def require(self, feature: ModerationFeature) -> None:
+        if not self.settings.enabled(feature):
+            raise FeatureDisabled(feature)
+
+    def report(self, line: Line, chat_id: int | None = None) -> None:
+        target = self.admin_chat_id if chat_id is None else chat_id
+        if target is not None:
+            self.reports.append((target, line))
+
+    # Действие уже сделано и записано: недоставленная запись не должна его ломать.
+    async def after_handle(self) -> None:
+        for chat_id, line in self.reports:
+            try:
+                await self.ctx.bot.send_message(chat_id, self.ctx.text(line))
+            except (TelegramAPIError, TelegramNetworkError):
+                logger.warning("Чат админов %s не получил запись модерации", chat_id)
+
+    async def check_moderator(self) -> int:
+        message = self.ctx.message
+        if is_anonymous_admin(message):
+            raise AnonymousModerator()
+
+        administrators = await self.ctx.chat_administrators()
+        moderator = next(
+            (a for a in administrators if a.user.id == message.user.id), None
+        )
+        if not has_right(moderator, self.right):
+            raise ModeratorLacksRight(self.right)
+
+        return message.user.id
+
+    def duration(self, seconds: int) -> str:
+        return duration_text(self.ctx, seconds)
+
+    def term(self, seconds: int | None) -> str:
+        return term_text(self.ctx, seconds)
+
+    async def on_error(self, exc: Exception) -> None:
+        phrases = self.phrases
+        match exc:
+            case CommandArgsError() | TargetMissing():
+                line = self.voiced_usage()
+            case AnonymousModerator():
+                line = phrases.anonymous()
+            case FeatureDisabled(feature=feature):
+                line = phrases.feature_disabled(feature=self.ctx.text(feature_name(feature)))
+            case ModeratorLacksRight(right=right):
+                line = phrases.moderator_lacks_right(
+                    right=self.ctx.text(right_name(right))
+                )
+            case BotLacksRight(right=right):
+                line = phrases.bot_lacks_right(right=self.ctx.text(right_name(right)))
+            case TermOutOfRange(min_seconds=shortest, max_seconds=longest):
+                line = phrases.term_out_of_range(
+                    min=self.duration(shortest), max=self.duration(longest)
+                )
+            case _:
+                raise exc
+        await self.ctx.say(line, reply=True)

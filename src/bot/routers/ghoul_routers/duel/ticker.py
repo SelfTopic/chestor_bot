@@ -1,4 +1,3 @@
-import asyncio
 import logging
 import time
 from collections.abc import AsyncIterator, Callable
@@ -16,6 +15,7 @@ from src.bot.services.dialog import DialogService
 from src.database.models import DuelSession
 
 from ....services.notify import SelfrotBotNotifier
+from ....services.ticker import Ticker
 from .fight import finalize_outcome, run_and_announce_fight
 from .services import DuelServices
 
@@ -32,7 +32,7 @@ def stage_timeouts() -> dict[str, float]:
 
 # Отсчёт идёт с момента, когда тикер впервые увидел дуэль на стадии, поэтому таймаут может
 # сработать на interval позже. Гонку «нажатие против таймаута» закрывает atomic_update.
-class DuelTicker:
+class DuelTicker(Ticker):
     def __init__(
         self,
         session_factory: async_sessionmaker[AsyncSession],
@@ -42,43 +42,13 @@ class DuelTicker:
         interval_seconds: float = 1.0,
         clock: Callable[[], float] = time.monotonic,
     ) -> None:
+        super().__init__(interval_seconds)
         self._session_factory = session_factory
         self._bot = bot
         self._container = container
         self._dialog_service = dialog_service
-        self._interval = interval_seconds
         self.clock = clock
         self._seen: dict[tuple[int, str], float] = {}
-        self._task: asyncio.Task[None] | None = None
-
-    async def start(self) -> None:
-        if self._task is not None:
-            logger.warning("DuelTicker is already running")
-            return
-
-        logger.info(f"Starting DuelTicker (interval={self._interval}s)")
-        self._task = asyncio.create_task(self._loop())
-
-    async def stop(self) -> None:
-        if self._task is None:
-            return
-
-        self._task.cancel()
-        try:
-            await self._task
-        except asyncio.CancelledError:
-            pass
-        self._task = None
-        logger.info("DuelTicker stopped")
-
-    async def _loop(self) -> None:
-        while True:
-            try:
-                await self.tick()
-            except Exception:
-                logger.error("DuelTicker tick failed", exc_info=True)
-
-            await asyncio.sleep(self._interval)
 
     async def tick(self) -> None:
         timeouts = stage_timeouts()

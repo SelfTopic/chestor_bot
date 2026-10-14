@@ -23,6 +23,26 @@ from .lottery import (
     UnknownLotteryColor,
 )
 from .media_not_found import MediaNotFound, MediaNotFoundInDatabase
+from .moderation import (
+    AdminChatIsSelf,
+    AdminChatNotFound,
+    AdminChatNotLinked,
+    AdminChatTaken,
+    AnonymousModerator,
+    BotLacksRight,
+    FeatureDisabled,
+    ModerationError,
+    ModeratorLacksRight,
+    NotChatOwner,
+    TargetAbsent,
+    TargetIsAdmin,
+    TargetHasNoWarnings,
+    TargetMissing,
+    TargetNotBanned,
+    TargetNotMuted,
+    TermOutOfRange,
+    WarnLimitOutOfRange,
+)
 from .quiz import QuizBusy, QuizEmailMissing, QuizSessionMissing, QuizUnavailable
 from .rp_commands import RpCommandError, RpCommandLimitReached, RpCommandNotFound
 from .time import DurationParseError
@@ -87,4 +107,22 @@ __all__ = [
     "ReceiverMissingError",
     "ReceiverVanishedError",
     "SenderMissingError",
+    "FeatureDisabled",
+    "ModerationError",
+    "AnonymousModerator",
+    "ModeratorLacksRight",
+    "BotLacksRight",
+    "TargetIsAdmin",
+    "TargetNotMuted",
+    "TargetHasNoWarnings",
+    "TargetMissing",
+    "TargetNotBanned",
+    "TargetAbsent",
+    "TermOutOfRange",
+    "WarnLimitOutOfRange",
+    "NotChatOwner",
+    "AdminChatNotFound",
+    "AdminChatIsSelf",
+    "AdminChatTaken",
+    "AdminChatNotLinked",
 ]

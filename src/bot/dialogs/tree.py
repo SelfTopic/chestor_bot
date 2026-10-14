@@ -1288,7 +1288,1621 @@ class _MobDialogs:
         )
 
 
+class _ModerationFeatureDialogs:
+    def ban(self) -> Line:
+        return Line("moderation.feature.ban", {})
+
+    def kick(self) -> Line:
+        return Line("moderation.feature.kick", {})
+
+    def mute(self) -> Line:
+        return Line("moderation.feature.mute", {})
+
+    def notices(self) -> Line:
+        return Line("moderation.feature.notices", {})
+
+    def warns(self) -> Line:
+        return Line("moderation.feature.warns", {})
+
+
+class _ModerationMenuDialogs:
+    def admin_chat(self) -> Line:
+        return Line("moderation.menu.admin_chat", {})
+
+    def admin_chat_none(self) -> Line:
+        return Line("moderation.menu.admin_chat_none", {})
+
+    def ban(self) -> Line:
+        return Line("moderation.menu.ban", {})
+
+    def ban_default(self) -> Line:
+        return Line("moderation.menu.ban_default", {})
+
+    def button_minus(self) -> Line:
+        return Line("moderation.menu.button_minus", {})
+
+    def button_next(self) -> Line:
+        return Line("moderation.menu.button_next", {})
+
+    def button_off(self, *, name: object) -> Line:
+        return Line("moderation.menu.button_off", {"name": name})
+
+    def button_on(self, *, name: object) -> Line:
+        return Line("moderation.menu.button_on", {"name": name})
+
+    def button_plus(self) -> Line:
+        return Line("moderation.menu.button_plus", {})
+
+    def button_prev(self) -> Line:
+        return Line("moderation.menu.button_prev", {})
+
+    def button_value(self, *, name: object, value: object) -> Line:
+        return Line("moderation.menu.button_value", {"name": name, "value": value})
+
+    def column_setting(self) -> Line:
+        return Line("moderation.menu.column_setting", {})
+
+    def column_value(self) -> Line:
+        return Line("moderation.menu.column_value", {})
+
+    def hint(self) -> Line:
+        return Line("moderation.menu.hint", {})
+
+    def kick(self) -> Line:
+        return Line("moderation.menu.kick", {})
+
+    def mute(self) -> Line:
+        return Line("moderation.menu.mute", {})
+
+    def mute_default(self) -> Line:
+        return Line("moderation.menu.mute_default", {})
+
+    def no_right(self, *, right: object) -> Line:
+        return Line("moderation.menu.no_right", {"right": right})
+
+    def not_admin(self) -> Line:
+        return Line("moderation.menu.not_admin", {})
+
+    def notices(self) -> Line:
+        return Line("moderation.menu.notices", {})
+
+    def off(self) -> Line:
+        return Line("moderation.menu.off", {})
+
+    def on(self) -> Line:
+        return Line("moderation.menu.on", {})
+
+    def title(self, *, chat: object) -> Line:
+        return Line("moderation.menu.title", {"chat": chat})
+
+    def use_arrows(self) -> Line:
+        return Line("moderation.menu.use_arrows", {})
+
+    def voice(self) -> Line:
+        return Line("moderation.menu.voice", {})
+
+    def voice_neutral(self) -> Line:
+        return Line("moderation.menu.voice_neutral", {})
+
+    def voice_rough(self) -> Line:
+        return Line("moderation.menu.voice_rough", {})
+
+    def warn_expiry(self) -> Line:
+        return Line("moderation.menu.warn_expiry", {})
+
+    def warn_limit(self) -> Line:
+        return Line("moderation.menu.warn_limit", {})
+
+    def warn_penalty(self) -> Line:
+        return Line("moderation.menu.warn_penalty", {})
+
+    def warns(self) -> Line:
+        return Line("moderation.menu.warns", {})
+
+
+class _ModerationNeutralDialogs:
+    def admin_chat_current(self, *, chat: object) -> Line:
+        return Line("moderation.neutral.admin_chat_current", {"chat": chat})
+
+    def admin_chat_linked(self, *, chat: object) -> Line:
+        return Line("moderation.neutral.admin_chat_linked", {"chat": chat})
+
+    def admin_chat_none(self) -> Line:
+        return Line("moderation.neutral.admin_chat_none", {})
+
+    def admin_chat_not_found(self, *, query: object) -> Line:
+        return Line("moderation.neutral.admin_chat_not_found", {"query": query})
+
+    def admin_chat_not_linked(self) -> Line:
+        return Line("moderation.neutral.admin_chat_not_linked", {})
+
+    def admin_chat_requested(self, *, chat: object, command: object) -> Line:
+        return Line(
+            "moderation.neutral.admin_chat_requested",
+            {
+                "chat": chat,
+                "command": command,
+            },
+        )
+
+    def admin_chat_self(self) -> Line:
+        return Line("moderation.neutral.admin_chat_self", {})
+
+    def admin_chat_taken(self) -> Line:
+        return Line("moderation.neutral.admin_chat_taken", {})
+
+    def admin_chat_unlinked(self, *, chat: object) -> Line:
+        return Line("moderation.neutral.admin_chat_unlinked", {"chat": chat})
+
+    def anonymous(self) -> Line:
+        return Line("moderation.neutral.anonymous", {})
+
+    def ban_default_current(self, *, term: object) -> Line:
+        return Line("moderation.neutral.ban_default_current", {"term": term})
+
+    def ban_default_set(self, *, term: object) -> Line:
+        return Line("moderation.neutral.ban_default_set", {"term": term})
+
+    def ban_usage(self) -> Line:
+        return Line("moderation.neutral.ban_usage", {})
+
+    def banned(self, *, name: object, term: object) -> Line:
+        return Line("moderation.neutral.banned", {"name": name, "term": term})
+
+    def banned_for(self, *, name: object, reason: object, term: object) -> Line:
+        return Line(
+            "moderation.neutral.banned_for",
+            {
+                "name": name,
+                "reason": reason,
+                "term": term,
+            },
+        )
+
+    def bot_lacks_right(self, *, right: object) -> Line:
+        return Line("moderation.neutral.bot_lacks_right", {"right": right})
+
+    def feature_disabled(self, *, feature: object) -> Line:
+        return Line("moderation.neutral.feature_disabled", {"feature": feature})
+
+    def kick_usage(self) -> Line:
+        return Line("moderation.neutral.kick_usage", {})
+
+    def kicked(self, *, name: object) -> Line:
+        return Line("moderation.neutral.kicked", {"name": name})
+
+    def kicked_for(self, *, name: object, reason: object) -> Line:
+        return Line("moderation.neutral.kicked_for", {"name": name, "reason": reason})
+
+    def log_ban_default(self, *, chat: object, moderator: object, term: object) -> Line:
+        return Line(
+            "moderation.neutral.log_ban_default",
+            {
+                "chat": chat,
+                "moderator": moderator,
+                "term": term,
+            },
+        )
+
+    def log_ban_expired(self, *, chat: object, id: object, name: object) -> Line:
+        return Line(
+            "moderation.neutral.log_ban_expired",
+            {
+                "chat": chat,
+                "id": id,
+                "name": name,
+            },
+        )
+
+    def log_banned(
+        self,
+        *,
+        chat: object,
+        id: object,
+        moderator: object,
+        name: object,
+        term: object,
+    ) -> Line:
+        return Line(
+            "moderation.neutral.log_banned",
+            {
+                "chat": chat,
+                "id": id,
+                "moderator": moderator,
+                "name": name,
+                "term": term,
+            },
+        )
+
+    def log_banned_for(
+        self,
+        *,
+        chat: object,
+        id: object,
+        moderator: object,
+        name: object,
+        reason: object,
+        term: object,
+    ) -> Line:
+        return Line(
+            "moderation.neutral.log_banned_for",
+            {
+                "chat": chat,
+                "id": id,
+                "moderator": moderator,
+                "name": name,
+                "reason": reason,
+                "term": term,
+            },
+        )
+
+    def log_feature(
+        self,
+        *,
+        chat: object,
+        feature: object,
+        moderator: object,
+        state: object,
+    ) -> Line:
+        return Line(
+            "moderation.neutral.log_feature",
+            {
+                "chat": chat,
+                "feature": feature,
+                "moderator": moderator,
+                "state": state,
+            },
+        )
+
+    def log_kicked(
+        self,
+        *,
+        chat: object,
+        id: object,
+        moderator: object,
+        name: object,
+    ) -> Line:
+        return Line(
+            "moderation.neutral.log_kicked",
+            {
+                "chat": chat,
+                "id": id,
+                "moderator": moderator,
+                "name": name,
+            },
+        )
+
+    def log_kicked_for(
+        self,
+        *,
+        chat: object,
+        id: object,
+        moderator: object,
+        name: object,
+        reason: object,
+    ) -> Line:
+        return Line(
+            "moderation.neutral.log_kicked_for",
+            {
+                "chat": chat,
+                "id": id,
+                "moderator": moderator,
+                "name": name,
+                "reason": reason,
+            },
+        )
+
+    def log_mute_default(
+        self,
+        *,
+        chat: object,
+        moderator: object,
+        term: object,
+    ) -> Line:
+        return Line(
+            "moderation.neutral.log_mute_default",
+            {
+                "chat": chat,
+                "moderator": moderator,
+                "term": term,
+            },
+        )
+
+    def log_mute_expired(self, *, chat: object, id: object, name: object) -> Line:
+        return Line(
+            "moderation.neutral.log_mute_expired",
+            {
+                "chat": chat,
+                "id": id,
+                "name": name,
+            },
+        )
+
+    def log_muted(
+        self,
+        *,
+        chat: object,
+        id: object,
+        moderator: object,
+        name: object,
+        term: object,
+    ) -> Line:
+        return Line(
+            "moderation.neutral.log_muted",
+            {
+                "chat": chat,
+                "id": id,
+                "moderator": moderator,
+                "name": name,
+                "term": term,
+            },
+        )
+
+    def log_muted_for(
+        self,
+        *,
+        chat: object,
+        id: object,
+        moderator: object,
+        name: object,
+        reason: object,
+        term: object,
+    ) -> Line:
+        return Line(
+            "moderation.neutral.log_muted_for",
+            {
+                "chat": chat,
+                "id": id,
+                "moderator": moderator,
+                "name": name,
+                "reason": reason,
+                "term": term,
+            },
+        )
+
+    def log_unbanned(
+        self,
+        *,
+        chat: object,
+        id: object,
+        moderator: object,
+        name: object,
+    ) -> Line:
+        return Line(
+            "moderation.neutral.log_unbanned",
+            {
+                "chat": chat,
+                "id": id,
+                "moderator": moderator,
+                "name": name,
+            },
+        )
+
+    def log_unlinked(self, *, chat: object, moderator: object) -> Line:
+        return Line(
+            "moderation.neutral.log_unlinked",
+            {
+                "chat": chat,
+                "moderator": moderator,
+            },
+        )
+
+    def log_unmuted(
+        self,
+        *,
+        chat: object,
+        id: object,
+        moderator: object,
+        name: object,
+    ) -> Line:
+        return Line(
+            "moderation.neutral.log_unmuted",
+            {
+                "chat": chat,
+                "id": id,
+                "moderator": moderator,
+                "name": name,
+            },
+        )
+
+    def log_unwarned(
+        self,
+        *,
+        chat: object,
+        count: object,
+        id: object,
+        limit: object,
+        moderator: object,
+        name: object,
+    ) -> Line:
+        return Line(
+            "moderation.neutral.log_unwarned",
+            {
+                "chat": chat,
+                "count": count,
+                "id": id,
+                "limit": limit,
+                "moderator": moderator,
+                "name": name,
+            },
+        )
+
+    def log_voice(self, *, chat: object, moderator: object) -> Line:
+        return Line(
+            "moderation.neutral.log_voice",
+            {
+                "chat": chat,
+                "moderator": moderator,
+            },
+        )
+
+    def log_warn_expired(
+        self,
+        *,
+        chat: object,
+        count: object,
+        id: object,
+        limit: object,
+        name: object,
+    ) -> Line:
+        return Line(
+            "moderation.neutral.log_warn_expired",
+            {
+                "chat": chat,
+                "count": count,
+                "id": id,
+                "limit": limit,
+                "name": name,
+            },
+        )
+
+    def log_warn_expiry(self, *, chat: object, moderator: object, term: object) -> Line:
+        return Line(
+            "moderation.neutral.log_warn_expiry",
+            {
+                "chat": chat,
+                "moderator": moderator,
+                "term": term,
+            },
+        )
+
+    def log_warn_limit(self, *, chat: object, limit: object, moderator: object) -> Line:
+        return Line(
+            "moderation.neutral.log_warn_limit",
+            {
+                "chat": chat,
+                "limit": limit,
+                "moderator": moderator,
+            },
+        )
+
+    def log_warn_penalty(
+        self,
+        *,
+        chat: object,
+        moderator: object,
+        penalty: object,
+    ) -> Line:
+        return Line(
+            "moderation.neutral.log_warn_penalty",
+            {
+                "chat": chat,
+                "moderator": moderator,
+                "penalty": penalty,
+            },
+        )
+
+    def log_warn_penalty_banned(
+        self,
+        *,
+        chat: object,
+        id: object,
+        limit: object,
+        moderator: object,
+        name: object,
+        term: object,
+    ) -> Line:
+        return Line(
+            "moderation.neutral.log_warn_penalty_banned",
+            {
+                "chat": chat,
+                "id": id,
+                "limit": limit,
+                "moderator": moderator,
+                "name": name,
+                "term": term,
+            },
+        )
+
+    def log_warn_penalty_kicked(
+        self,
+        *,
+        chat: object,
+        id: object,
+        limit: object,
+        moderator: object,
+        name: object,
+    ) -> Line:
+        return Line(
+            "moderation.neutral.log_warn_penalty_kicked",
+            {
+                "chat": chat,
+                "id": id,
+                "limit": limit,
+                "moderator": moderator,
+                "name": name,
+            },
+        )
+
+    def log_warn_penalty_muted(
+        self,
+        *,
+        chat: object,
+        id: object,
+        limit: object,
+        moderator: object,
+        name: object,
+        term: object,
+    ) -> Line:
+        return Line(
+            "moderation.neutral.log_warn_penalty_muted",
+            {
+                "chat": chat,
+                "id": id,
+                "limit": limit,
+                "moderator": moderator,
+                "name": name,
+                "term": term,
+            },
+        )
+
+    def log_warned(
+        self,
+        *,
+        chat: object,
+        count: object,
+        id: object,
+        limit: object,
+        moderator: object,
+        name: object,
+    ) -> Line:
+        return Line(
+            "moderation.neutral.log_warned",
+            {
+                "chat": chat,
+                "count": count,
+                "id": id,
+                "limit": limit,
+                "moderator": moderator,
+                "name": name,
+            },
+        )
+
+    def log_warned_for(
+        self,
+        *,
+        chat: object,
+        count: object,
+        id: object,
+        limit: object,
+        moderator: object,
+        name: object,
+        reason: object,
+    ) -> Line:
+        return Line(
+            "moderation.neutral.log_warned_for",
+            {
+                "chat": chat,
+                "count": count,
+                "id": id,
+                "limit": limit,
+                "moderator": moderator,
+                "name": name,
+                "reason": reason,
+            },
+        )
+
+    def moderator_lacks_right(self, *, right: object) -> Line:
+        return Line("moderation.neutral.moderator_lacks_right", {"right": right})
+
+    def mute_default_current(self, *, term: object) -> Line:
+        return Line("moderation.neutral.mute_default_current", {"term": term})
+
+    def mute_default_set(self, *, term: object) -> Line:
+        return Line("moderation.neutral.mute_default_set", {"term": term})
+
+    def mute_expired(self, *, name: object) -> Line:
+        return Line("moderation.neutral.mute_expired", {"name": name})
+
+    def mute_usage(self) -> Line:
+        return Line("moderation.neutral.mute_usage", {})
+
+    def muted(self, *, name: object, term: object) -> Line:
+        return Line("moderation.neutral.muted", {"name": name, "term": term})
+
+    def muted_for(self, *, name: object, reason: object, term: object) -> Line:
+        return Line(
+            "moderation.neutral.muted_for",
+            {
+                "name": name,
+                "reason": reason,
+                "term": term,
+            },
+        )
+
+    def no_reason(self) -> Line:
+        return Line("moderation.neutral.no_reason", {})
+
+    def no_warnings(self, *, name: object) -> Line:
+        return Line("moderation.neutral.no_warnings", {"name": name})
+
+    def not_banned(self, *, name: object) -> Line:
+        return Line("moderation.neutral.not_banned", {"name": name})
+
+    def not_muted(self, *, name: object) -> Line:
+        return Line("moderation.neutral.not_muted", {"name": name})
+
+    def owner_only(self) -> Line:
+        return Line("moderation.neutral.owner_only", {})
+
+    def target_absent(self, *, name: object) -> Line:
+        return Line("moderation.neutral.target_absent", {"name": name})
+
+    def target_is_admin(self, *, name: object) -> Line:
+        return Line("moderation.neutral.target_is_admin", {"name": name})
+
+    def term_out_of_range(self, *, max: object, min: object) -> Line:
+        return Line("moderation.neutral.term_out_of_range", {"max": max, "min": min})
+
+    def unban_usage(self) -> Line:
+        return Line("moderation.neutral.unban_usage", {})
+
+    def unbanned(self, *, name: object) -> Line:
+        return Line("moderation.neutral.unbanned", {"name": name})
+
+    def unmute_usage(self) -> Line:
+        return Line("moderation.neutral.unmute_usage", {})
+
+    def unmuted(self, *, name: object) -> Line:
+        return Line("moderation.neutral.unmuted", {"name": name})
+
+    def unwarn_usage(self) -> Line:
+        return Line("moderation.neutral.unwarn_usage", {})
+
+    def unwarned(self, *, count: object, limit: object, name: object) -> Line:
+        return Line(
+            "moderation.neutral.unwarned",
+            {
+                "count": count,
+                "limit": limit,
+                "name": name,
+            },
+        )
+
+    def user_not_found(self, *, query: object) -> Line:
+        return Line("moderation.neutral.user_not_found", {"query": query})
+
+    def voice_current(self) -> Line:
+        return Line("moderation.neutral.voice_current", {})
+
+    def voice_set(self) -> Line:
+        return Line("moderation.neutral.voice_set", {})
+
+    def warn_expired(self, *, count: object, limit: object, name: object) -> Line:
+        return Line(
+            "moderation.neutral.warn_expired",
+            {
+                "count": count,
+                "limit": limit,
+                "name": name,
+            },
+        )
+
+    def warn_expiry_current(self, *, term: object) -> Line:
+        return Line("moderation.neutral.warn_expiry_current", {"term": term})
+
+    def warn_expiry_set(self, *, term: object) -> Line:
+        return Line("moderation.neutral.warn_expiry_set", {"term": term})
+
+    def warn_limit_current(self, *, limit: object, max: object, min: object) -> Line:
+        return Line(
+            "moderation.neutral.warn_limit_current",
+            {
+                "limit": limit,
+                "max": max,
+                "min": min,
+            },
+        )
+
+    def warn_limit_out_of_range(self, *, max: object, min: object) -> Line:
+        return Line(
+            "moderation.neutral.warn_limit_out_of_range",
+            {
+                "max": max,
+                "min": min,
+            },
+        )
+
+    def warn_limit_set(self, *, limit: object) -> Line:
+        return Line("moderation.neutral.warn_limit_set", {"limit": limit})
+
+    def warn_penalty_banned(self, *, limit: object, name: object, term: object) -> Line:
+        return Line(
+            "moderation.neutral.warn_penalty_banned",
+            {
+                "limit": limit,
+                "name": name,
+                "term": term,
+            },
+        )
+
+    def warn_penalty_current(self, *, penalty: object) -> Line:
+        return Line("moderation.neutral.warn_penalty_current", {"penalty": penalty})
+
+    def warn_penalty_kicked(self, *, limit: object, name: object) -> Line:
+        return Line(
+            "moderation.neutral.warn_penalty_kicked",
+            {
+                "limit": limit,
+                "name": name,
+            },
+        )
+
+    def warn_penalty_muted(self, *, limit: object, name: object, term: object) -> Line:
+        return Line(
+            "moderation.neutral.warn_penalty_muted",
+            {
+                "limit": limit,
+                "name": name,
+                "term": term,
+            },
+        )
+
+    def warn_penalty_set(self, *, penalty: object) -> Line:
+        return Line("moderation.neutral.warn_penalty_set", {"penalty": penalty})
+
+    def warn_usage(self) -> Line:
+        return Line("moderation.neutral.warn_usage", {})
+
+    def warned(self, *, count: object, limit: object, name: object) -> Line:
+        return Line(
+            "moderation.neutral.warned",
+            {
+                "count": count,
+                "limit": limit,
+                "name": name,
+            },
+        )
+
+    def warned_for(
+        self,
+        *,
+        count: object,
+        limit: object,
+        name: object,
+        reason: object,
+    ) -> Line:
+        return Line(
+            "moderation.neutral.warned_for",
+            {
+                "count": count,
+                "limit": limit,
+                "name": name,
+                "reason": reason,
+            },
+        )
+
+    def warns_item(self, *, left: object, reason: object) -> Line:
+        return Line("moderation.neutral.warns_item", {"left": left, "reason": reason})
+
+    def warns_item_forever(self, *, reason: object) -> Line:
+        return Line("moderation.neutral.warns_item_forever", {"reason": reason})
+
+    def warns_list(
+        self,
+        *,
+        count: object,
+        items: object,
+        limit: object,
+        name: object,
+    ) -> Line:
+        return Line(
+            "moderation.neutral.warns_list",
+            {
+                "count": count,
+                "items": items,
+                "limit": limit,
+                "name": name,
+            },
+        )
+
+    def warns_none(self, *, name: object) -> Line:
+        return Line("moderation.neutral.warns_none", {"name": name})
+
+    def warns_usage(self) -> Line:
+        return Line("moderation.neutral.warns_usage", {})
+
+
+class _ModerationPenaltyDialogs:
+    def ban(self) -> Line:
+        return Line("moderation.penalty.ban", {})
+
+    def kick(self) -> Line:
+        return Line("moderation.penalty.kick", {})
+
+    def mute(self) -> Line:
+        return Line("moderation.penalty.mute", {})
+
+    def timed(self, *, penalty: object, term: object) -> Line:
+        return Line("moderation.penalty.timed", {"penalty": penalty, "term": term})
+
+
+class _ModerationRightDialogs:
+    def change_info(self) -> Line:
+        return Line("moderation.right.change_info", {})
+
+    def restrict_members(self) -> Line:
+        return Line("moderation.right.restrict_members", {})
+
+
+class _ModerationRoughDialogs:
+    def admin_chat_current(self, *, chat: object) -> Line:
+        return Line("moderation.rough.admin_chat_current", {"chat": chat})
+
+    def admin_chat_linked(self, *, chat: object) -> Line:
+        return Line("moderation.rough.admin_chat_linked", {"chat": chat})
+
+    def admin_chat_none(self) -> Line:
+        return Line("moderation.rough.admin_chat_none", {})
+
+    def admin_chat_not_found(self, *, query: object) -> Line:
+        return Line("moderation.rough.admin_chat_not_found", {"query": query})
+
+    def admin_chat_not_linked(self) -> Line:
+        return Line("moderation.rough.admin_chat_not_linked", {})
+
+    def admin_chat_requested(self, *, chat: object, command: object) -> Line:
+        return Line(
+            "moderation.rough.admin_chat_requested",
+            {
+                "chat": chat,
+                "command": command,
+            },
+        )
+
+    def admin_chat_self(self) -> Line:
+        return Line("moderation.rough.admin_chat_self", {})
+
+    def admin_chat_taken(self) -> Line:
+        return Line("moderation.rough.admin_chat_taken", {})
+
+    def admin_chat_unlinked(self, *, chat: object) -> Line:
+        return Line("moderation.rough.admin_chat_unlinked", {"chat": chat})
+
+    def anonymous(self) -> Line:
+        return Line("moderation.rough.anonymous", {})
+
+    def ban_default_current(self, *, term: object) -> Line:
+        return Line("moderation.rough.ban_default_current", {"term": term})
+
+    def ban_default_set(self, *, term: object) -> Line:
+        return Line("moderation.rough.ban_default_set", {"term": term})
+
+    def ban_usage(self) -> Line:
+        return Line("moderation.rough.ban_usage", {})
+
+    def banned(self, *, name: object, term: object) -> Line:
+        return Line("moderation.rough.banned", {"name": name, "term": term})
+
+    def banned_for(self, *, name: object, reason: object, term: object) -> Line:
+        return Line(
+            "moderation.rough.banned_for",
+            {
+                "name": name,
+                "reason": reason,
+                "term": term,
+            },
+        )
+
+    def bot_lacks_right(self, *, right: object) -> Line:
+        return Line("moderation.rough.bot_lacks_right", {"right": right})
+
+    def feature_disabled(self, *, feature: object) -> Line:
+        return Line("moderation.rough.feature_disabled", {"feature": feature})
+
+    def kick_usage(self) -> Line:
+        return Line("moderation.rough.kick_usage", {})
+
+    def kicked(self, *, name: object) -> Line:
+        return Line("moderation.rough.kicked", {"name": name})
+
+    def kicked_for(self, *, name: object, reason: object) -> Line:
+        return Line("moderation.rough.kicked_for", {"name": name, "reason": reason})
+
+    def log_ban_default(self, *, chat: object, moderator: object, term: object) -> Line:
+        return Line(
+            "moderation.rough.log_ban_default",
+            {
+                "chat": chat,
+                "moderator": moderator,
+                "term": term,
+            },
+        )
+
+    def log_ban_expired(self, *, chat: object, id: object, name: object) -> Line:
+        return Line(
+            "moderation.rough.log_ban_expired",
+            {
+                "chat": chat,
+                "id": id,
+                "name": name,
+            },
+        )
+
+    def log_banned(
+        self,
+        *,
+        chat: object,
+        id: object,
+        moderator: object,
+        name: object,
+        term: object,
+    ) -> Line:
+        return Line(
+            "moderation.rough.log_banned",
+            {
+                "chat": chat,
+                "id": id,
+                "moderator": moderator,
+                "name": name,
+                "term": term,
+            },
+        )
+
+    def log_banned_for(
+        self,
+        *,
+        chat: object,
+        id: object,
+        moderator: object,
+        name: object,
+        reason: object,
+        term: object,
+    ) -> Line:
+        return Line(
+            "moderation.rough.log_banned_for",
+            {
+                "chat": chat,
+                "id": id,
+                "moderator": moderator,
+                "name": name,
+                "reason": reason,
+                "term": term,
+            },
+        )
+
+    def log_feature(
+        self,
+        *,
+        chat: object,
+        feature: object,
+        moderator: object,
+        state: object,
+    ) -> Line:
+        return Line(
+            "moderation.rough.log_feature",
+            {
+                "chat": chat,
+                "feature": feature,
+                "moderator": moderator,
+                "state": state,
+            },
+        )
+
+    def log_kicked(
+        self,
+        *,
+        chat: object,
+        id: object,
+        moderator: object,
+        name: object,
+    ) -> Line:
+        return Line(
+            "moderation.rough.log_kicked",
+            {
+                "chat": chat,
+                "id": id,
+                "moderator": moderator,
+                "name": name,
+            },
+        )
+
+    def log_kicked_for(
+        self,
+        *,
+        chat: object,
+        id: object,
+        moderator: object,
+        name: object,
+        reason: object,
+    ) -> Line:
+        return Line(
+            "moderation.rough.log_kicked_for",
+            {
+                "chat": chat,
+                "id": id,
+                "moderator": moderator,
+                "name": name,
+                "reason": reason,
+            },
+        )
+
+    def log_mute_default(
+        self,
+        *,
+        chat: object,
+        moderator: object,
+        term: object,
+    ) -> Line:
+        return Line(
+            "moderation.rough.log_mute_default",
+            {
+                "chat": chat,
+                "moderator": moderator,
+                "term": term,
+            },
+        )
+
+    def log_mute_expired(self, *, chat: object, id: object, name: object) -> Line:
+        return Line(
+            "moderation.rough.log_mute_expired",
+            {
+                "chat": chat,
+                "id": id,
+                "name": name,
+            },
+        )
+
+    def log_muted(
+        self,
+        *,
+        chat: object,
+        id: object,
+        moderator: object,
+        name: object,
+        term: object,
+    ) -> Line:
+        return Line(
+            "moderation.rough.log_muted",
+            {
+                "chat": chat,
+                "id": id,
+                "moderator": moderator,
+                "name": name,
+                "term": term,
+            },
+        )
+
+    def log_muted_for(
+        self,
+        *,
+        chat: object,
+        id: object,
+        moderator: object,
+        name: object,
+        reason: object,
+        term: object,
+    ) -> Line:
+        return Line(
+            "moderation.rough.log_muted_for",
+            {
+                "chat": chat,
+                "id": id,
+                "moderator": moderator,
+                "name": name,
+                "reason": reason,
+                "term": term,
+            },
+        )
+
+    def log_unbanned(
+        self,
+        *,
+        chat: object,
+        id: object,
+        moderator: object,
+        name: object,
+    ) -> Line:
+        return Line(
+            "moderation.rough.log_unbanned",
+            {
+                "chat": chat,
+                "id": id,
+                "moderator": moderator,
+                "name": name,
+            },
+        )
+
+    def log_unlinked(self, *, chat: object, moderator: object) -> Line:
+        return Line(
+            "moderation.rough.log_unlinked",
+            {
+                "chat": chat,
+                "moderator": moderator,
+            },
+        )
+
+    def log_unmuted(
+        self,
+        *,
+        chat: object,
+        id: object,
+        moderator: object,
+        name: object,
+    ) -> Line:
+        return Line(
+            "moderation.rough.log_unmuted",
+            {
+                "chat": chat,
+                "id": id,
+                "moderator": moderator,
+                "name": name,
+            },
+        )
+
+    def log_unwarned(
+        self,
+        *,
+        chat: object,
+        count: object,
+        id: object,
+        limit: object,
+        moderator: object,
+        name: object,
+    ) -> Line:
+        return Line(
+            "moderation.rough.log_unwarned",
+            {
+                "chat": chat,
+                "count": count,
+                "id": id,
+                "limit": limit,
+                "moderator": moderator,
+                "name": name,
+            },
+        )
+
+    def log_voice(self, *, chat: object, moderator: object) -> Line:
+        return Line(
+            "moderation.rough.log_voice",
+            {
+                "chat": chat,
+                "moderator": moderator,
+            },
+        )
+
+    def log_warn_expired(
+        self,
+        *,
+        chat: object,
+        count: object,
+        id: object,
+        limit: object,
+        name: object,
+    ) -> Line:
+        return Line(
+            "moderation.rough.log_warn_expired",
+            {
+                "chat": chat,
+                "count": count,
+                "id": id,
+                "limit": limit,
+                "name": name,
+            },
+        )
+
+    def log_warn_expiry(self, *, chat: object, moderator: object, term: object) -> Line:
+        return Line(
+            "moderation.rough.log_warn_expiry",
+            {
+                "chat": chat,
+                "moderator": moderator,
+                "term": term,
+            },
+        )
+
+    def log_warn_limit(self, *, chat: object, limit: object, moderator: object) -> Line:
+        return Line(
+            "moderation.rough.log_warn_limit",
+            {
+                "chat": chat,
+                "limit": limit,
+                "moderator": moderator,
+            },
+        )
+
+    def log_warn_penalty(
+        self,
+        *,
+        chat: object,
+        moderator: object,
+        penalty: object,
+    ) -> Line:
+        return Line(
+            "moderation.rough.log_warn_penalty",
+            {
+                "chat": chat,
+                "moderator": moderator,
+                "penalty": penalty,
+            },
+        )
+
+    def log_warn_penalty_banned(
+        self,
+        *,
+        chat: object,
+        id: object,
+        limit: object,
+        moderator: object,
+        name: object,
+        term: object,
+    ) -> Line:
+        return Line(
+            "moderation.rough.log_warn_penalty_banned",
+            {
+                "chat": chat,
+                "id": id,
+                "limit": limit,
+                "moderator": moderator,
+                "name": name,
+                "term": term,
+            },
+        )
+
+    def log_warn_penalty_kicked(
+        self,
+        *,
+        chat: object,
+        id: object,
+        limit: object,
+        moderator: object,
+        name: object,
+    ) -> Line:
+        return Line(
+            "moderation.rough.log_warn_penalty_kicked",
+            {
+                "chat": chat,
+                "id": id,
+                "limit": limit,
+                "moderator": moderator,
+                "name": name,
+            },
+        )
+
+    def log_warn_penalty_muted(
+        self,
+        *,
+        chat: object,
+        id: object,
+        limit: object,
+        moderator: object,
+        name: object,
+        term: object,
+    ) -> Line:
+        return Line(
+            "moderation.rough.log_warn_penalty_muted",
+            {
+                "chat": chat,
+                "id": id,
+                "limit": limit,
+                "moderator": moderator,
+                "name": name,
+                "term": term,
+            },
+        )
+
+    def log_warned(
+        self,
+        *,
+        chat: object,
+        count: object,
+        id: object,
+        limit: object,
+        moderator: object,
+        name: object,
+    ) -> Line:
+        return Line(
+            "moderation.rough.log_warned",
+            {
+                "chat": chat,
+                "count": count,
+                "id": id,
+                "limit": limit,
+                "moderator": moderator,
+                "name": name,
+            },
+        )
+
+    def log_warned_for(
+        self,
+        *,
+        chat: object,
+        count: object,
+        id: object,
+        limit: object,
+        moderator: object,
+        name: object,
+        reason: object,
+    ) -> Line:
+        return Line(
+            "moderation.rough.log_warned_for",
+            {
+                "chat": chat,
+                "count": count,
+                "id": id,
+                "limit": limit,
+                "moderator": moderator,
+                "name": name,
+                "reason": reason,
+            },
+        )
+
+    def moderator_lacks_right(self, *, right: object) -> Line:
+        return Line("moderation.rough.moderator_lacks_right", {"right": right})
+
+    def mute_default_current(self, *, term: object) -> Line:
+        return Line("moderation.rough.mute_default_current", {"term": term})
+
+    def mute_default_set(self, *, term: object) -> Line:
+        return Line("moderation.rough.mute_default_set", {"term": term})
+
+    def mute_expired(self, *, name: object) -> Line:
+        return Line("moderation.rough.mute_expired", {"name": name})
+
+    def mute_usage(self) -> Line:
+        return Line("moderation.rough.mute_usage", {})
+
+    def muted(self, *, name: object, term: object) -> Line:
+        return Line("moderation.rough.muted", {"name": name, "term": term})
+
+    def muted_for(self, *, name: object, reason: object, term: object) -> Line:
+        return Line(
+            "moderation.rough.muted_for",
+            {
+                "name": name,
+                "reason": reason,
+                "term": term,
+            },
+        )
+
+    def no_reason(self) -> Line:
+        return Line("moderation.rough.no_reason", {})
+
+    def no_warnings(self, *, name: object) -> Line:
+        return Line("moderation.rough.no_warnings", {"name": name})
+
+    def not_banned(self, *, name: object) -> Line:
+        return Line("moderation.rough.not_banned", {"name": name})
+
+    def not_muted(self, *, name: object) -> Line:
+        return Line("moderation.rough.not_muted", {"name": name})
+
+    def owner_only(self) -> Line:
+        return Line("moderation.rough.owner_only", {})
+
+    def target_absent(self, *, name: object) -> Line:
+        return Line("moderation.rough.target_absent", {"name": name})
+
+    def target_is_admin(self, *, name: object) -> Line:
+        return Line("moderation.rough.target_is_admin", {"name": name})
+
+    def term_out_of_range(self, *, max: object, min: object) -> Line:
+        return Line("moderation.rough.term_out_of_range", {"max": max, "min": min})
+
+    def unban_usage(self) -> Line:
+        return Line("moderation.rough.unban_usage", {})
+
+    def unbanned(self, *, name: object) -> Line:
+        return Line("moderation.rough.unbanned", {"name": name})
+
+    def unmute_usage(self) -> Line:
+        return Line("moderation.rough.unmute_usage", {})
+
+    def unmuted(self, *, name: object) -> Line:
+        return Line("moderation.rough.unmuted", {"name": name})
+
+    def unwarn_usage(self) -> Line:
+        return Line("moderation.rough.unwarn_usage", {})
+
+    def unwarned(self, *, count: object, limit: object, name: object) -> Line:
+        return Line(
+            "moderation.rough.unwarned",
+            {
+                "count": count,
+                "limit": limit,
+                "name": name,
+            },
+        )
+
+    def user_not_found(self, *, query: object) -> Line:
+        return Line("moderation.rough.user_not_found", {"query": query})
+
+    def voice_current(self) -> Line:
+        return Line("moderation.rough.voice_current", {})
+
+    def voice_set(self) -> Line:
+        return Line("moderation.rough.voice_set", {})
+
+    def warn_expired(self, *, count: object, limit: object, name: object) -> Line:
+        return Line(
+            "moderation.rough.warn_expired",
+            {
+                "count": count,
+                "limit": limit,
+                "name": name,
+            },
+        )
+
+    def warn_expiry_current(self, *, term: object) -> Line:
+        return Line("moderation.rough.warn_expiry_current", {"term": term})
+
+    def warn_expiry_set(self, *, term: object) -> Line:
+        return Line("moderation.rough.warn_expiry_set", {"term": term})
+
+    def warn_limit_current(self, *, limit: object, max: object, min: object) -> Line:
+        return Line(
+            "moderation.rough.warn_limit_current",
+            {
+                "limit": limit,
+                "max": max,
+                "min": min,
+            },
+        )
+
+    def warn_limit_out_of_range(self, *, max: object, min: object) -> Line:
+        return Line(
+            "moderation.rough.warn_limit_out_of_range",
+            {
+                "max": max,
+                "min": min,
+            },
+        )
+
+    def warn_limit_set(self, *, limit: object) -> Line:
+        return Line("moderation.rough.warn_limit_set", {"limit": limit})
+
+    def warn_penalty_banned(self, *, limit: object, name: object, term: object) -> Line:
+        return Line(
+            "moderation.rough.warn_penalty_banned",
+            {
+                "limit": limit,
+                "name": name,
+                "term": term,
+            },
+        )
+
+    def warn_penalty_current(self, *, penalty: object) -> Line:
+        return Line("moderation.rough.warn_penalty_current", {"penalty": penalty})
+
+    def warn_penalty_kicked(self, *, limit: object, name: object) -> Line:
+        return Line(
+            "moderation.rough.warn_penalty_kicked",
+            {
+                "limit": limit,
+                "name": name,
+            },
+        )
+
+    def warn_penalty_muted(self, *, limit: object, name: object, term: object) -> Line:
+        return Line(
+            "moderation.rough.warn_penalty_muted",
+            {
+                "limit": limit,
+                "name": name,
+                "term": term,
+            },
+        )
+
+    def warn_penalty_set(self, *, penalty: object) -> Line:
+        return Line("moderation.rough.warn_penalty_set", {"penalty": penalty})
+
+    def warn_usage(self) -> Line:
+        return Line("moderation.rough.warn_usage", {})
+
+    def warned(self, *, count: object, limit: object, name: object) -> Line:
+        return Line(
+            "moderation.rough.warned",
+            {
+                "count": count,
+                "limit": limit,
+                "name": name,
+            },
+        )
+
+    def warned_for(
+        self,
+        *,
+        count: object,
+        limit: object,
+        name: object,
+        reason: object,
+    ) -> Line:
+        return Line(
+            "moderation.rough.warned_for",
+            {
+                "count": count,
+                "limit": limit,
+                "name": name,
+                "reason": reason,
+            },
+        )
+
+    def warns_item(self, *, left: object, reason: object) -> Line:
+        return Line("moderation.rough.warns_item", {"left": left, "reason": reason})
+
+    def warns_item_forever(self, *, reason: object) -> Line:
+        return Line("moderation.rough.warns_item_forever", {"reason": reason})
+
+    def warns_list(
+        self,
+        *,
+        count: object,
+        items: object,
+        limit: object,
+        name: object,
+    ) -> Line:
+        return Line(
+            "moderation.rough.warns_list",
+            {
+                "count": count,
+                "items": items,
+                "limit": limit,
+                "name": name,
+            },
+        )
+
+    def warns_none(self, *, name: object) -> Line:
+        return Line("moderation.rough.warns_none", {"name": name})
+
+    def warns_usage(self) -> Line:
+        return Line("moderation.rough.warns_usage", {})
+
+
+class _ModerationTermDialogs:
+    def after(self, *, duration: object) -> Line:
+        return Line("moderation.term.after", {"duration": duration})
+
+    def days(self, *, count: object) -> Line:
+        return Line("moderation.term.days", {"count": count})
+
+    def forever(self) -> Line:
+        return Line("moderation.term.forever", {})
+
+    def hours(self, *, count: object) -> Line:
+        return Line("moderation.term.hours", {"count": count})
+
+    def limited(self, *, duration: object) -> Line:
+        return Line("moderation.term.limited", {"duration": duration})
+
+    def minutes(self, *, count: object) -> Line:
+        return Line("moderation.term.minutes", {"count": count})
+
+    def never(self) -> Line:
+        return Line("moderation.term.never", {})
+
+    def seconds(self, *, count: object) -> Line:
+        return Line("moderation.term.seconds", {"count": count})
+
+
 class _ModerationDialogs:
+    feature = _ModerationFeatureDialogs()
+    menu = _ModerationMenuDialogs()
+    neutral = _ModerationNeutralDialogs()
+    penalty = _ModerationPenaltyDialogs()
+    right = _ModerationRightDialogs()
+    rough = _ModerationRoughDialogs()
+    term = _ModerationTermDialogs()
+
     def bot_added(self) -> Line:
         return Line("moderation.bot_added", {})
 
@@ -2157,8 +3771,456 @@ PLACEHOLDERS: dict[str, frozenset[str]] = {
     "mob.rewards": frozenset({"cheston", "progress"}),
     "mob.summary": frozenset({"losses", "outcome", "total", "wins"}),
     "moderation.bot_added": frozenset(),
+    "moderation.feature.ban": frozenset(),
+    "moderation.feature.kick": frozenset(),
+    "moderation.feature.mute": frozenset(),
+    "moderation.feature.notices": frozenset(),
+    "moderation.feature.warns": frozenset(),
     "moderation.goodbye_updated": frozenset({"text"}),
+    "moderation.menu.admin_chat": frozenset(),
+    "moderation.menu.admin_chat_none": frozenset(),
+    "moderation.menu.ban": frozenset(),
+    "moderation.menu.ban_default": frozenset(),
+    "moderation.menu.button_minus": frozenset(),
+    "moderation.menu.button_next": frozenset(),
+    "moderation.menu.button_off": frozenset({"name"}),
+    "moderation.menu.button_on": frozenset({"name"}),
+    "moderation.menu.button_plus": frozenset(),
+    "moderation.menu.button_prev": frozenset(),
+    "moderation.menu.button_value": frozenset({"name", "value"}),
+    "moderation.menu.column_setting": frozenset(),
+    "moderation.menu.column_value": frozenset(),
+    "moderation.menu.hint": frozenset(),
+    "moderation.menu.kick": frozenset(),
+    "moderation.menu.mute": frozenset(),
+    "moderation.menu.mute_default": frozenset(),
+    "moderation.menu.no_right": frozenset({"right"}),
+    "moderation.menu.not_admin": frozenset(),
+    "moderation.menu.notices": frozenset(),
+    "moderation.menu.off": frozenset(),
+    "moderation.menu.on": frozenset(),
+    "moderation.menu.title": frozenset({"chat"}),
+    "moderation.menu.use_arrows": frozenset(),
+    "moderation.menu.voice": frozenset(),
+    "moderation.menu.voice_neutral": frozenset(),
+    "moderation.menu.voice_rough": frozenset(),
+    "moderation.menu.warn_expiry": frozenset(),
+    "moderation.menu.warn_limit": frozenset(),
+    "moderation.menu.warn_penalty": frozenset(),
+    "moderation.menu.warns": frozenset(),
+    "moderation.neutral.admin_chat_current": frozenset({"chat"}),
+    "moderation.neutral.admin_chat_linked": frozenset({"chat"}),
+    "moderation.neutral.admin_chat_none": frozenset(),
+    "moderation.neutral.admin_chat_not_found": frozenset({"query"}),
+    "moderation.neutral.admin_chat_not_linked": frozenset(),
+    "moderation.neutral.admin_chat_requested": frozenset({"chat", "command"}),
+    "moderation.neutral.admin_chat_self": frozenset(),
+    "moderation.neutral.admin_chat_taken": frozenset(),
+    "moderation.neutral.admin_chat_unlinked": frozenset({"chat"}),
+    "moderation.neutral.anonymous": frozenset(),
+    "moderation.neutral.ban_default_current": frozenset({"term"}),
+    "moderation.neutral.ban_default_set": frozenset({"term"}),
+    "moderation.neutral.ban_usage": frozenset(),
+    "moderation.neutral.banned": frozenset({"name", "term"}),
+    "moderation.neutral.banned_for": frozenset({"name", "reason", "term"}),
+    "moderation.neutral.bot_lacks_right": frozenset({"right"}),
+    "moderation.neutral.feature_disabled": frozenset({"feature"}),
+    "moderation.neutral.kick_usage": frozenset(),
+    "moderation.neutral.kicked": frozenset({"name"}),
+    "moderation.neutral.kicked_for": frozenset({"name", "reason"}),
+    "moderation.neutral.log_ban_default": frozenset({"chat", "moderator", "term"}),
+    "moderation.neutral.log_ban_expired": frozenset({"chat", "id", "name"}),
+    "moderation.neutral.log_banned": frozenset(
+        {
+            "chat",
+            "id",
+            "moderator",
+            "name",
+            "term",
+        }
+    ),
+    "moderation.neutral.log_banned_for": frozenset(
+        {
+            "chat",
+            "id",
+            "moderator",
+            "name",
+            "reason",
+            "term",
+        }
+    ),
+    "moderation.neutral.log_feature": frozenset(
+        {
+            "chat",
+            "feature",
+            "moderator",
+            "state",
+        }
+    ),
+    "moderation.neutral.log_kicked": frozenset({"chat", "id", "moderator", "name"}),
+    "moderation.neutral.log_kicked_for": frozenset(
+        {
+            "chat",
+            "id",
+            "moderator",
+            "name",
+            "reason",
+        }
+    ),
+    "moderation.neutral.log_mute_default": frozenset({"chat", "moderator", "term"}),
+    "moderation.neutral.log_mute_expired": frozenset({"chat", "id", "name"}),
+    "moderation.neutral.log_muted": frozenset(
+        {
+            "chat",
+            "id",
+            "moderator",
+            "name",
+            "term",
+        }
+    ),
+    "moderation.neutral.log_muted_for": frozenset(
+        {
+            "chat",
+            "id",
+            "moderator",
+            "name",
+            "reason",
+            "term",
+        }
+    ),
+    "moderation.neutral.log_unbanned": frozenset({"chat", "id", "moderator", "name"}),
+    "moderation.neutral.log_unlinked": frozenset({"chat", "moderator"}),
+    "moderation.neutral.log_unmuted": frozenset({"chat", "id", "moderator", "name"}),
+    "moderation.neutral.log_unwarned": frozenset(
+        {
+            "chat",
+            "count",
+            "id",
+            "limit",
+            "moderator",
+            "name",
+        }
+    ),
+    "moderation.neutral.log_voice": frozenset({"chat", "moderator"}),
+    "moderation.neutral.log_warn_expired": frozenset(
+        {
+            "chat",
+            "count",
+            "id",
+            "limit",
+            "name",
+        }
+    ),
+    "moderation.neutral.log_warn_expiry": frozenset({"chat", "moderator", "term"}),
+    "moderation.neutral.log_warn_limit": frozenset({"chat", "limit", "moderator"}),
+    "moderation.neutral.log_warn_penalty": frozenset({"chat", "moderator", "penalty"}),
+    "moderation.neutral.log_warn_penalty_banned": frozenset(
+        {
+            "chat",
+            "id",
+            "limit",
+            "moderator",
+            "name",
+            "term",
+        }
+    ),
+    "moderation.neutral.log_warn_penalty_kicked": frozenset(
+        {
+            "chat",
+            "id",
+            "limit",
+            "moderator",
+            "name",
+        }
+    ),
+    "moderation.neutral.log_warn_penalty_muted": frozenset(
+        {
+            "chat",
+            "id",
+            "limit",
+            "moderator",
+            "name",
+            "term",
+        }
+    ),
+    "moderation.neutral.log_warned": frozenset(
+        {
+            "chat",
+            "count",
+            "id",
+            "limit",
+            "moderator",
+            "name",
+        }
+    ),
+    "moderation.neutral.log_warned_for": frozenset(
+        {
+            "chat",
+            "count",
+            "id",
+            "limit",
+            "moderator",
+            "name",
+            "reason",
+        }
+    ),
+    "moderation.neutral.moderator_lacks_right": frozenset({"right"}),
+    "moderation.neutral.mute_default_current": frozenset({"term"}),
+    "moderation.neutral.mute_default_set": frozenset({"term"}),
+    "moderation.neutral.mute_expired": frozenset({"name"}),
+    "moderation.neutral.mute_usage": frozenset(),
+    "moderation.neutral.muted": frozenset({"name", "term"}),
+    "moderation.neutral.muted_for": frozenset({"name", "reason", "term"}),
+    "moderation.neutral.no_reason": frozenset(),
+    "moderation.neutral.no_warnings": frozenset({"name"}),
+    "moderation.neutral.not_banned": frozenset({"name"}),
+    "moderation.neutral.not_muted": frozenset({"name"}),
+    "moderation.neutral.owner_only": frozenset(),
+    "moderation.neutral.target_absent": frozenset({"name"}),
+    "moderation.neutral.target_is_admin": frozenset({"name"}),
+    "moderation.neutral.term_out_of_range": frozenset({"max", "min"}),
+    "moderation.neutral.unban_usage": frozenset(),
+    "moderation.neutral.unbanned": frozenset({"name"}),
+    "moderation.neutral.unmute_usage": frozenset(),
+    "moderation.neutral.unmuted": frozenset({"name"}),
+    "moderation.neutral.unwarn_usage": frozenset(),
+    "moderation.neutral.unwarned": frozenset({"count", "limit", "name"}),
+    "moderation.neutral.user_not_found": frozenset({"query"}),
+    "moderation.neutral.voice_current": frozenset(),
+    "moderation.neutral.voice_set": frozenset(),
+    "moderation.neutral.warn_expired": frozenset({"count", "limit", "name"}),
+    "moderation.neutral.warn_expiry_current": frozenset({"term"}),
+    "moderation.neutral.warn_expiry_set": frozenset({"term"}),
+    "moderation.neutral.warn_limit_current": frozenset({"limit", "max", "min"}),
+    "moderation.neutral.warn_limit_out_of_range": frozenset({"max", "min"}),
+    "moderation.neutral.warn_limit_set": frozenset({"limit"}),
+    "moderation.neutral.warn_penalty_banned": frozenset({"limit", "name", "term"}),
+    "moderation.neutral.warn_penalty_current": frozenset({"penalty"}),
+    "moderation.neutral.warn_penalty_kicked": frozenset({"limit", "name"}),
+    "moderation.neutral.warn_penalty_muted": frozenset({"limit", "name", "term"}),
+    "moderation.neutral.warn_penalty_set": frozenset({"penalty"}),
+    "moderation.neutral.warn_usage": frozenset(),
+    "moderation.neutral.warned": frozenset({"count", "limit", "name"}),
+    "moderation.neutral.warned_for": frozenset({"count", "limit", "name", "reason"}),
+    "moderation.neutral.warns_item": frozenset({"left", "reason"}),
+    "moderation.neutral.warns_item_forever": frozenset({"reason"}),
+    "moderation.neutral.warns_list": frozenset({"count", "items", "limit", "name"}),
+    "moderation.neutral.warns_none": frozenset({"name"}),
+    "moderation.neutral.warns_usage": frozenset(),
+    "moderation.penalty.ban": frozenset(),
+    "moderation.penalty.kick": frozenset(),
+    "moderation.penalty.mute": frozenset(),
+    "moderation.penalty.timed": frozenset({"penalty", "term"}),
+    "moderation.right.change_info": frozenset(),
+    "moderation.right.restrict_members": frozenset(),
+    "moderation.rough.admin_chat_current": frozenset({"chat"}),
+    "moderation.rough.admin_chat_linked": frozenset({"chat"}),
+    "moderation.rough.admin_chat_none": frozenset(),
+    "moderation.rough.admin_chat_not_found": frozenset({"query"}),
+    "moderation.rough.admin_chat_not_linked": frozenset(),
+    "moderation.rough.admin_chat_requested": frozenset({"chat", "command"}),
+    "moderation.rough.admin_chat_self": frozenset(),
+    "moderation.rough.admin_chat_taken": frozenset(),
+    "moderation.rough.admin_chat_unlinked": frozenset({"chat"}),
+    "moderation.rough.anonymous": frozenset(),
+    "moderation.rough.ban_default_current": frozenset({"term"}),
+    "moderation.rough.ban_default_set": frozenset({"term"}),
+    "moderation.rough.ban_usage": frozenset(),
+    "moderation.rough.banned": frozenset({"name", "term"}),
+    "moderation.rough.banned_for": frozenset({"name", "reason", "term"}),
+    "moderation.rough.bot_lacks_right": frozenset({"right"}),
+    "moderation.rough.feature_disabled": frozenset({"feature"}),
+    "moderation.rough.kick_usage": frozenset(),
+    "moderation.rough.kicked": frozenset({"name"}),
+    "moderation.rough.kicked_for": frozenset({"name", "reason"}),
+    "moderation.rough.log_ban_default": frozenset({"chat", "moderator", "term"}),
+    "moderation.rough.log_ban_expired": frozenset({"chat", "id", "name"}),
+    "moderation.rough.log_banned": frozenset(
+        {
+            "chat",
+            "id",
+            "moderator",
+            "name",
+            "term",
+        }
+    ),
+    "moderation.rough.log_banned_for": frozenset(
+        {
+            "chat",
+            "id",
+            "moderator",
+            "name",
+            "reason",
+            "term",
+        }
+    ),
+    "moderation.rough.log_feature": frozenset(
+        {
+            "chat",
+            "feature",
+            "moderator",
+            "state",
+        }
+    ),
+    "moderation.rough.log_kicked": frozenset({"chat", "id", "moderator", "name"}),
+    "moderation.rough.log_kicked_for": frozenset(
+        {
+            "chat",
+            "id",
+            "moderator",
+            "name",
+            "reason",
+        }
+    ),
+    "moderation.rough.log_mute_default": frozenset({"chat", "moderator", "term"}),
+    "moderation.rough.log_mute_expired": frozenset({"chat", "id", "name"}),
+    "moderation.rough.log_muted": frozenset(
+        {
+            "chat",
+            "id",
+            "moderator",
+            "name",
+            "term",
+        }
+    ),
+    "moderation.rough.log_muted_for": frozenset(
+        {
+            "chat",
+            "id",
+            "moderator",
+            "name",
+            "reason",
+            "term",
+        }
+    ),
+    "moderation.rough.log_unbanned": frozenset({"chat", "id", "moderator", "name"}),
+    "moderation.rough.log_unlinked": frozenset({"chat", "moderator"}),
+    "moderation.rough.log_unmuted": frozenset({"chat", "id", "moderator", "name"}),
+    "moderation.rough.log_unwarned": frozenset(
+        {
+            "chat",
+            "count",
+            "id",
+            "limit",
+            "moderator",
+            "name",
+        }
+    ),
+    "moderation.rough.log_voice": frozenset({"chat", "moderator"}),
+    "moderation.rough.log_warn_expired": frozenset(
+        {
+            "chat",
+            "count",
+            "id",
+            "limit",
+            "name",
+        }
+    ),
+    "moderation.rough.log_warn_expiry": frozenset({"chat", "moderator", "term"}),
+    "moderation.rough.log_warn_limit": frozenset({"chat", "limit", "moderator"}),
+    "moderation.rough.log_warn_penalty": frozenset({"chat", "moderator", "penalty"}),
+    "moderation.rough.log_warn_penalty_banned": frozenset(
+        {
+            "chat",
+            "id",
+            "limit",
+            "moderator",
+            "name",
+            "term",
+        }
+    ),
+    "moderation.rough.log_warn_penalty_kicked": frozenset(
+        {
+            "chat",
+            "id",
+            "limit",
+            "moderator",
+            "name",
+        }
+    ),
+    "moderation.rough.log_warn_penalty_muted": frozenset(
+        {
+            "chat",
+            "id",
+            "limit",
+            "moderator",
+            "name",
+            "term",
+        }
+    ),
+    "moderation.rough.log_warned": frozenset(
+        {
+            "chat",
+            "count",
+            "id",
+            "limit",
+            "moderator",
+            "name",
+        }
+    ),
+    "moderation.rough.log_warned_for": frozenset(
+        {
+            "chat",
+            "count",
+            "id",
+            "limit",
+            "moderator",
+            "name",
+            "reason",
+        }
+    ),
+    "moderation.rough.moderator_lacks_right": frozenset({"right"}),
+    "moderation.rough.mute_default_current": frozenset({"term"}),
+    "moderation.rough.mute_default_set": frozenset({"term"}),
+    "moderation.rough.mute_expired": frozenset({"name"}),
+    "moderation.rough.mute_usage": frozenset(),
+    "moderation.rough.muted": frozenset({"name", "term"}),
+    "moderation.rough.muted_for": frozenset({"name", "reason", "term"}),
+    "moderation.rough.no_reason": frozenset(),
+    "moderation.rough.no_warnings": frozenset({"name"}),
+    "moderation.rough.not_banned": frozenset({"name"}),
+    "moderation.rough.not_muted": frozenset({"name"}),
+    "moderation.rough.owner_only": frozenset(),
+    "moderation.rough.target_absent": frozenset({"name"}),
+    "moderation.rough.target_is_admin": frozenset({"name"}),
+    "moderation.rough.term_out_of_range": frozenset({"max", "min"}),
+    "moderation.rough.unban_usage": frozenset(),
+    "moderation.rough.unbanned": frozenset({"name"}),
+    "moderation.rough.unmute_usage": frozenset(),
+    "moderation.rough.unmuted": frozenset({"name"}),
+    "moderation.rough.unwarn_usage": frozenset(),
+    "moderation.rough.unwarned": frozenset({"count", "limit", "name"}),
+    "moderation.rough.user_not_found": frozenset({"query"}),
+    "moderation.rough.voice_current": frozenset(),
+    "moderation.rough.voice_set": frozenset(),
+    "moderation.rough.warn_expired": frozenset({"count", "limit", "name"}),
+    "moderation.rough.warn_expiry_current": frozenset({"term"}),
+    "moderation.rough.warn_expiry_set": frozenset({"term"}),
+    "moderation.rough.warn_limit_current": frozenset({"limit", "max", "min"}),
+    "moderation.rough.warn_limit_out_of_range": frozenset({"max", "min"}),
+    "moderation.rough.warn_limit_set": frozenset({"limit"}),
+    "moderation.rough.warn_penalty_banned": frozenset({"limit", "name", "term"}),
+    "moderation.rough.warn_penalty_current": frozenset({"penalty"}),
+    "moderation.rough.warn_penalty_kicked": frozenset({"limit", "name"}),
+    "moderation.rough.warn_penalty_muted": frozenset({"limit", "name", "term"}),
+    "moderation.rough.warn_penalty_set": frozenset({"penalty"}),
+    "moderation.rough.warn_usage": frozenset(),
+    "moderation.rough.warned": frozenset({"count", "limit", "name"}),
+    "moderation.rough.warned_for": frozenset({"count", "limit", "name", "reason"}),
+    "moderation.rough.warns_item": frozenset({"left", "reason"}),
+    "moderation.rough.warns_item_forever": frozenset({"reason"}),
+    "moderation.rough.warns_list": frozenset({"count", "items", "limit", "name"}),
+    "moderation.rough.warns_none": frozenset({"name"}),
+    "moderation.rough.warns_usage": frozenset(),
     "moderation.rules_updated": frozenset({"rules"}),
+    "moderation.term.after": frozenset({"duration"}),
+    "moderation.term.days": frozenset({"count"}),
+    "moderation.term.forever": frozenset(),
+    "moderation.term.hours": frozenset({"count"}),
+    "moderation.term.limited": frozenset({"duration"}),
+    "moderation.term.minutes": frozenset({"count"}),
+    "moderation.term.never": frozenset(),
+    "moderation.term.seconds": frozenset({"count"}),
     "moderation.welcome_updated": frozenset({"text"}),
     "notify.death": frozenset({"cause", "level", "lifetime_rc_earned"}),
     "notify.death_cause.admin": frozenset(),

@@ -33,7 +33,7 @@
 ## `src/bot/`
 
 - **`__main__.py`** — `Dispatcher`: middlewares, корневой роутер, фоновые задачи
-  (`NotificationTicker`, `DuelTicker`, `VideoWorker`), polling (`ENV=DEV`) или вебхук.
+  (`NotificationTicker`, `DuelTicker`, `ModerationTicker`, `VideoWorker`), polling (`ENV=DEV`) или вебхук.
 - **`context.py`** — `AppContext`, контекст одного апдейта. Все зависимости хендлера —
   его типизированные ленивые свойства (`ctx.ghoul_service`, `ctx.transfer_service`, …),
   плюс общие хелперы (`ctx.say()`, `ctx.text()`, `ctx.db_user()`, `ctx.addressee()`, …).
@@ -49,7 +49,10 @@
   - `ghoul_routers/` — механика гуля: голод, статы, кагуне, бои с мобами, дуэли (`duel/`),
     показ боя (`battle_text.py`, `battle_text_generator.py`).
   - `creator_routers/` — админ-команды (`ADMIN_IDS` проверяет middleware пакета).
-  - `moderator_routers/` — приветствие/прощание/правила чата.
+  - `moderator_routers/` — модерация чата (модератор — админ Telegram с нужным правом):
+    `punishments/` — мут, бан, кик и их снятие, `settings/` — сроки по умолчанию, голос
+    модерации и привязка чата админов, куда уходит каждое действие и изменение настроек;
+    приветствие/прощание/правила чата.
   - `chat_member_update_routers/` — вход и выход участников; ведут учёт участников чата
     (`ChatParticipant`, сообщения в группе считает `SyncEntitiesMiddleware`).
   - `rich.py`, `targeting.py`, `types.py`, `utils.py` — общее для нескольких областей.
@@ -65,6 +68,8 @@
   - Заметные одиночные файлы: `ghoul.py` (статы/голод/смерть/поедание), `level_up.py`,
     `battle_record.py` (история боёв и `ActiveBattle`-лок), `notification_ticker.py`
     (уведомления о голоде/здоровье), `broadcast.py`, `quiz.py`.
+  - `moderation/` — модерация чатов: настройки чата (`moderation_settings`) и журнал
+    действий (`moderation_actions`). Сам Telegram (мут, бан) зовут роутеры.
   - `roast/` — огрызания через нейросеть (Cloud.ru Foundation Models): клиент `llm.py`,
     `RoastService` (состояние споров, лимиты, фильтр, журнал `roast_log`) и `prompts/` —
     характер, примеры и обращения в файлах, которые правятся без кода.

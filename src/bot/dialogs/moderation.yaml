@@ -1,0 +1,325 @@
+moderation:
+  term:
+    forever: навсегда
+    limited: 'на {duration}'
+    days: '{count} д'
+    hours: '{count} ч'
+    minutes: '{count} мин'
+    seconds: '{count} с'
+    after: 'через {duration}'
+    never: никогда
+  penalty:
+    mute: мут
+    ban: бан
+    kick: кик
+    timed: '{penalty} {term}'
+  feature:
+    mute: мут
+    ban: бан
+    kick: кик
+    warns: варны
+    notices: объявления о конце сроков
+  right:
+    restrict_members: «Блокировка пользователей»
+    change_info: «Изменение профиля группы»
+  menu:
+    title: '⚙️ Модерация «{chat}»'
+    column_setting: Настройка
+    column_value: Значение
+    'on': вкл
+    'off': выкл
+    mute: Мут
+    ban: Бан
+    kick: Кик
+    warns: Варны
+    notices: Объявления о конце сроков
+    mute_default: Мут без срока
+    ban_default: Бан без срока
+    warn_limit: Лимит варнов
+    warn_penalty: Наказание на лимите
+    warn_expiry: Варны сгорают
+    voice: Голос
+    admin_chat: Чат админов
+    voice_neutral: нейтральный
+    voice_rough: грубый
+    admin_chat_none: не привязан
+    hint: 'Менять кнопками может админ с правом «Изменение профиля группы». Чат админов привязывает владелец: /set_admin_chat'
+    button_on: '✅ {name}'
+    button_off: '❌ {name}'
+    button_value: '{name}: {value}'
+    button_prev: ◀
+    button_next: ▶
+    button_minus: −
+    button_plus: +
+    use_arrows: 'Значение меняется кнопками по бокам.'
+    no_right: 'Для этого нужно право {right}.'
+    not_admin: Менять настройки модерации могут только админы чата.
+  neutral:
+    muted: '🔇 {name} в муте {term}.'
+    muted_for: '🔇 {name} в муте {term}. Причина: {reason}'
+    unmuted: '🔊 {name} снова может писать.'
+    not_muted: '{name} и так не в муте.'
+    banned: '🚫 {name} получает бан {term}.'
+    banned_for: '🚫 {name} получает бан {term}. Причина: {reason}'
+    unbanned: '✅ Бан снят: {name} может вернуться по ссылке.'
+    not_banned: '{name} и так не в бане.'
+    kicked: '👢 {name} удаляется из чата. Вернуться можно по ссылке.'
+    kicked_for: '👢 {name} удаляется из чата. Причина: {reason}'
+    target_absent: '{name} нет в чате.'
+    mute_usage: |-
+      Мут — ответом на сообщение или по @username/id, срок и причина по желанию:
+      мут 30м флуд
+      /mute @username 1 час 30 мин спам
+      Без срока — срок по умолчанию, «навсегда» — без срока.
+    unmute_usage: 'Размут — ответом на сообщение («размут») или по @username/id: /unmute @username'
+    ban_usage: |-
+      Бан — ответом на сообщение или по @username/id, срок и причина по желанию:
+      бан 1д реклама
+      /ban @username навсегда спам
+      Без срока — срок по умолчанию.
+    unban_usage: 'Разбан — ответом на сообщение («разбан») или по @username/id: /unban @username'
+    kick_usage: |-
+      Кик — ответом на сообщение или по @username/id, причина по желанию:
+      кик флуд
+      /kick @username
+    mute_default_set: '⚙️ Мут без срока теперь даётся {term}.'
+    mute_default_current: |-
+      ⚙️ Мут без срока даётся {term}.
+      Поменять: «мут дефолт 1ч» или /mute_default 1h, «навсегда» — без срока.
+    ban_default_set: '⚙️ Бан без срока теперь даётся {term}.'
+    ban_default_current: |-
+      ⚙️ Бан без срока даётся {term}.
+      Поменять: «бан дефолт 1д» или /ban_default 1d, «навсегда» — без срока.
+    voice_set: ⚙️ Голос модерации теперь нейтральный.
+    voice_current: |-
+      ⚙️ Голос модерации — нейтральный.
+      Поменять: «Стиль модерации грубый» или /moderation_voice rough
+    admin_chat_none: |-
+      Чат админов не привязан.
+      Привязать: /set_admin_chat @чат_админов (или его id), потом подтвердить в том чате.
+    admin_chat_current: |-
+      Чат админов — «{chat}».
+      Отвязать: /set_admin_chat off
+    admin_chat_requested: |-
+      Запрос: сделать «{chat}» чатом админов этого чата.
+      Чтобы подтвердить, владелец этого чата пишет в «{chat}»:
+      {command}
+    admin_chat_linked: 'Готово: сюда будут приходить действия модерации и изменения настроек чата «{chat}».'
+    admin_chat_unlinked: Чат админов «{chat}» отвязан.
+    admin_chat_not_linked: Чат админов и так не привязан.
+    admin_chat_not_found: 'Не нашёл группу {query}. Укажите @username или id группы, где есть бот.'
+    admin_chat_self: Чат не может быть чатом админов сам для себя.
+    admin_chat_taken: Этот чат уже служит чатом админов другому чату.
+    owner_only: Привязывать и отвязывать чат админов может только владелец чата.
+    log_muted: '🔇 «{chat}» · мут {term}: {name} (id {id}). Модератор: {moderator}'
+    log_muted_for: '🔇 «{chat}» · мут {term}: {name} (id {id}). Модератор: {moderator}. Причина: {reason}'
+    log_unmuted: '🔊 «{chat}» · размут: {name} (id {id}). Модератор: {moderator}'
+    log_banned: '🚫 «{chat}» · бан {term}: {name} (id {id}). Модератор: {moderator}'
+    log_banned_for: '🚫 «{chat}» · бан {term}: {name} (id {id}). Модератор: {moderator}. Причина: {reason}'
+    log_unbanned: '✅ «{chat}» · разбан: {name} (id {id}). Модератор: {moderator}'
+    log_kicked: '👢 «{chat}» · кик: {name} (id {id}). Модератор: {moderator}'
+    log_kicked_for: '👢 «{chat}» · кик: {name} (id {id}). Модератор: {moderator}. Причина: {reason}'
+    log_mute_default: '⚙️ «{chat}» · мут без срока теперь {term}. Модератор: {moderator}'
+    log_ban_default: '⚙️ «{chat}» · бан без срока теперь {term}. Модератор: {moderator}'
+    log_voice: '⚙️ «{chat}» · голос модерации: нейтральный. Модератор: {moderator}'
+    log_unlinked: '⚙️ Чат «{chat}» отвязан от этого чата админов. Модератор: {moderator}'
+    user_not_found: 'Не нашёл {query}. Ответь на сообщение этого человека или укажи его id.'
+    anonymous: Анонимному админу модерация через бота недоступна — бот не видит, кто пишет.
+    moderator_lacks_right: 'Для этого нужно право {right}.'
+    bot_lacks_right: 'Боту не хватает права {right}. Выдайте его в настройках администраторов.'
+    target_is_admin: '{name} — администратор, его наказать нельзя.'
+    term_out_of_range: 'Срок — от {min} до {max} или «навсегда».'
+    feature_disabled: 'Это выключено в настройках модерации чата: {feature}. Включить — «настройки модерации».'
+    log_feature: '⚙️ «{chat}» · {feature}: {state}. Модератор: {moderator}'
+    warned: '⚠️ {name} получает варн: {count} из {limit}.'
+    warned_for: '⚠️ {name} получает варн: {count} из {limit}. Причина: {reason}'
+    warn_penalty_muted: '🔇 {name} набирает {limit} из {limit} варнов и уходит в мут {term}.'
+    warn_penalty_banned: '🚫 {name} набирает {limit} из {limit} варнов и получает бан {term}.'
+    warn_penalty_kicked: '👢 {name} набирает {limit} из {limit} варнов и удаляется из чата.'
+    unwarned: '✅ {name}: варн снят, осталось {count} из {limit}.'
+    no_warnings: '{name}: варнов нет, снимать нечего.'
+    warns_none: '{name}: активных варнов нет.'
+    warns_list: |-
+      ⚠️ {name}: варнов {count} из {limit}.
+      {items}
+    warns_item: '• {reason} — сгорит {left}'
+    warns_item_forever: '• {reason} — не сгорает'
+    no_reason: без причины
+    warn_usage: |-
+      Варн (или пред) — ответом на сообщение или по @username/id, причина по желанию:
+      варн флуд
+      /warn @username спам
+    unwarn_usage: 'Снять варн — ответом на сообщение («снять варн») или по @username/id: /unwarn @username'
+    warns_usage: 'Варны — свои: «варны»; чужие (только админам) — ответом или по @username/id: /warns @username'
+    warn_limit_set: '⚙️ Теперь наказание — на {limit}-м варне.'
+    warn_limit_current: |-
+      ⚙️ Наказание — на {limit}-м варне.
+      Поменять: «варн лимит 5» или /warn_limit 5 (от {min} до {max}).
+    warn_limit_out_of_range: 'Лимит варнов — от {min} до {max}.'
+    warn_penalty_set: '⚙️ На лимите варнов теперь {penalty}.'
+    warn_penalty_current: |-
+      ⚙️ На лимите варнов — {penalty}.
+      Поменять: «варн наказание мут 1ч» или /warn_action ban 1d (мут, бан или кик; без срока — прежний срок).
+    warn_expiry_set: '⚙️ Варны теперь сгорают {term}.'
+    warn_expiry_current: |-
+      ⚙️ Варны сгорают {term}.
+      Поменять: «варн срок 3д» или /warn_expiry 3d, «навсегда» — не сгорают.
+    log_warned: '⚠️ «{chat}» · варн {count}/{limit}: {name} (id {id}). Модератор: {moderator}'
+    log_warned_for: '⚠️ «{chat}» · варн {count}/{limit}: {name} (id {id}). Модератор: {moderator}. Причина: {reason}'
+    log_unwarned: '✅ «{chat}» · снят варн, осталось {count}/{limit}: {name} (id {id}). Модератор: {moderator}'
+    log_warn_penalty_muted: '🔇 «{chat}» · {limit}/{limit} варнов, мут {term}: {name} (id {id}). Модератор: {moderator}'
+    log_warn_penalty_banned: '🚫 «{chat}» · {limit}/{limit} варнов, бан {term}: {name} (id {id}). Модератор: {moderator}'
+    log_warn_penalty_kicked: '👢 «{chat}» · {limit}/{limit} варнов, кик: {name} (id {id}). Модератор: {moderator}'
+    log_warn_limit: '⚙️ «{chat}» · наказание теперь на {limit}-м варне. Модератор: {moderator}'
+    log_warn_penalty: '⚙️ «{chat}» · на лимите варнов теперь {penalty}. Модератор: {moderator}'
+    log_warn_expiry: '⚙️ «{chat}» · варны сгорают {term}. Модератор: {moderator}'
+    mute_expired: '🔊 {name}, срок мута истёк — снова можно писать.'
+    warn_expired: '🕊 {name}, варн сгорел. Осталось {count} из {limit}.'
+    log_mute_expired: '🔊 «{chat}» · мут истёк: {name} (id {id})'
+    log_ban_expired: '✅ «{chat}» · бан истёк: {name} (id {id}) может вернуться по ссылке'
+    log_warn_expired: '🕊 «{chat}» · варн сгорел, осталось {count}/{limit}: {name} (id {id})'
+  rough:
+    muted:
+      - '⛓ CCG пакует: {name} едет в Кокурию {term}. Посиди, подумай.'
+      - '⛓ {name} отправляется в Кокурию {term}. Рот закрыт.'
+    muted_for:
+      - '⛓ CCG пакует: {name} едет в Кокурию {term}. Статья: {reason}'
+      - '⛓ {name} отправляется в Кокурию {term}. За что: {reason}'
+    unmuted:
+      - '🔓 {name} выходит из Кокурии. Веди себя тихо.'
+      - '🔓 {name} на воле. Не радуйся, CCG следит.'
+    not_muted: '{name} и так на воле, кого выпускать-то?'
+    banned:
+      - '🚷 {name} вылетает из 20-го района {term}. Дорогу сюда забудь.'
+      - '🚷 Метка CCG: {name} сюда не заходит {term}.'
+    banned_for:
+      - '🚷 {name} вылетает из 20-го района {term}. Статья: {reason}'
+      - '🚷 Метка CCG: {name} сюда не заходит {term}. За что: {reason}'
+    unbanned: '🚪 Метку CCG сняли: {name} может вернуться по ссылке.'
+    not_banned: '{name} и так не в бане, кого прощать-то?'
+    kicked:
+      - '🥾 {name} летит за дверь. Захочет — вернётся по ссылке.'
+      - '🥾 Пинок под зад: {name} за дверью.'
+    kicked_for:
+      - '🥾 {name} летит за дверь. Статья: {reason}'
+      - '🥾 Пинок под зад: {name} за дверью. За что: {reason}'
+    target_absent: '{name} тут нет, пинать некого.'
+    mute_usage: |-
+      Кого пакуем? Ответь на сообщение или дай @username/id, срок и статью:
+      мут 30м флуд
+      /mute @username 1 час 30 мин спам
+      Без срока — срок по умолчанию, «навсегда» — с концами.
+    unmute_usage: 'Кого выпускаем? Ответь «размут» на сообщение или дай @username/id: /unmute @username'
+    ban_usage: |-
+      Кого гоним? Ответь на сообщение или дай @username/id, срок и статью:
+      бан 1д реклама
+      /ban @username навсегда спам
+      Без срока — срок по умолчанию.
+    unban_usage: 'Кого прощаем? Ответь «разбан» на сообщение или дай @username/id: /unban @username'
+    kick_usage: |-
+      Кого пинаем? Ответь на сообщение или дай @username/id, статья по желанию:
+      кик флуд
+      /kick @username
+    mute_default_set: '⚙️ Понял. Кто без срока — сидит в Кокурии {term}.'
+    mute_default_current: |-
+      ⚙️ Без срока пакую в Кокурию {term}.
+      Поменять: «мут дефолт 1ч» или /mute_default 1h, «навсегда» — с концами.
+    ban_default_set: '⚙️ Понял. Кто без срока — вылетает {term}.'
+    ban_default_current: |-
+      ⚙️ Без срока выгоняю {term}.
+      Поменять: «бан дефолт 1д» или /ban_default 1d, «навсегда» — с концами.
+    voice_set:
+      - ⚙️ Ну всё, CCG выходит на смену. Теперь по-грубому.
+      - ⚙️ Вежливость кончилась. Дальше по-грубому.
+    voice_current: |-
+      ⚙️ Сейчас я грубый. И не проси по-хорошему.
+      Смягчить: «Стиль модерации нейтральный» или /moderation_voice neutral
+    admin_chat_none: |-
+      Штаба у вас нет, докладывать некуда.
+      Завести: /set_admin_chat @чат_админов (или его id), потом подтвердить в том чате.
+    admin_chat_current: |-
+      Рапорты CCG уходят в «{chat}».
+      Разогнать штаб: /set_admin_chat off
+    admin_chat_requested: |-
+      Хотите штаб в «{chat}»? Пусть владелец этого чата подтвердит там:
+      {command}
+    admin_chat_linked: 'Штаб развёрнут. Сюда пойдут рапорты CCG и все перемены в «{chat}».'
+    admin_chat_unlinked: Штаб в «{chat}» разогнан, рапортов больше не будет.
+    admin_chat_not_linked: Штаба и так нет, разгонять некого.
+    admin_chat_not_found: 'Группа {query}? Не знаю такой. Дай @username или id, и чтобы я там был.'
+    admin_chat_self: Штаб сам в себе? Не выйдет.
+    admin_chat_taken: Этот чат уже штаб для другого чата. Ищите свой.
+    owner_only: Штаб заводит и разгоняет только владелец чата.
+    log_muted: '⛓ Рапорт CCG, «{chat}»: {name} (id {id}) в Кокурии {term}. Упаковка: {moderator}'
+    log_muted_for: '⛓ Рапорт CCG, «{chat}»: {name} (id {id}) в Кокурии {term}. Упаковка: {moderator}. Статья: {reason}'
+    log_unmuted: '🔓 Рапорт CCG, «{chat}»: {name} (id {id}) выходит из Кокурии. Выпуск: {moderator}'
+    log_banned: '🚷 Рапорт CCG, «{chat}»: {name} (id {id}) вылетает {term}. Изгнание: {moderator}'
+    log_banned_for: '🚷 Рапорт CCG, «{chat}»: {name} (id {id}) вылетает {term}. Изгнание: {moderator}. Статья: {reason}'
+    log_unbanned: '🚪 Рапорт CCG, «{chat}»: {name} (id {id}) снова может зайти. Прощение: {moderator}'
+    log_kicked: '🥾 Рапорт CCG, «{chat}»: {name} (id {id}) за дверью. Пинок: {moderator}'
+    log_kicked_for: '🥾 Рапорт CCG, «{chat}»: {name} (id {id}) за дверью. Пинок: {moderator}. Статья: {reason}'
+    log_mute_default: '⚙️ Рапорт CCG, «{chat}»: без срока теперь пакуем {term}. Приказ: {moderator}'
+    log_ban_default: '⚙️ Рапорт CCG, «{chat}»: без срока теперь выгоняем {term}. Приказ: {moderator}'
+    log_voice: '⚙️ Рапорт CCG, «{chat}»: вежливость кончилась, модерация по-грубому. Приказ: {moderator}'
+    log_unlinked: '⚙️ Рапорт CCG: штаб «{chat}» здесь разогнан. Приказ: {moderator}'
+    user_not_found: 'Кто такой {query}? CCG про такого не слышала. Ответь на его сообщение или дай id.'
+    anonymous: Сними маску, анонимус. Из-за угла тут не пакуют.
+    moderator_lacks_right: 'Руки коротки. Нужно право {right}.'
+    bot_lacks_right: 'Мне не дали право {right}. Без него я тут никого не упакую.'
+    target_is_admin: '{name} — админ. Своих CCG не трогает.'
+    term_out_of_range: 'Кокурия так не работает: от {min} до {max} или «навсегда».'
+    feature_disabled: 'CCG здесь это не делает: {feature} выключено в «настройках модерации».'
+    log_feature: '⚙️ Рапорт CCG, «{chat}»: {feature} — {state}. Приказ: {moderator}'
+    warned:
+      - '⚠️ CCG берёт {name} на карандаш: {count} из {limit}.'
+      - '⚠️ {name}, это предупреждение. {count} из {limit}, дальше — Кокурия.'
+    warned_for:
+      - '⚠️ CCG берёт {name} на карандаш: {count} из {limit}. Статья: {reason}'
+      - '⚠️ {name}, это предупреждение. {count} из {limit}. За что: {reason}'
+    warn_penalty_muted: '⛓ {name} собрал {limit} из {limit}. CCG пакует в Кокурию {term}.'
+    warn_penalty_banned: '🚷 {name} собрал {limit} из {limit} и вылетает из 20-го района {term}.'
+    warn_penalty_kicked: '🥾 {name} собрал {limit} из {limit}. Пинок под зад, за дверь.'
+    unwarned: '🧽 С {name} стёрли одну метку CCG, осталось {count} из {limit}.'
+    no_warnings: '{name} чист перед CCG, стирать нечего.'
+    warns_none: '{name} чист перед CCG.'
+    warns_list: |-
+      📋 Досье CCG на {name}: {count} из {limit}.
+      {items}
+    warns_item: '• {reason} — сгорит {left}'
+    warns_item_forever: '• {reason} — навечно в досье'
+    no_reason: без статьи
+    warn_usage: |-
+      Кого берём на карандаш? Ответь на сообщение или дай @username/id, статья по желанию:
+      варн флуд
+      /warn @username спам
+    unwarn_usage: 'С кого стираем метку? Ответь «снять варн» на сообщение или дай @username/id: /unwarn @username'
+    warns_usage: 'Досье: своё — «варны»; чужое (только админам) — ответом или по @username/id: /warns @username'
+    warn_limit_set: '⚙️ Понял. Пакую на {limit}-й метке.'
+    warn_limit_current: |-
+      ⚙️ Пакую на {limit}-й метке.
+      Поменять: «варн лимит 5» или /warn_limit 5 (от {min} до {max}).
+    warn_limit_out_of_range: 'Меток — от {min} до {max}, CCG не резиновая.'
+    warn_penalty_set: '⚙️ Понял. Кто соберёт все метки — получает {penalty}.'
+    warn_penalty_current: |-
+      ⚙️ Кто собрал все метки — получает {penalty}.
+      Поменять: «варн наказание мут 1ч» или /warn_action ban 1d (мут, бан или кик; без срока — прежний срок).
+    warn_expiry_set: '⚙️ Понял. Метки сгорают {term}.'
+    warn_expiry_current: |-
+      ⚙️ Метки сгорают {term}.
+      Поменять: «варн срок 3д» или /warn_expiry 3d, «навсегда» — навечно в досье.
+    log_warned: '⚠️ Рапорт CCG, «{chat}»: метка {count}/{limit} на {name} (id {id}). Выдал: {moderator}'
+    log_warned_for: '⚠️ Рапорт CCG, «{chat}»: метка {count}/{limit} на {name} (id {id}). Выдал: {moderator}. Статья: {reason}'
+    log_unwarned: '🧽 Рапорт CCG, «{chat}»: с {name} (id {id}) стёрли метку, осталось {count}/{limit}. Стёр: {moderator}'
+    log_warn_penalty_muted: '⛓ Рапорт CCG, «{chat}»: {name} (id {id}) собрал {limit}/{limit}, Кокурия {term}. Выдал: {moderator}'
+    log_warn_penalty_banned: '🚷 Рапорт CCG, «{chat}»: {name} (id {id}) собрал {limit}/{limit}, вылетает {term}. Выдал: {moderator}'
+    log_warn_penalty_kicked: '🥾 Рапорт CCG, «{chat}»: {name} (id {id}) собрал {limit}/{limit}, за дверью. Выдал: {moderator}'
+    log_warn_limit: '⚙️ Рапорт CCG, «{chat}»: пакуем на {limit}-й метке. Приказ: {moderator}'
+    log_warn_penalty: '⚙️ Рапорт CCG, «{chat}»: за все метки теперь {penalty}. Приказ: {moderator}'
+    log_warn_expiry: '⚙️ Рапорт CCG, «{chat}»: метки сгорают {term}. Приказ: {moderator}'
+    mute_expired:
+      - '🔓 {name}, срок в Кокурии вышел. Свободен, но CCG помнит.'
+      - '🔓 {name} отсидел своё. Можешь снова открывать рот.'
+    warn_expired: '🧽 {name}, одна метка CCG выцвела. Осталось {count} из {limit}.'
+    log_mute_expired: '🔓 Рапорт CCG, «{chat}»: {name} (id {id}) отсидел срок в Кокурии'
+    log_ban_expired: '🚪 Рапорт CCG, «{chat}»: срок изгнания {name} (id {id}) вышел, может вернуться по ссылке'
+    log_warn_expired: '🧽 Рапорт CCG, «{chat}»: у {name} (id {id}) выцвела метка, осталось {count}/{limit}'

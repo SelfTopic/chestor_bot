@@ -3,13 +3,13 @@
 
 import pytest
 
-from src.bot.dialogs import Dialogs, load_texts
+from src.bot.dialogs import Dialogs
 from src.bot.routers.common.fun import handlers
 
-from .conftest import matches_phrase, message_update, owner_dict, phrase_texts
+from .conftest import matches_phrase, message_update, owner_dict, phrase_texts, texts
 
 GROUP = -100555
-TEXTS = load_texts()
+TEXTS = texts()
 
 
 async def seed_group(feed, telegram, uid: int = 42, first_name: str = "Вася") -> None:

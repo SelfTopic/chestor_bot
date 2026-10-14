@@ -9,6 +9,7 @@ from .duel_session import DuelSessionRepository
 from .ghoul import GhoulRepository
 from .lottery import LotteryRepository
 from .media import MediaRepository
+from .moderation import DueExpiration, ModerationRepository
 from .scheduled_notification import ScheduledNotificationRepository
 from .transfer import TransferRepository
 from .user import UserRepository
@@ -26,6 +27,8 @@ __all__ = [
     "ChatRepository",
     "ChatParticipantRepository",
     "MediaRepository",
+    "DueExpiration",
+    "ModerationRepository",
     "LotteryRepository",
     "RpCommandsRepository",
     "BalancesLogRepository",

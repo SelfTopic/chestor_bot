@@ -1,0 +1,90 @@
+from src.bot.types import ChatRight, ModerationFeature
+
+
+class ModerationError(Exception): ...
+
+
+class AnonymousModerator(ModerationError): ...
+
+
+class TargetMissing(ModerationError): ...
+
+
+class FeatureDisabled(ModerationError):
+    def __init__(self, feature: ModerationFeature) -> None:
+        super().__init__(feature.value)
+        self.feature = feature
+
+
+class ModeratorLacksRight(ModerationError):
+    def __init__(self, right: ChatRight) -> None:
+        super().__init__(right.value)
+        self.right = right
+
+
+class BotLacksRight(ModerationError):
+    def __init__(self, right: ChatRight) -> None:
+        super().__init__(right.value)
+        self.right = right
+
+
+class TargetIsAdmin(ModerationError):
+    def __init__(self, name: str) -> None:
+        super().__init__(name)
+        self.name = name
+
+
+class TargetNotMuted(ModerationError):
+    def __init__(self, name: str) -> None:
+        super().__init__(name)
+        self.name = name
+
+
+class TermOutOfRange(ModerationError):
+    def __init__(self, min_seconds: int, max_seconds: int) -> None:
+        super().__init__(f"{min_seconds}..{max_seconds}")
+        self.min_seconds = min_seconds
+        self.max_seconds = max_seconds
+
+
+class WarnLimitOutOfRange(ModerationError):
+    def __init__(self, min_limit: int, max_limit: int) -> None:
+        super().__init__(f"{min_limit}..{max_limit}")
+        self.min_limit = min_limit
+        self.max_limit = max_limit
+
+
+class TargetHasNoWarnings(ModerationError):
+    def __init__(self, name: str) -> None:
+        super().__init__(name)
+        self.name = name
+
+
+class TargetNotBanned(ModerationError):
+    def __init__(self, name: str) -> None:
+        super().__init__(name)
+        self.name = name
+
+
+class TargetAbsent(ModerationError):
+    def __init__(self, name: str) -> None:
+        super().__init__(name)
+        self.name = name
+
+
+class NotChatOwner(ModerationError): ...
+
+
+class AdminChatNotFound(ModerationError):
+    def __init__(self, query: str) -> None:
+        super().__init__(query)
+        self.query = query
+
+
+class AdminChatIsSelf(ModerationError): ...
+
+
+class AdminChatTaken(ModerationError): ...
+
+
+class AdminChatNotLinked(ModerationError): ...
