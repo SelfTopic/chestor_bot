@@ -77,7 +77,8 @@
     `RoastService` (состояние споров, лимиты, фильтр, журнал `roast_log`) и `prompts/` —
     характер, примеры и обращения в файлах, которые правятся без кода.
   - `link_media/` — видео по ссылкам TikTok/YouTube: поиск ссылок (`links.py`), выбор
-    формата под лимит Bot API (`formats.py`), yt-dlp и запасной tikwm (`downloader.py`),
+    формата под лимит Bot API (`formats.py`), yt-dlp, gallery-dl для фотокаруселей и
+    запасной tikwm (`downloader.py`),
     `LinkMediaService` (параллельность, временная папка) и `MediaToolsUpdater` (суточное
     обновление yt-dlp и gallery-dl в их venv).
   - `search/` — «бот найди»: поиск Tavily (`tavily.py`) и краткий ответ модели по найденным

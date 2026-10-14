@@ -1,10 +1,12 @@
 """Ссылки TikTok/YouTube в тексте и выбор формата yt-dlp, который влезает в лимит Bot API."""
 
+import json
 from typing import Any
 
 import pytest
 
 from src.bot.services.link_media import find_links, pick
+from src.bot.services.link_media.downloader import _gallery_files
 
 MB = 1024 * 1024
 
@@ -92,3 +94,18 @@ def test_nothing_fits_means_too_large() -> None:
     info = {"formats": [fmt("18", vcodec="avc1", acodec="aac", height=360, filesize=60 * MB)]}
 
     assert pick(info, 49 * MB) is None
+
+
+def test_gallery_dl_files_are_told_apart_by_type() -> None:
+    out = json.dumps(
+        [
+            [2, {"id": "7695451669710048520"}],
+            [3, "https://p16.tiktokcdn-eu.com/photo.jpeg", {"type": "image", "num": 1}],
+            [3, "https://v45.tiktokcdn-eu.com/video/tos/sound", {"type": "audio", "num": 0}],
+        ]
+    )
+
+    assert _gallery_files(out) == [
+        ("https://p16.tiktokcdn-eu.com/photo.jpeg", "image"),
+        ("https://v45.tiktokcdn-eu.com/video/tos/sound", "audio"),
+    ]

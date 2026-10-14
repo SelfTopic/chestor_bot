@@ -9,7 +9,7 @@ import pytest
 
 from src.bot.dialogs import Dialogs
 from src.bot.exceptions import LinkMediaError, LinkMediaTooLarge
-from src.bot.services.link_media import LinkMediaService, Video
+from src.bot.services.link_media import LinkMediaService, Slideshow, Video
 
 from .conftest import message_update, phrase_texts
 
@@ -20,11 +20,16 @@ class FakeDownloader:
     def __init__(self) -> None:
         self.urls: list[str] = []
         self.error: Exception | None = None
+        self.images: tuple[str, ...] = ()
 
-    async def download(self, url: str, workdir: Path) -> Video:
+    async def download(self, url: str, workdir: Path) -> Video | Slideshow:
         self.urls.append(url)
         if self.error is not None:
             raise self.error
+        if self.images:
+            audio = workdir / "audio.mp3"
+            audio.write_bytes(b"mp3")
+            return Slideshow(self.images, audio)
         path = workdir / "video.mp4"
         path.write_bytes(b"mp4")
         return Video(path, width=720, height=1280, duration=12, thumbnail=None)
@@ -47,6 +52,23 @@ async def test_link_anywhere_in_the_text_gets_the_video(feed, settle, telegram, 
     assert video["video"] == "<file:video.mp4>"
     assert (video["width"], video["height"], video["duration"]) == ("720", "1280", "12")
     assert "reply_parameters" in video
+
+
+async def test_slideshow_goes_as_albums_of_links_and_then_the_sound(
+    feed, settle, telegram, downloader
+):
+    downloader.images = tuple(f"https://cdn.example/{n}.jpeg" for n in range(11))
+    telegram.results["sendMediaGroup"] = []
+
+    await feed(message_update(LINK))
+    await settle()
+
+    (album,) = telegram.bodies("sendMediaGroup")
+    assert [item["media"] for item in album["media"]] == list(downloader.images[:10])
+    (photo,) = telegram.bodies("sendPhoto")
+    assert photo["photo"] == downloader.images[10]
+    (audio,) = telegram.bodies("sendAudio")
+    assert audio["audio"] == "<file:audio.mp3>"
 
 
 async def test_too_large_video_is_explained(feed, settle, telegram, downloader):

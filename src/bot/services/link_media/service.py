@@ -7,7 +7,7 @@ from pathlib import Path
 from typing import Protocol
 
 from ..ticker import Ticker
-from .downloader import Video, run
+from .downloader import Slideshow, Video, run
 
 logger = logging.getLogger(__name__)
 
@@ -16,7 +16,7 @@ TOOLS = ("yt-dlp[default,curl-cffi]", "gallery-dl")
 
 
 class VideoDownloader(Protocol):
-    async def download(self, url: str, workdir: Path) -> Video: ...
+    async def download(self, url: str, workdir: Path) -> Video | Slideshow: ...
 
 
 class LinkMediaService:
@@ -29,7 +29,7 @@ class LinkMediaService:
         self._slots = asyncio.Semaphore(parallel)
 
     @asynccontextmanager
-    async def video(self, url: str) -> AsyncIterator[Video]:
+    async def media(self, url: str) -> AsyncIterator[Video | Slideshow]:
         async with self._slots:
             with tempfile.TemporaryDirectory(prefix="link_media_") as workdir:
                 yield await self._downloader.download(url, Path(workdir))
