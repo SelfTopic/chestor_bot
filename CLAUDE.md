@@ -154,6 +154,15 @@ generic-миксин она молча отключилась бы.
 игрока (`SEARCH_COOLDOWN`). Сам запрос — в `after_handle`. Включается с `TAVILY_API_KEY` и
 `LLM_API_KEY`; модель — `SEARCH_MODEL`.
 
+**Видео по ссылкам — `ctx.link_media_service`** (`services/link_media/`). На ссылку TikTok или
+YouTube в любом чате бот отвечает роликом (`routers/common/link_media_router.py`, перед
+огрызаниями; скачивание — в `after_handle`). yt-dlp — подпроцессом из своего venv
+`MEDIA_TOOLS_DIR` (`/opt/media-tools/bin` в образе), запасной вариант для TikTok — tikwm.
+Формат выбирает `formats.pick`: лучшее качество до 1080p, которое влезает в 50 МБ Bot API;
+не влезло или длиннее `LINK_MEDIA_MAX_DURATION` — фраза «слишком большое». `MediaToolsUpdater`
+обновляет yt-dlp и gallery-dl в их venv раз в сутки. Без yt-dlp в `MEDIA_TOOLS_DIR` ссылки
+не трогаются.
+
 **Запуск.** Сервис `bot` в `docker-compose.yml` запускает `python -m src.bot`, токен —
 `BOT_TOKEN`. `ENV=DEV` — polling, иначе вебхук на 8999 (`WEBHOOK_URL`, `WEBHOOK_SECRET`).
 Тестовый стенд — тот же сервис в отдельном проекте (`docker compose -p chestor_test …`)

@@ -10,6 +10,7 @@ from .common import (
     DepRouter,
     FunRouter,
     HelpRouter,
+    LinkMediaRouter,
     ProfileRouter,
     RaceProfileRouter,
     RoastRouter,
@@ -45,6 +46,7 @@ class RootRouter(BaseRouter[AppContext]):
         TransferRouter,
         DepRouter,
         FunRouter,
+        LinkMediaRouter,
         # Последним: огрызается только на то, что не забрала ни одна команда.
         RoastRouter,
     )
