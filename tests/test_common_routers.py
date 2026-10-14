@@ -9,8 +9,11 @@ from pathlib import Path
 import pytest
 from sqlalchemy import update
 
+from src.bot.config import game_config
 from src.bot.dialogs import Dialogs
 from src.bot.repositories import GhoulRepository, UserRepository
+from src.bot.services.ghoul_game.lottery import COLOR_TO_FOLDER
+from src.bot.services.lottery_video_genertor import LotteryGenerator
 from src.bot.services.wikipedia import WikipediaSummary
 from src.database.models import Chat
 from src.bot.routers.common.anime.guard import cut_guard
@@ -154,8 +157,22 @@ class TestDep:
         (reply,) = await send("депнуть красный 100")
         assert matches_phrase(reply, "lottery.not_enough_money")
 
+    @pytest.fixture
+    def lottery_videos(self, tmp_path, monkeypatch):
+        """Видео лотереи в git не лежат: генератор делает по крошечному ролику на цвет."""
+        LotteryGenerator(
+            output_dir=tmp_path / "videos" / "lottery",
+            videos_per_color=1,
+            video_size=(96, 96),
+            fps=4,
+            spin_duration=0.5,
+            pause_duration=0.25,
+        ).generate_all()
+        assert {p.parent.name for p in tmp_path.rglob("*.mp4")} == set(COLOR_TO_FOLDER.values())
+        monkeypatch.setattr(game_config, "path_to_assets", str(tmp_path))
+
     async def test_bet_changes_balance_and_result_arrives_later(
-        self, feed, telegram, session_factory
+        self, feed, telegram, session_factory, lottery_videos
     ):
         await seed(session_factory, 42, balance=1000)
         # гифка длительностью 0 с: итог придёт через duration + 1 = 1 секунду
