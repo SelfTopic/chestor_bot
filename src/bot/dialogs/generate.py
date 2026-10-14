@@ -104,7 +104,11 @@ def render_tree(placeholders: dict[str, frozenset[str]]) -> str:
 
 
 def main() -> None:
-    TREE_PATH.write_text(render_tree(signatures(load_texts())), "utf-8")
+    tree = render_tree(signatures(load_texts()))
+    if TREE_PATH.read_text("utf-8") == tree:
+        print(f"Без изменений: {TREE_PATH}")
+        return
+    TREE_PATH.write_text(tree, "utf-8")
     print(f"Записано: {TREE_PATH}")
 
 

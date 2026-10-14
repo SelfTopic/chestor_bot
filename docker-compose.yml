@@ -49,7 +49,12 @@ services:
   bot:
     <<: *app-image
     tty: true
-    command: ["poetry", "run", "python", "-m", "src.bot"]
+    # Перед ботом — дерево фраз из YAML: код смонтирован томом, так что новый tree.py
+    # появляется и в репозитории, его остаётся закоммитить.
+    command:
+      - sh
+      - -c
+      - poetry run python -m src.bot.dialogs.generate && exec poetry run python -m src.bot
     env_file:
       - .env
     environment:
