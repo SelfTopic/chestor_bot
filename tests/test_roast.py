@@ -108,6 +108,22 @@ async def test_busy_provider_is_retried(feed, settle, telegram, llm):
     assert len(llm.asked(GENERATOR)) == 2
 
 
+async def test_question_about_the_bot_gets_the_commands_guide_and_keeps_punctuation(
+    feed, settle, telegram, llm
+):
+    llm.reply = "Сам разберёшься. /anime 1 12 18:37 18:47 — отрывок."
+
+    await feed(message_update("бот как скачать кусок серии аниме", chat=GROUP))
+    await settle()
+
+    assert telegram.sent == [llm.reply]
+    assert RoastPrompts().commands in llm.asked(GENERATOR)[0]
+
+    await feed(insult("сам ты бомжиха"))
+    await settle()
+    assert RoastPrompts().commands not in llm.asked(GENERATOR)[1]
+
+
 async def test_reply_to_bots_message_about_another_player_needs_a_mention(
     feed, settle, telegram, llm, session_factory
 ):

@@ -33,6 +33,17 @@ LOG_RETENTION = timedelta(days=180)
 MENTION = re.compile(
     r"\b(?:бот|честор)(?:а|у|ом|е|ы|ов|ам|ами|ах)?\b", re.IGNORECASE
 )
+# Вопрос о самом боте: к запросу добавляется справка по командам. Только к таким
+# сообщениям — справка удлиняет запрос, а платится каждый токен.
+HELP = re.compile(
+    r"команд|умееш|помо[гщ]|подскаж|туториал|научи|объясни|как\b.{0,30}?\b(?:игра|получ|сдела"
+    r"|купи|прокач|стать|начат|зараб|работа|пользова|качат|скача|узна|вызв|перевест|кинуть)"
+    r"|что такое"
+    r"|что (?:ты )?(?:можешь|делаешь)|зачем ты|где (?:взять|найти)",
+    re.IGNORECASE,
+)
+HELP_MAX_TOKENS = 300
+ROAST_MAX_TOKENS = 120
 # Смех и междометия в реплае боту: отвечать на них нечем.
 TRIVIAL = re.compile(
     r"^[\W\d_]*$|^\W*(?:[хаъ]{3,}|лол|кек|ору|бля|ну|пон|ок|жесть|а+|о+|э+|м+|чт?о+)[\W]*$",
@@ -237,14 +248,24 @@ class RoastService:
         chat = render_chat(incoming, history)
         facts_text = "; ".join(fact_lines(facts, argument.turns))
         request = self._request(chat, facts_text, good)
+        help_asked = HELP.search(incoming.text) is not None
+        if help_asked:
+            request = f"{request}\n\n{self._prompts.commands}"
 
         if not self._spend():
             return RoastOutcome()
         started = time.monotonic()
-        reply = await self._generate(request)
+        reply = await self._generate(
+            request, max_tokens=HELP_MAX_TOKENS if help_asked else ROAST_MAX_TOKENS
+        )
         latency_ms = int((time.monotonic() - started) * 1000)
 
-        reply = chat_style(reply) if reply else None
+        # В справке пунктуация нужна: без двоеточий и точек ломаются команды вроде
+        # «/anime 1 12 18:37 18:47».
+        if reply:
+            reply = reply.strip().strip("\"'«»") if help_asked else chat_style(reply)
+        else:
+            reply = None
         filtered = reply is not None and BANNED.search(reply) is not None
         async with self._session_factory() as session:
             entry = await RoastRepository(session).add(
@@ -313,11 +334,15 @@ class RoastService:
             .replace("{facts}", f"Что ты знаешь о собеседнике: {facts}" if facts else "")
         )
 
-    async def _generate(self, request: str) -> str | None:
+    async def _generate(self, request: str, *, max_tokens: int) -> str | None:
         try:
             async with asyncio.timeout(self._timeout):
                 return await self._llm.complete(
-                    self._model, self._prompts.persona, request, max_tokens=120, temperature=0.9
+                    self._model,
+                    self._prompts.persona,
+                    request,
+                    max_tokens=max_tokens,
+                    temperature=0.9,
                 )
         except (LlmError, TimeoutError):
             logger.warning("Модель огрызаний не ответила", exc_info=True)
