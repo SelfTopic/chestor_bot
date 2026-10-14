@@ -1,5 +1,8 @@
 import asyncio
+import contextlib
 import logging
+import os
+import signal
 from pathlib import Path
 
 from src.bot.exceptions import MediaToolError
@@ -16,19 +19,33 @@ TOOLS = ("yt-dlp[default,curl-cffi]", "gallery-dl")
 
 
 async def run(*args: str, timeout: float = TOOL_TIMEOUT) -> str:
+    # Своя группа процессов: yt-dlp запускает ffmpeg, и убивать нужно обоих, а не только
+    # yt-dlp. Группы других скачиваний это не задевает.
     process = await asyncio.create_subprocess_exec(
-        *args, stdout=asyncio.subprocess.PIPE, stderr=asyncio.subprocess.PIPE
+        *args,
+        stdout=asyncio.subprocess.PIPE,
+        stderr=asyncio.subprocess.PIPE,
+        start_new_session=True,
     )
     try:
         out, err = await asyncio.wait_for(process.communicate(), timeout)
     except TimeoutError:
-        process.kill()
-        await process.wait()
+        await _kill(process)
         raise MediaToolError(f"timeout: {' '.join(args[:3])}") from None
+    except asyncio.CancelledError:
+        # Отменённая задача не должна оставить скачивание работать сиротой.
+        await _kill(process)
+        raise
     if process.returncode != 0:
         lines = err.decode(errors="replace").strip().splitlines()
         raise MediaToolError(lines[-1] if lines else f"exit code {process.returncode}")
     return out.decode(errors="replace")
+
+
+async def _kill(process: asyncio.subprocess.Process) -> None:
+    with contextlib.suppress(ProcessLookupError):
+        os.killpg(process.pid, signal.SIGKILL)
+    await process.wait()
 
 
 # yt-dlp и gallery-dl живут в своём venv и обновляются в нём: сайты ломают скачивание
