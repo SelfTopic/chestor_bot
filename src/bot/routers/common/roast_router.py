@@ -12,6 +12,8 @@ GROUP_CHATS = ("group", "supergroup")
 
 class RoastHandler(MessageHandler[AppContext[TextUserMessage]]):
     query = HasText() & HasUser()
+    # Видит каждое сообщение группы: в статистике команд это было бы любое сообщение.
+    counted = False
 
     # Модель отвечает секундами: ждать её в handle значило бы держать сессию БД и слот
     # диспетчера, поэтому сам запрос — в after_handle.

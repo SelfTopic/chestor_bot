@@ -48,7 +48,12 @@ class EpisodeCaption(BaseFilter[AppContext[Any]]):
 FORWARDED = HasVideo() & HasForwardOrigin() & HasUser() & FromUserbot()
 
 
-class EpisodeForwardedHandler(MessageHandler[AppContext[ForwardedVideoMessage]]):
+# Служебный обмен с юзерботом, а не игроки: в статистику команд не идёт.
+class UserbotTraffic:
+    counted = False
+
+
+class EpisodeForwardedHandler(UserbotTraffic, MessageHandler[AppContext[ForwardedVideoMessage]]):
     caption = EpisodeCaption()
     query = FORWARDED & caption
 
@@ -66,7 +71,7 @@ class EpisodeForwardedHandler(MessageHandler[AppContext[ForwardedVideoMessage]])
         logger.info("Серия %s×%s: пост %s канала %s", season, episode, origin.message_id, origin.chat.id)
 
 
-class EditForwardedHandler(MessageHandler[AppContext[ForwardedVideoMessage]]):
+class EditForwardedHandler(UserbotTraffic, MessageHandler[AppContext[ForwardedVideoMessage]]):
     query = FORWARDED
 
     async def handle(self) -> None:
@@ -87,7 +92,7 @@ class EditForwardedHandler(MessageHandler[AppContext[ForwardedVideoMessage]]):
 
 # Ответ юзерботу, а не людям: по нему он досылает посты, которые не дошли до бота
 # (например, пришли, пока бот перезапускался и выбросил накопившиеся апдейты).
-class SyncHandler(MessageHandler[AppContext[TextMessage]]):
+class SyncHandler(UserbotTraffic, MessageHandler[AppContext[TextMessage]]):
     query = Command("userbot_sync", args_count=0) & FromUserbot()
 
     async def handle(self) -> None:

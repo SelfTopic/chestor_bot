@@ -14,6 +14,7 @@ from .scheduled_notification import ScheduledNotification
 from .transfer import Transfer
 from .user import User
 from .user_cooldowns import UserCooldown
+from .analytics import BotEvent, ChatActivity
 from .anime_episode import AnimeEpisode
 from .ghoul_edit import GhoulEdit
 from .link_media import LinkMediaCache
@@ -25,6 +26,8 @@ from .moderation import ModerationAction, ModerationSettings, ModerationWarning
 __all__ = [
     "ActiveBattle",
     "AnimeEpisode",
+    "BotEvent",
+    "ChatActivity",
     "Base",
     "GhoulEdit",
     "LinkMediaCache",
