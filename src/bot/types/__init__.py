@@ -1,6 +1,7 @@
 from .coffee import CoffeeResult
 from .dep import DepColor, DepResult
 from .kagune import KaguneType
+from .link_media import CachedMedia, CachedSlideshow, CachedVideo
 from .media import MediaCollection, MediaDownloadType, MediaSaveRequest, VideoCutJob
 from .moderation import (
     ChatModeration,
@@ -18,6 +19,9 @@ from .register_ghoul import RegisterGhoulType
 from .time_components import Duration, TimeComponents
 
 __all__ = [
+    "CachedMedia",
+    "CachedSlideshow",
+    "CachedVideo",
     "KaguneType",
     "RegisterGhoulType",
     "TimeComponents",

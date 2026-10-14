@@ -44,7 +44,8 @@
   `SyncEntitiesMiddleware` (апсерт `User`/`Chat` в отдельной сессии), `BanMiddleware`.
 - **`routers/`** — только приём апдейтов и ответы. `RootRouter` в `routers/__init__.py`.
   - `common/` — команды, не завязанные на расу (профиль, баланс, переводы, вордли, RP,
-    лотерея, аниме, `fun/`: «бот выбери/кто/число», «бот найди», калькулятор). `roast_router.py` стоит
+    лотерея, аниме, `fun/`: «бот выбери/кто/число», «бот найди», калькулятор).
+    `link_media_router.py` отвечает роликом на ссылку TikTok/YouTube. `roast_router.py` стоит
     последним в `RootRouter`: огрызается нейросетью на то, что не забрала ни одна команда.
   - `ghoul_routers/` — механика гуля: голод, статы, кагуне, бои с мобами, дуэли (`duel/`),
     показ боя (`battle_text.py`, `battle_text_generator.py`).
@@ -75,6 +76,12 @@
   - `roast/` — огрызания через нейросеть:
     `RoastService` (состояние споров, лимиты, фильтр, журнал `roast_log`) и `prompts/` —
     характер, примеры и обращения в файлах, которые правятся без кода.
+  - `link_media/` — видео по ссылкам TikTok/YouTube: поиск ссылок (`links.py`), выбор
+    формата под лимит Bot API (`formats.py`), yt-dlp, gallery-dl для фотокаруселей и
+    запасной tikwm (`downloader.py`),
+    `LinkMediaService` (параллельность, временная папка, кэш `file_id` по id поста в
+    `link_media_cache` своими сессиями) и `MediaToolsUpdater` (суточное
+    обновление yt-dlp и gallery-dl в их venv).
   - `search/` — «бот найди»: поиск Tavily (`tavily.py`) и краткий ответ модели по найденным
     фрагментам; `SearchService` держит общий дневной лимит и кулдаун игрока в памяти,
     инструкция модели — `prompts/system.md`.

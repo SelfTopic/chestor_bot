@@ -1202,6 +1202,11 @@ class _KaguneDialogs:
         return Line("kagune.info", {})
 
 
+class _LinkMediaDialogs:
+    def too_large(self) -> Line:
+        return Line("link_media.too_large", {})
+
+
 class _LotteryDialogs:
     def bet_out_of_range(self, *, max_bet: object, min_bet: object) -> Line:
         return Line(
@@ -3419,6 +3424,7 @@ class _Dialogs:
     fun = _FunDialogs()
     ghoul = _GhoulDialogs()
     kagune = _KaguneDialogs()
+    link_media = _LinkMediaDialogs()
     lottery = _LotteryDialogs()
     mob = _MobDialogs()
     moderation = _ModerationDialogs()
@@ -3769,6 +3775,7 @@ PLACEHOLDERS: dict[str, frozenset[str]] = {
     "kagune.upgrade.no_user": frozenset(),
     "kagune.upgrade.not_owned": frozenset(),
     "kagune.upgrade.unknown_type": frozenset(),
+    "link_media.too_large": frozenset(),
     "lottery.bet_out_of_range": frozenset({"max_bet", "min_bet"}),
     "lottery.failed": frozenset(),
     "lottery.lose": frozenset({"balance", "bet", "chosen_color", "winning_color"}),

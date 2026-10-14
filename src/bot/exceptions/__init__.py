@@ -15,6 +15,7 @@ from .media_download import (
     ValidationMediaError,
 )
 from .ghoul import GhoulNotFound, KaguneAlreadyOwned, KaguneNotOwned, LastKaguneType
+from .link_media import LinkMediaError, LinkMediaTooLarge
 from .lottery import (
     BetOutOfRange,
     LotteryError,
@@ -98,6 +99,8 @@ __all__ = [
     "KaguneAlreadyOwned",
     "KaguneNotOwned",
     "LastKaguneType",
+    "LinkMediaError",
+    "LinkMediaTooLarge",
     "LotteryError",
     "BetOutOfRange",
     "NotEnoughMoneyForBet",

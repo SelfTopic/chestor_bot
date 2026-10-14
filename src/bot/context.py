@@ -51,6 +51,7 @@ from .services.media_paths import media_for, random_file
 from .services.moderation import ModerationService
 from .services.notify import Notifier, SelfrotBotNotifier
 from .services.quiz import QuizService
+from .services.link_media import LinkMediaService
 from .services.roast import RoastService
 from .services.search import SearchService
 
@@ -77,6 +78,7 @@ class AppContext(BaseContext[TEvent]):
     ghoul_quiz_service: QuizService
     roast_service: RoastService
     search_service: SearchService
+    link_media_service: LinkMediaService
     _administrators: list[ChatMember] | None = field(
         default=None, init=False, repr=False, compare=False
     )

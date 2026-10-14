@@ -2,6 +2,7 @@ import asyncio
 import logging
 import os
 import sys
+from pathlib import Path
 
 from ghoul_quiz import DEFAULT_BASE_URL as DEFAULT_QUIZ_URL
 from selfrot import BaseDispatcher
@@ -36,6 +37,7 @@ from .services.notification_ticker import NotificationTicker
 from .services.notify import NotifyError, SelfrotBotNotifier
 from .services.quiz import QuizService
 from .services.llm import LlmClient
+from .services.link_media import Downloader, LinkMediaService, MediaToolsUpdater
 from .services.roast import RoastPrompts, RoastService
 from .services.search import SearchService, TavilyClient
 
@@ -44,6 +46,8 @@ logger = logging.getLogger(__name__)
 WEBHOOK_PORT = 8999
 # Сообщение в Telegram — до 4096 символов, остальное место под текст фразы.
 ERROR_LIMIT = 3500
+# Bot API принимает от бота файлы до 50 МБ; запас — на служебные поля multipart.
+UPLOAD_LIMIT = 49 * 1024 * 1024
 
 
 def error_line(exc: Exception) -> Line:
@@ -131,6 +135,13 @@ class Dispatcher(BaseDispatcher[AppContext]):
             cooldown=settings.SEARCH_COOLDOWN,
             timeout=settings.SEARCH_TIMEOUT,
         )
+        tools = Path(settings.MEDIA_TOOLS_DIR)
+        self.link_media_service = LinkMediaService(
+            Downloader(tools, UPLOAD_LIMIT, settings.LINK_MEDIA_MAX_DURATION),
+            session_factory,
+            enabled=(tools / "yt-dlp").exists(),
+        )
+        self.media_tools_updater = MediaToolsUpdater(tools)
         self.duel_ticker = DuelTicker(
             session_factory=session_factory,
             bot=self.api,
@@ -165,6 +176,7 @@ class Dispatcher(BaseDispatcher[AppContext]):
             self.quiz_service,
             self.roast_service,
             self.search_service,
+            self.link_media_service,
         )
 
     async def on_startup(self) -> None:
@@ -175,6 +187,8 @@ class Dispatcher(BaseDispatcher[AppContext]):
         await self.notification_ticker.start()
         await self.moderation_ticker.start()
         await self.duel_ticker.start()
+        if self.link_media_service.enabled:
+            await self.media_tools_updater.start()
         self.roast_service.bot_id = (await self.api.get_me()).id
         await self.roast_service.cleanup()
 
@@ -183,6 +197,7 @@ class Dispatcher(BaseDispatcher[AppContext]):
         await self.notification_ticker.stop()
         await self.moderation_ticker.stop()
         await self.duel_ticker.stop()
+        await self.media_tools_updater.stop()
         await self.quiz_service.close()
         await self.search_service.close()
         await self.llm.close()

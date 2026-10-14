@@ -44,6 +44,12 @@ RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
 
 COPY --from=builder /opt/poetry-venvs /opt/poetry-venvs
 
+# yt-dlp и gallery-dl (видео по ссылкам) — в своём venv: бот сам обновляет их раз в сутки,
+# не трогая свои зависимости из poetry.lock.
+RUN --mount=type=cache,target=/root/.cache/pip \
+    python -m venv /opt/media-tools \
+    && /opt/media-tools/bin/pip install "yt-dlp[default,curl-cffi]" gallery-dl
+
 COPY . .
 
 CMD ["poetry", "run", "python", "-m", "src.bot"]
