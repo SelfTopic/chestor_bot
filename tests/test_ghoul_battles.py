@@ -3,7 +3,6 @@
 побеждает), моб-громила (игрок проигрывает) или зеркало без урона (ничья)."""
 
 import pytest
-from dependency_injector import providers
 
 from src.bot.config import game_config
 from src.bot.dialogs import Dialogs
@@ -66,9 +65,7 @@ HARMLESS_PLAYER = dict(
 @pytest.fixture
 def mob(dispatcher):
     def _set(kind: str) -> None:
-        dispatcher.container.mob_service.override(
-            providers.Object(FakeMobService(kind))
-        )
+        dispatcher.mob_service = FakeMobService(kind)
 
     return _set
 

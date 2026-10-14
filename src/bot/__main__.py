@@ -10,7 +10,6 @@ from selfrot.middleware import LoggingMiddleware
 from selfrot.types import Message, Update
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 
-from src.bot.containers import Container
 from src.bot.dialogs import Dialogs, Line
 from src.bot.exceptions import (
     ChatNotFound,
@@ -22,6 +21,14 @@ from src.bot.exceptions import (
     QuizSessionMissing,
     UserNotFound,
 )
+from src.bot.services import (
+    MobService,
+    RpCommandsService,
+    VideoCutterService,
+    VideoWorker,
+    WikipediaService,
+    WordleService,
+)
 from src.bot.services.dialog import DialogService
 from src.config import settings
 from src.database import session_factory as default_session_factory
@@ -32,6 +39,7 @@ from .logs import setup_logging
 from .middlewares import BanMiddleware, DatabaseMiddleware, SyncEntitiesMiddleware
 from .routers import RootRouter
 from .routers.ghoul_routers.duel import DuelTicker
+from .session_services import rp_commands_repository
 from .services.moderation import ModerationTicker
 from .services.notification_ticker import NotificationTicker
 from .services.notify import NotifyError, SelfrotBotNotifier
@@ -99,8 +107,14 @@ class Dispatcher(BaseDispatcher[AppContext]):
         super().__init__(token)
         self.dialog_service = DialogService(on_broken=self.report_broken_texts)
         self.alerts: set[asyncio.Task[None]] = set()
-        self.container = Container()
         self.session_factory = session_factory
+        # Живут весь процесс: кэши RP-команд, партии вордли, очередь нарезки видео.
+        self.rp_commands_service = RpCommandsService(rp_commands_repository)
+        self.wordle_service = WordleService()
+        self.wikipedia_service = WikipediaService()
+        self.mob_service = MobService()
+        self.video_cutter_service = VideoCutterService()
+        self.video_worker = VideoWorker(self.video_cutter_service)
         self.notification_ticker = NotificationTicker(
             session_factory=session_factory,
             notifier=SelfrotBotNotifier(self.api),
@@ -153,8 +167,8 @@ class Dispatcher(BaseDispatcher[AppContext]):
         self.duel_ticker = DuelTicker(
             session_factory=session_factory,
             bot=self.api,
-            container=self.container,
             dialog_service=self.dialog_service,
+            mob_service=self.mob_service,
         )
 
     def report_broken_texts(self, error: Exception) -> None:
@@ -178,21 +192,26 @@ class Dispatcher(BaseDispatcher[AppContext]):
         return self.context(
             update,
             self.api,
-            self.dialog_service,
-            self.container,
-            self.session_factory,
-            self.quiz_service,
-            self.roast_service,
-            self.search_service,
-            self.link_media_service,
-            self.music_service,
+            dialog_service=self.dialog_service,
+            session_factory=self.session_factory,
+            ghoul_quiz_service=self.quiz_service,
+            roast_service=self.roast_service,
+            search_service=self.search_service,
+            link_media_service=self.link_media_service,
+            music_service=self.music_service,
+            rp_commands_service=self.rp_commands_service,
+            wordle_service=self.wordle_service,
+            wikipedia_service=self.wikipedia_service,
+            mob_service=self.mob_service,
+            video_cutter_service=self.video_cutter_service,
+            video_worker=self.video_worker,
         )
 
     async def on_startup(self) -> None:
         # Перед любым режимом старый вебхук снимается (иначе polling получит 409),
         # накопившиеся апдейты отбрасываются.
         await self.api.delete_webhook(drop_pending_updates=True)
-        await self.container.video_worker().start()
+        await self.video_worker.start()
         await self.notification_ticker.start()
         await self.moderation_ticker.start()
         await self.duel_ticker.start()
@@ -202,7 +221,7 @@ class Dispatcher(BaseDispatcher[AppContext]):
         await self.roast_service.cleanup()
 
     async def on_shutdown(self) -> None:
-        await self.container.video_worker().stop()
+        await self.video_worker.stop()
         await self.notification_ticker.stop()
         await self.moderation_ticker.stop()
         await self.duel_ticker.stop()

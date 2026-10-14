@@ -1,0 +1,9 @@
+[Unit]
+Description=chestor_bot: тестовый стенд из последней запушенной ветки
+After=network-online.target docker.service
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+EnvironmentFile=/etc/chestor-stand.env
+ExecStart=/usr/local/bin/chestor-stand-deploy

@@ -1,15 +1,9 @@
 from dataclasses import dataclass
-from typing import Any
-
-from src.bot.containers import Container
 from src.bot.services import BattleRecordService, DuelService
 from src.bot.services.dialog import DialogService
+from src.bot.session_services import SessionServices
 
-from ....context import AppContext
-from ....repositories.fight import FightRepository
 from ....services.battle import BattleService
-from ....services.level_up import LevelUpService
-from ....services.notify import Notifier
 from ..battle_text_generator import BattleTextGenerator
 
 
@@ -22,38 +16,11 @@ class DuelServices:
     dialogs: DialogService
 
     @classmethod
-    def from_ctx(cls, ctx: AppContext[Any]) -> "DuelServices":
+    def from_services(cls, services: SessionServices) -> "DuelServices":
         return cls(
-            battle=ctx.battle_service,
-            battle_text_generator=BattleTextGenerator(dialog_service=ctx.dialog_service),
-            battle_record_service=ctx.battle_record_service,
-            duel_service=ctx.duel_service,
-            dialogs=ctx.dialog_service,
-        )
-
-    @classmethod
-    def from_container(
-        cls, container: Container, dialog_service: DialogService, notifier: Notifier
-    ) -> "DuelServices":
-        user_service = container.user_service()
-        ghoul_service = container.ghoul_service()
-        battle_record_service = container.battle_record_service()
-        duel_service = container.duel_service()
-        battle = BattleService(
-            engine=container.battle_engine(),
-            fights=FightRepository(container.db_session(), container.ghoul_repository()),
-            ghoul_service=ghoul_service,
-            user_service=user_service,
-            level_up_service=LevelUpService(
-                user_service, ghoul_service, dialog_service, notifier
-            ),
-            battle_record_service=battle_record_service,
-            duel_service=duel_service,
-        )
-        return cls(
-            battle=battle,
-            battle_text_generator=BattleTextGenerator(dialog_service=dialog_service),
-            battle_record_service=battle_record_service,
-            duel_service=duel_service,
-            dialogs=dialog_service,
+            battle=services.battle_service,
+            battle_text_generator=BattleTextGenerator(dialog_service=services.dialog_service),
+            battle_record_service=services.battle_record_service,
+            duel_service=services.duel_service,
+            dialogs=services.dialog_service,
         )

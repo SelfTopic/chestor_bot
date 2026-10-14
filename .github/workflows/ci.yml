@@ -1,0 +1,65 @@
+name: CI
+
+on:
+  push:
+  pull_request:
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  checks:
+    name: ruff, pyright, selfrot check, pytest
+    runs-on: ubuntu-24.04
+    env:
+      BOT_TOKEN: "123456:TEST"
+      POSTGRES_DATABASE: test
+      POSTGRES_USERNAME: test
+      POSTGRES_PASSWORD: test
+      POSTGRES_HOSTNAME: localhost
+      PGADMIN_DEFAULT_EMAIL: test@example.org
+      PGADMIN_DEFAULT_PASSWORD: test
+      GHOUL_QUIZ_API_KEY: test
+    steps:
+      - uses: actions/checkout@v7
+
+      - run: pipx install poetry==2.3.4
+
+      - uses: actions/setup-python@v7
+        with:
+          python-version: "3.11"
+          cache: poetry
+
+      - run: sudo apt-get update && sudo apt-get install -y --no-install-recommends ffmpeg
+
+      - run: poetry install --no-interaction --no-root
+
+      - run: poetry run pip install pyright==1.1.414
+
+      - run: poetry run ruff check src/bot tests
+      - run: poetry run pyright src/bot tests
+      - run: poetry run selfrot check --strict src.bot.__main__:Dispatcher
+      - run: poetry run python -m pytest tests -n auto
+
+  image:
+    name: Docker image
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v7
+      - uses: docker/setup-buildx-action@v4
+      - uses: docker/build-push-action@v7
+        with:
+          context: .
+          push: false
+          load: true
+          tags: chestor-bot:ci
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+      - run: |
+          docker run --rm --entrypoint sh chestor-bot:ci -c '
+            /opt/media-tools/bin/yt-dlp --version &&
+            /opt/media-tools/bin/gallery-dl --version &&
+            ffmpeg -version | head -1 &&
+            poetry run python -c "import shazamio, selfrot; print(\"ok\")"
+          '

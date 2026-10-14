@@ -8,10 +8,11 @@ from selfrot.exceptions import TelegramAPIError
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 
-from src.bot.containers import Container, session_context
 from src.bot.dialogs import Dialogs
 from src.bot.game_configs import DUEL_CONFIG
+from src.bot.services import MobService
 from src.bot.services.dialog import DialogService
+from src.bot.session_services import SessionServices, session_context
 from src.database.models import DuelSession
 
 from ....services.notify import SelfrotBotNotifier
@@ -37,16 +38,16 @@ class DuelTicker(Ticker):
         self,
         session_factory: async_sessionmaker[AsyncSession],
         bot: Bot,
-        container: Container,
         dialog_service: DialogService,
+        mob_service: MobService,
         interval_seconds: float = 1.0,
         clock: Callable[[], float] = time.monotonic,
     ) -> None:
         super().__init__(interval_seconds)
         self._session_factory = session_factory
         self._bot = bot
-        self._container = container
         self._dialog_service = dialog_service
+        self._mob_service = mob_service
         self.clock = clock
         self._seen: dict[tuple[int, str], float] = {}
 
@@ -82,10 +83,10 @@ class DuelTicker(Ticker):
         async with self._session_factory() as session:
             token = session_context.set(session)
             try:
-                yield DuelServices.from_container(
-                    self._container,
-                    self._dialog_service,
-                    SelfrotBotNotifier(self._bot),
+                yield DuelServices.from_services(
+                    SessionServices(
+                        self._dialog_service, SelfrotBotNotifier(self._bot), self._mob_service
+                    )
                 )
                 await session.commit()
             finally:

@@ -50,8 +50,12 @@ Postgres + SQLAlchemy (async), миграции Alembic, запуск в Docker 
 
 **Зависимости — через `AppContext`** (`context.py`). Сервисы там — типизированные ленивые
 `cached_property`, один экземпляр на апдейт: `self.ctx.transfer_service`, `self.ctx.ghoul_service`.
-Хендлеры **никогда** не обращаются к `ctx.container`. Нужен новый сервис — добавь свойство
-в `AppContext` (и провайдер в `containers.py`, если сервис собирается контейнером).
+Всё, что стоит на сессии БД (репозитории и сервисы на них), объявлено один раз в
+`SessionServices` (`session_services.py`): `AppContext` её наследует, а вне апдейта (тикер
+дуэлей) объект создаётся сам. Нужен новый сервис на сессии — одно свойство в
+`SessionServices`. Процессный сервис (кэш, очередь, соединение) создаётся в `Dispatcher` и
+передаётся полем `AppContext` из `create_context`; тесты подменяют его присваиванием
+`dispatcher.<сервис> = …`.
 
 - Сервисы привязаны к сессии БД, которую ставит `DatabaseMiddleware`. В `after_handle` /
   `defer` сессия уже закрыта, session-bound сервисы там не использовать.
@@ -81,7 +85,7 @@ Postgres + SQLAlchemy (async), миграции Alembic, запуск в Docker 
 
 **Где что лежит — правило без исключений** (его проверяет `tests/test_layout.py`):
 
-- **Слои по ролям** — корень `src/bot` (`context.py`, `bot.py`, `containers.py`, `config.py`,
+- **Слои по ролям** — корень `src/bot` (`context.py`, `bot.py`, `session_services.py`, `config.py`,
   `game_configs.py`, `logs.py`), `services/`, `repositories/`, `middlewares/`, `types/`,
   `exceptions/`, `utils/`, `dialogs/`. Сервис глобален, потому что он сервис, сколько бы роутеров им ни
   пользовалось. Слои не импортируют `routers/`; собирает всё только `__main__.py`.
@@ -194,7 +198,8 @@ shazamio (`recognize.py`, звук сначала сводится ffmpeg) и п
 **Запуск.** Сервис `bot` в `docker-compose.yml` запускает `python -m src.bot`, токен —
 `BOT_TOKEN`. `ENV=DEV` — polling, иначе вебхук на 8999 (`WEBHOOK_URL`, `WEBHOOK_SECRET`).
 Тестовый стенд — тот же сервис в отдельном проекте (`docker compose -p chestor_test …`)
-со своим `.env`: токен тестового бота. Как поднять бота в облачной сессии и проверить
+со своим `.env`: токен тестового бота. Стенд сам ставит последнюю запушенную ветку после
+зелёного CI и пишет об этом в Telegram — `docs/dev/stand.md` (`deploy/stand/`). Как поднять бота в облачной сессии и проверить
 изменения вживую — `docs/dev/dev-session.md`.
 
 ## Проверки
@@ -231,17 +236,18 @@ python -m pytest tests -n auto           # параллельно, ~1 мин
   делают тест дерева и проверка при запуске.
 - `GhoulService.get()` считает `telegram_id <= 666000` внутренним id гуля, поэтому в тестах
   гулей бери telegram_id больше, например `700001`.
-- Медиа (`src/assets`: гифки, видео) почти целиком не в git. В чистом клоне тесты, которым
-  нужен реальный файл (лотерея: `TestDep::test_bet_changes_balance_and_result_arrives_later`),
-  падают, потому что файла нет. Это ожидаемо.
+- Медиа (`src/assets`: гифки, видео) почти целиком не в git, поэтому тест не полагается на
+  файлы оттуда: нужное создаёт сам во временной папке (лотерея — крошечными роликами
+  `LotteryGenerator`). Все тесты проходят в чистом клоне без `.env`.
+- **CI** (`.github/workflows/ci.yml`) на каждый пуш гоняет те же проверки на Python 3.11, как в
+  образе, и собирает Docker-образ с проверкой yt-dlp, gallery-dl, ffmpeg и shazamio внутри.
+  После пуша результат смотреть `gh run watch`; «готово» — только при зелёном CI.
 
 Типизация — pyright в режиме standard. Значения из нетипизированных источников (`dict[str, Any]`,
 JSON, `.get()`) сужай через `isinstance` / `assert`, прежде чем передавать в типизированный код.
 
 ## Открытые задачи
 
-- `dependency-injector`: после ухода aiogram контейнер — просто список фабрик под
-  `AppContext`. Можно собирать сервисы прямо в `AppContext` и убрать зависимость.
 - `/ban_bot` разбирает срок своим `BanService.parse_duration` (`7d`), а не `DurationParser`,
   которым сроки читает модерация чатов («30 мин», `2h`, `1d`).
 - `utils/generate_lottery_video.py` не импортируется, но это скрипт
