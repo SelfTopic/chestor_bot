@@ -52,6 +52,7 @@ from .services.moderation import ModerationService
 from .services.notify import Notifier, SelfrotBotNotifier
 from .services.quiz import QuizService
 from .services.link_media import LinkMediaService
+from .services.music import MusicService
 from .services.roast import RoastService
 from .services.search import SearchService
 
@@ -79,6 +80,7 @@ class AppContext(BaseContext[TEvent]):
     roast_service: RoastService
     search_service: SearchService
     link_media_service: LinkMediaService
+    music_service: MusicService
     _administrators: list[ChatMember] | None = field(
         default=None, init=False, repr=False, compare=False
     )

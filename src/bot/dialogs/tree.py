@@ -2945,6 +2945,33 @@ class _ModerationDialogs:
         return Line("moderation.welcome_updated", {"text": text})
 
 
+class _MusicDialogs:
+    def button(self, *, author: object, duration: object, title: object) -> Line:
+        return Line(
+            "music.button",
+            {
+                "author": author,
+                "duration": duration,
+                "title": title,
+            },
+        )
+
+    def downloading(self) -> Line:
+        return Line("music.downloading", {})
+
+    def failed(self) -> Line:
+        return Line("music.failed", {})
+
+    def not_found(self, *, query: object) -> Line:
+        return Line("music.not_found", {"query": query})
+
+    def results(self, *, query: object) -> Line:
+        return Line("music.results", {"query": query})
+
+    def usage(self) -> Line:
+        return Line("music.usage", {})
+
+
 class _NotifyDeathCauseDialogs:
     def admin(self) -> Line:
         return Line("notify.death_cause.admin", {})
@@ -3434,6 +3461,7 @@ class _Dialogs:
     lottery = _LotteryDialogs()
     mob = _MobDialogs()
     moderation = _ModerationDialogs()
+    music = _MusicDialogs()
     notify = _NotifyDialogs()
     profile = _ProfileDialogs()
     quiz = _QuizDialogs()
@@ -4259,6 +4287,12 @@ PLACEHOLDERS: dict[str, frozenset[str]] = {
     "moderation.term.never": frozenset(),
     "moderation.term.seconds": frozenset({"count"}),
     "moderation.welcome_updated": frozenset({"text"}),
+    "music.button": frozenset({"author", "duration", "title"}),
+    "music.downloading": frozenset(),
+    "music.failed": frozenset(),
+    "music.not_found": frozenset({"query"}),
+    "music.results": frozenset({"query"}),
+    "music.usage": frozenset(),
     "notify.death": frozenset({"cause", "level", "lifetime_rc_earned"}),
     "notify.death_cause.admin": frozenset(),
     "notify.death_cause.eaten": frozenset(),

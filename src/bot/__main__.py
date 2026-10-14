@@ -37,7 +37,9 @@ from .services.notification_ticker import NotificationTicker
 from .services.notify import NotifyError, SelfrotBotNotifier
 from .services.quiz import QuizService
 from .services.llm import LlmClient
-from .services.link_media import Downloader, LinkMediaService, MediaToolsUpdater
+from .services.link_media import Downloader, LinkMediaService
+from .services.media_tools import MediaToolsUpdater
+from .services.music import MusicFinder, MusicService
 from .services.roast import RoastPrompts, RoastService
 from .services.search import SearchService, TavilyClient
 
@@ -141,6 +143,11 @@ class Dispatcher(BaseDispatcher[AppContext]):
             session_factory,
             enabled=(tools / "yt-dlp").exists(),
         )
+        self.music_service = MusicService(
+            MusicFinder(tools, settings.MUSIC_MAX_DURATION),
+            session_factory,
+            enabled=self.link_media_service.enabled,
+        )
         self.media_tools_updater = MediaToolsUpdater(tools)
         self.duel_ticker = DuelTicker(
             session_factory=session_factory,
@@ -177,6 +184,7 @@ class Dispatcher(BaseDispatcher[AppContext]):
             self.roast_service,
             self.search_service,
             self.link_media_service,
+            self.music_service,
         )
 
     async def on_startup(self) -> None:

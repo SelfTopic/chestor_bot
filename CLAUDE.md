@@ -167,6 +167,12 @@ YouTube в любом чате бот отвечает роликом (`routers/
 обновляет yt-dlp и gallery-dl в их venv раз в сутки. Без yt-dlp в `MEDIA_TOOLS_DIR` ссылки
 не трогаются.
 
+**Песни — `ctx.music_service`** (`services/music/`, `routers/common/music_router.py`).
+«песня <название>» ищет на YouTube через yt-dlp (`ytsearch`, до 5 треков не длиннее
+`MUSIC_MAX_DURATION`) и показывает их кнопками; по нажатию бот качает звук с обложкой и шлёт
+аудио, `file_id` кэшируется в `music_tracks` по id трека. Подпроцессы yt-dlp, флаги и суточное
+обновление общие с видео по ссылкам — `services/media_tools.py` (`run`, `MediaToolError`).
+
 **Юзербот** (`src/userbot_parser`, сервис `userbot_parser`, свой `.env`). Качает серии аниме
 для нарезки `/anime` и пересылает боту в личку видео-посты: серии из `CHANNEL_ID` (подпись
 «Токийский гуль N сезон M.») и эдиты из `EDIT_CHANNELS`. Каждый новый пост — сразу, а при
