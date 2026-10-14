@@ -33,28 +33,45 @@ def bot_command(action: str, args: type[TArgs]) -> AnyCommand[TArgs]:
     )
 
 
-async def random_mention(ctx: AppContext[TextMessage]) -> str | None:
-    user = await ctx.chat_service.random_participant(ctx.message.chat.id)
-    if user is None:
-        return None
-    return (
-        f'<a href="tg://user?id={user.telegram_id}">{html.escape(user.full_name)}</a>'
-    )
-
-
 class PickArgs(CommandArgs):
     items: Rest
 
 
-class PickHandler(MessageHandler[AppContext[TextMessage]]):
-    cmd = bot_command("выбери", PickArgs)
-    query = cmd
+class WhoArgs(CommandArgs):
+    question: Rest
+
+
+Integer = Annotated[str, Field(pattern=r"^-?\d+$")]
+
+
+class NumberArgs(CommandArgs):
+    low: Integer
+    high: Integer
+
+
+class AskBotHandler(MessageHandler[AppContext[TextMessage]]):
+    pick_cmd = bot_command("выбери", PickArgs)
+    who_cmd = bot_command("кто", WhoArgs)
+    participant_cmd = AnyCommand(
+        *(
+            Command(
+                f"{name} случайный участник",
+                prefixes="",
+                ignore_case=True,
+                args_count=0,
+            )
+            for name in ("бот", "честор")
+        )
+    )
+    number_cmd = bot_command("число", NumberArgs)
+
     too_few = Dialogs.fun.pick.too_few()
     too_many = Dialogs.fun.pick.too_many(max_items=MAX_PICK_ITEMS)
     too_long = Dialogs.fun.pick.too_long()
 
-    async def handle(self) -> None:
-        text = self.cmd.parse(self.ctx).items
+    @pick_cmd
+    async def pick(self) -> None:
+        text = self.pick_cmd.parse(self.ctx).items
         items = [item.strip() for item in ITEM_SEPARATOR.split(text) if item.strip()]
 
         if len(items) < 2:
@@ -67,19 +84,11 @@ class PickHandler(MessageHandler[AppContext[TextMessage]]):
             line = Dialogs.fun.pick.result(choice=random.choice(items))
         await self.ctx.say(line, reply=True)
 
+    @who_cmd
+    async def who(self) -> None:
+        question = self.who_cmd.parse(self.ctx).question
 
-class WhoArgs(CommandArgs):
-    question: Rest
-
-
-class WhoHandler(MessageHandler[AppContext[TextMessage]]):
-    cmd = bot_command("кто", WhoArgs)
-    query = cmd
-
-    async def handle(self) -> None:
-        question = self.cmd.parse(self.ctx).question
-
-        mention = await random_mention(self.ctx)
+        mention = await self.random_mention()
         if mention is None:
             await self.ctx.say(NOBODY, reply=True)
             return
@@ -90,23 +99,9 @@ class WhoHandler(MessageHandler[AppContext[TextMessage]]):
             parse_mode="HTML",
         )
 
-
-class RandomParticipantHandler(MessageHandler[AppContext[TextMessage]]):
-    cmd = AnyCommand(
-        *(
-            Command(
-                f"{name} случайный участник",
-                prefixes="",
-                ignore_case=True,
-                args_count=0,
-            )
-            for name in ("бот", "честор")
-        )
-    )
-    query = cmd
-
-    async def handle(self) -> None:
-        mention = await random_mention(self.ctx)
+    @participant_cmd
+    async def participant(self) -> None:
+        mention = await self.random_mention()
         if mention is None:
             await self.ctx.say(NOBODY, reply=True)
             return
@@ -117,24 +112,18 @@ class RandomParticipantHandler(MessageHandler[AppContext[TextMessage]]):
             parse_mode="HTML",
         )
 
-
-Integer = Annotated[str, Field(pattern=r"^-?\d+$")]
-
-
-class NumberArgs(CommandArgs):
-    low: Integer
-    high: Integer
-
-
-class RandomNumberHandler(MessageHandler[AppContext[TextMessage]]):
-    cmd = bot_command("число", NumberArgs)
-    query = cmd
-
-    async def handle(self) -> None:
-        args = self.cmd.parse(self.ctx)
+    @number_cmd
+    async def number(self) -> None:
+        args = self.number_cmd.parse(self.ctx)
         low, high = sorted((int(args.low), int(args.high)))
         number = random.randint(low, high)
         await self.ctx.say(Dialogs.fun.number(number=number), reply=True)
+
+    async def random_mention(self) -> str | None:
+        user = await self.ctx.chat_service.random_participant(self.ctx.message.chat.id)
+        if user is None:
+            return None
+        return f'<a href="tg://user?id={user.telegram_id}">{html.escape(user.full_name)}</a>'
 
 
 class CalculatorHandler(MessageHandler[AppContext[TextMessage]]):
