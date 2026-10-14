@@ -14,6 +14,7 @@ from .scheduled_notification import ScheduledNotification
 from .transfer import Transfer
 from .user import User
 from .user_cooldowns import UserCooldown
+from .link_media import LinkMediaCache
 from .roast_log import RoastLog
 from .rp_commands import Rp
 from .moderation import ModerationAction, ModerationSettings, ModerationWarning
@@ -21,6 +22,7 @@ from .moderation import ModerationAction, ModerationSettings, ModerationWarning
 __all__ = [
     "ActiveBattle",
     "Base",
+    "LinkMediaCache",
     "Battle",
     "Chat",
     "ChatParticipant",

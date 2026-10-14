@@ -5,7 +5,7 @@ from typing import Any
 
 import pytest
 
-from src.bot.services.link_media import find_links, pick
+from src.bot.services.link_media import find_links, media_key, pick
 from src.bot.services.link_media.downloader import _gallery_files
 
 MB = 1024 * 1024
@@ -109,3 +109,18 @@ def test_gallery_dl_files_are_told_apart_by_type() -> None:
         ("https://p16.tiktokcdn-eu.com/photo.jpeg", "image"),
         ("https://v45.tiktokcdn-eu.com/video/tos/sound", "audio"),
     ]
+
+
+@pytest.mark.parametrize(
+    ("url", "key"),
+    [
+        ("https://www.tiktok.com/@user/video/7412345678901234567?lang=ru", "tiktok:7412345678901234567"),
+        ("https://www.tiktok.com/@yuno/photo/7695451669710048520", "tiktok:7695451669710048520"),
+        ("https://youtu.be/dQw4w9WgXcQ?t=5", "youtube:dQw4w9WgXcQ"),
+        ("https://m.youtube.com/watch?app=desktop&v=dQw4w9WgXcQ", "youtube:dQw4w9WgXcQ"),
+        ("https://youtube.com/shorts/abcdefghijk", "youtube:abcdefghijk"),
+        ("https://vt.tiktok.com/ZSbYQSbFS/", None),
+    ],
+)
+def test_cache_key_is_the_post_id(url: str, key: str | None) -> None:
+    assert media_key(url) == key

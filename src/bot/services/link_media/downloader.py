@@ -36,12 +36,12 @@ class Video:
     thumbnail: Path | None
 
 
-# Картинки слайдшоу — ссылками: Telegram скачивает их сам, а альбом из файлов с диска
-# selfrot отправить не умеет.
+# Картинки и звук — ссылками: Telegram скачивает их сам, а файлы с диска внутрь
+# rich-сообщения selfrot загрузить не умеет.
 @dataclass(frozen=True)
 class Slideshow:
     images: tuple[str, ...]
-    audio: Path | None
+    audio: str | None
 
 
 async def run(*args: str, timeout: float = TOOL_TIMEOUT) -> str:
@@ -67,20 +67,32 @@ class Downloader:
         self._limit = limit
         self._max_duration = max_duration
 
-    async def download(self, url: str, workdir: Path) -> Video | Slideshow:
-        async with aiohttp.ClientSession(
+    async def resolve(self, url: str) -> str:
+        parts = urlsplit(url)
+        host = parts.hostname or ""
+        if not (host.startswith(("vm.", "vt.")) or parts.path.startswith("/t/")):
+            return url
+        try:
+            async with self._http() as http, http.get(url) as response:
+                return str(response.url)
+        except (aiohttp.ClientError, TimeoutError) as exc:
+            logger.warning("Короткая ссылка %s не раскрылась: %s", url, exc)
+            return url
+
+    def _http(self) -> aiohttp.ClientSession:
+        return aiohttp.ClientSession(
             headers={"User-Agent": BROWSER_UA}, timeout=aiohttp.ClientTimeout(total=60)
-        ) as http:
-            url = await self._resolve_short_link(url, http)
+        )
+
+    async def download(self, url: str, workdir: Path) -> Video | Slideshow:
+        async with self._http() as http:
             try:
                 if "/photo/" in url:
-                    return await self._slideshow(url, workdir, http)
+                    return await self._slideshow(url)
                 info = await self._info(url)
                 if not has_video(info):
                     page = info.get("webpage_url")
-                    return await self._slideshow(
-                        page if isinstance(page, str) else url, workdir, http, info
-                    )
+                    return await self._slideshow(page if isinstance(page, str) else url)
                 return await self._ytdlp_video(info, workdir)
             except LinkMediaTooLarge:
                 raise
@@ -93,18 +105,6 @@ class Downloader:
                 return await self._tikwm(url, workdir, http)
             except (aiohttp.ClientError, TimeoutError, ValueError, KeyError) as exc:
                 raise LinkMediaError(f"tikwm не скачал {url}: {exc}") from exc
-
-    async def _resolve_short_link(self, url: str, http: aiohttp.ClientSession) -> str:
-        parts = urlsplit(url)
-        host = parts.hostname or ""
-        if not (host.startswith(("vm.", "vt.")) or parts.path.startswith("/t/")):
-            return url
-        try:
-            async with http.get(url) as response:
-                return str(response.url)
-        except (aiohttp.ClientError, TimeoutError) as exc:
-            logger.warning("Короткая ссылка %s не раскрылась: %s", url, exc)
-            return url
 
     async def _info(self, url: str) -> dict[str, Any]:
         for attempt in range(1, GEO_BLOCK_ATTEMPTS + 1):
@@ -146,47 +146,13 @@ class Downloader:
         )
         return await self._checked(Path(out.strip().splitlines()[-1]), workdir)
 
-    async def _slideshow(
-        self,
-        url: str,
-        workdir: Path,
-        http: aiohttp.ClientSession,
-        info: dict[str, Any] | None = None,
-    ) -> Slideshow:
+    async def _slideshow(self, url: str) -> Slideshow:
         files = _gallery_files(await run(self._gallerydl, "--quiet", "--dump-json", url))
         images = tuple(link for link, kind in files if kind == "image")
         if not images:
             raise LinkMediaError(f"gallery-dl: в {url} нет картинок")
-
-        sound = next((link for link, kind in files if kind == "audio"), None)
-        if sound is not None:
-            audio: Path | None = await _fetch(http, sound, workdir / "audio.mp3")
-        elif info is not None:
-            audio = await self._ytdlp_audio(info, workdir)
-        else:
-            audio = None
+        audio = next((link for link, kind in files if kind == "audio"), None)
         return Slideshow(images, audio)
-
-    async def _ytdlp_audio(self, info: dict[str, Any], workdir: Path) -> Path | None:
-        info_path = workdir / "info.json"
-        info_path.write_text(json.dumps(info))
-        try:
-            out = await run(
-                self._ytdlp,
-                *YTDLP_FLAGS,
-                "-f",
-                "ba",
-                "--load-info-json",
-                str(info_path),
-                "-o",
-                str(workdir / "audio.%(ext)s"),
-                "--print",
-                "after_move:filepath",
-            )
-        except LinkMediaError as exc:
-            logger.warning("Звук слайдшоу не скачался: %s", exc)
-            return None
-        return Path(out.strip().splitlines()[-1])
 
     async def _tikwm(
         self, url: str, workdir: Path, http: aiohttp.ClientSession
@@ -201,7 +167,7 @@ class Downloader:
         images = data.get("images")
         if isinstance(images, list) and images:
             music = data.get("music")
-            audio = await _fetch(http, _tikwm_url(music), workdir / "audio.mp3") if music else None
+            audio = _tikwm_url(music) if isinstance(music, str) and music else None
             return Slideshow(tuple(_tikwm_url(image) for image in images), audio)
 
         source = data.get("hdplay") or data.get("play")

@@ -160,8 +160,10 @@ YouTube в любом чате бот отвечает роликом (`routers/
 `MEDIA_TOOLS_DIR` (`/opt/media-tools/bin` в образе), запасной вариант для TikTok — tikwm.
 Формат выбирает `formats.pick`: лучшее качество до 1080p, которое влезает в 50 МБ Bot API;
 не влезло или длиннее `LINK_MEDIA_MAX_DURATION` — фраза «слишком большое». Фотокарусель TikTok —
-альбомами по 10 картинок ссылками (gallery-dl `--dump-json`, запасной tikwm: Telegram качает
-их сам) и звуком файлом. `MediaToolsUpdater`
+одно rich-сообщение: слайдшоу картинок и звук, всё ссылками (gallery-dl `--dump-json`,
+запасной tikwm), Telegram качает их сам; не принял звук — уходит без него. Отправленное
+кэшируется в `link_media_cache` по id поста (`media_key`: `tiktok:…`, `youtube:…`) и потом
+уходит по `file_id`; устаревший `file_id` — запись удаляется, медиа качается заново. `MediaToolsUpdater`
 обновляет yt-dlp и gallery-dl в их venv раз в сутки. Без yt-dlp в `MEDIA_TOOLS_DIR` ссылки
 не трогаются.
 

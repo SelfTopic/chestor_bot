@@ -138,6 +138,7 @@ class Dispatcher(BaseDispatcher[AppContext]):
         tools = Path(settings.MEDIA_TOOLS_DIR)
         self.link_media_service = LinkMediaService(
             Downloader(tools, UPLOAD_LIMIT, settings.LINK_MEDIA_MAX_DURATION),
+            session_factory,
             enabled=(tools / "yt-dlp").exists(),
         )
         self.media_tools_updater = MediaToolsUpdater(tools)

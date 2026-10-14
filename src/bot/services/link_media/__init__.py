@@ -1,17 +1,18 @@
 from .downloader import Downloader, Slideshow, Video
 from .formats import Choice, pick
-from .links import LINK, find_links
-from .service import LinkMediaService, MediaToolsUpdater, VideoDownloader
+from .links import LINK, find_links, media_key
+from .service import LinkMediaService, MediaDownloader, MediaToolsUpdater
 
 __all__ = [
     "Choice",
     "Downloader",
     "LINK",
     "LinkMediaService",
+    "MediaDownloader",
     "MediaToolsUpdater",
     "Slideshow",
     "Video",
-    "VideoDownloader",
     "find_links",
+    "media_key",
     "pick",
 ]
