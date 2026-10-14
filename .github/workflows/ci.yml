@@ -4,7 +4,6 @@ on:
   push:
   pull_request:
 
-# Новый пуш в ту же ветку отменяет прогон, который ещё идёт.
 concurrency:
   group: ci-${{ github.ref }}
   cancel-in-progress: true
@@ -12,9 +11,8 @@ concurrency:
 jobs:
   checks:
     name: ruff, pyright, selfrot check, pytest
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     env:
-      # src.config требует эти настройки при импорте; значения фиктивные, как в tests/conftest.py.
       BOT_TOKEN: "123456:TEST"
       POSTGRES_DATABASE: test
       POSTGRES_USERNAME: test
@@ -24,12 +22,11 @@ jobs:
       PGADMIN_DEFAULT_PASSWORD: test
       GHOUL_QUIZ_API_KEY: test
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       - run: pipx install poetry==2.3.4
 
-      # Python как в образе бота (Dockerfile), а не как на машине разработчика.
-      - uses: actions/setup-python@v5
+      - uses: actions/setup-python@v7
         with:
           python-version: "3.11"
           cache: poetry
@@ -43,16 +40,15 @@ jobs:
       - run: poetry run ruff check src/bot tests
       - run: poetry run pyright src/bot tests
       - run: poetry run selfrot check --strict src.bot.__main__:Dispatcher
-      # Postgres для тестов conftest.py поднимает сам через Docker раннера.
       - run: poetry run python -m pytest tests -n auto
 
   image:
     name: Docker image
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     steps:
-      - uses: actions/checkout@v4
-      - uses: docker/setup-buildx-action@v3
-      - uses: docker/build-push-action@v6
+      - uses: actions/checkout@v7
+      - uses: docker/setup-buildx-action@v4
+      - uses: docker/build-push-action@v7
         with:
           context: .
           push: false
@@ -60,7 +56,6 @@ jobs:
           tags: chestor-bot:ci
           cache-from: type=gha
           cache-to: type=gha,mode=max
-      # Инструменты, без которых бот запускается, но не качает видео, песни и не шазамит.
       - run: |
           docker run --rm --entrypoint sh chestor-bot:ci -c '
             /opt/media-tools/bin/yt-dlp --version &&

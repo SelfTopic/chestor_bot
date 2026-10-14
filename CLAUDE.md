@@ -198,7 +198,8 @@ shazamio (`recognize.py`, звук сначала сводится ffmpeg) и п
 **Запуск.** Сервис `bot` в `docker-compose.yml` запускает `python -m src.bot`, токен —
 `BOT_TOKEN`. `ENV=DEV` — polling, иначе вебхук на 8999 (`WEBHOOK_URL`, `WEBHOOK_SECRET`).
 Тестовый стенд — тот же сервис в отдельном проекте (`docker compose -p chestor_test …`)
-со своим `.env`: токен тестового бота. Как поднять бота в облачной сессии и проверить
+со своим `.env`: токен тестового бота. Стенд сам ставит последнюю запушенную ветку после
+зелёного CI и пишет об этом в Telegram — `docs/dev/stand.md` (`deploy/stand/`). Как поднять бота в облачной сессии и проверить
 изменения вживую — `docs/dev/dev-session.md`.
 
 ## Проверки
