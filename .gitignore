@@ -6,7 +6,6 @@ __pycache__/
 *.log.*
 .env
 src/userbot_parser/.env
-src/userbot_parser/edits_state.json
 alembic.ini
 !.alembic.ini.example
 rclone.conf

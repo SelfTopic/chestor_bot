@@ -1,45 +1,74 @@
 import asyncio
 import json
 import logging
-from pathlib import Path
 
 from pyrogram import filters
 from pyrogram.client import Client
 from pyrogram.handlers.message_handler import MessageHandler
-from pyrogram.types import Message
+from pyrogram.types import Chat, Message
 
 logger = logging.getLogger(__name__)
 
+SYNC_COMMAND = "/edits_sync"
+SYNC_REPLY = "edits_sync "
+# Бот при старте выбрасывает накопившиеся апдейты, поэтому запрос повторяется, пока он
+# не поднимется и не ответит.
+SYNC_RETRY = 30.0
+# Сверка досылает и живые посты, пересланные, пока бот перезапускался.
+SYNC_INTERVAL = 3600.0
 # Telegram пересылает не больше 100 сообщений за раз.
 FORWARD_BATCH = 100
 # Пауза между пачками: досылка всей истории каналов не должна упереться в FloodWait.
 BATCH_PAUSE = 2.0
 
 
-# Последний пересланный id по каждому каналу — в state_path: при запуске досылается только
-# то, что вышло, пока юзербот был выключен.
+# Что уже дошло, знает только бот: он отвечает на SYNC_COMMAND последним сохранённым
+# постом по каждому каналу, юзербот досылает всё, что новее.
 class EditsForwarder:
-    def __init__(self, app: Client, channels: list[str], bot: str, state_path: Path) -> None:
+    def __init__(self, app: Client, channels: list[str], bot: str) -> None:
         self.app = app
         self.channels = channels
         self.bot = bot
-        self.state_path = state_path
-        self.state: dict[str, int] = self._load_state()
+        self._reply: asyncio.Future[dict[int, int]] | None = None
 
-    def _load_state(self) -> dict[str, int]:
-        if not self.state_path.exists():
-            return {}
-        return {str(k): int(v) for k, v in json.loads(self.state_path.read_text()).items()}
+    def listen(self) -> None:
+        chats: list[int | str] = [*self.channels]
+        self.app.add_handler(MessageHandler(self._on_post, filters.chat(chats) & filters.video))
+        self.app.add_handler(
+            MessageHandler(self._on_bot_reply, filters.chat(self.bot) & filters.text)
+        )
 
-    def _save(self, channel: str, last_id: int) -> None:
-        if last_id <= self.state.get(channel, 0):
+    async def run(self) -> None:
+        while True:
+            try:
+                await self._catch_up(await self._last_posts())
+            except Exception:
+                logger.exception("Сверка эдитов с ботом не удалась")
+            await asyncio.sleep(SYNC_INTERVAL)
+
+    async def _last_posts(self) -> dict[int, int]:
+        self._reply = asyncio.get_running_loop().create_future()
+        while True:
+            await self.app.send_message(self.bot, SYNC_COMMAND)
+            try:
+                return await asyncio.wait_for(asyncio.shield(self._reply), SYNC_RETRY)
+            except TimeoutError:
+                logger.info("Бот %s пока не ответил на сверку, повторяю", self.bot)
+
+    async def _on_bot_reply(self, _: Client, message: Message) -> None:
+        text = message.text or ""
+        if not text.startswith(SYNC_REPLY) or self._reply is None or self._reply.done():
             return
-        self.state[channel] = last_id
-        self.state_path.write_text(json.dumps(self.state, indent=2))
+        last = json.loads(text.removeprefix(SYNC_REPLY))
+        self._reply.set_result({int(channel): int(post) for channel, post in last.items()})
 
-    async def catch_up(self) -> None:
+    async def _catch_up(self, last_posts: dict[int, int]) -> None:
         for channel in self.channels:
-            last = self.state.get(channel, 0)
+            chat = await self.app.get_chat(channel)
+            if not isinstance(chat, Chat):
+                logger.warning("%s: аккаунт не подписан на канал, пропускаю", channel)
+                continue
+            last = last_posts.get(chat.id, 0)
             missed: list[int] = []
             # Pyrogram объявляет асинхронный генератор как корутину.
             async for message in self.app.get_chat_history(channel):  # pyright: ignore[reportGeneralTypeIssues]
@@ -51,25 +80,13 @@ class EditsForwarder:
             logger.info("%s: к пересылке %d эдитов", channel, len(missed))
 
             for start in range(0, len(missed), FORWARD_BATCH):
-                batch = missed[start : start + FORWARD_BATCH]
-                await self.app.forward_messages(self.bot, channel, batch)
-                self._save(channel, batch[-1])
+                await self.app.forward_messages(
+                    self.bot, channel, missed[start : start + FORWARD_BATCH]
+                )
                 await asyncio.sleep(BATCH_PAUSE)
 
-    def listen(self) -> None:
-        chats: list[int | str] = [*self.channels]
-        self.app.add_handler(MessageHandler(self._on_post, filters.chat(chats) & filters.video))
-
     async def _on_post(self, _: Client, message: Message) -> None:
-        channel = self._channel_key(message)
-        if channel is None:
-            return
         await message.forward(self.bot)
-        self._save(channel, message.id)
-        logger.info("%s: переслан новый эдит %d", channel, message.id)
-
-    def _channel_key(self, message: Message) -> str | None:
-        names = {str(message.chat.id), (message.chat.username or "").lower()}
-        return next(
-            (channel for channel in self.channels if channel.lstrip("@").lower() in names), None
+        logger.info(
+            "%s: переслан новый эдит %d", message.chat.username or message.chat.id, message.id
         )

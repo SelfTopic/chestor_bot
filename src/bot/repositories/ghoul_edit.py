@@ -26,6 +26,12 @@ class GhoulEditRepository(Base):
         )
         return (await self.session.execute(stmt)).scalar_one_or_none() is not None
 
+    async def last_posts(self) -> dict[int, int]:
+        stmt = select(GhoulEdit.channel_id, func.max(GhoulEdit.channel_message_id)).group_by(
+            GhoulEdit.channel_id
+        )
+        return {channel: post for channel, post in (await self.session.execute(stmt)).all()}
+
     async def random_file_id(self) -> str | None:
         stmt = select(GhoulEdit.file_id).order_by(func.random()).limit(1)
         return (await self.session.execute(stmt)).scalar_one_or_none()

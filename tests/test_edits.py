@@ -71,3 +71,13 @@ async def test_1000_minus_7_sends_a_stored_edit(feed, send, telegram):
     (video,) = telegram.bodies("sendVideo")
     assert video["video"] == "EDIT1"
     assert "caption" not in video
+
+
+async def test_userbot_learns_the_last_stored_post_of_each_channel(feed, send):
+    assert await send("/edits_sync", uid=777) == []
+    assert await send("/edits_sync", uid=USERBOT) == ["edits_sync {}"]
+
+    for update in (forwarded("EDIT1", 10), forwarded("EDIT2", 12), forwarded("EDIT3", 11)):
+        await feed(update)
+
+    assert await send("/edits_sync", uid=USERBOT) == [f'edits_sync {{"{CHANNEL}": 12}}']

@@ -1,3 +1,4 @@
+import json
 import logging
 from typing import Any
 
@@ -47,6 +48,16 @@ class EditForwardedHandler(MessageHandler[AppContext[ForwardedVideoMessage]]):
             logger.info("Новый эдит: пост %s канала %s", origin.message_id, origin.chat.id)
 
 
+# Ответ юзерботу, а не людям: по нему он досылает посты, которые не дошли до бота
+# (например, пришли, пока бот перезапускался и выбросил накопившиеся апдейты).
+class EditsSyncHandler(MessageHandler[AppContext[TextMessage]]):
+    query = Command("edits_sync", args_count=0) & FromEditsUserbot()
+
+    async def handle(self) -> None:
+        last = await self.ctx.ghoul_edit_repository.last_posts()
+        await self.ctx.message.answer(f"edits_sync {json.dumps(last)}")
+
+
 class RandomEditHandler(MessageHandler[AppContext[TextMessage]]):
     query = Command("1000-7", prefixes="", args_count=0)
 
@@ -59,4 +70,4 @@ class RandomEditHandler(MessageHandler[AppContext[TextMessage]]):
 
 
 class EditsRouter(BaseRouter[AppContext]):
-    handlers = (EditForwardedHandler, RandomEditHandler)
+    handlers = (EditForwardedHandler, EditsSyncHandler, RandomEditHandler)

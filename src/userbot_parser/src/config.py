@@ -21,9 +21,6 @@ class Config:
         channel.strip() for channel in os.getenv("EDIT_CHANNELS", "").split(",") if channel.strip()
     ]
     EDITS_BOT: str = os.getenv("EDITS_BOT", "")
-    EDITS_STATE_PATH: Path = Path(
-        os.getenv("EDITS_STATE_PATH", "src/userbot_parser/edits_state.json")
-    )
 
     SEASONS_COUNT = 4
     SERIES_COUNT = 12

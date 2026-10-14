@@ -37,11 +37,12 @@ async def main():
 
     me = await app.get_me()
     logger.info("Эдиты: EDITS_USERBOT_ID для .env бота — %s", me.id)
-    forwarder = EditsForwarder(app, config.EDIT_CHANNELS, config.EDITS_BOT, config.EDITS_STATE_PATH)
+    forwarder = EditsForwarder(app, config.EDIT_CHANNELS, config.EDITS_BOT)
     forwarder.listen()
-    await forwarder.catch_up()
     logger.info("Слушаю новые эдиты в %s", ", ".join(config.EDIT_CHANNELS))
+    sync = asyncio.create_task(forwarder.run())
     await idle()
+    sync.cancel()
     await app.stop()
 
 
