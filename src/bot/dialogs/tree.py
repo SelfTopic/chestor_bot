@@ -2945,7 +2945,23 @@ class _ModerationDialogs:
         return Line("moderation.welcome_updated", {"text": text})
 
 
+class _MusicShazamDialogs:
+    def not_recognized(self) -> Line:
+        return Line("music.shazam.not_recognized", {})
+
+    def recognized(self, *, artist: object, title: object) -> Line:
+        return Line("music.shazam.recognized", {"artist": artist, "title": title})
+
+    def too_big(self) -> Line:
+        return Line("music.shazam.too_big", {})
+
+    def usage(self) -> Line:
+        return Line("music.shazam.usage", {})
+
+
 class _MusicDialogs:
+    shazam = _MusicShazamDialogs()
+
     def button(self, *, author: object, duration: object, title: object) -> Line:
         return Line(
             "music.button",
@@ -4292,6 +4308,10 @@ PLACEHOLDERS: dict[str, frozenset[str]] = {
     "music.failed": frozenset(),
     "music.not_found": frozenset({"query"}),
     "music.results": frozenset({"query"}),
+    "music.shazam.not_recognized": frozenset(),
+    "music.shazam.recognized": frozenset({"artist", "title"}),
+    "music.shazam.too_big": frozenset(),
+    "music.shazam.usage": frozenset(),
     "music.usage": frozenset(),
     "notify.death": frozenset({"cause", "level", "lifetime_rc_earned"}),
     "notify.death_cause.admin": frozenset(),

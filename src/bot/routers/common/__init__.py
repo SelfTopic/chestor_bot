@@ -12,7 +12,7 @@ from .race_profile import RaceProfileRouter
 from .role_play import RolePlayRouter
 from .edits_router import EditsRouter
 from .link_media_router import LinkMediaRouter
-from .music_router import MusicRouter
+from .music import MusicRouter
 from .roast_router import RoastRouter
 from .userbot_inbox import UserbotInboxRouter
 from .start_router import StartRouter

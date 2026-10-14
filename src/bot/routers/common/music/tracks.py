@@ -1,18 +1,18 @@
 import logging
 from textwrap import shorten
 
-from selfrot import BaseRouter, CallbackPayload, CommandArgs, InlineKeyboard, MessageHandler, Rest, button
+from selfrot import CallbackPayload, InlineKeyboard, button
 from selfrot.exceptions import TelegramAPIError, TelegramBadRequest, TelegramNetworkError
-from selfrot.filter import Command, HasMessageCallbackQuery
+from selfrot.filter import HasMessageCallbackQuery
 from selfrot.handlers import CallbackQueryHandler
-from selfrot.types import InputFile, Message
+from selfrot.types import InlineKeyboardMarkup, InputFile, Message
 
-from src.bot.dialogs import Dialogs, Line
+from src.bot.dialogs import Dialogs
 from src.bot.exceptions import MediaToolError
 from src.bot.services.music import Audio, Track
 
-from ...context import AppContext
-from ..types import DataMessageCallbackQuery, TextMessage
+from ....context import AppContext
+from ...types import DataMessageCallbackQuery
 
 logger = logging.getLogger(__name__)
 
@@ -25,54 +25,17 @@ class TrackPick(CallbackPayload, prefix="song"):
     track_id: str
 
 
-class SongArgs(CommandArgs):
-    query: Rest = ""
-
-
-class SongSearchHandler(MessageHandler[AppContext[TextMessage]]):
-    cmd = Command("песня", SongArgs, prefixes="", ignore_case=True)
-    query = cmd
-
-    # Поиск через yt-dlp идёт секундами: в handle он держал бы сессию БД и слот диспетчера.
-    asked = ""
-
-    async def handle(self) -> None:
-        if not self.ctx.music_service.enabled:
-            return
-        asked = self.cmd.parse(self.ctx).query.strip()
-        if not asked:
-            await self.ctx.say(MUSIC.usage(), reply=True)
-            return
-        self.asked = asked
-
-    async def after_handle(self) -> None:
-        if not self.asked:
-            return
-        try:
-            await self.ctx.answer_chat_action("typing")
-            tracks = await self.ctx.music_service.search(self.asked)
-        except MediaToolError:
-            logger.warning("Поиск песни %r не удался", self.asked, exc_info=True)
-            await self.ctx.say(MUSIC.failed(), reply=True)
-            return
-        if not tracks:
-            await self.ctx.say(MUSIC.not_found(query=self.asked), reply=True)
-            return
-
-        keyboard = InlineKeyboard()
-        for track in tracks:
-            keyboard.row(button(self.ctx.text(self.label(track)), TrackPick(track_id=track.id)))
-        await self.ctx.message.reply(
-            self.ctx.text(MUSIC.results(query=self.asked)), reply_markup=keyboard.markup()
-        )
-
-    def label(self, track: Track) -> Line:
+def track_keyboard(ctx: AppContext[object], tracks: list[Track]) -> InlineKeyboardMarkup:
+    keyboard = InlineKeyboard()
+    for track in tracks:
         minutes, seconds = divmod(track.duration, 60)
-        return MUSIC.button(
+        label = MUSIC.button(
             title=shorten(track.title, TITLE_WIDTH, placeholder="…"),
             author=shorten(track.author, TITLE_WIDTH // 2, placeholder="…"),
             duration=f"{minutes}:{seconds:02}",
         )
+        keyboard.row(button(ctx.text(label), TrackPick(track_id=track.id)))
+    return keyboard.markup()
 
 
 class TrackPickHandler(CallbackQueryHandler[AppContext[DataMessageCallbackQuery]]):
@@ -120,7 +83,3 @@ class TrackPickHandler(CallbackQueryHandler[AppContext[DataMessageCallbackQuery]
             duration=audio.duration or None,
             thumbnail=InputFile.from_path(audio.thumbnail) if audio.thumbnail else None,
         )
-
-
-class MusicRouter(BaseRouter[AppContext]):
-    handlers = (SongSearchHandler, TrackPickHandler)

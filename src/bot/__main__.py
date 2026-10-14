@@ -39,7 +39,7 @@ from .services.quiz import QuizService
 from .services.llm import LlmClient
 from .services.link_media import Downloader, LinkMediaService
 from .services.media_tools import MediaToolsUpdater
-from .services.music import MusicFinder, MusicService
+from .services.music import MusicFinder, MusicService, Recognizer
 from .services.roast import RoastPrompts, RoastService
 from .services.search import SearchService, TavilyClient
 
@@ -145,6 +145,7 @@ class Dispatcher(BaseDispatcher[AppContext]):
         )
         self.music_service = MusicService(
             MusicFinder(tools, settings.MUSIC_MAX_DURATION),
+            Recognizer(),
             session_factory,
             enabled=self.link_media_service.enabled,
         )
