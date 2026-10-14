@@ -2,10 +2,13 @@ import asyncio
 import logging
 import os
 import sys
+import time
 from pathlib import Path
+from typing import Any
 
 from ghoul_quiz import DEFAULT_BASE_URL as DEFAULT_QUIZ_URL
 from selfrot import BaseDispatcher
+from selfrot.handlers import BaseHandler
 from selfrot.middleware import LoggingMiddleware
 from selfrot.types import Message, Update
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
@@ -45,6 +48,7 @@ from .services.notification_ticker import NotificationTicker
 from .services.notify import NotifyError, SelfrotBotNotifier
 from .services.quiz import QuizService
 from .services.llm import LlmClient
+from .services.analytics import AnalyticsRecorder, AnalyticsTicker
 from .services.link_media import Downloader, LinkMediaService
 from .services.media_tools import MediaToolsUpdater
 from .services.music import MusicFinder, MusicService, Recognizer
@@ -108,6 +112,8 @@ class Dispatcher(BaseDispatcher[AppContext]):
         self.dialog_service = DialogService(on_broken=self.report_broken_texts)
         self.alerts: set[asyncio.Task[None]] = set()
         self.session_factory = session_factory
+        self.analytics = AnalyticsRecorder(session_factory)
+        self.analytics_ticker = AnalyticsTicker(self.analytics)
         # Живут весь процесс: кэши RP-команд, партии вордли, очередь нарезки видео.
         self.rp_commands_service = RpCommandsService(rp_commands_repository)
         self.wordle_service = WordleService()
@@ -188,6 +194,31 @@ class Dispatcher(BaseDispatcher[AppContext]):
             except NotifyError:
                 logger.warning("Админ %s не получил сообщение от бота", admin_id)
 
+    # Через propagate проходит каждый апдейт, и только он знает, какой хендлер сработал.
+    # Упавший хендлер propagate пробрасывает исключением: сообщение всё равно считается.
+    async def propagate(self, ctx: AppContext) -> BaseHandler[Any] | None:
+        started = time.monotonic()
+        handler = None
+        try:
+            handler = await super().propagate(ctx)
+            return handler
+        finally:
+            self.observe(ctx, handler, time.monotonic() - started)
+
+    def observe(self, ctx: AppContext, handler: BaseHandler[Any] | None, seconds: float) -> None:
+        user, chat, event = ctx.user, ctx.chat, ctx.event
+        if isinstance(event, Message) and user is not None and chat is not None:
+            self.analytics.message(chat_id=chat.id, user_id=user.id, chat_type=chat.type)
+        if handler is not None and getattr(handler, "counted", True):
+            self.analytics.command(
+                handler=type(handler).__name__,
+                update_kind=type(event).__name__,
+                user_id=user.id if user is not None else None,
+                chat_id=chat.id if chat is not None else None,
+                chat_type=chat.type if chat is not None else None,
+                seconds=seconds,
+            )
+
     def create_context(self, update: Update) -> AppContext:
         return self.context(
             update,
@@ -215,6 +246,7 @@ class Dispatcher(BaseDispatcher[AppContext]):
         await self.notification_ticker.start()
         await self.moderation_ticker.start()
         await self.duel_ticker.start()
+        await self.analytics_ticker.start()
         if self.link_media_service.enabled:
             await self.media_tools_updater.start()
         self.roast_service.bot_id = (await self.api.get_me()).id
@@ -225,6 +257,8 @@ class Dispatcher(BaseDispatcher[AppContext]):
         await self.notification_ticker.stop()
         await self.moderation_ticker.stop()
         await self.duel_ticker.stop()
+        await self.analytics_ticker.stop()
+        await self.analytics.flush()
         await self.media_tools_updater.stop()
         await self.quiz_service.close()
         await self.search_service.close()
