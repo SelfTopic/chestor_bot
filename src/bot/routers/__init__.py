@@ -18,6 +18,7 @@ from .common import (
     RolePlayRouter,
     StartRouter,
     TransferRouter,
+    UserbotInboxRouter,
     WordleRouter,
 )
 from .chat_member_update_routers import ChatMemberUpdateRouter
@@ -46,6 +47,7 @@ class RootRouter(BaseRouter[AppContext]):
         AnimeRouter,
         TransferRouter,
         DepRouter,
+        UserbotInboxRouter,
         # Раньше FunRouter: иначе «1000-7» посчитал бы калькулятор.
         EditsRouter,
         FunRouter,

@@ -30,7 +30,7 @@ class Settings(BaseSettings):
     SEARCH_TIMEOUT: float = Field(default=25.0)
     MEDIA_TOOLS_DIR: str = Field(default="/opt/media-tools/bin")
     LINK_MEDIA_MAX_DURATION: int = Field(default=900)
-    EDITS_USERBOT_ID: int = Field(default=0)
+    USERBOT_ID: int = Field(default=0)
 
     HTTP_PROXY: str = Field(default="")
     HTTPS_PROXY: str = Field(default="")

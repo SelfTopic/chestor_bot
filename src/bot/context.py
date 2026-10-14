@@ -33,7 +33,7 @@ from src.bot.services import (
     WikipediaService,
     WordleService,
 )
-from src.bot.repositories import GhoulEditRepository, MediaRepository
+from src.bot.repositories import AnimeEpisodeRepository, GhoulEditRepository, MediaRepository
 from src.bot.services.dialog import DialogService
 from src.bot.services.ghoul_game import LotteryService
 from src.bot.services.stat_upgrade import StatUpgradeService
@@ -188,6 +188,10 @@ class AppContext(BaseContext[TEvent]):
     @cached_property
     def ghoul_edit_repository(self) -> GhoulEditRepository:
         return self.container.ghoul_edit_repository()
+
+    @cached_property
+    def anime_episode_repository(self) -> AnimeEpisodeRepository:
+        return self.container.anime_episode_repository()
 
     @cached_property
     def notifier(self) -> Notifier:

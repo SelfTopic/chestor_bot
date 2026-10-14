@@ -13,6 +13,7 @@ from .role_play import RolePlayRouter
 from .edits_router import EditsRouter
 from .link_media_router import LinkMediaRouter
 from .roast_router import RoastRouter
+from .userbot_inbox import UserbotInboxRouter
 from .start_router import StartRouter
 from .tops import CommonTopsRouter
 from .transfer import TransferRouter
@@ -32,6 +33,7 @@ __all__ = [
     "EditsRouter",
     "LinkMediaRouter",
     "RoastRouter",
+    "UserbotInboxRouter",
     "RolePlayRouter",
     "StartRouter",
     "TransferRouter",

@@ -16,11 +16,12 @@ class Config:
     CHANNEL_ID: str = os.getenv("CHANNEL_ID", "")
     DOWNLOAD_PATH: str | Path = os.getenv("DOWNLOAD_PATH", "")
 
-    # Эдиты для «1000-7»: каналы через запятую и бот, которому их пересылать.
+    # Бот, которому пересылаются посты: серии из CHANNEL_ID и эдиты для «1000-7» из каналов
+    # EDIT_CHANNELS (через запятую). Без BOT_USERNAME юзербот только качает серии.
+    BOT_USERNAME: str = os.getenv("BOT_USERNAME", "")
     EDIT_CHANNELS: list[str] = [
         channel.strip() for channel in os.getenv("EDIT_CHANNELS", "").split(",") if channel.strip()
     ]
-    EDITS_BOT: str = os.getenv("EDITS_BOT", "")
 
     SEASONS_COUNT = 4
     SERIES_COUNT = 12

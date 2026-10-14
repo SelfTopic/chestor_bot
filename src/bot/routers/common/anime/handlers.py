@@ -45,7 +45,7 @@ class AnimeHandler(MessageHandler[AppContext[TextMessage]]):
 
     # Долгая часть (нарезка, загрузка) — в after_handle: к тому времени слот диспетчера и
     # сессия БД свободны.
-    episode_path: Path | None = None
+    episode: str | InputFile | None = None
     job: VideoCutJob | None = None
     processing: Message | None = None
     is_gif = False
@@ -59,14 +59,26 @@ class AnimeHandler(MessageHandler[AppContext[TextMessage]]):
             f"src/assets/videos/tokio_ghoul/Season_{args.season}_Episode_{args.episode}.mp4"
         )
 
+        whole = not args.start and not args.end
+        # Серия целиком — по file_id из канала: файлы серий больше 50 МБ, которые Bot API
+        # принимает от бота на загрузку.
+        file_id = (
+            await self.ctx.anime_episode_repository.file_id(args.season, args.episode)
+            if whole
+            else None
+        )
+        if file_id is not None:
+            self.episode = file_id
+            return
+
         if not input_path.exists():
             await self.ctx.say(
                 Dialogs.anime.not_found(season=args.season, episode=args.episode)
             )
             return
 
-        if not args.start and not args.end:
-            self.episode_path = input_path
+        if whole:
+            self.episode = InputFile.from_path(input_path)
             return
 
         if not args.start or not args.end:
@@ -133,10 +145,10 @@ class AnimeHandler(MessageHandler[AppContext[TextMessage]]):
         self.user_id = user_id
 
     async def after_handle(self) -> None:
-        if self.episode_path is not None:
+        if self.episode is not None:
             args = self.cmd.parse(self.ctx)
             await self.ctx.message.reply_video(
-                video=InputFile.from_path(self.episode_path),
+                video=self.episode,
                 caption=self.ctx.text(
                     Dialogs.anime.episode_caption(
                         season=args.season, episode=args.episode

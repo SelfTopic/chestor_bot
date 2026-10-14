@@ -1,6 +1,7 @@
 import asyncio
 import json
 import logging
+from collections.abc import Callable
 
 from pyrogram import filters
 from pyrogram.client import Client
@@ -9,8 +10,8 @@ from pyrogram.types import Chat, Message
 
 logger = logging.getLogger(__name__)
 
-SYNC_COMMAND = "/edits_sync"
-SYNC_REPLY = "edits_sync "
+SYNC_COMMAND = "/userbot_sync"
+SYNC_REPLY = "userbot_sync "
 # Бот при старте выбрасывает накопившиеся апдейты, поэтому запрос повторяется, пока он
 # не поднимется и не ответит.
 SYNC_RETRY = 30.0
@@ -22,17 +23,21 @@ FORWARD_BATCH = 100
 BATCH_PAUSE = 2.0
 
 
+# Какие посты канала пересылать боту: эдиты — любое видео, серии — с подписью серии.
+Wanted = Callable[[Message], bool]
+
+
 # Что уже дошло, знает только бот: он отвечает на SYNC_COMMAND последним сохранённым
 # постом по каждому каналу, юзербот досылает всё, что новее.
-class EditsForwarder:
-    def __init__(self, app: Client, channels: list[str], bot: str) -> None:
+class ChannelForwarder:
+    def __init__(self, app: Client, sources: dict[str, Wanted], bot: str) -> None:
         self.app = app
-        self.channels = channels
+        self.sources = sources
         self.bot = bot
         self._reply: asyncio.Future[dict[int, int]] | None = None
 
     def listen(self) -> None:
-        chats: list[int | str] = [*self.channels]
+        chats: list[int | str] = [*self.sources]
         self.app.add_handler(MessageHandler(self._on_post, filters.chat(chats) & filters.video))
         self.app.add_handler(
             MessageHandler(self._on_bot_reply, filters.chat(self.bot) & filters.text)
@@ -63,7 +68,7 @@ class EditsForwarder:
         self._reply.set_result({int(channel): int(post) for channel, post in last.items()})
 
     async def _catch_up(self, last_posts: dict[int, int]) -> None:
-        for channel in self.channels:
+        for channel, wanted in self.sources.items():
             chat = await self.app.get_chat(channel)
             if not isinstance(chat, Chat):
                 logger.warning("%s: аккаунт не подписан на канал, пропускаю", channel)
@@ -74,10 +79,10 @@ class EditsForwarder:
             async for message in self.app.get_chat_history(channel):  # pyright: ignore[reportGeneralTypeIssues]
                 if message.id <= last:
                     break
-                if message.video:
+                if message.video and wanted(message):
                     missed.append(message.id)
             missed.reverse()
-            logger.info("%s: к пересылке %d эдитов", channel, len(missed))
+            logger.info("%s: к пересылке %d постов", channel, len(missed))
 
             for start in range(0, len(missed), FORWARD_BATCH):
                 await self.app.forward_messages(
@@ -86,7 +91,16 @@ class EditsForwarder:
                 await asyncio.sleep(BATCH_PAUSE)
 
     async def _on_post(self, _: Client, message: Message) -> None:
-        await message.forward(self.bot)
-        logger.info(
-            "%s: переслан новый эдит %d", message.chat.username or message.chat.id, message.id
+        names = {str(message.chat.id), (message.chat.username or "").lower()}
+        wanted = next(
+            (
+                wanted
+                for channel, wanted in self.sources.items()
+                if channel.lstrip("@").lower() in names
+            ),
+            None,
         )
+        if wanted is None or not wanted(message):
+            return
+        await message.forward(self.bot)
+        logger.info("%s: переслан новый пост %d", message.chat.username or message.chat.id, message.id)
