@@ -990,6 +990,11 @@ class _FunCalculatorDialogs:
         return Line("fun.calculator.too_big", {})
 
 
+class _FunEditsDialogs:
+    def empty(self) -> Line:
+        return Line("fun.edits.empty", {})
+
+
 class _FunPickDialogs:
     def result(self, *, choice: object) -> Line:
         return Line("fun.pick.result", {"choice": choice})
@@ -1023,6 +1028,7 @@ class _FunSearchDialogs:
 
 class _FunDialogs:
     calculator = _FunCalculatorDialogs()
+    edits = _FunEditsDialogs()
     pick = _FunPickDialogs()
     search = _FunSearchDialogs()
 
@@ -3711,6 +3717,7 @@ PLACEHOLDERS: dict[str, frozenset[str]] = {
     "fight.winner": frozenset({"name"}),
     "fun.calculator.division_by_zero": frozenset(),
     "fun.calculator.too_big": frozenset(),
+    "fun.edits.empty": frozenset(),
     "fun.nobody": frozenset(),
     "fun.number": frozenset({"number"}),
     "fun.pick.result": frozenset({"choice"}),

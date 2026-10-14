@@ -167,6 +167,13 @@ YouTube в любом чате бот отвечает роликом (`routers/
 обновляет yt-dlp и gallery-dl в их venv раз в сутки. Без yt-dlp в `MEDIA_TOOLS_DIR` ссылки
 не трогаются.
 
+**Эдиты «1000-7»** (`routers/common/edits_router.py`, таблица `ghoul_edits`). Юзербот
+(`src/userbot_parser`, сервис `userbot_parser`) пересылает боту в личку видео-посты каналов
+`EDIT_CHANNELS`: при запуске — пропущенное (последний id по каналу в `edits_state.json`),
+дальше — каждый новый пост. Бот принимает пересылки только от `EDITS_USERBOT_ID` и хранит
+`file_id` с каналом и id поста (повтор не записывается); «1000-7» — случайный эдит по `file_id`.
+Роутер стоит раньше `FunRouter`: иначе «1000-7» посчитал бы калькулятор.
+
 **Запуск.** Сервис `bot` в `docker-compose.yml` запускает `python -m src.bot`, токен —
 `BOT_TOKEN`. `ENV=DEV` — polling, иначе вебхук на 8999 (`WEBHOOK_URL`, `WEBHOOK_SECRET`).
 Тестовый стенд — тот же сервис в отдельном проекте (`docker compose -p chestor_test …`)

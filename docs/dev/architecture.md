@@ -20,7 +20,7 @@
 │   ├── config.py         # pydantic-settings, переменные окружения (см. «Три конфига»)
 │   ├── database/models/  # SQLAlchemy-модели (общие для бота и миграций)
 │   ├── assets/           # гифки/видео/шрифты (почти целиком вне git)
-│   └── userbot_parser/   # отдельный парсер канала на Pyrogram, свой config/.env
+│   └── userbot_parser/   # юзербот на Pyrogram: серии аниме и эдиты для «1000-7», свой .env
 ├── migrations/           # Alembic (versions/ — и схема, и data-миграции seed-строк)
 ├── tests/                # см. «Тесты»
 ├── docs/
@@ -45,7 +45,8 @@
 - **`routers/`** — только приём апдейтов и ответы. `RootRouter` в `routers/__init__.py`.
   - `common/` — команды, не завязанные на расу (профиль, баланс, переводы, вордли, RP,
     лотерея, аниме, `fun/`: «бот выбери/кто/число», «бот найди», калькулятор).
-    `link_media_router.py` отвечает роликом на ссылку TikTok/YouTube. `roast_router.py` стоит
+    `link_media_router.py` отвечает роликом на ссылку TikTok/YouTube, `edits_router.py` —
+    принимает эдиты от юзербота и отвечает случайным на «1000-7». `roast_router.py` стоит
     последним в `RootRouter`: огрызается нейросетью на то, что не забрала ни одна команда.
   - `ghoul_routers/` — механика гуля: голод, статы, кагуне, бои с мобами, дуэли (`duel/`),
     показ боя (`battle_text.py`, `battle_text_generator.py`).

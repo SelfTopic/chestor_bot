@@ -7,6 +7,7 @@ from .chat_participant import ChatParticipantRepository
 from .death_log import DeathLogRepository
 from .duel_session import DuelSessionRepository
 from .ghoul import GhoulRepository
+from .ghoul_edit import GhoulEditRepository
 from .link_media import LinkMediaRepository
 from .lottery import LotteryRepository
 from .media import MediaRepository
@@ -24,6 +25,7 @@ __all__ = [
     "Base",
     "UserRepository",
     "GhoulRepository",
+    "GhoulEditRepository",
     "UserCooldownRepository",
     "ChatRepository",
     "ChatParticipantRepository",

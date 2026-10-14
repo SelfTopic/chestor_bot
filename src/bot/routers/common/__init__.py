@@ -10,6 +10,7 @@ from .help_router import HelpRouter
 from .profile_router import ProfileRouter
 from .race_profile import RaceProfileRouter
 from .role_play import RolePlayRouter
+from .edits_router import EditsRouter
 from .link_media_router import LinkMediaRouter
 from .roast_router import RoastRouter
 from .start_router import StartRouter
@@ -28,6 +29,7 @@ __all__ = [
     "HelpRouter",
     "ProfileRouter",
     "RaceProfileRouter",
+    "EditsRouter",
     "LinkMediaRouter",
     "RoastRouter",
     "RolePlayRouter",

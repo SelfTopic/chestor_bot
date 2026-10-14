@@ -11,6 +11,7 @@ from .repositories import (
     ChatRepository,
     DeathLogRepository,
     DuelSessionRepository,
+    GhoulEditRepository,
     GhoulRepository,
     LotteryRepository,
     MediaRepository,
@@ -65,6 +66,7 @@ class Container(containers.DeclarativeContainer):
     )
 
     media_repository = providers.Factory(MediaRepository, session=db_session)
+    ghoul_edit_repository = providers.Factory(GhoulEditRepository, session=db_session)
 
     moderation_repository = providers.Factory(ModerationRepository, session=db_session)
 
