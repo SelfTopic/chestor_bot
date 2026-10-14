@@ -16,6 +16,15 @@ class Config:
     CHANNEL_ID: str = os.getenv("CHANNEL_ID", "")
     DOWNLOAD_PATH: str | Path = os.getenv("DOWNLOAD_PATH", "")
 
+    # Эдиты для «1000-7»: каналы через запятую и бот, которому их пересылать.
+    EDIT_CHANNELS: list[str] = [
+        channel.strip() for channel in os.getenv("EDIT_CHANNELS", "").split(",") if channel.strip()
+    ]
+    EDITS_BOT: str = os.getenv("EDITS_BOT", "")
+    EDITS_STATE_PATH: Path = Path(
+        os.getenv("EDITS_STATE_PATH", "src/userbot_parser/edits_state.json")
+    )
+
     SEASONS_COUNT = 4
     SERIES_COUNT = 12
 

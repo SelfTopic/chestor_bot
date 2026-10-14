@@ -3,8 +3,10 @@ import logging
 
 import tgcrypto
 from pyrogram.client import Client
+from pyrogram.methods.utilities.idle import idle
 
 from .config import config
+from .edits import EditsForwarder
 from .parser import TelegramParser
 
 logging.basicConfig(level=logging.INFO)
@@ -29,6 +31,17 @@ async def main():
     await parser.parse_channel()
     logger.info("Parsing completed.")
 
+    if not (config.EDIT_CHANNELS and config.EDITS_BOT):
+        await app.stop()
+        return
+
+    me = await app.get_me()
+    logger.info("Эдиты: EDITS_USERBOT_ID для .env бота — %s", me.id)
+    forwarder = EditsForwarder(app, config.EDIT_CHANNELS, config.EDITS_BOT, config.EDITS_STATE_PATH)
+    forwarder.listen()
+    await forwarder.catch_up()
+    logger.info("Слушаю новые эдиты в %s", ", ".join(config.EDIT_CHANNELS))
+    await idle()
     await app.stop()
 
 

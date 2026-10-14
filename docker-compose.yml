@@ -126,14 +126,15 @@ services:
 
   userbot_parser:
     # Базой не пользуется, поэтому от migrations не зависит: запуск без образа —
-    # сначала `docker compose build migrations`.
+    # сначала `docker compose build migrations`. Докачивает серии аниме, затем пересылает
+    # боту эдиты из каналов (EDIT_CHANNELS) и остаётся слушать новые посты.
     <<: *app-image
     command: ["poetry", "run", "python", "-m", "src.userbot_parser.src.main"]
     env_file:
       - src/userbot_parser/.env
     volumes:
       - .:/app 
-    restart: "no"
+    restart: unless-stopped
     networks:
       - app_network
 
