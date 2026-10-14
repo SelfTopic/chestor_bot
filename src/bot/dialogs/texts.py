@@ -8,6 +8,9 @@ import yaml
 
 DIALOGS_DIR = Path(__file__).parent
 
+# Разбор через libyaml на порядок быстрее; без неё — тот же разбор на Python.
+SafeLoader: type[yaml.SafeLoader] = getattr(yaml, "CSafeLoader", yaml.SafeLoader)
+
 PHRASE_FIELDS = frozenset({"text", "gifs", "gif_chance"})
 
 Placeholders = Mapping[str, frozenset[str]]
@@ -31,7 +34,7 @@ def load_texts(folder: Path = DIALOGS_DIR) -> Phrases:
     phrases: Phrases = {}
     for path in sorted(folder.glob("*.yaml")):
         try:
-            data = yaml.safe_load(path.read_text("utf-8"))
+            data = yaml.load(path.read_text("utf-8"), Loader=SafeLoader)
         except yaml.YAMLError as exc:
             raise DialogFileError(f"{path.name}: не читается как YAML\n{exc}") from exc
         if not isinstance(data, dict):

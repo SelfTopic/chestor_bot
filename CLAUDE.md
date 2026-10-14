@@ -160,11 +160,11 @@ generic-миксин она молча отключилась бы.
 ruff check src/bot tests
 pyright src/bot tests                      # режим standard
 selfrot check --strict src.bot.__main__:Dispatcher
-python -m pytest tests
+python -m pytest tests -n auto           # параллельно, ~1 мин
 ```
 
 - Тестам нужен Docker: общий `tests/conftest.py` поднимает `postgres:16-alpine` на
-  случайном порту (один на прогон, только если тесту нужна БД; без fsync, в памяти), а
+  случайном порту (один на процесс pytest, только если тесту нужна БД; без fsync, в памяти), а
   Telegram подменён фейковым HTTP-сервером (`FakeTelegram`). Схема создаётся один раз на
   прогон, перед каждым тестом таблицы очищаются `TRUNCATE … RESTART IDENTITY` — пустые
   таблицы и id с 1. Тест, которому нужна своя схема или своя база, создаёт отдельную базу
