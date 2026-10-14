@@ -3,7 +3,7 @@ from contextvars import Token
 from selfrot import BaseMiddleware
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from src.bot.containers import session_context
+from src.bot.session_services import session_context
 
 from ..context import AppContext
 

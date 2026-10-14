@@ -1,7 +1,7 @@
 import logging
 import random
 import time
-from collections.abc import Awaitable, Callable, Collection
+from collections.abc import Awaitable, Callable
 from dataclasses import dataclass, field
 from functools import cached_property
 
@@ -10,46 +10,26 @@ from selfrot.exceptions import TelegramBadRequest
 from selfrot.types import ChatMember, InputFile, Message
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 
-from src.bot.containers import Container
 from src.bot.dialogs import Line
 from src.bot.exceptions import UserNotFound
 from src.bot.services import (
-    BanService,
-    BattleEngine,
-    BattleRecordService,
-    ChatService,
-    CoffeeService,
-    CooldownService,
-    DuelService,
-    GhoulService,
-    PlayerLookupService,
-    ResetService,
+    MobService,
     RpCommandsService,
-    StatsEditService,
-    TransferService,
-    UserService,
     VideoCutterService,
     VideoWorker,
     WikipediaService,
     WordleService,
 )
-from src.bot.repositories import AnimeEpisodeRepository, GhoulEditRepository, MediaRepository
+from src.bot.repositories import MediaRepository
 from src.bot.services.dialog import DialogService
-from src.bot.services.ghoul_game import LotteryService
-from src.bot.services.stat_upgrade import StatUpgradeService
 from src.bot.types import MediaDownloadType, TimeComponents
 from src.bot.utils import parse_seconds
 from src.database.models import Ghoul, Media, User
 
-from .repositories.fight import FightRepository
-from .repositories.user_names import UserNameRepository
-from .services.battle import BattleService
-from .services.broadcast import BroadcastService
-from .services.level_up import LevelUpService
 from .services.lookup import find_user
 from .services.media_paths import media_for, random_file
-from .services.moderation import ModerationService
 from .services.notify import Notifier, SelfrotBotNotifier
+from .session_services import SessionServices
 from .services.quiz import QuizService
 from .services.link_media import LinkMediaService
 from .services.music import MusicService
@@ -69,150 +49,31 @@ class Addressee:
     first_name: str
 
 
-# Сервисы создаются лениво, один раз на апдейт. Сессию БД кладёт DatabaseMiddleware уже
-# после create_context, поэтому в after_handle и отложенных вызовах сервисы с БД недоступны.
+# Сервисы создаются лениво, один раз на апдейт (SessionServices). Сессию БД кладёт
+# DatabaseMiddleware уже после create_context, поэтому в after_handle и отложенных вызовах
+# сервисы с БД недоступны.
 @dataclass
-class AppContext(BaseContext[TEvent]):
+class AppContext(BaseContext[TEvent], SessionServices):
     dialog_service: DialogService
-    container: Container
     session_factory: async_sessionmaker[AsyncSession]
     ghoul_quiz_service: QuizService
     roast_service: RoastService
     search_service: SearchService
     link_media_service: LinkMediaService
     music_service: MusicService
+    rp_commands_service: RpCommandsService
+    wordle_service: WordleService
+    wikipedia_service: WikipediaService
+    mob_service: MobService
+    video_cutter_service: VideoCutterService
+    video_worker: VideoWorker
     _administrators: list[ChatMember] | None = field(
         default=None, init=False, repr=False, compare=False
     )
 
     @cached_property
-    def user_service(self) -> UserService:
-        return self.container.user_service()
-
-    @cached_property
-    def chat_service(self) -> ChatService:
-        return self.container.chat_service()
-
-    @cached_property
-    def transfer_service(self) -> TransferService:
-        return self.container.transfer_service()
-
-    @cached_property
-    def ghoul_service(self) -> GhoulService:
-        return self.container.ghoul_service()
-
-    @cached_property
-    def coffee_service(self) -> CoffeeService:
-        return self.container.coffee_service()
-
-    @cached_property
-    def stat_upgrade_service(self) -> StatUpgradeService:
-        return self.container.stat_upgrade_service()
-
-    @cached_property
-    def battle_engine(self) -> BattleEngine:
-        return self.container.battle_engine()
-
-    @cached_property
-    def battle_service(self) -> BattleService:
-        return BattleService(
-            engine=self.battle_engine,
-            fights=FightRepository(
-                self.container.db_session(), self.container.ghoul_repository()
-            ),
-            ghoul_service=self.ghoul_service,
-            user_service=self.user_service,
-            level_up_service=self.level_up_service,
-            battle_record_service=self.battle_record_service,
-            duel_service=self.duel_service,
-        )
-
-    @cached_property
-    def duel_service(self) -> DuelService:
-        return self.container.duel_service()
-
-    @cached_property
-    def battle_record_service(self) -> BattleRecordService:
-        return self.container.battle_record_service()
-
-    @cached_property
-    def lottery_service(self) -> LotteryService:
-        return self.container.lottery_service()
-
-    @cached_property
-    def rp_commands_service(self) -> RpCommandsService:
-        return self.container.rp_commands_service()
-
-    @cached_property
-    def wordle_service(self) -> WordleService:
-        return self.container.wordle_service()
-
-    @cached_property
-    def wikipedia_service(self) -> WikipediaService:
-        return self.container.wikipedia_service()
-
-    @cached_property
-    def video_worker(self) -> VideoWorker:
-        return self.container.video_worker()
-
-    @cached_property
-    def video_cutter_service(self) -> VideoCutterService:
-        return self.container.video_cutter_service()
-
-    @cached_property
-    def ban_service(self) -> BanService:
-        return self.container.ban_service()
-
-    @cached_property
-    def player_lookup_service(self) -> PlayerLookupService:
-        return self.container.player_lookup_service()
-
-    @cached_property
-    def stats_edit_service(self) -> StatsEditService:
-        return self.container.stats_edit_service()
-
-    @cached_property
-    def reset_service(self) -> ResetService:
-        return self.container.reset_service()
-
-    @cached_property
-    def cooldown_service(self) -> CooldownService:
-        return self.container.cooldown_service()
-
-    @cached_property
-    def moderation_service(self) -> ModerationService:
-        return self.container.moderation_service()
-
-    @cached_property
-    def media_repository(self) -> MediaRepository:
-        return self.container.media_repository()
-
-    @cached_property
-    def ghoul_edit_repository(self) -> GhoulEditRepository:
-        return self.container.ghoul_edit_repository()
-
-    @cached_property
-    def anime_episode_repository(self) -> AnimeEpisodeRepository:
-        return self.container.anime_episode_repository()
-
-    @cached_property
     def notifier(self) -> Notifier:
         return SelfrotBotNotifier(self.bot)
-
-    @cached_property
-    def broadcast_service(self) -> BroadcastService:
-        # Не из контейнера: Notifier живёт на Bot этого апдейта.
-        return BroadcastService(
-            self.container.user_repository(),
-            self.container.chat_repository(),
-            self.notifier,
-        )
-
-    @cached_property
-    def level_up_service(self) -> LevelUpService:
-        return LevelUpService(
-            self.user_service, self.ghoul_service, self.dialog_service, self.notifier
-        )
 
     def text(self, line: Line) -> str:
         return self.dialog_service.text(line)
@@ -235,11 +96,6 @@ class AppContext(BaseContext[TEvent]):
             raise ValueError("User not found in database")
 
         return user
-
-    async def first_names(self, telegram_ids: Collection[int]) -> dict[int, str]:
-        return await UserNameRepository(self.container.db_session()).first_names(
-            telegram_ids
-        )
 
     async def db_ghoul(self) -> Ghoul:
         sender = self.user

@@ -37,8 +37,9 @@
 - **`context.py`** — `AppContext`, контекст одного апдейта. Все зависимости хендлера —
   его типизированные ленивые свойства (`ctx.ghoul_service`, `ctx.transfer_service`, …),
   плюс общие хелперы (`ctx.say()`, `ctx.text()`, `ctx.db_user()`, `ctx.addressee()`, …).
-- **`containers.py`** — DI-контейнер (`dependency-injector`): репозитории и сервисы,
-  привязанные к сессии БД из `session_context`. Хендлеры его не видят, только `AppContext`.
+- **`session_services.py`** — `SessionServices`: репозитории и сервисы на текущей сессии БД
+  (`session_context`), каждый — `cached_property`. `AppContext` её наследует, тикер дуэлей
+  создаёт её сам. Процессные сервисы создаёт `Dispatcher` и передаёт полями `AppContext`.
 - **`bot.py`**, **`logs.py`** — класс бота (прокси) и настройка логов.
 - **`middlewares/`** — уровня диспетчера: `DatabaseMiddleware` (сессия на апдейт),
   `SyncEntitiesMiddleware` (апсерт `User`/`Chat` в отдельной сессии), `BanMiddleware`.

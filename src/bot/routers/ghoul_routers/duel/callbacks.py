@@ -22,7 +22,7 @@ class DuelPressHandler(CallbackQueryHandler[AppContext[DataCallbackQuery]]):
 
     async def handle(self) -> None:
         payload = self.press.parse(self.ctx)
-        services = DuelServices.from_ctx(self.ctx)
+        services = DuelServices.from_services(self.ctx)
 
         if payload.action in ("consent_initiator", "consent_target"):
             await self.consent(payload, services)

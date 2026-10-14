@@ -127,7 +127,7 @@ class Boom(MessageHandler[AppContext[TextMessage]]):
     query = Text("boom")
 
     async def handle(self) -> None:
-        await self.ctx.container.user_repository().change_data(
+        await self.ctx.user_repository.change_data(
             42, first_name="изменено"
         )
         raise RuntimeError("boom")

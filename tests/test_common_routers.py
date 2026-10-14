@@ -7,7 +7,6 @@ from datetime import datetime
 from pathlib import Path
 
 import pytest
-from dependency_injector import providers
 from sqlalchemy import update
 
 from src.bot.dialogs import Dialogs
@@ -530,9 +529,7 @@ class FakeWikipedia:
 class TestWordle:
     @pytest.fixture(autouse=True)
     def no_network(self, dispatcher):
-        dispatcher.container.wikipedia_service.override(
-            providers.Object(FakeWikipedia())
-        )
+        dispatcher.wikipedia_service = FakeWikipedia()
 
     async def test_start_and_resume(self, feed, telegram):
         await feed(message_update("вордли", uid=42))
@@ -552,7 +549,7 @@ class TestWordle:
 
     async def test_wrong_guess_replaces_board(self, feed, dispatcher, telegram):
         await feed(message_update("вордли", uid=42))
-        dispatcher.container.wordle_service()._sessions[
+        dispatcher.wordle_service._sessions[
             42
         ].target = "СТЕНА"  # игра хранит слова в верхнем регистре
 
@@ -578,7 +575,7 @@ class TestWordle:
 
     async def test_win_pays_award(self, feed, dispatcher, telegram, session_factory):
         await feed(message_update("вордли", uid=42))
-        dispatcher.container.wordle_service()._sessions[42].target = "СТЕНА"
+        dispatcher.wordle_service._sessions[42].target = "СТЕНА"
 
         await feed(message_update("стена", uid=42))
 
@@ -606,13 +603,11 @@ class TestWordleFinishLink:
 
     @pytest.fixture(autouse=True)
     def wiki(self, dispatcher):
-        dispatcher.container.wikipedia_service.override(
-            providers.Object(FakeWikipedia(self.ARTICLE))
-        )
+        dispatcher.wikipedia_service = FakeWikipedia(self.ARTICLE)
 
     async def start(self, feed, dispatcher):
         await feed(message_update("вордли", uid=42))
-        dispatcher.container.wordle_service()._sessions[42].target = "СТЕНА"
+        dispatcher.wordle_service._sessions[42].target = "СТЕНА"
 
     async def test_win_links_the_word(self, feed, dispatcher, telegram, session_factory):
         await self.start(feed, dispatcher)
@@ -643,12 +638,8 @@ class TestWordleFinishLink:
         assert telegram.sent[-1] in phrase_texts(lose)
 
     async def test_url_is_escaped_in_href(self, feed, dispatcher, telegram):
-        dispatcher.container.wikipedia_service.override(
-            providers.Object(
-                FakeWikipedia(
-                    WikipediaSummary(extract="x", url='https://e.org/?a=1&b="2"')
-                )
-            )
+        dispatcher.wikipedia_service = FakeWikipedia(
+            WikipediaSummary(extract="x", url='https://e.org/?a=1&b="2"')
         )
         await self.start(feed, dispatcher)
 
@@ -659,9 +650,7 @@ class TestWordleFinishLink:
     async def test_without_article_the_word_stays_bold(
         self, feed, dispatcher, telegram
     ):
-        dispatcher.container.wikipedia_service.override(
-            providers.Object(FakeWikipedia())
-        )
+        dispatcher.wikipedia_service = FakeWikipedia()
         await self.start(feed, dispatcher)
 
         await feed(message_update("стена", uid=42))
@@ -751,7 +740,7 @@ class TestAnimeCut:
     @pytest.fixture
     def worker(self, dispatcher):
         worker = FakeVideoWorker()
-        dispatcher.container.video_worker.override(providers.Object(worker))
+        dispatcher.video_worker = worker
         return worker
 
     async def test_fragment_is_sent_as_video(
@@ -796,7 +785,7 @@ class TestAnimeCut:
         # долгая часть в after_handle: хендлер закрылся (слот и сессия БД свободны),
         # а видео ещё нет. У прода хендлер ждал нарезку внутри себя.
         worker = FakeVideoWorker(manual=True)
-        dispatcher.container.video_worker.override(providers.Object(worker))
+        dispatcher.video_worker = worker
 
         await feed(message_update("/anime 99 99 00:10 00:20"))
         await asyncio.sleep(0.2)
@@ -812,7 +801,7 @@ class TestAnimeCut:
         self, feed, dispatcher, telegram, episode, settle
     ):
         worker = FakeVideoWorker(manual=True)
-        dispatcher.container.video_worker.override(providers.Object(worker))
+        dispatcher.video_worker = worker
 
         await feed(message_update("/anime 99 99 00:10 00:20", uid=42))
         await asyncio.sleep(0.2)
@@ -849,7 +838,7 @@ class TestAnimeCut:
 
 class TestVideoWorkerLifecycle:
     async def test_worker_starts_and_stops_with_dispatcher(self, dispatcher):
-        worker = dispatcher.container.video_worker()
+        worker = dispatcher.video_worker
 
         await dispatcher.on_startup()
         assert worker._is_running

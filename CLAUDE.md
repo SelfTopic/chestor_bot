@@ -50,8 +50,12 @@ Postgres + SQLAlchemy (async), миграции Alembic, запуск в Docker 
 
 **Зависимости — через `AppContext`** (`context.py`). Сервисы там — типизированные ленивые
 `cached_property`, один экземпляр на апдейт: `self.ctx.transfer_service`, `self.ctx.ghoul_service`.
-Хендлеры **никогда** не обращаются к `ctx.container`. Нужен новый сервис — добавь свойство
-в `AppContext` (и провайдер в `containers.py`, если сервис собирается контейнером).
+Всё, что стоит на сессии БД (репозитории и сервисы на них), объявлено один раз в
+`SessionServices` (`session_services.py`): `AppContext` её наследует, а вне апдейта (тикер
+дуэлей) объект создаётся сам. Нужен новый сервис на сессии — одно свойство в
+`SessionServices`. Процессный сервис (кэш, очередь, соединение) создаётся в `Dispatcher` и
+передаётся полем `AppContext` из `create_context`; тесты подменяют его присваиванием
+`dispatcher.<сервис> = …`.
 
 - Сервисы привязаны к сессии БД, которую ставит `DatabaseMiddleware`. В `after_handle` /
   `defer` сессия уже закрыта, session-bound сервисы там не использовать.
@@ -81,7 +85,7 @@ Postgres + SQLAlchemy (async), миграции Alembic, запуск в Docker 
 
 **Где что лежит — правило без исключений** (его проверяет `tests/test_layout.py`):
 
-- **Слои по ролям** — корень `src/bot` (`context.py`, `bot.py`, `containers.py`, `config.py`,
+- **Слои по ролям** — корень `src/bot` (`context.py`, `bot.py`, `session_services.py`, `config.py`,
   `game_configs.py`, `logs.py`), `services/`, `repositories/`, `middlewares/`, `types/`,
   `exceptions/`, `utils/`, `dialogs/`. Сервис глобален, потому что он сервис, сколько бы роутеров им ни
   пользовалось. Слои не импортируют `routers/`; собирает всё только `__main__.py`.
@@ -240,8 +244,6 @@ JSON, `.get()`) сужай через `isinstance` / `assert`, прежде че
 
 ## Открытые задачи
 
-- `dependency-injector`: после ухода aiogram контейнер — просто список фабрик под
-  `AppContext`. Можно собирать сервисы прямо в `AppContext` и убрать зависимость.
 - `/ban_bot` разбирает срок своим `BanService.parse_duration` (`7d`), а не `DurationParser`,
   которым сроки читает модерация чатов («30 мин», `2h`, `1d`).
 - `utils/generate_lottery_video.py` не импортируется, но это скрипт
