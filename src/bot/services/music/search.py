@@ -1,7 +1,9 @@
+import asyncio
 import json
 import logging
 import re
 from collections import OrderedDict
+from collections.abc import Coroutine
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
@@ -15,9 +17,11 @@ logger = logging.getLogger(__name__)
 RESULTS = 5
 # Канал автозагрузок YouTube Music называется «Исполнитель - Topic».
 TOPIC_SUFFIX = " - Topic"
-# YouTube душит скачивание с IP сервера (403 или зависание), а поиск при этом работает:
-# долго ждать нет смысла, лучше сразу к SoundCloud.
+# YouTube душит скачивание с IP сервера (403 или зависание), а поиск при этом работает,
+# поэтому та же песня сразу качается и с SoundCloud: что первым скачалось, то и отправляется.
 YOUTUBE_TIMEOUT = 60
+# SoundCloud отдаёт звук HLS-фрагментами: параллельно они качаются заметно быстрее.
+FRAGMENTS = "8"
 SOUNDCLOUD_RESULTS = 6
 # Без подписки Go+ SoundCloud отдаёт вместо трека превью ровно на 30 секунд.
 PREVIEW_SECONDS = 31
@@ -75,19 +79,16 @@ class MusicFinder:
         return found
 
     async def download(self, track_id: str, workdir: Path) -> Audio:
-        try:
-            return await self._fetch(
-                f"https://www.youtube.com/watch?v={track_id}",
-                workdir / "youtube",
-                ("-f", "bestaudio[ext=m4a]/bestaudio"),
-                timeout=YOUTUBE_TIMEOUT,
-            )
-        except MediaToolError as exc:
-            track = self._seen.get(track_id)
-            if track is None:
-                raise
-            logger.warning("YouTube не отдал %s (%s), ищу на SoundCloud", track_id, exc)
-            return await self._soundcloud(track, workdir)
+        youtube = self._fetch(
+            f"https://www.youtube.com/watch?v={track_id}",
+            workdir / "youtube",
+            ("-f", "bestaudio[ext=m4a]/bestaudio"),
+            timeout=YOUTUBE_TIMEOUT,
+        )
+        track = self._seen.get(track_id)
+        if track is None:
+            return await youtube
+        return await first_success(youtube, self._soundcloud(track, workdir))
 
     async def _soundcloud(self, track: Track, workdir: Path) -> Audio:
         urls = await self._soundcloud_urls(track)
@@ -96,7 +97,7 @@ class MusicFinder:
                 return await self._fetch(
                     url,
                     workdir / f"soundcloud{attempt}",
-                    ("-f", "bestaudio[ext=mp3]/bestaudio", "-x", "--audio-format", "mp3"),
+                    ("-N", FRAGMENTS, "-f", "bestaudio[ext=m4a]/bestaudio[ext=mp3]/bestaudio"),
                 )
             except MediaToolError as exc:
                 logger.info("SoundCloud не отдал %s: %s", url, exc)
@@ -166,6 +167,25 @@ def credits(meta: dict[str, Any]) -> tuple[str, str]:
     if dash and artist and song:
         return song, artist
     return title, _author(meta.get("channel") or meta.get("uploader"))
+
+
+async def first_success(*downloads: Coroutine[Any, Any, Audio]) -> Audio:
+    pending = {asyncio.create_task(download) for download in downloads}
+    errors: list[BaseException] = []
+    try:
+        while pending:
+            done, pending = await asyncio.wait(pending, return_when=asyncio.FIRST_COMPLETED)
+            for task in done:
+                error = task.exception()
+                if error is None:
+                    return task.result()
+                errors.append(error)
+                logger.warning("Источник песни не отдал звук: %s", error)
+    finally:
+        for task in pending:
+            task.cancel()
+        await asyncio.gather(*pending, return_exceptions=True)
+    raise MusicError("; ".join(str(error) for error in errors))
 
 
 def soundcloud_candidates(entries: list[dict[str, Any]], duration: int) -> list[str]:

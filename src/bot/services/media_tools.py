@@ -25,6 +25,11 @@ async def run(*args: str, timeout: float = TOOL_TIMEOUT) -> str:
         process.kill()
         await process.wait()
         raise MediaToolError(f"timeout: {' '.join(args[:3])}") from None
+    except asyncio.CancelledError:
+        # Отменённая задача не должна оставить скачивание работать сиротой.
+        process.kill()
+        await process.wait()
+        raise
     if process.returncode != 0:
         lines = err.decode(errors="replace").strip().splitlines()
         raise MediaToolError(lines[-1] if lines else f"exit code {process.returncode}")
