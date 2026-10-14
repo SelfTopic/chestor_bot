@@ -1,7 +1,7 @@
 import html
 import random
 import re
-from typing import Annotated, TypeVar
+from typing import Annotated
 
 from pydantic import Field
 from selfrot import CommandArgs, MessageHandler, Rest
@@ -12,25 +12,13 @@ from src.bot.dialogs import Dialogs
 from ....context import AppContext
 from ...types import TextMessage
 from .calculator import DivisionByZero, ResultTooBig
+from .commands import bot_command
 from .filters import Arithmetic
-
-TArgs = TypeVar("TArgs", bound=CommandArgs)
 
 ITEM_SEPARATOR = re.compile(r"\s*(?:,|\bили\b)\s*", re.IGNORECASE)
 MAX_PICK_ITEMS = 50
 MAX_ITEM_LENGTH = 200
 NOBODY = Dialogs.fun.nobody()
-
-
-def bot_command(action: str, args: type[TArgs]) -> AnyCommand[TArgs]:
-    return AnyCommand(
-        *(
-            Command(
-                f"{name} {action}", args, prefixes="", ignore_case=True, strict=True
-            )
-            for name in ("бот", "честор")
-        )
-    )
 
 
 class PickArgs(CommandArgs):

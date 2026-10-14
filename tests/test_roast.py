@@ -12,7 +12,8 @@ from aiohttp import web
 from sqlalchemy import select
 
 from src.bot.dialogs import Dialogs
-from src.bot.services.roast import LlmClient, RoastPrompts, RoastService
+from src.bot.services.llm import LlmClient
+from src.bot.services.roast import RoastPrompts, RoastService
 from src.bot.services.roast import service as roast_module
 from src.config import settings
 from src.database.models import RoastLog

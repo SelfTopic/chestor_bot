@@ -147,6 +147,12 @@ generic-миксин она молча отключилась бы.
 `BANNED` бот молчит. Включается только с `LLM_API_KEY` и `ROAST_ENABLED=true`; модель —
 `ROAST_MODEL`.
 
+**Поиск — `ctx.search_service`** (`services/search/`). Процессный сервис: «бот найди …» ищет
+в Tavily и отвечает моделью Cloud.ru по найденным фрагментам (клиент модели `services/llm.py`
+общий с огрызаниями). Лимиты в памяти: общий на бота в сутки (`SEARCH_DAILY_LIMIT`) и кулдаун
+игрока (`SEARCH_COOLDOWN`). Сам запрос — в `after_handle`. Включается с `TAVILY_API_KEY` и
+`LLM_API_KEY`; модель — `SEARCH_MODEL`.
+
 **Запуск.** Сервис `bot` в `docker-compose.yml` запускает `python -m src.bot`, токен —
 `BOT_TOKEN`. `ENV=DEV` — polling, иначе вебхук на 8999 (`WEBHOOK_URL`, `WEBHOOK_SECRET`).
 Тестовый стенд — тот же сервис в отдельном проекте (`docker compose -p chestor_test …`)

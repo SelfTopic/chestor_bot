@@ -1004,9 +1004,27 @@ class _FunPickDialogs:
         return Line("fun.pick.too_many", {"max_items": max_items})
 
 
+class _FunSearchDialogs:
+    def cooldown(self, *, seconds: object) -> Line:
+        return Line("fun.search.cooldown", {"seconds": seconds})
+
+    def failed(self) -> Line:
+        return Line("fun.search.failed", {})
+
+    def limit_reached(self) -> Line:
+        return Line("fun.search.limit_reached", {})
+
+    def unavailable(self) -> Line:
+        return Line("fun.search.unavailable", {})
+
+    def usage(self) -> Line:
+        return Line("fun.search.usage", {})
+
+
 class _FunDialogs:
     calculator = _FunCalculatorDialogs()
     pick = _FunPickDialogs()
+    search = _FunSearchDialogs()
 
     def nobody(self) -> Line:
         return Line("fun.nobody", {})
@@ -3694,6 +3712,11 @@ PLACEHOLDERS: dict[str, frozenset[str]] = {
     "fun.pick.too_long": frozenset(),
     "fun.pick.too_many": frozenset({"max_items"}),
     "fun.random_participant": frozenset({"mention"}),
+    "fun.search.cooldown": frozenset({"seconds"}),
+    "fun.search.failed": frozenset(),
+    "fun.search.limit_reached": frozenset(),
+    "fun.search.unavailable": frozenset(),
+    "fun.search.usage": frozenset(),
     "fun.who": frozenset({"mention", "question"}),
     "ghoul.dead": frozenset(),
     "ghoul.dead_profile": frozenset({"name"}),

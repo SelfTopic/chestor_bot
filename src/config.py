@@ -23,6 +23,11 @@ class Settings(BaseSettings):
     ROAST_MODEL: str = Field(default="deepseek-ai/DeepSeek-V4-Pro")
     ROAST_DAILY_LIMIT: int = Field(default=500)
     ROAST_TIMEOUT: float = Field(default=25.0)
+    TAVILY_API_KEY: SecretStr = Field(default=SecretStr(""))
+    SEARCH_MODEL: str = Field(default="deepseek-ai/DeepSeek-V4-Pro")
+    SEARCH_DAILY_LIMIT: int = Field(default=30)
+    SEARCH_COOLDOWN: float = Field(default=60.0)
+    SEARCH_TIMEOUT: float = Field(default=25.0)
 
     HTTP_PROXY: str = Field(default="")
     HTTPS_PROXY: str = Field(default="")

@@ -45,6 +45,7 @@ from .moderation import (
 )
 from .quiz import QuizBusy, QuizEmailMissing, QuizSessionMissing, QuizUnavailable
 from .rp_commands import RpCommandError, RpCommandLimitReached, RpCommandNotFound
+from .search import SearchCooldown, SearchError, SearchLimitReached, SearchUnavailable
 from .time import DurationParseError
 from .transfer import (
     InsufficientBalanceError,
@@ -89,6 +90,10 @@ __all__ = [
     "QuizEmailMissing",
     "QuizSessionMissing",
     "QuizUnavailable",
+    "SearchCooldown",
+    "SearchError",
+    "SearchLimitReached",
+    "SearchUnavailable",
     "GhoulNotFound",
     "KaguneAlreadyOwned",
     "KaguneNotOwned",

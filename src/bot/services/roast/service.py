@@ -13,7 +13,7 @@ from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 from src.database.models import RoastLog
 
 from ...repositories import PlayerFacts, RoastRepository
-from .llm import LlmClient, LlmError
+from ..llm import LlmClient, LlmError
 from .prompts import RoastPrompts
 
 logger = logging.getLogger(__name__)
