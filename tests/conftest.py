@@ -164,6 +164,7 @@ class FakeTelegram:
             },
             "deleteMessage": True,
             "answerCallbackQuery": True,
+            "sendChatAction": True,
             "deleteWebhook": True,
             "setWebhook": True,
         }.get(

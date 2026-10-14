@@ -35,7 +35,9 @@ from .services.moderation import ModerationTicker
 from .services.notification_ticker import NotificationTicker
 from .services.notify import NotifyError, SelfrotBotNotifier
 from .services.quiz import QuizService
-from .services.roast import LlmClient, RoastPrompts, RoastService
+from .services.llm import LlmClient
+from .services.roast import RoastPrompts, RoastService
+from .services.search import SearchService, TavilyClient
 
 logger = logging.getLogger(__name__)
 
@@ -119,6 +121,16 @@ class Dispatcher(BaseDispatcher[AppContext]):
             daily_limit=settings.ROAST_DAILY_LIMIT,
             timeout=settings.ROAST_TIMEOUT,
         )
+        tavily_key = settings.TAVILY_API_KEY.get_secret_value()
+        self.search_service = SearchService(
+            self.llm,
+            TavilyClient(tavily_key),
+            enabled=bool(tavily_key) and bool(api_key),
+            model=settings.SEARCH_MODEL,
+            daily_limit=settings.SEARCH_DAILY_LIMIT,
+            cooldown=settings.SEARCH_COOLDOWN,
+            timeout=settings.SEARCH_TIMEOUT,
+        )
         self.duel_ticker = DuelTicker(
             session_factory=session_factory,
             bot=self.api,
@@ -152,6 +164,7 @@ class Dispatcher(BaseDispatcher[AppContext]):
             self.session_factory,
             self.quiz_service,
             self.roast_service,
+            self.search_service,
         )
 
     async def on_startup(self) -> None:
@@ -171,6 +184,7 @@ class Dispatcher(BaseDispatcher[AppContext]):
         await self.moderation_ticker.stop()
         await self.duel_ticker.stop()
         await self.quiz_service.close()
+        await self.search_service.close()
         await self.llm.close()
 
     async def on_error(self, ctx: AppContext, exc: Exception) -> None:

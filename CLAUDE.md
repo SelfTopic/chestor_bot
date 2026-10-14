@@ -107,7 +107,8 @@ Postgres + SQLAlchemy (async), миграции Alembic, запуск в Docker 
   `__main__.py`). В коде остаются триггеры команд, игровой словарь (цвета лотереи, типы
   кагуне, названия статов) и подписи-словарь внутри rich-сообщений.
 - Хелпер, нужный один раз, — метод хендлера. Отправка, общая для пакета, — модуль вроде `sending.py`.
-- Класс `CommandArgs` стоит прямо над своим хендлером.
+- Класс `CommandArgs` стоит прямо над своим хендлером; у хендлера с ветками-декораторами — над классом,
+  в порядке веток.
 
 **Команды «ответом или по @username/id»** — всегда два хендлера (`XRepliedHandler` с
 `HasReplyUser()` и `XHandler` с `~HasReplyUser()`), а не один с плавающими аргументами:
@@ -145,6 +146,12 @@ generic-миксин она молча отключилась бы.
 `services/roast/prompts/`, перечитываются на ходу. На ошибку, таймаут или срабатывание фильтра
 `BANNED` бот молчит. Включается только с `LLM_API_KEY` и `ROAST_ENABLED=true`; модель —
 `ROAST_MODEL`.
+
+**Поиск — `ctx.search_service`** (`services/search/`). Процессный сервис: «бот найди …» ищет
+в Tavily и отвечает моделью Cloud.ru по найденным фрагментам (клиент модели `services/llm.py`
+общий с огрызаниями). Лимиты в памяти: общий на бота в сутки (`SEARCH_DAILY_LIMIT`) и кулдаун
+игрока (`SEARCH_COOLDOWN`). Сам запрос — в `after_handle`. Включается с `TAVILY_API_KEY` и
+`LLM_API_KEY`; модель — `SEARCH_MODEL`.
 
 **Запуск.** Сервис `bot` в `docker-compose.yml` запускает `python -m src.bot`, токен —
 `BOT_TOKEN`. `ENV=DEV` — polling, иначе вебхук на 8999 (`WEBHOOK_URL`, `WEBHOOK_SECRET`).

@@ -52,6 +52,7 @@ from .services.moderation import ModerationService
 from .services.notify import Notifier, SelfrotBotNotifier
 from .services.quiz import QuizService
 from .services.roast import RoastService
+from .services.search import SearchService
 
 logger = logging.getLogger(__name__)
 
@@ -75,6 +76,7 @@ class AppContext(BaseContext[TEvent]):
     session_factory: async_sessionmaker[AsyncSession]
     ghoul_quiz_service: QuizService
     roast_service: RoastService
+    search_service: SearchService
     _administrators: list[ChatMember] | None = field(
         default=None, init=False, repr=False, compare=False
     )
