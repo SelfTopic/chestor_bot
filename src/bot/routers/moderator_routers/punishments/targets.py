@@ -22,8 +22,16 @@ def split_target(text: str) -> tuple[str, str] | None:
         return None
 
     query = match.group(1) if match.re is LEADING_ID else match.group(0)
-    rest = text[: match.start()] + " " + text[match.end() :]
-    return query, " ".join(rest.split())
+    return query, cut(text, match.start(), match.end())
+
+
+def cut(text: str, start: int, end: int) -> str:
+    return " ".join((text[:start] + " " + text[end:]).split())
+
+
+def without_name(text: str, name: str) -> str:
+    start = text.find(name)
+    return text if start < 0 else cut(text, start, start + len(name))
 
 
 class TargetTextArgs(CommandArgs):
@@ -39,7 +47,15 @@ class AnywhereTargetHandler:
         raise NotImplementedError
 
     async def handle(self) -> None:
-        found = split_target(self.cmd.parse(self.ctx).text)
+        text = self.cmd.parse(self.ctx).text
+        # Кликабельное имя человека без ника несёт его id: искать в базе не нужно.
+        mentioned = self.ctx.mentions()
+        if mentioned:
+            name, user = mentioned[0]
+            await self.perform(user.id, without_name(text, name))
+            return
+
+        found = split_target(text)
         if found is None:
             raise TargetMissing()
 

@@ -156,6 +156,22 @@ class TestMute:
         (row,) = await journal(session_factory)
         assert (row.duration_seconds, row.reason) == (3600, None)
 
+    async def test_clickable_name_targets_member_missing_from_db(
+        self, send, telegram, session_factory
+    ):
+        user = user_dict(TARGET, "Петя")
+        mention = {"type": "text_mention", "offset": 4, "length": 4, "user": user}
+
+        (reply,) = await send("мут Петя 1ч", uid=ADMIN, chat=GROUP, entities=[mention])
+
+        assert reply in phrase_texts(
+            neutral.muted(name="Петя", term=term.limited(duration=term.hours(count=1)))
+        )
+        (body,) = telegram.bodies("restrictChatMember")
+        assert body["user_id"] == TARGET
+        (row,) = await journal(session_factory)
+        assert (row.target_id, row.duration_seconds) == (TARGET, 3600)
+
     async def test_forever(self, send, telegram, session_factory):
         (reply,) = await send(
             "мут навсегда", uid=ADMIN, chat=GROUP, reply_to_uid=TARGET
