@@ -44,12 +44,6 @@ moderation:
     voice_rough: грубый
     admin_chat_none: не привязан
     hint: 'Менять кнопками может админ с правом «Изменение профиля группы». Чат админов привязывает владелец: /set_admin_chat'
-    as_text: |-
-      {title}
-      {rows}
-
-      {hint}
-    row: '{name}: {value}'
     button_on: '✅ {name}'
     button_off: '❌ {name}'
     button_value: '{name}: {value}'
@@ -57,7 +51,6 @@ moderation:
     button_next: ▶
     button_minus: −
     button_plus: +
-    saved: Сохранено.
     use_arrows: 'Значение меняется кнопками по бокам.'
     no_right: 'Для этого нужно право {right}.'
     not_admin: Менять настройки модерации могут только админы чата.

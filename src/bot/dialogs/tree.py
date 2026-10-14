@@ -1312,16 +1312,6 @@ class _ModerationMenuDialogs:
     def admin_chat_none(self) -> Line:
         return Line("moderation.menu.admin_chat_none", {})
 
-    def as_text(self, *, hint: object, rows: object, title: object) -> Line:
-        return Line(
-            "moderation.menu.as_text",
-            {
-                "hint": hint,
-                "rows": rows,
-                "title": title,
-            },
-        )
-
     def ban(self) -> Line:
         return Line("moderation.menu.ban", {})
 
@@ -1381,12 +1371,6 @@ class _ModerationMenuDialogs:
 
     def on(self) -> Line:
         return Line("moderation.menu.on", {})
-
-    def row(self, *, name: object, value: object) -> Line:
-        return Line("moderation.menu.row", {"name": name, "value": value})
-
-    def saved(self) -> Line:
-        return Line("moderation.menu.saved", {})
 
     def title(self, *, chat: object) -> Line:
         return Line("moderation.menu.title", {"chat": chat})
@@ -3795,7 +3779,6 @@ PLACEHOLDERS: dict[str, frozenset[str]] = {
     "moderation.goodbye_updated": frozenset({"text"}),
     "moderation.menu.admin_chat": frozenset(),
     "moderation.menu.admin_chat_none": frozenset(),
-    "moderation.menu.as_text": frozenset({"hint", "rows", "title"}),
     "moderation.menu.ban": frozenset(),
     "moderation.menu.ban_default": frozenset(),
     "moderation.menu.button_minus": frozenset(),
@@ -3816,8 +3799,6 @@ PLACEHOLDERS: dict[str, frozenset[str]] = {
     "moderation.menu.notices": frozenset(),
     "moderation.menu.off": frozenset(),
     "moderation.menu.on": frozenset(),
-    "moderation.menu.row": frozenset({"name", "value"}),
-    "moderation.menu.saved": frozenset(),
     "moderation.menu.title": frozenset({"chat"}),
     "moderation.menu.use_arrows": frozenset(),
     "moderation.menu.voice": frozenset(),

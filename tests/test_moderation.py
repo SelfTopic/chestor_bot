@@ -11,6 +11,7 @@ from sqlalchemy import select, update
 from selfrot.types import AcceptedGiftTypes, ChatMemberRestricted, ChatPermissions
 from src.bot.dialogs import Dialogs
 from src.bot.repositories import ChatRepository, ModerationRepository
+from src.bot.services.moderation import MAX_WARN_LIMIT
 from src.bot.types import ModerationActionType, ModerationVoice, WarnPenalty
 from src.bot.types.insert import ChatInsert
 from src.database.models import ModerationAction, ModerationSettings, ModerationWarning
@@ -825,6 +826,21 @@ class TestMenu:
         await feed(press(button_data(body, only_text(menu.button_next()))))
 
         assert (await stored_settings(session_factory)).mute_default_seconds == 3600
+
+    async def test_label_press_and_limit_edge_do_not_redraw(
+        self, feed, telegram, session_factory
+    ):
+        await set_settings(session_factory, warn_limit=MAX_WARN_LIMIT)
+        body = await open_menu(feed, telegram)
+        label = menu.button_value(name=menu.warn_limit(), value=MAX_WARN_LIMIT)
+        with pytest.raises(AssertionError):
+            button_data(body, only_text(menu.button_plus()))
+
+        await feed(press(button_data(body, only_text(label))))
+
+        (answer,) = telegram.bodies("answerCallbackQuery")
+        assert answer["text"] == only_text(menu.use_arrows())
+        assert telegram.bodies("editMessageText") == []
 
     async def test_press_without_change_info_right_is_refused(
         self, feed, telegram, session_factory

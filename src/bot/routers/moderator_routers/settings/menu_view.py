@@ -1,9 +1,9 @@
 from collections.abc import Callable
 from typing import Any, Literal
 
-from selfrot import CallbackPayload, InlineKeyboard, button
+from selfrot import CallbackPayload, button
 from selfrot.types import (
-    InlineKeyboardMarkup,
+    InlineKeyboardButton,
     InputRichBlockParagraph,
     InputRichBlockSectionHeading,
     InputRichBlockTable,
@@ -11,6 +11,7 @@ from selfrot.types import (
 )
 
 from src.bot.dialogs import Dialogs, Line
+from src.bot.services.moderation import MAX_WARN_LIMIT, MIN_WARN_LIMIT
 from src.bot.types import ChatModeration, ModerationFeature, ModerationVoice, WarnPenalty
 
 from ....context import AppContext
@@ -105,7 +106,7 @@ def voice_text(ctx: AppContext[Any], voice: ModerationVoice) -> str:
     return ctx.text(MENU.voice_rough() if voice is ModerationVoice.ROUGH else MENU.voice_neutral())
 
 
-class MenuView:
+class MenuTable:
     def __init__(
         self,
         ctx: AppContext[Any],
@@ -163,48 +164,49 @@ class MenuView:
             ]
         )
 
-    def text(self) -> str:
-        ctx = self.ctx
-        rows = "\n".join(ctx.text(MENU.row(name=name, value=value)) for name, value in self.rows())
-        return ctx.text(
-            MENU.as_text(
-                title=ctx.text(MENU.title(chat=self.chat_title)),
-                rows=rows,
-                hint=ctx.text(MENU.hint()),
-            )
-        )
-
-    def keyboard(self) -> InlineKeyboardMarkup:
+    def buttons(self) -> list[list[InlineKeyboardButton]]:
         ctx, settings = self.ctx, self.settings
-        keyboard = InlineKeyboard()
 
-        def toggle(feature: ModerationFeature):
+        def toggle(feature: ModerationFeature) -> InlineKeyboardButton:
             name = ctx.text(FEATURE_LABELS[feature]())
             label = MENU.button_on(name=name) if settings.enabled(feature) else MENU.button_off(name=name)
             return button(ctx.text(label), MenuPress(action="toggle", key=feature.value))
 
-        keyboard.row(*(toggle(f) for f in (ModerationFeature.MUTE, ModerationFeature.BAN, ModerationFeature.KICK)))
-        keyboard.row(toggle(ModerationFeature.WARNS), toggle(ModerationFeature.NOTICES))
+        def step(action: MenuAction, key: str, step: int, label: Line) -> InlineKeyboardButton:
+            return button(ctx.text(label), MenuPress(action=action, key=key, step=step))
 
-        def stepper(action: MenuAction, key: str, label: Line, minus: Line, plus: Line):
-            keyboard.row(
-                button(ctx.text(minus), MenuPress(action=action, key=key, step=-1)),
-                button(ctx.text(label), MenuPress(action="noop")),
-                button(ctx.text(plus), MenuPress(action=action, key=key, step=1)),
-            )
+        # Шаг за край лимита ничего бы не поменял, а правку без изменений Telegram отвергает.
+        def edge() -> InlineKeyboardButton:
+            return button(" ", MenuPress(action="noop", key="edge"))
 
+        def middle(label: Line) -> InlineKeyboardButton:
+            return button(ctx.text(label), MenuPress(action="noop"))
+
+        rows = [
+            [toggle(f) for f in (ModerationFeature.MUTE, ModerationFeature.BAN, ModerationFeature.KICK)],
+            [toggle(ModerationFeature.WARNS), toggle(ModerationFeature.NOTICES)],
+        ]
         for key, title in TERM_LABELS.items():
             label = MENU.button_value(name=ctx.text(title()), value=self.term(key))
-            stepper("term", key, label, MENU.button_prev(), MENU.button_next())
-        limit = MENU.button_value(name=ctx.text(MENU.warn_limit()), value=settings.warn_limit)
-        stepper("limit", "", limit, MENU.button_minus(), MENU.button_plus())
+            rows.append(
+                [
+                    step("term", key, -1, MENU.button_prev()),
+                    middle(label),
+                    step("term", key, 1, MENU.button_next()),
+                ]
+            )
 
-        penalty = MENU.button_value(
-            name=ctx.text(MENU.warn_penalty()), value=self.term("penalty")
+        limit = settings.warn_limit
+        rows.append(
+            [
+                step("limit", "", -1, MENU.button_minus()) if limit > MIN_WARN_LIMIT else edge(),
+                middle(MENU.button_value(name=ctx.text(MENU.warn_limit()), value=limit)),
+                step("limit", "", 1, MENU.button_plus()) if limit < MAX_WARN_LIMIT else edge(),
+            ]
         )
-        keyboard.row(button(ctx.text(penalty), MenuPress(action="penalty")))
-        voice = MENU.button_value(
-            name=ctx.text(MENU.voice()), value=voice_text(ctx, settings.voice)
-        )
-        keyboard.row(button(ctx.text(voice), MenuPress(action="voice")))
-        return keyboard.markup()
+
+        penalty = MENU.button_value(name=ctx.text(MENU.warn_penalty()), value=self.term("penalty"))
+        rows.append([button(ctx.text(penalty), MenuPress(action="penalty"))])
+        voice = MENU.button_value(name=ctx.text(MENU.voice()), value=voice_text(ctx, settings.voice))
+        rows.append([button(ctx.text(voice), MenuPress(action="voice"))])
+        return rows
