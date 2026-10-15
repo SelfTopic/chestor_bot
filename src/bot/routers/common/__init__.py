@@ -9,6 +9,7 @@ from .fun import FunRouter
 from .help_router import HelpRouter
 from .profile_router import ProfileRouter
 from .race_profile import RaceProfileRouter
+from .rich_router import RichRouter
 from .role_play import RolePlayRouter
 from .edits_router import EditsRouter
 from .link_media_router import LinkMediaRouter
@@ -32,6 +33,7 @@ __all__ = [
     "HelpRouter",
     "ProfileRouter",
     "RaceProfileRouter",
+    "RichRouter",
     "EditsRouter",
     "LinkMediaRouter",
     "MarriageLinkRouter",

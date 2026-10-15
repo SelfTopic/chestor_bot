@@ -3427,6 +3427,26 @@ class _QuizDialogs:
         return Line("quiz.wrong", {})
 
 
+class _RichDialogs:
+    def download_failed(self) -> Line:
+        return Line("rich.download_failed", {})
+
+    def empty(self) -> Line:
+        return Line("rich.empty", {})
+
+    def not_utf8(self) -> Line:
+        return Line("rich.not_utf8", {})
+
+    def rejected(self, *, error: object) -> Line:
+        return Line("rich.rejected", {"error": error})
+
+    def too_long(self, *, limit: object) -> Line:
+        return Line("rich.too_long", {"limit": limit})
+
+    def usage(self) -> Line:
+        return Line("rich.usage", {})
+
+
 class _RoastDialogs:
     def bored(self) -> Line:
         return Line("roast.bored", {})
@@ -3838,6 +3858,7 @@ class _Dialogs:
     notify = _NotifyDialogs()
     profile = _ProfileDialogs()
     quiz = _QuizDialogs()
+    rich = _RichDialogs()
     roast = _RoastDialogs()
     rp = _RpDialogs()
     rules = _RulesDialogs()
@@ -4762,6 +4783,12 @@ PLACEHOLDERS: dict[str, frozenset[str]] = {
     "quiz.play_again": frozenset(),
     "quiz.result": frozenset({"answer", "choice", "question", "status"}),
     "quiz.wrong": frozenset(),
+    "rich.download_failed": frozenset(),
+    "rich.empty": frozenset(),
+    "rich.not_utf8": frozenset(),
+    "rich.rejected": frozenset({"error"}),
+    "rich.too_long": frozenset({"limit"}),
+    "rich.usage": frozenset(),
     "roast.bored": frozenset(),
     "rp.created": frozenset({"action", "command"}),
     "rp.delete_usage": frozenset(),
