@@ -46,7 +46,12 @@ class DialogService:
 
     def text(self, line: Line) -> str:
         variants = self._phrase(line).variants
-        return self._random.choice(variants).format_map(line.params)
+        # Подстановка-фраза раскрывается в свой текст: иначе в сообщение ушёл бы repr Line.
+        params = {
+            name: self.text(value) if isinstance(value, Line) else value
+            for name, value in line.params.items()
+        }
+        return self._random.choice(variants).format_map(params)
 
     def gifs(self, line: Line) -> Gifs:
         phrase = self._phrase(line)

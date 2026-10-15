@@ -351,6 +351,24 @@ async def test_family_is_named_only_when_everyone_agrees_and_the_top_shows_the_n
     assert top == only_text(Dialogs.tops.balance.message(count=1, rows=row))
 
 
+async def test_family_view_shows_the_name_the_account_and_the_members(send, session_factory):
+    await seed_players(session_factory)
+    await seed_family(session_factory, A, B, balance=1000)
+    async with session_factory() as session:
+        await FamilyRepository(session).set_name(1, "Антейку")
+        await session.commit()
+        members = await FamilyRepository(session).members(1)
+
+    (reply,) = await send("семья", uid=A, first_name=NAMES[A], chat=GROUP)
+
+    rows = "\n".join(
+        only_text(Dialogs.family.row(name=who(m.telegram_id), since=m.joined_at.strftime("%d.%m.%Y")))
+        for m in members
+    )
+    title = only_text(Dialogs.family.title_named(name="Антейку"))
+    assert reply == only_text(Dialogs.family.view(title=title, balance=1000, rows=rows))
+
+
 async def test_one_member_against_keeps_the_old_name(feed, telegram, session_factory, rename):
     await seed_players(session_factory)
     await seed_family(session_factory, A, B)
