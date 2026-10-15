@@ -9,6 +9,7 @@ from src.bot.repositories.chat import ChatRepository
 from src.bot.repositories.ghoul import GhoulRepository
 from src.bot.repositories.user import UserRepository
 from src.bot.repositories.user_coldown import UserCooldownRepository
+from src.bot.repositories.wallet import WalletRepository
 from src.bot.services.dialog import DialogService
 from src.bot.services.ghoul import GhoulService
 from src.bot.services.level_up import LevelUpService
@@ -52,6 +53,7 @@ def _make_level_up_service(session, bot):
         user_cooldown_repository=UserCooldownRepository(session),
         chat_repository=ChatRepository(session),
         balances_log_repository=BalancesLogRepository(session),
+        wallet_repository=WalletRepository(session),
     )
     return LevelUpService(
         user_service=user_service,

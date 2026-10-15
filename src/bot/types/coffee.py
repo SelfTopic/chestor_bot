@@ -1,10 +1,10 @@
 from dataclasses import dataclass
 
-from src.database.models import Ghoul, User
+from src.database.models import Ghoul
 
 
 @dataclass
 class CoffeeResult:
     ghoul: Ghoul
-    user: User
+    balance: int
     award: int

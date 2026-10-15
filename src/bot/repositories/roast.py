@@ -5,7 +5,7 @@ from typing import Optional
 from sqlalchemy import delete, func, or_, select, update
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from ...database.models import Battle, Ghoul, RoastLog, User
+from ...database.models import Battle, Family, FamilyMember, Ghoul, RoastLog, User
 from .base import Base
 
 
@@ -37,7 +37,7 @@ class RoastRepository(Base):
         losses = select(func.count()).select_from(Battle).where(lost).scalar_subquery()
         stmt = (
             select(
-                User.balance,
+                func.coalesce(Family.balance, User.balance),
                 Ghoul.level,
                 Ghoul.snap_count,
                 Ghoul.coffee_count,
@@ -45,7 +45,10 @@ class RoastRepository(Base):
                 wins,
                 losses,
             )
+            .select_from(User)
             .outerjoin(Ghoul, Ghoul.telegram_id == User.telegram_id)
+            .outerjoin(FamilyMember, FamilyMember.telegram_id == User.telegram_id)
+            .outerjoin(Family, Family.id == FamilyMember.family_id)
             .where(User.telegram_id == telegram_id)
         )
         row = (await self.session.execute(stmt)).one_or_none()

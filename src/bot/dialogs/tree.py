@@ -609,6 +609,26 @@ class _CombatPowerDialogs:
         )
 
 
+class _DivorceDialogs:
+    def ask(self) -> Line:
+        return Line("divorce.ask", {})
+
+    def button(self) -> Line:
+        return Line("divorce.button", {})
+
+    def dissolved(self, *, amount: object, heir: object, name: object) -> Line:
+        return Line("divorce.dissolved", {"amount": amount, "heir": heir, "name": name})
+
+    def done(self, *, name: object) -> Line:
+        return Line("divorce.done", {"name": name})
+
+    def not_married(self) -> Line:
+        return Line("divorce.not_married", {})
+
+    def stale(self) -> Line:
+        return Line("divorce.stale", {})
+
+
 class _DuelButtonsDialogs:
     def consent_initiator(self) -> Line:
         return Line("duel.buttons.consent_initiator", {})
@@ -745,6 +765,9 @@ class _DuelRefusalsDialogs:
     def self_duel(self) -> Line:
         return Line("duel.refusals.self_duel", {})
 
+    def spouses(self) -> Line:
+        return Line("duel.refusals.spouses", {})
+
     def target_day_limit(self) -> Line:
         return Line("duel.refusals.target_day_limit", {})
 
@@ -868,6 +891,154 @@ class _ErrorsDialogs:
 
     def username_not_found(self, *, username: object) -> Line:
         return Line("errors.username_not_found", {"username": username})
+
+
+class _FamilyListDialogs:
+    def empty(self) -> Line:
+        return Line("family.list.empty", {})
+
+    def message(self, *, count: object, rows: object) -> Line:
+        return Line("family.list.message", {"count": count, "rows": rows})
+
+    def more(self, *, count: object) -> Line:
+        return Line("family.list.more", {"count": count})
+
+    def named_row(
+        self,
+        *,
+        age: object,
+        members: object,
+        name: object,
+        place: object,
+        since: object,
+    ) -> Line:
+        return Line(
+            "family.list.named_row",
+            {
+                "age": age,
+                "members": members,
+                "name": name,
+                "place": place,
+                "since": since,
+            },
+        )
+
+    def row(
+        self,
+        *,
+        age: object,
+        members: object,
+        place: object,
+        since: object,
+    ) -> Line:
+        return Line(
+            "family.list.row",
+            {
+                "age": age,
+                "members": members,
+                "place": place,
+                "since": since,
+            },
+        )
+
+
+class _FamilyRenameButtonsDialogs:
+    def agree(self) -> Line:
+        return Line("family.rename.buttons.agree", {})
+
+    def decline(self) -> Line:
+        return Line("family.rename.buttons.decline", {})
+
+    def private(self) -> Line:
+        return Line("family.rename.buttons.private", {})
+
+
+class _FamilyRenameConsentDialogs:
+    def accepted(self) -> Line:
+        return Line("family.rename.consent.accepted", {})
+
+    def declined(self) -> Line:
+        return Line("family.rename.consent.declined", {})
+
+    def renamed(self) -> Line:
+        return Line("family.rename.consent.renamed", {})
+
+
+class _FamilyRenameRefusalsDialogs:
+    def already_pending(self) -> Line:
+        return Line("family.rename.refusals.already_pending", {})
+
+    def bad_name(self, *, limit: object) -> Line:
+        return Line("family.rename.refusals.bad_name", {"limit": limit})
+
+    def not_married(self) -> Line:
+        return Line("family.rename.refusals.not_married", {})
+
+
+class _FamilyRenameDialogs:
+    buttons = _FamilyRenameButtonsDialogs()
+    consent = _FamilyRenameConsentDialogs()
+    refusals = _FamilyRenameRefusalsDialogs()
+
+    def ask(self, *, name: object, proposer: object, rows: object) -> Line:
+        return Line(
+            "family.rename.ask",
+            {
+                "name": name,
+                "proposer": proposer,
+                "rows": rows,
+            },
+        )
+
+    def declined(self, *, name: object, person: object) -> Line:
+        return Line("family.rename.declined", {"name": name, "person": person})
+
+    def declined_private(self) -> Line:
+        return Line("family.rename.declined_private", {})
+
+    def expired(self, *, name: object) -> Line:
+        return Line("family.rename.expired", {"name": name})
+
+    def link_not_family(self) -> Line:
+        return Line("family.rename.link_not_family", {})
+
+    def link_stale(self) -> Line:
+        return Line("family.rename.link_stale", {})
+
+    def renamed(self, *, name: object) -> Line:
+        return Line("family.rename.renamed", {"name": name})
+
+    def usage(self) -> Line:
+        return Line("family.rename.usage", {})
+
+    def vote(self, *, name: object) -> Line:
+        return Line("family.rename.vote", {"name": name})
+
+    def voted(self) -> Line:
+        return Line("family.rename.voted", {})
+
+
+class _FamilyDialogs:
+    list = _FamilyListDialogs()
+    rename = _FamilyRenameDialogs()
+
+    def row(self, *, age: object, name: object, since: object) -> Line:
+        return Line("family.row", {"age": age, "name": name, "since": since})
+
+    def single(self) -> Line:
+        return Line("family.single", {})
+
+    def title(self) -> Line:
+        return Line("family.title", {})
+
+    def title_named(self, *, name: object) -> Line:
+        return Line("family.title_named", {"name": name})
+
+    def top_name(self, *, members: object) -> Line:
+        return Line("family.top_name", {"members": members})
+
+    def view(self, *, balance: object, rows: object, title: object) -> Line:
+        return Line("family.view", {"balance": balance, "rows": rows, "title": title})
 
 
 class _FightLogDialogs:
@@ -1291,6 +1462,165 @@ class _LotteryDialogs:
                 "winning_color": winning_color,
             },
         )
+
+
+class _MarriageButtonsDialogs:
+    def decline(self) -> Line:
+        return Line("marriage.buttons.decline", {})
+
+    def family(self) -> Line:
+        return Line("marriage.buttons.family", {})
+
+    def family_decline(self) -> Line:
+        return Line("marriage.buttons.family_decline", {})
+
+    def family_vote(self) -> Line:
+        return Line("marriage.buttons.family_vote", {})
+
+    def pay(self, *, price: object) -> Line:
+        return Line("marriage.buttons.pay", {"price": price})
+
+    def proposer(self) -> Line:
+        return Line("marriage.buttons.proposer", {})
+
+    def target(self) -> Line:
+        return Line("marriage.buttons.target", {})
+
+
+class _MarriageConsentDialogs:
+    def accepted(self) -> Line:
+        return Line("marriage.consent.accepted", {})
+
+    def already(self) -> Line:
+        return Line("marriage.consent.already", {})
+
+    def declined(self) -> Line:
+        return Line("marriage.consent.declined", {})
+
+    def married(self) -> Line:
+        return Line("marriage.consent.married", {})
+
+    def not_enough_money(self, *, price: object) -> Line:
+        return Line("marriage.consent.not_enough_money", {"price": price})
+
+    def not_invited(self) -> Line:
+        return Line("marriage.consent.not_invited", {})
+
+    def stale(self) -> Line:
+        return Line("marriage.consent.stale", {})
+
+
+class _MarriageFailedDialogs:
+    def family_changed(self, *, proposer: object) -> Line:
+        return Line("marriage.failed.family_changed", {"proposer": proposer})
+
+    def target_broke(self, *, price: object, target: object) -> Line:
+        return Line("marriage.failed.target_broke", {"price": price, "target": target})
+
+    def target_taken(self, *, target: object) -> Line:
+        return Line("marriage.failed.target_taken", {"target": target})
+
+
+class _MarriageRefusalsDialogs:
+    def already_proposed(self) -> Line:
+        return Line("marriage.refusals.already_proposed", {})
+
+    def bot(self) -> Line:
+        return Line("marriage.refusals.bot", {})
+
+    def not_a_person(self) -> Line:
+        return Line("marriage.refusals.not_a_person", {})
+
+    def not_enough_money(self, *, price: object) -> Line:
+        return Line("marriage.refusals.not_enough_money", {"price": price})
+
+    def not_registered(self) -> Line:
+        return Line("marriage.refusals.not_registered", {})
+
+    def same_family(self) -> Line:
+        return Line("marriage.refusals.same_family", {})
+
+    def self(self) -> Line:
+        return Line("marriage.refusals.self", {})
+
+    def target_married(self) -> Line:
+        return Line("marriage.refusals.target_married", {})
+
+
+class _MarriageDialogs:
+    buttons = _MarriageButtonsDialogs()
+    consent = _MarriageConsentDialogs()
+    failed = _MarriageFailedDialogs()
+    refusals = _MarriageRefusalsDialogs()
+
+    def ask(self, *, price: object, proposer: object, target: object) -> Line:
+        return Line(
+            "marriage.ask",
+            {
+                "price": price,
+                "proposer": proposer,
+                "target": target,
+            },
+        )
+
+    def declined(self, *, name: object, price: object, proposer: object) -> Line:
+        return Line(
+            "marriage.declined",
+            {
+                "name": name,
+                "price": price,
+                "proposer": proposer,
+            },
+        )
+
+    def expired(self, *, price: object, proposer: object) -> Line:
+        return Line("marriage.expired", {"price": price, "proposer": proposer})
+
+    def family_declined(self) -> Line:
+        return Line("marriage.family_declined", {})
+
+    def family_hint(self, *, proposer: object) -> Line:
+        return Line("marriage.family_hint", {"proposer": proposer})
+
+    def family_vote(self, *, proposer: object, target: object) -> Line:
+        return Line("marriage.family_vote", {"proposer": proposer, "target": target})
+
+    def family_voted(self) -> Line:
+        return Line("marriage.family_voted", {})
+
+    def invite(self, *, proposer: object, rows: object, target: object) -> Line:
+        return Line(
+            "marriage.invite",
+            {
+                "proposer": proposer,
+                "rows": rows,
+                "target": target,
+            },
+        )
+
+    def link_not_family(self) -> Line:
+        return Line("marriage.link_not_family", {})
+
+    def link_stale(self) -> Line:
+        return Line("marriage.link_stale", {})
+
+    def married(self, *, members: object, target: object) -> Line:
+        return Line("marriage.married", {"members": members, "target": target})
+
+    def not_your_button(self) -> Line:
+        return Line("marriage.not_your_button", {})
+
+    def row_confirmed(self, *, name: object) -> Line:
+        return Line("marriage.row_confirmed", {"name": name})
+
+    def row_waiting(self, *, name: object) -> Line:
+        return Line("marriage.row_waiting", {"name": name})
+
+    def usage(self) -> Line:
+        return Line("marriage.usage", {})
+
+    def user_not_found(self, *, target: object) -> Line:
+        return Line("marriage.user_not_found", {"target": target})
 
 
 class _MobDialogs:
@@ -3331,11 +3661,17 @@ class _TransferErrorsDialogs:
             },
         )
 
+    def bot(self) -> Line:
+        return Line("transfer.errors.bot", {})
+
     def failed(self) -> Line:
         return Line("transfer.errors.failed", {})
 
     def insufficient_balance(self) -> Line:
         return Line("transfer.errors.insufficient_balance", {})
+
+    def not_a_person(self) -> Line:
+        return Line("transfer.errors.not_a_person", {})
 
     def receiver_limit(self) -> Line:
         return Line("transfer.errors.receiver_limit", {})
@@ -3354,6 +3690,9 @@ class _TransferErrorsDialogs:
 
     def sender_too_new(self, *, days: object) -> Line:
         return Line("transfer.errors.sender_too_new", {"days": days})
+
+    def spouse(self) -> Line:
+        return Line("transfer.errors.spouse", {})
 
 
 class _TransferDialogs:
@@ -3480,9 +3819,11 @@ class _Dialogs:
     banned = _BannedDialogs()
     coffee = _CoffeeDialogs()
     combat_power = _CombatPowerDialogs()
+    divorce = _DivorceDialogs()
     duel = _DuelDialogs()
     eat_human = _EatHumanDialogs()
     errors = _ErrorsDialogs()
+    family = _FamilyDialogs()
     fight = _FightDialogs()
     fun = _FunDialogs()
     ghoul = _GhoulDialogs()
@@ -3490,6 +3831,7 @@ class _Dialogs:
     kagune = _KaguneDialogs()
     link_media = _LinkMediaDialogs()
     lottery = _LotteryDialogs()
+    marriage = _MarriageDialogs()
     mob = _MobDialogs()
     moderation = _ModerationDialogs()
     music = _MusicDialogs()
@@ -3673,6 +4015,12 @@ PLACEHOLDERS: dict[str, frozenset[str]] = {
     "combat_power.rich.hints": frozenset(),
     "combat_power.rich.title": frozenset({"danger_rank", "name"}),
     "combat_power.short": frozenset({"effective_power", "vacuum_power"}),
+    "divorce.ask": frozenset(),
+    "divorce.button": frozenset(),
+    "divorce.dissolved": frozenset({"amount", "heir", "name"}),
+    "divorce.done": frozenset({"name"}),
+    "divorce.not_married": frozenset(),
+    "divorce.stale": frozenset(),
     "duel.accepted": frozenset(),
     "duel.buttons.consent_initiator": frozenset(),
     "duel.buttons.consent_target": frozenset(),
@@ -3709,6 +4057,7 @@ PLACEHOLDERS: dict[str, frozenset[str]] = {
     "duel.refusals.not_registered": frozenset(),
     "duel.refusals.pair_limit": frozenset({"per_pair"}),
     "duel.refusals.self_duel": frozenset(),
+    "duel.refusals.spouses": frozenset(),
     "duel.refusals.target_day_limit": frozenset(),
     "duel.refusals.target_no_ghoul": frozenset(),
     "duel.refusals.target_no_private_chat": frozenset(),
@@ -3735,6 +4084,36 @@ PLACEHOLDERS: dict[str, frozenset[str]] = {
     "errors.unexpected": frozenset({"error"}),
     "errors.user_not_found": frozenset({"query"}),
     "errors.username_not_found": frozenset({"username"}),
+    "family.list.empty": frozenset(),
+    "family.list.message": frozenset({"count", "rows"}),
+    "family.list.more": frozenset({"count"}),
+    "family.list.named_row": frozenset({"age", "members", "name", "place", "since"}),
+    "family.list.row": frozenset({"age", "members", "place", "since"}),
+    "family.rename.ask": frozenset({"name", "proposer", "rows"}),
+    "family.rename.buttons.agree": frozenset(),
+    "family.rename.buttons.decline": frozenset(),
+    "family.rename.buttons.private": frozenset(),
+    "family.rename.consent.accepted": frozenset(),
+    "family.rename.consent.declined": frozenset(),
+    "family.rename.consent.renamed": frozenset(),
+    "family.rename.declined": frozenset({"name", "person"}),
+    "family.rename.declined_private": frozenset(),
+    "family.rename.expired": frozenset({"name"}),
+    "family.rename.link_not_family": frozenset(),
+    "family.rename.link_stale": frozenset(),
+    "family.rename.refusals.already_pending": frozenset(),
+    "family.rename.refusals.bad_name": frozenset({"limit"}),
+    "family.rename.refusals.not_married": frozenset(),
+    "family.rename.renamed": frozenset({"name"}),
+    "family.rename.usage": frozenset(),
+    "family.rename.vote": frozenset({"name"}),
+    "family.rename.voted": frozenset(),
+    "family.row": frozenset({"age", "name", "since"}),
+    "family.single": frozenset(),
+    "family.title": frozenset(),
+    "family.title_named": frozenset({"name"}),
+    "family.top_name": frozenset({"members"}),
+    "family.view": frozenset({"balance", "rows", "title"}),
     "fight.defeated": frozenset({"name"}),
     "fight.draw": frozenset(),
     "fight.final_hp": frozenset({"hp", "name"}),
@@ -3859,6 +4238,47 @@ PLACEHOLDERS: dict[str, frozenset[str]] = {
             "winning_color",
         }
     ),
+    "marriage.ask": frozenset({"price", "proposer", "target"}),
+    "marriage.buttons.decline": frozenset(),
+    "marriage.buttons.family": frozenset(),
+    "marriage.buttons.family_decline": frozenset(),
+    "marriage.buttons.family_vote": frozenset(),
+    "marriage.buttons.pay": frozenset({"price"}),
+    "marriage.buttons.proposer": frozenset(),
+    "marriage.buttons.target": frozenset(),
+    "marriage.consent.accepted": frozenset(),
+    "marriage.consent.already": frozenset(),
+    "marriage.consent.declined": frozenset(),
+    "marriage.consent.married": frozenset(),
+    "marriage.consent.not_enough_money": frozenset({"price"}),
+    "marriage.consent.not_invited": frozenset(),
+    "marriage.consent.stale": frozenset(),
+    "marriage.declined": frozenset({"name", "price", "proposer"}),
+    "marriage.expired": frozenset({"price", "proposer"}),
+    "marriage.failed.family_changed": frozenset({"proposer"}),
+    "marriage.failed.target_broke": frozenset({"price", "target"}),
+    "marriage.failed.target_taken": frozenset({"target"}),
+    "marriage.family_declined": frozenset(),
+    "marriage.family_hint": frozenset({"proposer"}),
+    "marriage.family_vote": frozenset({"proposer", "target"}),
+    "marriage.family_voted": frozenset(),
+    "marriage.invite": frozenset({"proposer", "rows", "target"}),
+    "marriage.link_not_family": frozenset(),
+    "marriage.link_stale": frozenset(),
+    "marriage.married": frozenset({"members", "target"}),
+    "marriage.not_your_button": frozenset(),
+    "marriage.refusals.already_proposed": frozenset(),
+    "marriage.refusals.bot": frozenset(),
+    "marriage.refusals.not_a_person": frozenset(),
+    "marriage.refusals.not_enough_money": frozenset({"price"}),
+    "marriage.refusals.not_registered": frozenset(),
+    "marriage.refusals.same_family": frozenset(),
+    "marriage.refusals.self": frozenset(),
+    "marriage.refusals.target_married": frozenset(),
+    "marriage.row_confirmed": frozenset({"name"}),
+    "marriage.row_waiting": frozenset({"name"}),
+    "marriage.usage": frozenset(),
+    "marriage.user_not_found": frozenset({"target"}),
     "mob.busy": frozenset(),
     "mob.cooldown": frozenset({"minutes", "seconds"}),
     "mob.draw": frozenset(),
@@ -4408,14 +4828,17 @@ PLACEHOLDERS: dict[str, frozenset[str]] = {
     "transfer.cancelled": frozenset(),
     "transfer.done": frozenset({"amount"}),
     "transfer.errors.amount_out_of_range": frozenset({"max_amount", "min_amount"}),
+    "transfer.errors.bot": frozenset(),
     "transfer.errors.failed": frozenset(),
     "transfer.errors.insufficient_balance": frozenset(),
+    "transfer.errors.not_a_person": frozenset(),
     "transfer.errors.receiver_limit": frozenset(),
     "transfer.errors.receiver_missing": frozenset(),
     "transfer.errors.receiver_vanished": frozenset(),
     "transfer.errors.self_transfer": frozenset(),
     "transfer.errors.sender_missing": frozenset(),
     "transfer.errors.sender_too_new": frozenset({"days"}),
+    "transfer.errors.spouse": frozenset(),
     "transfer.reply_usage": frozenset(),
     "transfer.usage": frozenset(),
     "wordle.errors.not_russian": frozenset(),

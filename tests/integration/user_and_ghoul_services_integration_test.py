@@ -5,6 +5,7 @@ from src.bot.repositories.chat import ChatRepository
 from src.bot.repositories.ghoul import GhoulRepository
 from src.bot.repositories.user import UserRepository
 from src.bot.repositories.user_coldown import UserCooldownRepository
+from src.bot.repositories.wallet import WalletRepository
 from src.bot.services.ghoul import GhoulService
 from src.bot.services.user import UserService
 from src.bot.types import Race
@@ -18,6 +19,7 @@ def user_service(session):
         user_cooldown_repository=UserCooldownRepository(session),
         chat_repository=ChatRepository(session),
         balances_log_repository=BalancesLogRepository(session),
+        wallet_repository=WalletRepository(session),
     )
 
 

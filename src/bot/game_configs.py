@@ -297,3 +297,14 @@ class DuelConfig:
 
 
 DUEL_CONFIG = DuelConfig()
+
+
+@dataclass
+class MarriageConfig:
+    proposal_price: int = 250_000
+    acceptance_price: int = 250_000
+    proposal_lifetime_seconds: int = 3600
+    family_name_max_length: int = 32
+
+
+MARRIAGE_CONFIG = MarriageConfig()

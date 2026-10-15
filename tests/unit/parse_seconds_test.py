@@ -1,4 +1,6 @@
-from src.bot.utils import format_duration, parse_seconds
+import pytest
+
+from src.bot.utils import format_age, format_duration, parse_seconds
 
 
 def test_parse_seconds_basic():
@@ -44,3 +46,19 @@ def test_format_duration_days_hours_minutes():
 def test_format_duration_non_positive_clamped():
     assert format_duration(0) == "0м"
     assert format_duration(-10) == "0м"
+
+
+@pytest.mark.parametrize(
+    ("seconds", "age"),
+    [
+        (-5, "0м"),
+        (59, "0м"),
+        (7 * 60, "7м"),
+        (2 * 3600 + 15 * 60, "2ч 15м"),
+        (5 * 86400 + 4 * 3600 + 59 * 60, "5д 4ч"),
+        (40 * 86400 + 12 * 3600, "1мес 10д"),
+        (30 * 86400 + 5 * 3600, "1мес"),
+    ],
+)
+def test_format_age_shows_the_two_largest_units(seconds, age):
+    assert format_age(seconds) == age

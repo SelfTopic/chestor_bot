@@ -13,7 +13,9 @@ from src.bot.exceptions import (
 from src.bot.game_configs import TRANSFER_CONFIG
 from src.bot.repositories.balances_log import BalancesLogRepository
 from src.bot.repositories.transfer import TransferRepository
+from src.bot.repositories.family import FamilyRepository
 from src.bot.repositories.user import UserRepository
+from src.bot.repositories.wallet import WalletRepository
 from src.bot.services.transfer import TransferService
 from src.bot.utils import utcnow_naive
 from src.database.models import User
@@ -35,6 +37,8 @@ def transfer_service(session):
         user_repository=UserRepository(session),
         transfer_repository=TransferRepository(session),
         balances_log_repository=BalancesLogRepository(session),
+        wallet_repository=WalletRepository(session),
+        family_repository=FamilyRepository(session),
     )
 
 
@@ -66,7 +70,7 @@ async def test_validate_allows_brand_new_receiver(transfer_service, make_user, s
     await make_user(telegram_id=1, username="sender")
     await make_user(telegram_id=2, username="receiver")
     await _age_account(session, 1, days=10)
-    await UserRepository(session).change_balance_atomic(1, delta=1000)
+    await UserRepository(session).change_data(1, balance=1000)
 
     await transfer_service.validate(1, 2, 100)
 
@@ -77,7 +81,7 @@ async def test_validate_rejects_when_receiver_limit_exceeded(
     await make_user(telegram_id=1, username="sender")
     await make_user(telegram_id=2, username="receiver")
     await _age_account(session, 1, days=10)
-    await UserRepository(session).change_balance_atomic(1, delta=1000)
+    await UserRepository(session).change_data(1, balance=1000)
 
     transfer_repo = TransferRepository(session)
     for _ in range(TRANSFER_CONFIG.max_received_per_day):
@@ -94,7 +98,7 @@ async def test_transfer_moves_balance_and_logs(transfer_service, make_user, sess
     await _age_account(session, 1, days=10)
 
     user_repo = UserRepository(session)
-    await user_repo.change_balance_atomic(1, delta=1000)
+    await user_repo.change_data(1, balance=1000)
 
     transfer = await transfer_service.transfer(1, 2, 300)
 
@@ -127,6 +131,8 @@ async def _transfer_in_own_session(engine, sender_id, receiver_id, amount, resul
             user_repository=UserRepository(session),
             transfer_repository=TransferRepository(session),
             balances_log_repository=BalancesLogRepository(session),
+            wallet_repository=WalletRepository(session),
+            family_repository=FamilyRepository(session),
         )
         try:
             await service.transfer(sender_id, receiver_id, amount)
@@ -149,7 +155,7 @@ async def test_concurrent_transfers_never_overdraft(engine):
         await user_repo.upsert(telegram_id=1, first_name="Sender")
         await user_repo.upsert(telegram_id=2, first_name="Receiver")
         await _age_account(session, 1, days=10)
-        await user_repo.change_balance_atomic(1, delta=1000)
+        await user_repo.change_data(1, balance=1000)
         await session.commit()
 
     results = []

@@ -25,6 +25,8 @@ class DuelInvite:
         match refused.reason:
             case DuelRefusal.SELF:
                 return refusals.self_duel()
+            case DuelRefusal.SPOUSES:
+                return refusals.spouses()
             case DuelRefusal.NOT_REGISTERED:
                 return refusals.not_registered()
             case DuelRefusal.INITIATOR_NO_PRIVATE_CHAT:

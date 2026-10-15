@@ -12,6 +12,7 @@ from .race_profile import RaceProfileRouter
 from .role_play import RolePlayRouter
 from .edits_router import EditsRouter
 from .link_media_router import LinkMediaRouter
+from .marriage import MarriageLinkRouter, MarriageRouter, MarriageTicker
 from .music import MusicRouter
 from .roast_router import RoastRouter
 from .userbot_inbox import UserbotInboxRouter
@@ -33,6 +34,9 @@ __all__ = [
     "RaceProfileRouter",
     "EditsRouter",
     "LinkMediaRouter",
+    "MarriageLinkRouter",
+    "MarriageRouter",
+    "MarriageTicker",
     "MusicRouter",
     "RoastRouter",
     "UserbotInboxRouter",

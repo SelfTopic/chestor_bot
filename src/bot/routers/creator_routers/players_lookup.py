@@ -19,7 +19,7 @@ class AdminProfileHandler(MessageHandler[AppContext[TextMessage]]):
     query = cmd
     usage = Dialogs.admin.profile.usage()
 
-    def profile_text(self, profile: PlayerProfile) -> str:
+    def profile_text(self, profile: PlayerProfile, balance: int) -> str:
         phrases = Dialogs.admin.profile
         user = profile.user
         ghoul = profile.ghoul
@@ -59,7 +59,7 @@ class AdminProfileHandler(MessageHandler[AppContext[TextMessage]]):
                 id=user.telegram_id,
                 name=user.full_name,
                 username=user.username or "—",
-                balance=user.balance,
+                balance=balance,
                 status=self.ctx.text(status),
                 ban=ban,
                 ghoul=ghoul_text,
@@ -75,7 +75,8 @@ class AdminProfileHandler(MessageHandler[AppContext[TextMessage]]):
             await self.ctx.say(not_found)
             return
 
-        await self.ctx.message.answer(self.profile_text(profile), parse_mode="HTML")
+        balance = await self.ctx.user_service.balance(profile.user.telegram_id)
+        await self.ctx.message.answer(self.profile_text(profile, balance), parse_mode="HTML")
 
     async def on_error(self, exc: Exception) -> None:
         if isinstance(exc, CommandArgsError):

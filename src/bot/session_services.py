@@ -13,6 +13,7 @@ from .repositories import (
     ChatRepository,
     DeathLogRepository,
     DuelSessionRepository,
+    FamilyRepository,
     GhoulEditRepository,
     GhoulRepository,
     LotteryRepository,
@@ -23,6 +24,7 @@ from .repositories import (
     TransferRepository,
     UserCooldownRepository,
     UserRepository,
+    WalletRepository,
 )
 from .repositories.fight import FightRepository
 from .repositories.user_names import UserNameRepository
@@ -45,6 +47,7 @@ from .services import (
 from .services.battle import BattleService
 from .services.broadcast import BroadcastService
 from .services.dialog import DialogService
+from .services.family import FamilyService
 from .services.ghoul_game import CoffeeService, LotteryService
 from .services.level_up import LevelUpService
 from .services.moderation import ModerationService
@@ -154,6 +157,14 @@ class SessionServices:
         return DuelSessionRepository(self.session)
 
     @cached_property
+    def wallet_repository(self) -> WalletRepository:
+        return WalletRepository(self.session)
+
+    @cached_property
+    def family_repository(self) -> FamilyRepository:
+        return FamilyRepository(self.session)
+
+    @cached_property
     def battle_engine(self) -> BattleEngine:
         return BattleEngine(mob_service=self.mob_service)
 
@@ -180,6 +191,7 @@ class SessionServices:
             self.user_cooldown_repository,
             self.chat_repository,
             self.balances_log_repository,
+            self.wallet_repository,
         )
 
     @cached_property
@@ -201,6 +213,10 @@ class SessionServices:
             self.user_cooldown_repository,
             self.chat_repository,
         )
+
+    @cached_property
+    def family_service(self) -> FamilyService:
+        return FamilyService(self.family_repository, self.user_service)
 
     @cached_property
     def chat_service(self) -> ChatService:
@@ -247,6 +263,7 @@ class SessionServices:
             user_repo=self.user_repository,
             ghoul_repo=self.ghoul_repository,
             balances_log_repo=self.balances_log_repository,
+            wallet_repo=self.wallet_repository,
         )
 
     @cached_property
@@ -263,6 +280,8 @@ class SessionServices:
             user_repository=self.user_repository,
             transfer_repository=self.transfer_repository,
             balances_log_repository=self.balances_log_repository,
+            wallet_repository=self.wallet_repository,
+            family_repository=self.family_repository,
         )
 
     @cached_property
@@ -281,6 +300,7 @@ class SessionServices:
             level_up_service=self.level_up_service,
             battle_record_service=self.battle_record_service,
             duel_service=self.duel_service,
+            families=self.family_repository,
         )
 
     @cached_property

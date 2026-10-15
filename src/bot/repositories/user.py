@@ -2,7 +2,7 @@ import logging
 from datetime import datetime
 from typing import Any, Optional, Union
 
-from sqlalchemy import desc, exists, select, update
+from sqlalchemy import exists, select
 from sqlalchemy.dialects.postgresql import insert
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -87,10 +87,6 @@ class UserRepository(Base):
         logger.debug(f"User found: ID {user.id}")
         return user
 
-    async def get_top_balance(self, limit: int):
-        stmt = select(User).order_by(desc(User.balance)).limit(limit)
-        result = await self.session.scalars(stmt)
-        return list(result)
 
     async def exists(self, telegram_id: int) -> bool:
         logger.debug(f"Called method exists. Params: telegram_id={telegram_id}")
@@ -133,36 +129,7 @@ class UserRepository(Base):
 
         return user
 
-    async def change_balance_atomic(self, telegram_id: int, delta: int) -> Optional[User]:
-        logger.debug(
-            f"Called method change_balance_atomic. Params: telegram_id={telegram_id}, delta={delta}"
-        )
 
-        stmt = (
-            update(User)
-            .where(User.telegram_id == telegram_id)
-            .values(balance=User.balance + delta)
-            .returning(User)
-        )
-
-        user = await self.session.scalar(stmt)
-        return user
-
-    # Проверка баланса в WHERE того же UPDATE: между проверкой и списанием нет гонки.
-    async def debit_if_sufficient(self, telegram_id: int, amount: int) -> Optional[User]:
-        logger.debug(
-            f"Called method debit_if_sufficient. Params: telegram_id={telegram_id}, amount={amount}"
-        )
-
-        stmt = (
-            update(User)
-            .where(User.telegram_id == telegram_id, User.balance >= amount)
-            .values(balance=User.balance - amount)
-            .returning(User)
-        )
-
-        user = await self.session.scalar(stmt)
-        return user
 
     async def ban(
         self,

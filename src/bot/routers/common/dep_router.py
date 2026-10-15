@@ -42,7 +42,7 @@ class DepnutHandler(MessageHandler[AppContext[TextUserMessage]]):
                 winning_color=dep_result.winning_color.value,
                 bet=dep_result.bet_amount,
                 earned=dep_result.earned,
-                balance=dep_result.user.balance,
+                balance=dep_result.balance,
                 multiplier=f"{multiplier}x",
             )
 
@@ -50,7 +50,7 @@ class DepnutHandler(MessageHandler[AppContext[TextUserMessage]]):
             chosen_color=dep_result.chosen_color.value,
             winning_color=dep_result.winning_color.value,
             bet=dep_result.bet_amount,
-            balance=dep_result.user.balance,
+            balance=dep_result.balance,
         )
 
     async def reply_later(self, line: Line) -> None:
