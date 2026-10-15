@@ -1,3 +1,4 @@
+import re
 from dataclasses import dataclass
 from pathlib import Path
 
@@ -62,3 +63,73 @@ def _split(text: str, path: Path) -> tuple[str, str]:
     except StopIteration:
         raise DocsError(f"{path.name}: шапка не закрыта строкой ---") from None
     return "\n".join(lines[1:end]), "\n".join(lines[end + 1 :])
+
+
+# Подраздел «### …» — одна команда или механика; /help находит его по словам заголовка.
+@dataclass(frozen=True)
+class DocTopic:
+    page: DocPage
+    heading: str
+    words: tuple[str, ...]
+    markdown: str
+
+
+TOPIC_LEVEL = "### "
+SEPARATORS = re.compile(r"[/,()]")
+MARKUP = re.compile(r"[*`]")
+
+
+def topics(page: DocPage) -> list[DocTopic]:
+    found: list[DocTopic] = []
+    heading: str | None = None
+    lines: list[str] = []
+    in_code = False
+
+    def close() -> None:
+        if heading is not None:
+            found.append(DocTopic(page, heading, heading_words(heading), "\n".join(lines).strip()))
+
+    for line in page.markdown.splitlines():
+        if line.lstrip().startswith("```"):
+            in_code = not in_code
+        is_heading = not in_code and line.startswith("#")
+        if is_heading:
+            close()
+            heading, lines = None, []
+            if line.startswith(TOPIC_LEVEL):
+                heading = line[len(TOPIC_LEVEL) :].strip()
+        if heading is not None:
+            lines.append(line)
+    close()
+    return found
+
+
+def heading_words(heading: str) -> tuple[str, ...]:
+    words = (normalize(part) for part in SEPARATORS.split(MARKUP.sub("", heading)))
+    return tuple(word for word in words if word)
+
+
+def normalize(text: str) -> str:
+    return " ".join(text.lower().replace("ё", "е").lstrip("/").split())
+
+
+def find(pages: list[DocPage], query: str) -> DocTopic | DocPage | None:
+    wanted = normalize(query)
+    if not wanted:
+        return None
+    every = [topic for page in pages for topic in topics(page)]
+    exact = next((topic for topic in every if wanted in topic.words), None)
+    if exact is not None:
+        return exact
+    page = next(
+        (page for page in pages if wanted in (normalize(word) for word in page.help_words)),
+        None,
+    )
+    if page is not None:
+        return page
+    # «кофе» находит «пить кофе»: все слова запроса есть в одном из слов заголовка.
+    tokens = set(wanted.split())
+    return next(
+        (topic for topic in every if any(tokens <= set(word.split()) for word in topic.words)),
+        None,
+    )

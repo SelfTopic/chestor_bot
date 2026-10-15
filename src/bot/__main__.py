@@ -233,6 +233,7 @@ class Dispatcher(BaseDispatcher[AppContext]):
             search_service=self.search_service,
             link_media_service=self.link_media_service,
             music_service=self.music_service,
+            player_docs_service=self.player_docs,
             rp_commands_service=self.rp_commands_service,
             wordle_service=self.wordle_service,
             wikipedia_service=self.wikipedia_service,

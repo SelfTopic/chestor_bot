@@ -114,4 +114,8 @@ class TelegramDocsChannel:
             raise NotifyError(str(e)) from e
 
     def link(self, message_id: int) -> str:
-        return f"https://t.me/{self._channel.lstrip('@')}/{message_id}"
+        return post_link(self._channel, message_id)
+
+
+def post_link(channel: str, message_id: int) -> str:
+    return f"https://t.me/{channel.lstrip('@')}/{message_id}"

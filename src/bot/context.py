@@ -33,6 +33,7 @@ from .session_services import SessionServices
 from .services.quiz import QuizService
 from .services.link_media import LinkMediaService
 from .services.music import MusicService
+from .services.player_docs import PlayerDocsService
 from .services.roast import RoastService
 from .services.search import SearchService
 
@@ -61,6 +62,7 @@ class AppContext(BaseContext[TEvent], SessionServices):
     search_service: SearchService
     link_media_service: LinkMediaService
     music_service: MusicService
+    player_docs_service: PlayerDocsService
     rp_commands_service: RpCommandsService
     wordle_service: WordleService
     wikipedia_service: WikipediaService

@@ -1,4 +1,4 @@
-from .pages import DocPage, load_pages
+from .pages import DocPage, DocTopic, load_pages
 from .service import PlayerDocsService, PublishReport
 
-__all__ = ["DocPage", "PlayerDocsService", "PublishReport", "load_pages"]
+__all__ = ["DocPage", "DocTopic", "PlayerDocsService", "PublishReport", "load_pages"]

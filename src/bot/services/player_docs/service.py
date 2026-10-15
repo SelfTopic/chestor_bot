@@ -7,7 +7,7 @@ from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 
 from ...repositories import DocsPostRepository, PublishedPost
 from ..notify import DocsChannel
-from .pages import DocPage, load_contents_template, load_pages
+from .pages import DocPage, DocTopic, find, load_contents_template, load_pages
 
 logger = logging.getLogger(__name__)
 
@@ -28,6 +28,15 @@ class PlayerDocsService:
 
     def pages(self) -> list[DocPage]:
         return load_pages(self._folder)
+
+    def find(self, query: str) -> DocTopic | DocPage | None:
+        return find(self.pages(), query)
+
+    # Процессный сервис: на чтение опубликованного — своя короткая сессия.
+    async def published(self, channel: str) -> dict[str, int]:
+        async with self._session_factory() as session:
+            posts = await DocsPostRepository(session).published(channel)
+        return {slug: post.message_id for slug, post in posts.items()}
 
     async def publish(self, channel: DocsChannel, channel_name: str) -> PublishReport:
         pages = self.pages()
