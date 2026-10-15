@@ -57,6 +57,11 @@ class ExplicitTargetHandler(_TargetErrors, Generic[TTargetArgs]):
 
     async def handle(self) -> None:
         args = self.cmd.parse(self.ctx)
+        # Кликабельное имя человека без ника несёт его id: искать в базе не нужно.
+        mentioned = self.ctx.mentions()
+        if mentioned:
+            await self.perform(mentioned[0][1].id, args)
+            return
 
         user = await find_user(self.ctx.user_service, args.target)
         if user is None:
