@@ -7,13 +7,14 @@ from .consent import (
     NotYourMarriageButtonHandler,
     ProposalAnswerHandler,
 )
-from .family import DivorceHandler, DivorcePressHandler, FamilyHandler
+from .family import DivorceHandler, DivorcePressHandler, FamiliesHandler, FamilyHandler
 from .propose import ProposalHandler, ProposalPaymentHandler, ProposalRepliedHandler
+from .rename import RenameAnswerHandler, RenameHandler, RenameLinkHandler
 from .ticker import MarriageTicker
 
 
 class MarriageLinkRouter(BaseRouter[AppContext]):
-    handlers = (FamilyConsentLinkHandler,)
+    handlers = (FamilyConsentLinkHandler, RenameLinkHandler)
 
 
 class MarriageRouter(BaseRouter[AppContext]):
@@ -23,6 +24,9 @@ class MarriageRouter(BaseRouter[AppContext]):
         ProposalPaymentHandler,
         ProposalAnswerHandler,
         FamilyHandler,
+        FamiliesHandler,
+        RenameHandler,
+        RenameAnswerHandler,
         DivorceHandler,
         DivorcePressHandler,
         NotYourMarriageButtonHandler,

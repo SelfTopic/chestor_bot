@@ -3,14 +3,16 @@ from datetime import datetime, timedelta
 from enum import Enum, auto
 
 from src.bot.game_configs import MARRIAGE_CONFIG
-from src.database.models import MarriageProposal
+from src.bot.utils import is_service_account
+from src.database.models import FamilyRename, MarriageProposal
 
-from ..repositories import FamilyRepository, Member
+from ..repositories import ChatFamily, FamilyRepository, Member
 from .user import UserService
 
 
 class MarriageRefusal(Enum):
     SELF = auto()
+    NOT_A_PERSON = auto()
     NOT_REGISTERED = auto()
     SAME_FAMILY = auto()
     TARGET_MARRIED = auto()
@@ -47,6 +49,33 @@ class NotMarried(Exception):
     pass
 
 
+class RenameRefusal(Enum):
+    NOT_MARRIED = auto()
+    BAD_NAME = auto()
+    ALREADY_PENDING = auto()
+
+
+class RenameRefused(Exception):
+    def __init__(self, reason: RenameRefusal) -> None:
+        super().__init__(reason.name)
+        self.reason = reason
+
+
+@dataclass(frozen=True)
+class RenameState:
+    rename: FamilyRename
+    # Нынешние члены семьи: согласиться должен каждый.
+    members: tuple[int, ...]
+
+    @property
+    def consented(self) -> frozenset[int]:
+        return frozenset(self.rename.consented)
+
+    @property
+    def renamed(self) -> bool:
+        return self.rename.stage == "renamed"
+
+
 @dataclass(frozen=True)
 class ProposalState:
     proposal: MarriageProposal
@@ -67,6 +96,7 @@ class ProposalState:
 @dataclass(frozen=True)
 class FamilyView:
     family_id: int
+    name: str | None
     balance: int
     created_at: datetime
     members: list[Member]
@@ -88,6 +118,8 @@ class FamilyService:
     async def check_proposal(self, proposer_id: int, target_id: int) -> None:
         if proposer_id == target_id:
             raise MarriageRefused(MarriageRefusal.SELF)
+        if is_service_account(proposer_id) or is_service_account(target_id):
+            raise MarriageRefused(MarriageRefusal.NOT_A_PERSON)
 
         proposer = await self._users.get(proposer_id)
         if proposer is None or await self._users.get(target_id) is None:
@@ -223,7 +255,7 @@ class FamilyService:
         family = await self._families.family(family_id)
         assert family is not None
         members = await self._families.members(family_id)
-        return FamilyView(family_id, family.balance, family.created_at, members)
+        return FamilyView(family_id, family.name, family.balance, family.created_at, members)
 
     async def divorce(self, telegram_id: int) -> Divorce:
         family_id = await self._families.family_id_of(telegram_id)
@@ -253,4 +285,68 @@ class FamilyService:
             proposal = await self._families.finish(proposal_id, "expired")
             if proposal is not None:
                 expired.append(proposal)
+        return expired
+
+    async def families_in_chat(self, chat_id: int) -> list[ChatFamily]:
+        return await self._families.families_in_chat(chat_id)
+
+    async def propose_rename(self, proposer_id: int, raw_name: str, chat_id: int) -> RenameState:
+        name = " ".join(raw_name.split())
+        if not 0 < len(name) <= MARRIAGE_CONFIG.family_name_max_length:
+            raise RenameRefused(RenameRefusal.BAD_NAME)
+        family_id = await self._families.family_id_of(proposer_id)
+        if family_id is None:
+            raise RenameRefused(RenameRefusal.NOT_MARRIED)
+        if await self._families.awaiting_rename(family_id) is not None:
+            raise RenameRefused(RenameRefusal.ALREADY_PENDING)
+
+        rename = await self._families.create_rename(family_id, name, proposer_id, chat_id)
+        return await self._rename_state(rename)
+
+    async def set_rename_message(self, rename_id: int, message_id: int) -> None:
+        await self._families.set_rename_message(rename_id, message_id)
+
+    async def rename_state(self, rename_id: int) -> RenameState | None:
+        rename = await self._families.rename(rename_id)
+        return None if rename is None else await self._rename_state(rename)
+
+    async def answer_rename(self, rename_id: int, telegram_id: int, agree: bool) -> RenameState:
+        rename = await self._families.lock_rename(rename_id)
+        if rename is None or rename.stage != "awaiting":
+            raise ConsentRefused(ConsentRefusal.STALE)
+        state = await self._rename_state(rename)
+        if not state.members:
+            raise ConsentRefused(ConsentRefusal.STALE)
+        if telegram_id not in state.members:
+            raise ConsentRefused(ConsentRefusal.NOT_INVITED)
+
+        if not agree:
+            declined = await self._families.finish_rename(rename_id, "declined", telegram_id)
+            assert declined is not None
+            return replace(state, rename=declined)
+
+        if telegram_id in state.consented:
+            raise ConsentRefused(ConsentRefusal.ALREADY_CONSENTED)
+        rename = await self._families.add_rename_consent(rename_id, telegram_id)
+        if set(state.members) <= set(rename.consented):
+            await self._families.set_name(rename.family_id, rename.name)
+            renamed = await self._families.finish_rename(rename_id, "renamed")
+            assert renamed is not None
+            rename = renamed
+        return replace(state, rename=rename)
+
+    async def _rename_state(self, rename: FamilyRename) -> RenameState:
+        members = [m.telegram_id for m in await self._families.members(rename.family_id)]
+        proposer = rename.proposer_telegram_id
+        ordered = [proposer] if proposer in members else []
+        ordered += [tid for tid in members if tid != proposer]
+        return RenameState(rename, tuple(ordered))
+
+    async def expire_overdue_renames(self) -> list[RenameState]:
+        lifetime = timedelta(seconds=MARRIAGE_CONFIG.proposal_lifetime_seconds)
+        expired = []
+        for rename_id in await self._families.overdue_renames(lifetime):
+            rename = await self._families.finish_rename(rename_id, "expired")
+            if rename is not None:
+                expired.append(await self._rename_state(rename))
         return expired

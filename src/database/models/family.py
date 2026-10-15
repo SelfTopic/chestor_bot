@@ -2,6 +2,7 @@ from datetime import datetime
 from typing import Optional
 
 from sqlalchemy import BigInteger, ForeignKey, func
+from sqlalchemy.dialects.postgresql import ARRAY
 from sqlalchemy.orm import Mapped, mapped_column
 
 from .base import Base
@@ -70,5 +71,27 @@ class MarriageConsent(Base):
         ForeignKey(MarriageProposal.id, ondelete="CASCADE"), primary_key=True
     )
     telegram_id: Mapped[int] = mapped_column(BigInteger, primary_key=True)
+
+    created_at: Mapped[datetime] = mapped_column(nullable=False, server_default=func.now())
+
+
+class FamilyRename(Base):
+    __tablename__ = "family_renames"
+
+    id: Mapped[int] = mapped_column(autoincrement=True, primary_key=True)
+
+    family_id: Mapped[int] = mapped_column(
+        ForeignKey(Family.id, ondelete="CASCADE"), nullable=False, index=True
+    )
+    name: Mapped[str] = mapped_column(nullable=False)
+    proposer_telegram_id: Mapped[int] = mapped_column(BigInteger, nullable=False)
+
+    chat_id: Mapped[int] = mapped_column(BigInteger, nullable=False)
+    message_id: Mapped[Optional[int]] = mapped_column(BigInteger, nullable=True)
+
+    consented: Mapped[list[int]] = mapped_column(ARRAY(BigInteger), nullable=False)
+
+    stage: Mapped[str] = mapped_column(nullable=False, default="awaiting", index=True)
+    declined_by: Mapped[Optional[int]] = mapped_column(BigInteger, nullable=True)
 
     created_at: Mapped[datetime] = mapped_column(nullable=False, server_default=func.now())

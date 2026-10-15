@@ -13,6 +13,7 @@ from .regen_calculate import (
     hours_until_starved,
     next_hunger_threshold,
 )
+from .service_accounts import is_service_account
 from .time_now import utcnow_naive
 
 __all__ = [
@@ -31,5 +32,6 @@ __all__ = [
     "hours_until_hunger_threshold",
     "hours_until_starved",
     "next_hunger_threshold",
+    "is_service_account",
     "utcnow_naive",
 ]

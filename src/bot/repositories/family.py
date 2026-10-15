@@ -2,12 +2,14 @@ from dataclasses import dataclass
 from datetime import datetime, timedelta
 
 from sqlalchemy import delete, func, select, update
-from sqlalchemy.dialects.postgresql import insert
+from sqlalchemy.dialects.postgresql import aggregate_order_by, insert
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from ...database.models import (
+    ChatParticipant,
     Family,
     FamilyMember,
+    FamilyRename,
     MarriageConsent,
     MarriageProposal,
     User,
@@ -19,6 +21,14 @@ from .base import Base
 class Member:
     telegram_id: int
     joined_at: datetime
+
+
+@dataclass(frozen=True)
+class ChatFamily:
+    family_id: int
+    name: str | None
+    created_at: datetime
+    member_names: list[str]
 
 
 class FamilyRepository(Base):
@@ -169,6 +179,98 @@ class FamilyRepository(Base):
             select(MarriageProposal.id).where(
                 MarriageProposal.stage == "awaiting",
                 MarriageProposal.created_at < func.now() - lifetime,
+            )
+        )
+        return list(rows)
+
+    async def set_name(self, family_id: int, name: str) -> None:
+        await self.session.execute(update(Family).where(Family.id == family_id).values(name=name))
+
+    async def families_in_chat(self, chat_id: int) -> list[ChatFamily]:
+        in_chat = (
+            select(FamilyMember.family_id)
+            .join(ChatParticipant, ChatParticipant.telegram_id == FamilyMember.telegram_id)
+            .where(ChatParticipant.chat_id == chat_id)
+        )
+        names = func.array_agg(aggregate_order_by(User.first_name, FamilyMember.joined_at))
+        rows = await self.session.execute(
+            select(Family.id, Family.name, Family.created_at, names)
+            .join(FamilyMember, FamilyMember.family_id == Family.id)
+            .join(User, User.telegram_id == FamilyMember.telegram_id)
+            .where(Family.id.in_(in_chat))
+            .group_by(Family.id)
+            .order_by(Family.created_at)
+        )
+        return [
+            ChatFamily(family_id, name, created_at, list(member_names))
+            for family_id, name, created_at, member_names in rows
+        ]
+
+    async def create_rename(
+        self, family_id: int, name: str, proposer_id: int, chat_id: int
+    ) -> FamilyRename:
+        rename = FamilyRename(
+            family_id=family_id,
+            name=name,
+            proposer_telegram_id=proposer_id,
+            chat_id=chat_id,
+            consented=[proposer_id],
+            stage="awaiting",
+        )
+        self.session.add(rename)
+        await self.session.flush()
+        return rename
+
+    async def awaiting_rename(self, family_id: int) -> FamilyRename | None:
+        return await self.session.scalar(
+            select(FamilyRename).where(
+                FamilyRename.family_id == family_id, FamilyRename.stage == "awaiting"
+            )
+        )
+
+    async def rename(self, rename_id: int) -> FamilyRename | None:
+        return await self.session.get(FamilyRename, rename_id)
+
+    async def lock_rename(self, rename_id: int) -> FamilyRename | None:
+        return await self.session.scalar(
+            select(FamilyRename)
+            .where(FamilyRename.id == rename_id)
+            .with_for_update()
+            .execution_options(populate_existing=True)
+        )
+
+    async def set_rename_message(self, rename_id: int, message_id: int) -> None:
+        await self.session.execute(
+            update(FamilyRename).where(FamilyRename.id == rename_id).values(message_id=message_id)
+        )
+
+    async def add_rename_consent(self, rename_id: int, telegram_id: int) -> FamilyRename:
+        rename = await self.session.scalar(
+            update(FamilyRename)
+            .where(FamilyRename.id == rename_id)
+            .values(consented=func.array_append(FamilyRename.consented, telegram_id))
+            .returning(FamilyRename)
+            .execution_options(populate_existing=True)
+        )
+        assert rename is not None
+        return rename
+
+    async def finish_rename(
+        self, rename_id: int, stage: str, declined_by: int | None = None
+    ) -> FamilyRename | None:
+        return await self.session.scalar(
+            update(FamilyRename)
+            .where(FamilyRename.id == rename_id, FamilyRename.stage == "awaiting")
+            .values(stage=stage, declined_by=declined_by)
+            .returning(FamilyRename)
+            .execution_options(populate_existing=True)
+        )
+
+    async def overdue_renames(self, lifetime: timedelta) -> list[int]:
+        rows = await self.session.scalars(
+            select(FamilyRename.id).where(
+                FamilyRename.stage == "awaiting",
+                FamilyRename.created_at < func.now() - lifetime,
             )
         )
         return list(rows)

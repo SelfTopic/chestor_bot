@@ -137,7 +137,11 @@ class NotYourMarriageButtonHandler(CallbackQueryHandler[AppContext[DataCallbackQ
 
 
 class MalformedMarriageButtonHandler(CallbackQueryHandler[AppContext[DataCallbackQuery]]):
-    query = CallbackDataStartswith("marry") | CallbackDataStartswith("divorce:")
+    query = (
+        CallbackDataStartswith("marry")
+        | CallbackDataStartswith("fname:")
+        | CallbackDataStartswith("divorce:")
+    )
 
     async def handle(self) -> None:
         await self.ctx.callback_query.answer()

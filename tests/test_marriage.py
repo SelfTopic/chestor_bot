@@ -13,6 +13,7 @@ from src.bot.dialogs import Dialogs
 from src.bot.game_configs import MARRIAGE_CONFIG
 from src.bot.repositories import FamilyRepository
 from src.bot.routers.common.marriage.render import mention
+from src.bot.utils.service_accounts import TELEGRAM
 from src.database.models import Family, MarriageProposal
 
 from .conftest import button_data, callback_update, message_update, only_text, owner_dict, phrase_texts
@@ -173,6 +174,8 @@ async def test_one_refusal_cancels_the_proposal_and_burns_the_money(
     ("balances", "target", "refusal"),
     [
         ({"Вася": RICH}, A, Dialogs.marriage.refusals.self()),
+        # Автопересылка из канала: в from — служебный аккаунт Telegram.
+        ({"Вася": RICH}, TELEGRAM, Dialogs.marriage.refusals.not_a_person()),
         ({"Вася": PRICE - 1}, B, Dialogs.marriage.refusals.not_enough_money(price=PRICE)),
     ],
 )
@@ -182,6 +185,18 @@ async def test_proposal_refusals(send, session_factory, balances, target, refusa
     (reply,) = await send("брак", uid=A, chat=GROUP, reply_to_uid=target)
 
     assert reply in phrase_texts(refusal)
+
+
+async def test_a_bot_cannot_be_called_even_if_it_got_into_the_database(feed, telegram, session_factory):
+    await seed_players(session_factory, Вася=RICH)
+    await seed(session_factory, 999, "Другой бот")
+    update = message_update("брак", uid=A, chat=GROUP, reply_to_uid=999)
+    update["message"]["reply_to_message"]["from"]["is_bot"] = True
+
+    await feed(update)
+
+    (reply,) = telegram.bodies("sendMessage")
+    assert reply["text"] in phrase_texts(Dialogs.marriage.refusals.bot())
 
 
 async def test_someone_already_married_cannot_be_called(feed, send, session_factory, propose):
@@ -292,3 +307,91 @@ async def test_spouses_neither_duel_nor_transfer_to_each_other(send, session_fac
 
     assert duel in phrase_texts(Dialogs.duel.refusals.spouses())
     assert transfer in phrase_texts(Dialogs.transfer.errors.spouse())
+
+
+@pytest.fixture
+def rename(feed, telegram):
+    """Член семьи предлагает имя; отдаёт сообщение с кнопками."""
+
+    async def _rename(uid: int, name: str) -> dict[str, Any]:
+        await feed(message_update(f"имя семьи {name}", uid=uid, first_name=NAMES[uid], chat=GROUP))
+        (ask,) = telegram.bodies("sendMessage")
+        return ask
+
+    return _rename
+
+
+async def family_name(session_factory, uid: int) -> str | None:
+    async with session_factory() as session:
+        families = FamilyRepository(session)
+        family_id = await families.family_id_of(uid)
+        assert family_id is not None
+        family = await families.family(family_id)
+        assert family is not None
+        return family.name
+
+
+async def test_family_is_named_only_when_everyone_agrees_and_the_top_shows_the_name(
+    feed, send, telegram, session_factory, rename
+):
+    await seed_players(session_factory)
+    await seed_family(session_factory, A, B, C, balance=1000)
+    ask = await rename(A, "  Антейку   навсегда ")
+    agree = button_data(ask, only_text(Dialogs.family.rename.buttons.agree()))
+
+    await feed(press(agree, B, 100))
+    assert await family_name(session_factory, A) is None
+    await send("/start rename_1", uid=C, first_name=NAMES[C])
+    (vote,) = telegram.bodies("sendMessage")
+    await feed(press(button_data(vote, only_text(Dialogs.family.rename.buttons.agree())), C, 55))
+
+    assert await family_name(session_factory, A) == "Антейку навсегда"
+    (top,) = await send("топ бал 1", uid=D, first_name=NAMES[D])
+    row = only_text(Dialogs.tops.balance.row(place=1, name="Антейку навсегда", balance=1000))
+    assert top == only_text(Dialogs.tops.balance.message(count=1, rows=row))
+
+
+async def test_one_member_against_keeps_the_old_name(feed, telegram, session_factory, rename):
+    await seed_players(session_factory)
+    await seed_family(session_factory, A, B)
+    ask = await rename(A, "Аогири")
+
+    await feed(press(button_data(ask, only_text(Dialogs.family.rename.buttons.decline())), B, 100))
+
+    assert await family_name(session_factory, A) is None
+    (edit,) = telegram.bodies("editMessageText")
+    assert edit["text"] == only_text(Dialogs.family.rename.declined(person=who(B), name="Аогири"))
+
+
+async def test_outsider_cannot_vote_and_a_long_name_is_refused(
+    feed, send, telegram, session_factory, rename
+):
+    await seed_players(session_factory)
+    await seed_family(session_factory, A, B)
+
+    (long,) = await send(f"имя семьи {'я' * 33}", uid=A, chat=GROUP)
+    assert long == only_text(Dialogs.family.rename.refusals.bad_name(limit=32))
+
+    ask = await rename(A, "Аогири")
+    await feed(press(button_data(ask, only_text(Dialogs.family.rename.buttons.agree())), D))
+    (alert,) = telegram.bodies("answerCallbackQuery")
+    assert alert["text"] == only_text(Dialogs.marriage.consent.not_invited())
+
+
+async def test_marriages_lists_families_with_a_member_in_this_chat(send, session_factory):
+    await seed_players(session_factory)
+    await seed_family(session_factory, A, B)
+    await seed_family(session_factory, C, D)
+    async with session_factory() as session:
+        await FamilyRepository(session).set_name(1, "Антейку")
+        await session.commit()
+        (family, _) = await session.scalars(select(Family).order_by(Family.id))
+    await send("привет", uid=B, first_name=NAMES[B], chat=GROUP)
+
+    (reply,) = await send("браки", uid=B, first_name=NAMES[B], chat=GROUP)
+
+    since = family.created_at.strftime("%d.%m.%Y")
+    row = only_text(
+        Dialogs.family.list.named_row(place=1, name="Антейку", members="Вася, Петя", since=since)
+    )
+    assert reply == only_text(Dialogs.family.list.message(count=1, rows=row))

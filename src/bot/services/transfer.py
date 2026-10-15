@@ -13,6 +13,7 @@ from ..exceptions import (
     SelfTransferError,
     SenderMissingError,
     SenderTooNewError,
+    ServiceAccountTransferError,
     SpouseTransferError,
 )
 from ..game_configs import TRANSFER_CONFIG
@@ -23,7 +24,7 @@ from ..repositories import (
     UserRepository,
     WalletRepository,
 )
-from ..utils import utcnow_naive
+from ..utils import is_service_account, utcnow_naive
 
 logger = logging.getLogger(__name__)
 
@@ -55,6 +56,9 @@ class TransferService:
 
         if sender_id == receiver_id:
             raise SelfTransferError()
+
+        if is_service_account(sender_id) or is_service_account(receiver_id):
+            raise ServiceAccountTransferError()
 
         if await self.family_repository.same_family(sender_id, receiver_id):
             raise SpouseTransferError()

@@ -14,5 +14,10 @@ class MarriageAnswer(CallbackPayload, prefix="marry"):
     answer: Literal["agree", "decline"]
 
 
+class FamilyRenameAnswer(CallbackPayload, prefix="fname"):
+    rename_id: int
+    answer: Literal["agree", "decline"]
+
+
 class DivorcePress(CallbackPayload, prefix="divorce"):
     expected_id: int

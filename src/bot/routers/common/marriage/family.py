@@ -1,3 +1,5 @@
+import html
+
 from selfrot import InlineKeyboard, MessageHandler
 from selfrot.filter import HasUser, Text
 from selfrot.handlers import CallbackQueryHandler
@@ -31,8 +33,47 @@ class FamilyHandler(MessageHandler[AppContext[TextUserMessage]]):
             )
             for member in family.members
         )
-        view = Dialogs.family.view(balance=family.balance, rows=rows)
+        title = (
+            Dialogs.family.title_named(name=html.escape(family.name))
+            if family.name
+            else Dialogs.family.title()
+        )
+        view = Dialogs.family.view(title=title, balance=family.balance, rows=rows)
         await ctx.say(view, reply=True, parse_mode="HTML")
+
+
+# Сообщение Telegram ограничено 4096 символами: дальше «и ещё N».
+LIST_LIMIT = 3500
+
+
+class FamiliesHandler(MessageHandler[AppContext[TextUserMessage]]):
+    query = Text("браки", ignore_case=True) & HasUser()
+
+    async def handle(self) -> None:
+        ctx = self.ctx
+        families = await ctx.family_service.families_in_chat(ctx.message.chat.id)
+        if not families:
+            await ctx.say(Dialogs.family.list.empty(), reply=True)
+            return
+
+        rows: list[str] = []
+        for place, family in enumerate(families, start=1):
+            members = ", ".join(family.member_names)
+            since = family.created_at.strftime("%d.%m.%Y")
+            line = (
+                Dialogs.family.list.named_row(
+                    place=place, name=family.name, members=members, since=since
+                )
+                if family.name
+                else Dialogs.family.list.row(place=place, members=members, since=since)
+            )
+            row = ctx.text(line)
+            if sum(len(r) + 1 for r in rows) + len(row) > LIST_LIMIT:
+                rows.append(ctx.text(Dialogs.family.list.more(count=len(families) - len(rows))))
+                break
+            rows.append(row)
+        listing = Dialogs.family.list.message(count=len(families), rows="\n".join(rows))
+        await ctx.say(listing, reply=True)
 
 
 class DivorceHandler(MessageHandler[AppContext[TextUserMessage]]):

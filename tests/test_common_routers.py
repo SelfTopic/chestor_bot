@@ -20,6 +20,7 @@ from src.bot.routers.common.anime.guard import cut_guard
 from src.bot.routers.common.transfer.flow import TransferPress
 from src.bot.routers.common.wordle.captions import attempts_word
 
+from src.bot.utils.service_accounts import TELEGRAM
 from .conftest import (
     button_data,
     callback_update,
@@ -317,6 +318,18 @@ class TestTransfer:
         (reply,) = await send("/transfer 10", uid=42, reply_to_uid=42)
 
         assert reply in phrase_texts(Dialogs.transfer.errors.self_transfer())
+
+    async def test_transfer_to_a_channel_post_rejected(self, send):
+        (reply,) = await send("/transfer 10", uid=42, reply_to_uid=TELEGRAM)
+
+        assert reply in phrase_texts(Dialogs.transfer.errors.not_a_person())
+
+    async def test_transfer_to_the_bot_itself_rejected(self, send, session_factory):
+        await seed(session_factory, 1, "Бот")  # id из токена тестового бота
+
+        (reply,) = await send("/transfer 1 10", uid=42)
+
+        assert reply in phrase_texts(Dialogs.transfer.errors.bot())
 
     async def test_new_account_rejected(self, send, session_factory):
         await seed(session_factory, 44, "Новичок", balance=1000)  # создан только что

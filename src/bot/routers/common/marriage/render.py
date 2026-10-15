@@ -5,13 +5,15 @@ from selfrot.types import InlineKeyboardMarkup
 
 from src.bot.dialogs import Dialogs, Line
 from src.bot.game_configs import MARRIAGE_CONFIG
-from src.bot.services.family import MarriageFailure, ProposalState
+from src.bot.services.family import MarriageFailure, ProposalState, RenameState
 from src.bot.session_services import SessionServices
 
-from .payloads import MarriageAnswer
+from .payloads import FamilyRenameAnswer, MarriageAnswer
 
 PHRASES = Dialogs.marriage
 LINK_PREFIX = "marry_"
+RENAME_LINK_PREFIX = "rename_"
+RENAME = Dialogs.family.rename
 
 
 def mention(telegram_id: int, name: str) -> str:
@@ -82,4 +84,40 @@ async def proposal_view(
         if bot_username:
             link = f"https://t.me/{bot_username}?start={LINK_PREFIX}{proposal_id}"
             keyboard.row(button(text(PHRASES.buttons.family()), url=link))
+    return body, keyboard.markup()
+
+
+async def rename_view(
+    services: SessionServices, state: RenameState, bot_username: str | None
+) -> tuple[str, InlineKeyboardMarkup | None]:
+    text = services.dialog_service.text
+    rename = state.rename
+    name = html.escape(rename.name)
+    who = await mentions(services, (*state.members, rename.proposer_telegram_id))
+
+    if state.renamed:
+        return text(RENAME.renamed(name=name)), None
+    if rename.declined_by is not None:
+        declined_by = (await mentions(services, (rename.declined_by,)))[rename.declined_by]
+        return text(RENAME.declined(person=declined_by, name=name)), None
+    if rename.stage != "awaiting":
+        return text(RENAME.expired(name=name)), None
+
+    rows = "\n".join(
+        text(PHRASES.row_confirmed(name=who[tid]))
+        if tid in state.consented
+        else text(PHRASES.row_waiting(name=who[tid]))
+        for tid in state.members
+    )
+    body = text(RENAME.ask(proposer=who[rename.proposer_telegram_id], name=name, rows=rows))
+    keyboard = InlineKeyboard().row(
+        button(text(RENAME.buttons.agree()), FamilyRenameAnswer(rename_id=rename.id, answer="agree")),
+        button(
+            text(RENAME.buttons.decline()),
+            FamilyRenameAnswer(rename_id=rename.id, answer="decline"),
+        ),
+    )
+    if bot_username:
+        link = f"https://t.me/{bot_username}?start={RENAME_LINK_PREFIX}{rename.id}"
+        keyboard.row(button(text(RENAME.buttons.private()), url=link))
     return body, keyboard.markup()

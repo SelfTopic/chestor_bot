@@ -9,7 +9,7 @@ from .chat import ChatRepository
 from .chat_participant import ChatParticipantRepository
 from .death_log import DeathLogRepository
 from .duel_session import DuelSessionRepository
-from .family import FamilyRepository, Member
+from .family import ChatFamily, FamilyRepository, Member
 from .ghoul import GhoulRepository
 from .ghoul_edit import GhoulEditRepository
 from .link_media import LinkMediaRepository
@@ -55,6 +55,7 @@ __all__ = [
     "ScheduledNotificationRepository",
     "DeathLogRepository",
     "DuelSessionRepository",
+    "ChatFamily",
     "FamilyRepository",
     "Member",
     "PlayerFacts",

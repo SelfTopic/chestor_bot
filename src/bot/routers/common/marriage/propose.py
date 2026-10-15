@@ -10,7 +10,12 @@ from src.bot.game_configs import MARRIAGE_CONFIG
 from src.bot.services.family import MarriageRefusal, MarriageRefused
 
 from ....context import AppContext
-from ...targeting import ExplicitTargetHandler, RepliedTargetHandler, TargetArgs
+from ...targeting import (
+    ExplicitTargetHandler,
+    RepliedTargetHandler,
+    TargetArgs,
+    is_bot_target,
+)
 from ...types import TextUserMessage, TextUserReplyMessage
 from .payloads import ProposalPayment
 from .render import PHRASES, mentions, proposal_view
@@ -23,6 +28,8 @@ def refusal_line(reason: MarriageRefusal) -> Line:
     match reason:
         case MarriageRefusal.SELF:
             return refusals.self()
+        case MarriageRefusal.NOT_A_PERSON:
+            return refusals.not_a_person()
         case MarriageRefusal.NOT_REGISTERED:
             return refusals.not_registered()
         case MarriageRefusal.SAME_FAMILY:
@@ -41,6 +48,9 @@ class Proposal:
     async def perform(self, telegram_id: int, args: Any) -> None:
         ctx = self.ctx
         proposer_id = ctx.message.user.id
+        if is_bot_target(ctx, telegram_id):
+            await ctx.say(PHRASES.refusals.bot(), reply=True)
+            return
         try:
             await ctx.family_service.check_proposal(proposer_id, telegram_id)
         except MarriageRefused as refused:

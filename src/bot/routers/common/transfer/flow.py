@@ -15,11 +15,13 @@ from src.bot.exceptions import (
     SelfTransferError,
     SenderMissingError,
     SenderTooNewError,
+    ServiceAccountTransferError,
     SpouseTransferError,
     TransferError,
 )
 
 from ....context import AppContext
+from ...targeting import is_bot_target
 from ...types import TextUserMessage
 
 CONFIRM_BUTTON = Dialogs.transfer.buttons.confirm()
@@ -54,6 +56,8 @@ def transfer_error_line(exc: TransferError) -> Line:
             return errors.self_transfer()
         case SpouseTransferError():
             return errors.spouse()
+        case ServiceAccountTransferError():
+            return errors.not_a_person()
         case SenderMissingError():
             return errors.sender_missing()
         case SenderTooNewError(min_age_days=days):
@@ -96,6 +100,9 @@ async def ask_confirmation(
     amount: int,
 ) -> None:
     message = ctx.message
+    if is_bot_target(ctx, receiver_id):
+        await ctx.say(Dialogs.transfer.errors.bot(), reply=True)
+        return
 
     try:
         await ctx.transfer_service.validate(message.user.id, receiver_id, amount)
