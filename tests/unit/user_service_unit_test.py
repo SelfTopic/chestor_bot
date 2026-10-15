@@ -5,6 +5,7 @@ from src.bot.repositories.chat import ChatRepository
 from src.bot.repositories.ghoul import GhoulRepository
 from src.bot.repositories.user import UserRepository
 from src.bot.repositories.user_coldown import UserCooldownRepository
+from src.bot.repositories.wallet import WalletRepository
 from src.bot.services.user import UserService
 from src.bot.types import Race
 
@@ -17,6 +18,7 @@ def user_service(session):
         user_cooldown_repository=UserCooldownRepository(session),
         chat_repository=ChatRepository(session),
         balances_log_repository=BalancesLogRepository(session),
+        wallet_repository=WalletRepository(session),
     )
 
 
@@ -44,7 +46,7 @@ async def test_plus_balance(user_service, make_user):
     result = await user_service.plus_balance(
         telegram_id=100_000_200, change_balance=500, log="test"
     )
-    assert result.balance == 500
+    assert result == 500
 
 
 async def test_plus_balance_accumulates(user_service, make_user):
@@ -55,7 +57,7 @@ async def test_plus_balance_accumulates(user_service, make_user):
     result = await user_service.plus_balance(
         telegram_id=100_000_201, change_balance=200, log="test"
     )
-    assert result.balance == 300
+    assert result == 300
 
 
 async def test_minus_balance(user_service, make_user):
@@ -66,7 +68,7 @@ async def test_minus_balance(user_service, make_user):
     result = await user_service.minus_balance(
         telegram_id=100_000_202, change_balance=400, log="test"
     )
-    assert result.balance == 600
+    assert result == 600
 
 
 async def test_minus_balance_can_go_negative(user_service, make_user):
@@ -75,7 +77,7 @@ async def test_minus_balance_can_go_negative(user_service, make_user):
     result = await user_service.minus_balance(
         telegram_id=100_000_203, change_balance=100, log="test"
     )
-    assert result.balance == -100
+    assert result == -100
 
 
 async def test_plus_balance_raises_for_unknown_user(user_service):

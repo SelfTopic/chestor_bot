@@ -4,6 +4,7 @@ from src.bot.exceptions import GhoulNotFound, UserNotFound
 from src.bot.repositories.balances_log import BalancesLogRepository
 from src.bot.repositories.ghoul import GhoulRepository
 from src.bot.repositories.user import UserRepository
+from src.bot.repositories.wallet import WalletRepository
 from src.bot.services.admin.stats_edit import StatsEditService
 
 ADMIN_ID = 1
@@ -15,6 +16,7 @@ def stats_service(session):
         user_repo=UserRepository(session),
         ghoul_repo=GhoulRepository(session),
         balances_log_repo=BalancesLogRepository(session),
+        wallet_repo=WalletRepository(session),
     )
 
 

@@ -8,7 +8,9 @@ from ..repositories import (
     ChatRepository,
     GhoulRepository,
     UserCooldownRepository,
+    TopWallet,
     UserRepository,
+    WalletRepository,
 )
 from ..types import Race
 from .base import Base
@@ -24,6 +26,7 @@ class UserService(Base):
         user_cooldown_repository: UserCooldownRepository,
         chat_repository: ChatRepository,
         balances_log_repository: BalancesLogRepository,
+        wallet_repository: WalletRepository,
     ) -> None:
         super().__init__(
             user_repository=user_repository,
@@ -32,6 +35,7 @@ class UserService(Base):
             chat_repository=chat_repository,
         )
         self.balances_log_repository = balances_log_repository
+        self.wallet_repository = wallet_repository
 
     async def get(self, find_by: Union[str, int]) -> Optional[User]:
         logger.debug(f"Called method get. Search parameter: {find_by}")
@@ -41,65 +45,44 @@ class UserService(Base):
         logger.debug(f"User found: {user is not None}")
         return user
 
-    async def plus_balance(
-        self, telegram_id: int, change_balance: int, log: str
-    ) -> User:
-        logger.debug(
-            f"Called method plus_balance. User ID: {telegram_id}, change balance: {change_balance}"
-        )
+    async def balance(self, telegram_id: int) -> int:
+        balance = await self.wallet_repository.balance(telegram_id)
+        return 0 if balance is None else balance
 
-        user = await self.user_repository.change_balance_atomic(
-            telegram_id=telegram_id, delta=change_balance
-        )
+    async def plus_balance(self, telegram_id: int, change_balance: int, log: str) -> int:
+        return await self._change(telegram_id, change_balance, log)
 
-        if not user:
+    async def minus_balance(self, telegram_id: int, change_balance: int, log: str) -> int:
+        return await self._change(telegram_id, -change_balance, log)
+
+    async def _change(self, telegram_id: int, delta: int, log: str) -> int:
+        logger.debug(f"Balance change. User ID: {telegram_id}, delta: {delta}")
+
+        after = await self.wallet_repository.change(telegram_id, delta)
+        if after is None:
             logger.error("Cannot change balance to nouser")
             raise ValueError("Cannot change balance to nouser")
 
-        after_balance = user.balance
-        before_balance = after_balance - change_balance
+        await self._log(telegram_id, delta, after, log)
+        return after
 
+    async def debit_if_sufficient(self, telegram_id: int, amount: int, log: str) -> int | None:
+        after = await self.wallet_repository.debit_if_sufficient(telegram_id, amount)
+        if after is not None:
+            await self._log(telegram_id, -amount, after, log)
+        return after
+
+    async def _log(self, telegram_id: int, delta: int, after: int, log: str) -> None:
         await self.balances_log_repository.insert(
             telegram_id=telegram_id,
-            change_balance=change_balance,
-            before_balance=before_balance,
-            after_balance=after_balance,
+            change_balance=delta,
+            before_balance=after - delta,
+            after_balance=after,
             log=log,
         )
 
-        return user
-
-    async def minus_balance(
-        self, telegram_id: int, change_balance: int, log: str
-    ) -> User:
-        logger.debug(
-            f"Called method minus_balance. User ID: {telegram_id}, change balance: {change_balance}"
-        )
-
-        user = await self.user_repository.change_balance_atomic(
-            telegram_id=telegram_id, delta=-change_balance
-        )
-
-        if not user:
-            logger.error("Cannot change balance to nouser")
-            raise ValueError("Cannot change balance to nouser")
-
-        after_balance = user.balance
-        before_balance = after_balance + change_balance
-
-        await self.balances_log_repository.insert(
-            telegram_id=telegram_id,
-            change_balance=-change_balance,
-            before_balance=before_balance,
-            after_balance=after_balance,
-            log=log,
-        )
-
-        return user
-
-    async def get_top_balance(self, limit: int = 20):
-        result = await self.user_repository.get_top_balance(limit)
-        return result
+    async def get_top_balance(self, limit: int = 20) -> list[TopWallet]:
+        return await self.wallet_repository.top(limit)
 
     def race(self, bit: int) -> Optional[Race]:
         for race in Race:

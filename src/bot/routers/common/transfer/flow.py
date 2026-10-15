@@ -15,6 +15,7 @@ from src.bot.exceptions import (
     SelfTransferError,
     SenderMissingError,
     SenderTooNewError,
+    SpouseTransferError,
     TransferError,
 )
 
@@ -51,6 +52,8 @@ def transfer_error_line(exc: TransferError) -> Line:
             return errors.amount_out_of_range(min_amount=low, max_amount=high)
         case SelfTransferError():
             return errors.self_transfer()
+        case SpouseTransferError():
+            return errors.spouse()
         case SenderMissingError():
             return errors.sender_missing()
         case SenderTooNewError(min_age_days=days):

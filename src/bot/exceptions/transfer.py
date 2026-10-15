@@ -11,6 +11,9 @@ class InvalidTransferAmountError(TransferError):
 class SelfTransferError(TransferError): ...
 
 
+class SpouseTransferError(TransferError): ...
+
+
 class SenderMissingError(TransferError): ...
 
 
@@ -36,6 +39,7 @@ __all__ = [
     "TransferError",
     "InvalidTransferAmountError",
     "SelfTransferError",
+    "SpouseTransferError",
     "SenderMissingError",
     "SenderTooNewError",
     "InsufficientBalanceError",

@@ -43,10 +43,9 @@ async def do_upgrade(
     if user is None:
         return False, Dialogs.kagune.upgrade.no_user()
 
-    if user.balance < price:
-        return False, Dialogs.errors.not_enough_money(
-            money=int(price - user.balance) + 1
-        )
+    balance = await ctx.user_service.balance(telegram_id)
+    if balance < price:
+        return False, Dialogs.errors.not_enough_money(money=int(price - balance) + 1)
 
     await ctx.user_service.minus_balance(
         telegram_id=telegram_id, change_balance=price, log="upgrade kagune"

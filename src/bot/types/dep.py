@@ -1,8 +1,6 @@
 from dataclasses import dataclass
 from enum import Enum
 
-from src.database.models import User
-
 
 class DepColor(Enum):
     RED = "красный"
@@ -14,7 +12,7 @@ class DepColor(Enum):
 
 @dataclass
 class DepResult:
-    user: User
+    balance: int
     bet_amount: int
     chosen_color: DepColor
     winning_color: DepColor

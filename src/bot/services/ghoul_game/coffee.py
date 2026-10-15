@@ -24,11 +24,11 @@ class CoffeeService:
         money = COFFEE_CONFIG.award
 
         ghoul = await self.ghoul_service.coffee(telegram_id=user_id)
-        user = await self.user_service.plus_balance(
+        balance = await self.user_service.plus_balance(
             telegram_id=user_id, change_balance=money, log="coffee award"
         )
 
-        return CoffeeResult(ghoul=ghoul, user=user, award=money)
+        return CoffeeResult(ghoul=ghoul, balance=balance, award=money)
 
     async def execute_cooldown(self, user_id: int, cooldown_name: str = "COFFEE"):
         cooldown = await self.cooldown_service.get_active_cooldown(

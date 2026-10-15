@@ -49,7 +49,7 @@ class LotteryService:
         if not user:
             raise LotteryPlayerMissing()
 
-        if user.balance < bet_amount:
+        if await self.user_service.balance(user_id) < bet_amount:
             raise NotEnoughMoneyForBet()
 
         winning_color = self._get_random_color_by_chance()
@@ -59,12 +59,12 @@ class LotteryService:
         if is_won:
             multiplier = LOTTERY_CONFIG.get_multiplier(winning_color.value)
             earned = int(bet_amount * multiplier)
-            user = await self.user_service.plus_balance(
+            balance = await self.user_service.plus_balance(
                 telegram_id=user_id, change_balance=earned, log="lottery win"
             )
         else:
             earned = 0
-            user = await self.user_service.minus_balance(
+            balance = await self.user_service.minus_balance(
                 telegram_id=user_id, change_balance=bet_amount, log="lottery bet"
             )
 
@@ -81,7 +81,7 @@ class LotteryService:
         )
 
         return DepResult(
-            user=user,
+            balance=balance,
             bet_amount=bet_amount,
             chosen_color=chosen_color,
             winning_color=winning_color,

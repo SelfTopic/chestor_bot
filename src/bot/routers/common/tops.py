@@ -6,6 +6,7 @@ from selfrot.filter import Command
 from src.bot.dialogs import Dialogs
 
 from ...context import AppContext
+from ...repositories import TopWallet
 from ..types import TextMessage
 
 
@@ -27,12 +28,19 @@ class TopBalanceHandler(MessageHandler[AppContext[TextMessage]]):
         rows = "\n".join(
             self.ctx.text(
                 Dialogs.tops.balance.row(
-                    place=place, name=user.first_name, balance=user.balance
+                    place=place, name=self.wallet_name(wallet), balance=wallet.balance
                 )
             )
-            for place, user in enumerate(top, start=1)
+            for place, wallet in enumerate(top, start=1)
         )
         await self.ctx.say(Dialogs.tops.balance.message(count=count, rows=rows))
+
+    def wallet_name(self, wallet: TopWallet) -> str:
+        if not wallet.is_family:
+            return wallet.names[0]
+        if wallet.family_name:
+            return wallet.family_name
+        return self.ctx.text(Dialogs.family.top_name(members=", ".join(wallet.names)))
 
     async def on_error(self, exc: Exception) -> None:
         if isinstance(exc, CommandArgsError):

@@ -12,6 +12,8 @@ from .common import (
     FunRouter,
     HelpRouter,
     LinkMediaRouter,
+    MarriageLinkRouter,
+    MarriageRouter,
     MusicRouter,
     ProfileRouter,
     RaceProfileRouter,
@@ -31,6 +33,8 @@ from .moderator_routers import ModeratorRouter
 class RootRouter(BaseRouter[AppContext]):
     # Порядок важен: апдейт достаётся первому подошедшему роутеру.
     routers = (
+        # Раньше StartRouter: тот приветствует на любой /start, а это ссылка из брака.
+        MarriageLinkRouter,
         StartRouter,
         BotRouter,
         GhoulRouter,
@@ -47,6 +51,7 @@ class RootRouter(BaseRouter[AppContext]):
         WordleRouter,
         AnimeRouter,
         TransferRouter,
+        MarriageRouter,
         DepRouter,
         UserbotInboxRouter,
         # Раньше FunRouter: иначе «1000-7» посчитал бы калькулятор.

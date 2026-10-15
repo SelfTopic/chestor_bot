@@ -9,6 +9,7 @@ from src.bot.repositories.chat import ChatRepository
 from src.bot.repositories.ghoul import GhoulRepository
 from src.bot.repositories.user import UserRepository
 from src.bot.repositories.user_coldown import UserCooldownRepository
+from src.bot.repositories.wallet import WalletRepository
 from src.bot.services.ghoul import GhoulService
 from src.bot.services.stat_upgrade import StatUpgradeService
 from src.bot.services.user import UserService
@@ -45,6 +46,7 @@ def _make_stat_service(session) -> StatUpgradeService:
         user_cooldown_repository=UserCooldownRepository(session),
         chat_repository=ChatRepository(session),
         balances_log_repository=BalancesLogRepository(session),
+        wallet_repository=WalletRepository(session),
     )
     return StatUpgradeService(
         ghoul_service=ghoul_service,
@@ -78,10 +80,10 @@ async def test_purchase_charges_discounted_price_for_max_health(
         telegram_id=telegram_id, change_balance=10_000_000, log="test"
     )
 
-    _, _, bought_health, price_health = await service.purchase(
+    _, bought_health, price_health = await service.purchase(
         telegram_id=telegram_id, stat_key="max_health", count=10
     )
-    _, _, bought_strength, price_strength = await service.purchase(
+    _, bought_strength, price_strength = await service.purchase(
         telegram_id=telegram_id, stat_key="strength", count=10
     )
 

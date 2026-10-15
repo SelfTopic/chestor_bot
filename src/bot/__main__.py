@@ -41,6 +41,7 @@ from .context import AppContext
 from .logs import setup_logging
 from .middlewares import BanMiddleware, DatabaseMiddleware, SyncEntitiesMiddleware
 from .routers import RootRouter
+from .routers.common import MarriageTicker
 from .routers.ghoul_routers.duel import DuelTicker
 from .session_services import rp_commands_repository
 from .services.moderation import ModerationTicker
@@ -180,6 +181,12 @@ class Dispatcher(BaseDispatcher[AppContext]):
             dialog_service=self.dialog_service,
             mob_service=self.mob_service,
         )
+        self.marriage_ticker = MarriageTicker(
+            session_factory=session_factory,
+            bot=self.api,
+            dialog_service=self.dialog_service,
+            mob_service=self.mob_service,
+        )
 
     def report_broken_texts(self, error: Exception) -> None:
         # Тексты перечитываются внутри синхронного text(), поэтому отправка — отдельной
@@ -251,6 +258,7 @@ class Dispatcher(BaseDispatcher[AppContext]):
         await self.notification_ticker.start()
         await self.moderation_ticker.start()
         await self.duel_ticker.start()
+        await self.marriage_ticker.start()
         await self.analytics_ticker.start()
         if settings.DOCS_CHANNEL:
             # Правка десятков постов упирается во флуд-контроль: запуск бота её не ждёт.
@@ -281,6 +289,7 @@ class Dispatcher(BaseDispatcher[AppContext]):
         await self.notification_ticker.stop()
         await self.moderation_ticker.stop()
         await self.duel_ticker.stop()
+        await self.marriage_ticker.stop()
         await self.analytics_ticker.stop()
         await self.analytics.flush()
         await self.media_tools_updater.stop()

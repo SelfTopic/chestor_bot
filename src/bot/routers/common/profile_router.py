@@ -21,10 +21,9 @@ class ProfileHandler(MessageHandler[AppContext[UserMessage]]):
             else race.value["name"]
         )
 
+        balance = await self.ctx.user_service.balance(user.telegram_id)
         await self.ctx.say(
-            Dialogs.profile.card(
-                name=user.full_name, race=race_name, balance=str(user.balance)
-            )
+            Dialogs.profile.card(name=user.full_name, race=race_name, balance=str(balance))
         )
 
 

@@ -78,6 +78,13 @@ Postgres + SQLAlchemy (async), миграции Alembic, запуск в Docker 
 (`BattleEngine`, `services/battle_engine/engine.py`). `battle_engine/core/` — чистый
 домен боя без БД и Telegram.
 
+**Деньги — только через кошелёк.** У члена семьи личного баланса нет, все его деньги на общем
+счёте семьи (`docs/design/marriages.md`). Поэтому `User.balance` не читать и не менять напрямую:
+баланс — `ctx.user_service.balance(id)`, изменения — `plus_balance` / `minus_balance` /
+`debit_if_sufficient` (`WalletRepository` сам выбирает счёт семьи или личный баланс), а в
+SQL — `coalesce(families.balance, users.balance)`. Семьи, предложения брака и развод —
+`ctx.family_service` (`services/family.py`), роутер — `routers/common/marriage/`.
+
 **Telegram — не в сервисах.** Сервис не принимает `Message` и не шлёт сообщения сам.
 Если сервису нужно отправлять (рассылка, level up, тикер уведомлений), он получает
 `Notifier` из `services/notify.py`: это единственное место в `services/`, где импортируется

@@ -68,8 +68,7 @@ class RaceProfileHandler(MessageHandler[AppContext[UserMessage]]):
             await self.send_ghoul_profile(user, ghoul)
             return
 
+        balance = await self.ctx.user_service.balance(user.telegram_id)
         await self.ctx.say(
-            Dialogs.profile.card(
-                name=user.full_name, race=race.value["name"], balance=user.balance
-            )
+            Dialogs.profile.card(name=user.full_name, race=race.value["name"], balance=balance)
         )

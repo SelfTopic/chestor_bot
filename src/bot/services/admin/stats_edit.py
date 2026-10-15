@@ -6,6 +6,7 @@ from src.bot.exceptions import GhoulNotFound, UnknownStatField, UserNotFound
 from src.bot.repositories.balances_log import BalancesLogRepository
 from src.bot.repositories.ghoul import GhoulRepository
 from src.bot.repositories.user import UserRepository
+from src.bot.repositories.wallet import WalletRepository
 from src.bot.utils import utcnow_naive
 from src.database.models import Ghoul, User
 
@@ -54,10 +55,12 @@ class StatsEditService:
         user_repo: UserRepository,
         ghoul_repo: GhoulRepository,
         balances_log_repo: BalancesLogRepository,
+        wallet_repo: WalletRepository,
     ):
         self.user_repo = user_repo
         self.ghoul_repo = ghoul_repo
         self.balances_log_repo = balances_log_repo
+        self.wallet_repo = wallet_repo
 
     def resolve_field(self, field: str) -> tuple[bool, bool]:
         if field in ALLOWED_USER_FIELDS:
@@ -81,10 +84,10 @@ class StatsEditService:
 
         if not is_ghoul_field:
             if field == "balance":
-                before_balance = user.balance
-                updated = await self.user_repo.change_data(
-                    user.telegram_id, balance=value
-                )
+                # У члена семьи правится счёт семьи: личного баланса у него нет.
+                before_balance = await self.wallet_repo.balance(user.telegram_id) or 0
+                await self.wallet_repo.change(user.telegram_id, value - before_balance)
+                updated = user
                 await self.balances_log_repo.insert(
                     telegram_id=user.telegram_id,
                     change_balance=value - before_balance,

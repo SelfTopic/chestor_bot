@@ -9,6 +9,7 @@ from .chat import ChatRepository
 from .chat_participant import ChatParticipantRepository
 from .death_log import DeathLogRepository
 from .duel_session import DuelSessionRepository
+from .family import FamilyRepository, Member
 from .ghoul import GhoulRepository
 from .ghoul_edit import GhoulEditRepository
 from .link_media import LinkMediaRepository
@@ -20,6 +21,7 @@ from .scheduled_notification import ScheduledNotificationRepository
 from .transfer import TransferRepository
 from .user import UserRepository
 from .user_coldown import UserCooldownRepository
+from .wallet import TopWallet, WalletRepository
 from .roast import PlayerFacts, RoastRepository
 from .rp_commands import RpCommandsRepository
 
@@ -34,6 +36,8 @@ __all__ = [
     "EventRecord",
     "Base",
     "UserRepository",
+    "TopWallet",
+    "WalletRepository",
     "GhoulRepository",
     "GhoulEditRepository",
     "UserCooldownRepository",
@@ -51,6 +55,8 @@ __all__ = [
     "ScheduledNotificationRepository",
     "DeathLogRepository",
     "DuelSessionRepository",
+    "FamilyRepository",
+    "Member",
     "PlayerFacts",
     "RoastRepository",
 ]

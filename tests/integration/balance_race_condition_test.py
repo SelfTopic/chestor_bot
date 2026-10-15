@@ -7,6 +7,7 @@ from src.bot.repositories.chat import ChatRepository
 from src.bot.repositories.ghoul import GhoulRepository
 from src.bot.repositories.user import UserRepository
 from src.bot.repositories.user_coldown import UserCooldownRepository
+from src.bot.repositories.wallet import WalletRepository
 from src.bot.services.user import UserService
 
 
@@ -21,6 +22,7 @@ async def _plus_balance_in_own_session(
             UserCooldownRepository(session),
             ChatRepository(session),
             BalancesLogRepository(session),
+            WalletRepository(session),
         )
         await service.plus_balance(
             telegram_id=telegram_id, change_balance=amount, log="race test"

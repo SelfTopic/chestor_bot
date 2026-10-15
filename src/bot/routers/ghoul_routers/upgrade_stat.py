@@ -7,7 +7,7 @@ from selfrot.types import InlineKeyboardMarkup, Message
 
 from src.bot.dialogs import Dialogs
 from src.bot.game_configs import STAT_UPGRADE_CONFIG, STATS, stat_cap_for_level
-from src.database.models import Ghoul, User
+from src.database.models import Ghoul
 
 from ...context import AppContext
 from ..types import DataMessageCallbackQuery, TextUserMessage
@@ -28,7 +28,7 @@ class StatNop(CallbackPayload, prefix="stat_nop"):
 
 
 def build_shop(
-    ctx: AppContext[Any], ghoul: Ghoul, user: User | None
+    ctx: AppContext[Any], ghoul: Ghoul, balance: int
 ) -> tuple[str, InlineKeyboardMarkup]:
     rows: list[str] = []
     keyboard = InlineKeyboard()
@@ -65,9 +65,7 @@ def build_shop(
         )
         keyboard.row(*buttons)
 
-    text = Dialogs.stats.shop.message(
-        balance=user.balance if user else 0, rows="\n".join(rows)
-    )
+    text = Dialogs.stats.shop.message(balance=balance, rows="\n".join(rows))
     return ctx.text(text), keyboard.markup()
 
 
@@ -83,8 +81,8 @@ class UpgradeStatHandler(MessageHandler[AppContext[TextUserMessage]]):
             return
 
         ghoul = await ctx.db_ghoul()
-        user = await ctx.user_service.get(find_by=message.user.id)
-        text, keyboard = build_shop(ctx, ghoul, user)
+        balance = await ctx.user_service.balance(message.user.id)
+        text, keyboard = build_shop(ctx, ghoul, balance)
         await message.reply(text, reply_markup=keyboard)
 
 
@@ -126,7 +124,7 @@ class StatBuyHandler(CallbackQueryHandler[AppContext[DataMessageCallbackQuery]])
             return
 
         payload = self.press.parse(ctx)
-        new_ghoul, new_user, bought, price = await ctx.stat_upgrade_service.purchase(
+        new_ghoul, bought, price = await ctx.stat_upgrade_service.purchase(
             telegram_id=callback.user.id, stat_key=payload.stat, count=payload.count
         )
 
@@ -138,7 +136,8 @@ class StatBuyHandler(CallbackQueryHandler[AppContext[DataMessageCallbackQuery]])
             await callback.answer(ctx.text(Dialogs.stats.limit()))
             return
 
-        text, keyboard = build_shop(ctx, new_ghoul, new_user)
+        balance = await ctx.user_service.balance(callback.user.id)
+        text, keyboard = build_shop(ctx, new_ghoul, balance)
         await message.edit_text(text, reply_markup=keyboard)
         await callback.answer(
             ctx.text(

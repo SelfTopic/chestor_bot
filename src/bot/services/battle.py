@@ -21,6 +21,7 @@ from src.bot.services.battle_engine.core import BattleResult, Fighter
 from src.bot.utils import utcnow_naive
 from src.database.models import DuelSession, Ghoul, User
 
+from ..repositories import FamilyRepository
 from ..repositories.fight import FightRepository, Score
 from .level_up import LevelUpService
 
@@ -55,6 +56,7 @@ class FightReport:
 
 class DuelRefusal(Enum):
     SELF = auto()
+    SPOUSES = auto()
     NOT_REGISTERED = auto()
     INITIATOR_NO_PRIVATE_CHAT = auto()
     TARGET_NO_PRIVATE_CHAT = auto()
@@ -133,6 +135,7 @@ class BattleService:
         level_up_service: LevelUpService,
         battle_record_service: BattleRecordService,
         duel_service: DuelService,
+        families: FamilyRepository,
     ) -> None:
         self.engine = engine
         self._fights = fights
@@ -141,6 +144,7 @@ class BattleService:
         self._level_up = level_up_service
         self._records = battle_record_service
         self._duels = duel_service
+        self._families = families
 
 
     async def _combatants(self, *telegram_ids: int) -> list[Combatant] | None:
@@ -193,6 +197,8 @@ class BattleService:
     ) -> OpenedDuel:
         if target_id == initiator_id:
             raise DuelRefused(DuelRefusal.SELF)
+        if await self._families.same_family(initiator_id, target_id):
+            raise DuelRefused(DuelRefusal.SPOUSES)
 
         found = await self._fights.participants(initiator_id, target_id)
         if initiator_id not in found or target_id not in found:
@@ -363,10 +369,13 @@ class BattleService:
         )
 
     async def _rob(self, winner_id: int, loser_id: int, loser: User | None) -> int | None:
-        if loser is None or loser.balance <= 0:
+        if loser is None:
+            return None
+        balance = await self._users.balance(loser_id)
+        if balance <= 0:
             return None
         percent = random.uniform(DUEL_CONFIG.rob_percent_min, DUEL_CONFIG.rob_percent_max)
-        amount = round(loser.balance * percent / 100.0)
+        amount = round(balance * percent / 100.0)
         if amount <= 0:
             return None
         await self._users.minus_balance(loser_id, amount, log=f"duel robbery by {winner_id}")
