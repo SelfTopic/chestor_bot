@@ -1,3 +1,4 @@
+import difflib
 import re
 from dataclasses import dataclass
 from pathlib import Path
@@ -133,3 +134,19 @@ def find(pages: list[DocPage], query: str) -> DocTopic | DocPage | None:
         (topic for topic in every if any(tokens <= set(word.split()) for word in topic.words)),
         None,
     )
+
+
+# Близость, ниже которой слово уже не опечатка, а другое слово.
+SUGGEST_CUTOFF = 0.6
+
+
+def suggest(pages: list[DocPage], query: str, limit: int = 3) -> list[str]:
+    words = {word for page in pages for topic in topics(page) for word in topic.words}
+    words.update(normalize(word) for page in pages for word in page.help_words)
+    # «кофэ» похоже не на «пить кофе» целиком, а на одно его слово — подсказка всё равно фраза.
+    phrase_of: dict[str, str] = {word: word for word in sorted(words)}
+    for word in sorted(words):
+        for token in word.split():
+            phrase_of.setdefault(token, word)
+    close = difflib.get_close_matches(normalize(query), list(phrase_of), n=limit * 2, cutoff=SUGGEST_CUTOFF)
+    return list(dict.fromkeys(phrase_of[key] for key in close))[:limit]

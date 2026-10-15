@@ -1140,6 +1140,9 @@ class _GhoulDialogs:
 
 
 class _HelpDialogs:
+    def did_you_mean(self, *, query: object) -> Line:
+        return Line("help.did_you_mean", {"query": query})
+
     def more(self) -> Line:
         return Line("help.more", {})
 
@@ -3820,6 +3823,7 @@ PLACEHOLDERS: dict[str, frozenset[str]] = {
     "ghoul.rich_profile.kagune_types": frozenset(),
     "ghoul.rich_profile.stats": frozenset(),
     "ghoul.rich_profile.title": frozenset({"danger_rank", "name"}),
+    "help.did_you_mean": frozenset({"query"}),
     "help.more": frozenset(),
     "help.not_found": frozenset({"query"}),
     "help.sections": frozenset({"rows"}),

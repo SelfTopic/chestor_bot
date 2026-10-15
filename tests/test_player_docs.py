@@ -14,7 +14,7 @@ from src.bot.services.player_docs import PlayerDocsService, load_pages
 from src.bot.services.player_docs.pages import load_contents_template, normalize, topics
 from src.config import settings
 
-from .conftest import only_text
+from .conftest import button_data, callback_update, only_text
 
 CHANNEL = "@docs_test"
 
@@ -176,3 +176,20 @@ async def test_help_for_an_unknown_word(send):
     (reply,) = await send("/help абракадабра")
 
     assert reply == only_text(Dialogs.help.not_found(query="абракадабра"))
+
+
+async def test_typo_gets_suggestions_and_a_press_turns_into_the_topic(feed, send, telegram):
+    snap = next(
+        topic
+        for page in load_pages(Path("docs/players"))
+        for topic in topics(page)
+        if "щелк" in topic.words
+    )
+
+    (reply,) = await send("/help щелу")
+
+    assert reply == only_text(Dialogs.help.did_you_mean(query="щелу"))
+    (body,) = telegram.bodies("sendMessage")
+    await feed(callback_update(button_data(body, "щелк")))
+    (edit,) = telegram.bodies("editMessageText")
+    assert edit["rich_message"]["markdown"] == snap.markdown
