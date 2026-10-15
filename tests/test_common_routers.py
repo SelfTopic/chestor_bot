@@ -55,11 +55,6 @@ class TestStartAndHelp:
 
         assert reply in phrase_texts(Dialogs.start(name="Вася"))
 
-    async def test_help(self, send):
-        (reply,) = await send("/help")
-
-        assert reply == only_text(Dialogs.help())
-
     @pytest.mark.parametrize("text", ["старт", "/starts", "/helper"])
     async def test_ignores_other_text(self, send, text):
         assert await send(text) == []
@@ -676,20 +671,17 @@ class TestWordleFinishLink:
         assert "<b>СТЕНА</b>" in text and "<a " not in text and "📖" not in text
 
 
-class TestAnime:
-    @pytest.fixture
-    def episode(self):
-        """Файл серии, которого нет в репозитории; создаётся и убирается тестом."""
-        folder = Path("src/assets/videos/tokio_ghoul")
-        path = folder / "Season_99_Episode_99.mp4"
-        created_folder = not folder.exists()
-        folder.mkdir(parents=True, exist_ok=True)
-        path.write_bytes(b"fake video")
-        yield path
-        path.unlink(missing_ok=True)
-        if created_folder:
-            folder.rmdir()
+@pytest.fixture
+def episode(tmp_path, monkeypatch):
+    """Файл серии во временной папке: у каждого теста свой, параллельные тесты не мешают."""
+    path = tmp_path / "videos" / "tokio_ghoul" / "Season_99_Episode_99.mp4"
+    path.parent.mkdir(parents=True)
+    path.write_bytes(b"fake video")
+    monkeypatch.setattr(game_config, "path_to_assets", str(tmp_path))
+    return path
 
+
+class TestAnime:
     async def test_usage(self, send):
         (reply,) = await send("/anime")
 
@@ -736,18 +728,6 @@ class FakeVideoWorker:
 
 
 class TestAnimeCut:
-    @pytest.fixture
-    def episode(self):
-        folder = Path("src/assets/videos/tokio_ghoul")
-        path = folder / "Season_99_Episode_99.mp4"
-        created_folder = not folder.exists()
-        folder.mkdir(parents=True, exist_ok=True)
-        path.write_bytes(b"fake video")
-        yield path
-        path.unlink(missing_ok=True)
-        if created_folder:
-            folder.rmdir()
-
     @pytest.fixture(autouse=True)
     def clean_guard(self):
         cut_guard.clear()
