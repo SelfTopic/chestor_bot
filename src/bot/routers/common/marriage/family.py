@@ -1,4 +1,5 @@
 import html
+from datetime import datetime
 
 from selfrot import InlineKeyboard, MessageHandler
 from selfrot.filter import HasUser, Text
@@ -7,11 +8,16 @@ from selfrot.types import DataCallbackQuery, Message
 
 from src.bot.dialogs import Dialogs
 from src.bot.services.family import NotMarried
+from src.bot.utils import format_age, utcnow_naive
 
 from ....context import AppContext
 from ...types import TextUserMessage
 from .payloads import DivorcePress
 from .render import mentions
+
+
+def age(since: datetime) -> str:
+    return format_age(int((utcnow_naive() - since).total_seconds()))
 
 
 class FamilyHandler(MessageHandler[AppContext[TextUserMessage]]):
@@ -28,7 +34,9 @@ class FamilyHandler(MessageHandler[AppContext[TextUserMessage]]):
         rows = "\n".join(
             ctx.text(
                 Dialogs.family.row(
-                    name=who[member.telegram_id], since=member.joined_at.strftime("%d.%m.%Y")
+                    name=who[member.telegram_id],
+                    since=member.joined_at.strftime("%d.%m.%Y"),
+                    age=age(member.joined_at),
                 )
             )
             for member in family.members
@@ -62,10 +70,16 @@ class FamiliesHandler(MessageHandler[AppContext[TextUserMessage]]):
             since = family.created_at.strftime("%d.%m.%Y")
             line = (
                 Dialogs.family.list.named_row(
-                    place=place, name=family.name, members=members, since=since
+                    place=place,
+                    name=family.name,
+                    members=members,
+                    since=since,
+                    age=age(family.created_at),
                 )
                 if family.name
-                else Dialogs.family.list.row(place=place, members=members, since=since)
+                else Dialogs.family.list.row(
+                    place=place, members=members, since=since, age=age(family.created_at)
+                )
             )
             row = ctx.text(line)
             if sum(len(r) + 1 for r in rows) + len(row) > LIST_LIMIT:

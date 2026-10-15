@@ -7,14 +7,14 @@ from datetime import timedelta
 from typing import Any
 
 import pytest
-from sqlalchemy import select, update
+from sqlalchemy import func, select, update
 
 from src.bot.dialogs import Dialogs
 from src.bot.game_configs import MARRIAGE_CONFIG
 from src.bot.repositories import FamilyRepository
 from src.bot.routers.common.marriage.render import mention
 from src.bot.utils.service_accounts import TELEGRAM
-from src.database.models import Family, MarriageProposal
+from src.database.models import Family, FamilyMember, MarriageProposal
 
 from .conftest import button_data, callback_update, message_update, only_text, owner_dict, phrase_texts
 from .test_common_routers import seed
@@ -44,6 +44,18 @@ async def seed_family(session_factory, *members: int, balance: int = 0) -> None:
         for uid in members:
             await families.add_member(family.id, uid)
         await families.change_balance(family.id, balance)
+        await session.commit()
+
+
+# Сорок дней с половиной назад: стаж «1мес 10д» не меняется, пока идёт тест.
+AGE = "1мес 10д"
+
+
+async def age_family(session_factory) -> None:
+    ago = func.now() - timedelta(days=40, hours=12)
+    async with session_factory() as session:
+        await session.execute(update(Family).values(created_at=ago))
+        await session.execute(update(FamilyMember).values(joined_at=ago))
         await session.commit()
 
 
@@ -354,6 +366,7 @@ async def test_family_is_named_only_when_everyone_agrees_and_the_top_shows_the_n
 async def test_family_view_shows_the_name_the_account_and_the_members(send, session_factory):
     await seed_players(session_factory)
     await seed_family(session_factory, A, B, balance=1000)
+    await age_family(session_factory)
     async with session_factory() as session:
         await FamilyRepository(session).set_name(1, "Антейку")
         await session.commit()
@@ -362,7 +375,11 @@ async def test_family_view_shows_the_name_the_account_and_the_members(send, sess
     (reply,) = await send("семья", uid=A, first_name=NAMES[A], chat=GROUP)
 
     rows = "\n".join(
-        only_text(Dialogs.family.row(name=who(m.telegram_id), since=m.joined_at.strftime("%d.%m.%Y")))
+        only_text(
+            Dialogs.family.row(
+                name=who(m.telegram_id), since=m.joined_at.strftime("%d.%m.%Y"), age=AGE
+            )
+        )
         for m in members
     )
     title = only_text(Dialogs.family.title_named(name="Антейку"))
@@ -400,6 +417,7 @@ async def test_marriages_lists_families_with_a_member_in_this_chat(send, session
     await seed_players(session_factory)
     await seed_family(session_factory, A, B)
     await seed_family(session_factory, C, D)
+    await age_family(session_factory)
     async with session_factory() as session:
         await FamilyRepository(session).set_name(1, "Антейку")
         await session.commit()
@@ -410,6 +428,8 @@ async def test_marriages_lists_families_with_a_member_in_this_chat(send, session
 
     since = family.created_at.strftime("%d.%m.%Y")
     row = only_text(
-        Dialogs.family.list.named_row(place=1, name="Антейку", members="Вася, Петя", since=since)
+        Dialogs.family.list.named_row(
+            place=1, name="Антейку", members="Вася, Петя", since=since, age=AGE
+        )
     )
     assert reply == only_text(Dialogs.family.list.message(count=1, rows=row))

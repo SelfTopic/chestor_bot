@@ -82,7 +82,7 @@ family:
     💵 Счёт семьи: {balance} CheSton
 
     {rows}
-  row: '{name} — с {since}'
+  row: '{name} — с {since}, уже {age}'
   top_name: 'семья {members}'
   list:
     empty:
@@ -92,8 +92,8 @@ family:
       💍 Семьи этого чата ({count}):
 
       {rows}
-    row: '{place}. {members} — с {since}'
-    named_row: '{place}. «{name}»: {members} — с {since}'
+    row: '{place}. {members} — с {since}, уже {age}'
+    named_row: '{place}. «{name}»: {members} — с {since}, уже {age}'
     more: '…и ещё {count}'
   rename:
     usage: 'Напиши имя после команды: «имя семьи Антейку». До 32 символов, сменить потом можно снова.'

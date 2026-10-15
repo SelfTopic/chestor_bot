@@ -906,6 +906,7 @@ class _FamilyListDialogs:
     def named_row(
         self,
         *,
+        age: object,
         members: object,
         name: object,
         place: object,
@@ -914,6 +915,7 @@ class _FamilyListDialogs:
         return Line(
             "family.list.named_row",
             {
+                "age": age,
                 "members": members,
                 "name": name,
                 "place": place,
@@ -921,10 +923,18 @@ class _FamilyListDialogs:
             },
         )
 
-    def row(self, *, members: object, place: object, since: object) -> Line:
+    def row(
+        self,
+        *,
+        age: object,
+        members: object,
+        place: object,
+        since: object,
+    ) -> Line:
         return Line(
             "family.list.row",
             {
+                "age": age,
                 "members": members,
                 "place": place,
                 "since": since,
@@ -1012,8 +1022,8 @@ class _FamilyDialogs:
     list = _FamilyListDialogs()
     rename = _FamilyRenameDialogs()
 
-    def row(self, *, name: object, since: object) -> Line:
-        return Line("family.row", {"name": name, "since": since})
+    def row(self, *, age: object, name: object, since: object) -> Line:
+        return Line("family.row", {"age": age, "name": name, "since": since})
 
     def single(self) -> Line:
         return Line("family.single", {})
@@ -4077,8 +4087,8 @@ PLACEHOLDERS: dict[str, frozenset[str]] = {
     "family.list.empty": frozenset(),
     "family.list.message": frozenset({"count", "rows"}),
     "family.list.more": frozenset({"count"}),
-    "family.list.named_row": frozenset({"members", "name", "place", "since"}),
-    "family.list.row": frozenset({"members", "place", "since"}),
+    "family.list.named_row": frozenset({"age", "members", "name", "place", "since"}),
+    "family.list.row": frozenset({"age", "members", "place", "since"}),
     "family.rename.ask": frozenset({"name", "proposer", "rows"}),
     "family.rename.buttons.agree": frozenset(),
     "family.rename.buttons.decline": frozenset(),
@@ -4098,7 +4108,7 @@ PLACEHOLDERS: dict[str, frozenset[str]] = {
     "family.rename.usage": frozenset(),
     "family.rename.vote": frozenset({"name"}),
     "family.rename.voted": frozenset(),
-    "family.row": frozenset({"name", "since"}),
+    "family.row": frozenset({"age", "name", "since"}),
     "family.single": frozenset(),
     "family.title": frozenset(),
     "family.title_named": frozenset({"name"}),
