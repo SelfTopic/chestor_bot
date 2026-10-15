@@ -49,6 +49,8 @@ from .services.notify import NotifyError, SelfrotBotNotifier
 from .services.quiz import QuizService
 from .services.llm import LlmClient
 from .services.analytics import AnalyticsRecorder, AnalyticsTicker
+from .services.notify import TelegramDocsChannel
+from .services.player_docs import PlayerDocsService
 from .services.link_media import Downloader, LinkMediaService
 from .services.media_tools import MediaToolsUpdater
 from .services.music import MusicFinder, MusicService, Recognizer
@@ -114,6 +116,7 @@ class Dispatcher(BaseDispatcher[AppContext]):
         self.session_factory = session_factory
         self.analytics = AnalyticsRecorder(session_factory)
         self.analytics_ticker = AnalyticsTicker(self.analytics)
+        self.player_docs = PlayerDocsService(session_factory, Path(settings.DOCS_DIR))
         # Живут весь процесс: кэши RP-команд, партии вордли, очередь нарезки видео.
         self.rp_commands_service = RpCommandsService(rp_commands_repository)
         self.wordle_service = WordleService()
@@ -247,10 +250,29 @@ class Dispatcher(BaseDispatcher[AppContext]):
         await self.moderation_ticker.start()
         await self.duel_ticker.start()
         await self.analytics_ticker.start()
+        if settings.DOCS_CHANNEL:
+            # Правка десятков постов упирается во флуд-контроль: запуск бота её не ждёт.
+            task = asyncio.create_task(self.publish_docs(settings.DOCS_CHANNEL))
+            self.alerts.add(task)
+            task.add_done_callback(self.alerts.discard)
         if self.link_media_service.enabled:
             await self.media_tools_updater.start()
         self.roast_service.bot_id = (await self.api.get_me()).id
         await self.roast_service.cleanup()
+
+    async def publish_docs(self, channel: str) -> None:
+        try:
+            report = await self.player_docs.publish(TelegramDocsChannel(self.api, channel), channel)
+        except Exception:
+            logger.exception("Документация в %s не опубликовалась", channel)
+            return
+        logger.info(
+            "Документация в %s: новых %d, исправлено %d, удалено %d",
+            channel,
+            len(report.published),
+            len(report.edited),
+            len(report.deleted),
+        )
 
     async def on_shutdown(self) -> None:
         await self.video_worker.stop()

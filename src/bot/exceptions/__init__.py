@@ -14,6 +14,7 @@ from .media_download import (
     MediaNotFoundError,
     ValidationMediaError,
 )
+from .docs import DocsError
 from .ghoul import GhoulNotFound, KaguneAlreadyOwned, KaguneNotOwned, LastKaguneType
 from .link_media import LinkMediaError, LinkMediaTooLarge
 from .media_tools import MediaToolError
@@ -65,6 +66,7 @@ from .user_not_found import UserNotFound
 from .wordle import WordleGuessError, WordleNotRussian, WordleWrongLength
 
 __all__ = [
+    "DocsError",
     "BattleError",
     "FighterHasPendingBattleError",
     "FighterIsDeadError",

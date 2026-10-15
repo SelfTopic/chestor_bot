@@ -2,8 +2,8 @@ from pathlib import Path
 from typing import Protocol
 
 from selfrot import Bot
-from selfrot.exceptions import TelegramAPIError
-from selfrot.types import InputFile
+from selfrot.exceptions import TelegramAPIError, TelegramBadRequest
+from selfrot.types import InputFile, InputRichMessage
 
 
 class NotifyError(Exception):
@@ -56,3 +56,62 @@ class SelfrotBotNotifier:
             raise NotifyError("Telegram не вернул video в ответе send_video")
 
         return sent.video.file_id
+
+
+class DocsChannel(Protocol):
+    async def publish(self, markdown: str) -> int: ...
+
+    async def edit(self, message_id: int, markdown: str) -> None: ...
+
+    async def delete(self, message_id: int) -> None: ...
+
+    async def pin(self, message_id: int) -> None: ...
+
+    def link(self, message_id: int) -> str: ...
+
+
+# Канал документации: посты — rich-сообщения из Markdown, Telegram сам строит из него блоки.
+class TelegramDocsChannel:
+    def __init__(self, bot: Bot, channel: str) -> None:
+        self._bot = bot
+        self._channel = channel
+
+    async def publish(self, markdown: str) -> int:
+        try:
+            sent = await self._bot.send_rich_message(
+                chat_id=self._channel, rich_message=InputRichMessage(markdown=markdown)
+            )
+        except TelegramAPIError as e:
+            raise NotifyError(str(e)) from e
+        return sent.message_id
+
+    async def edit(self, message_id: int, markdown: str) -> None:
+        try:
+            await self._bot.edit_message_text(
+                chat_id=self._channel,
+                message_id=message_id,
+                rich_message=InputRichMessage(markdown=markdown),
+            )
+        except TelegramBadRequest as e:
+            # Тот же текст, что уже в посте, Telegram отвергает — значит, править нечего.
+            if "message is not modified" not in str(e):
+                raise NotifyError(str(e)) from e
+        except TelegramAPIError as e:
+            raise NotifyError(str(e)) from e
+
+    async def delete(self, message_id: int) -> None:
+        try:
+            await self._bot.delete_message(chat_id=self._channel, message_id=message_id)
+        except TelegramAPIError as e:
+            raise NotifyError(str(e)) from e
+
+    async def pin(self, message_id: int) -> None:
+        try:
+            await self._bot.pin_chat_message(
+                chat_id=self._channel, message_id=message_id, disable_notification=True
+            )
+        except TelegramAPIError as e:
+            raise NotifyError(str(e)) from e
+
+    def link(self, message_id: int) -> str:
+        return f"https://t.me/{self._channel.lstrip('@')}/{message_id}"

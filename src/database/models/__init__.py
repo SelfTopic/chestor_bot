@@ -16,6 +16,7 @@ from .user import User
 from .user_cooldowns import UserCooldown
 from .analytics import BotEvent, ChatActivity
 from .anime_episode import AnimeEpisode
+from .docs_post import DocsPost
 from .ghoul_edit import GhoulEdit
 from .link_media import LinkMediaCache
 from .music_track import MusicTrack
@@ -28,6 +29,7 @@ __all__ = [
     "AnimeEpisode",
     "BotEvent",
     "ChatActivity",
+    "DocsPost",
     "Base",
     "GhoulEdit",
     "LinkMediaCache",
