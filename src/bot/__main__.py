@@ -145,6 +145,7 @@ class Dispatcher(BaseDispatcher[AppContext]):
             session_factory,
             self.llm,
             RoastPrompts(),
+            self.player_docs,
             enabled=settings.ROAST_ENABLED and bool(api_key),
             model=settings.ROAST_MODEL,
             daily_limit=settings.ROAST_DAILY_LIMIT,

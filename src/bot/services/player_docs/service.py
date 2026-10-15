@@ -7,7 +7,16 @@ from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 
 from ...repositories import DocsPostRepository, PublishedPost
 from ..notify import DocsChannel
-from .pages import DocPage, DocTopic, find, load_contents_template, load_pages, suggest
+from .pages import (
+    DocPage,
+    DocTopic,
+    find,
+    index,
+    load_contents_template,
+    load_pages,
+    relevant,
+    suggest,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -34,6 +43,12 @@ class PlayerDocsService:
 
     def suggest(self, query: str) -> list[str]:
         return suggest(self.pages(), query)
+
+    # Для нейросети: оглавление всех команд и подразделы, подходящие к вопросу.
+    def guide(self, question: str) -> tuple[str, str]:
+        pages = self.pages()
+        found = relevant(pages, question)
+        return index(pages), "\n\n".join(topic.markdown for topic in found)
 
     # Процессный сервис: на чтение опубликованного — своя короткая сессия.
     async def published(self, channel: str) -> dict[str, int]:

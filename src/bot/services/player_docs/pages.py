@@ -3,6 +3,7 @@ import re
 from dataclasses import dataclass
 from pathlib import Path
 
+import snowballstemmer
 import yaml
 
 from src.bot.exceptions import DocsError
@@ -150,3 +151,35 @@ def suggest(pages: list[DocPage], query: str, limit: int = 3) -> list[str]:
             phrase_of.setdefault(token, word)
     close = difflib.get_close_matches(normalize(query), list(phrase_of), n=limit * 2, cutoff=SUGGEST_CUTOFF)
     return list(dict.fromkeys(phrase_of[key] for key in close))[:limit]
+
+
+# Основа слова (Snowball): «гулем», «гуля» и «гуль» — одно «гул», вопрос находит раздел.
+STEMMER = snowballstemmer.stemmer("russian")
+STOP_WORDS = frozenset(
+    {"бот", "честор", "как", "что", "это", "где", "мне", "мой", "моя", "ты", "тебя", "тебе",
+     "можно", "нужно", "надо", "почему", "зачем", "когда", "сколько", "есть", "или", "так"}
+)
+WORD = re.compile(r"[а-яa-z0-9]+")
+HEADING_WEIGHT = 3
+
+
+def stems(text: str) -> set[str]:
+    words = [word for word in WORD.findall(normalize(text)) if len(word) >= 3 and word not in STOP_WORDS]
+    return set(STEMMER.stemWords(words))
+
+
+def relevant(pages: list[DocPage], question: str, limit: int = 4) -> list[DocTopic]:
+    asked = stems(question)
+    scored: list[tuple[int, int, DocTopic]] = []
+    for order, topic in enumerate(topic for page in pages for topic in topics(page)):
+        body = stems(f"{topic.markdown} {' '.join(topic.page.help_words)}")
+        score = HEADING_WEIGHT * len(asked & stems(topic.heading)) + len(asked & body)
+        if score:
+            scored.append((-score, order, topic))
+    return [topic for _, _, topic in sorted(scored)[:limit]]
+
+
+def index(pages: list[DocPage]) -> str:
+    return "\n".join(
+        f"- {page.title}: {'; '.join(topic.heading for topic in topics(page))}" for page in pages
+    )

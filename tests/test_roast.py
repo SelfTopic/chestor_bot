@@ -5,6 +5,7 @@
 """
 
 from collections.abc import AsyncIterator
+from pathlib import Path
 from typing import Any
 
 import pytest
@@ -13,6 +14,8 @@ from sqlalchemy import select
 
 from src.bot.dialogs import Dialogs
 from src.bot.services.llm import LlmClient
+from src.bot.services.player_docs import PlayerDocsService, load_pages
+from src.bot.services.player_docs.pages import topics
 from src.bot.services.roast import RoastPrompts, RoastService
 from src.bot.services.roast import service as roast_module
 from src.config import settings
@@ -63,6 +66,7 @@ async def llm(dispatcher, session_factory, telegram) -> AsyncIterator[FakeLlm]:
         session_factory,
         client,
         RoastPrompts(),
+        PlayerDocsService(session_factory, Path("docs/players")),
         enabled=True,
         model=GENERATOR,
         daily_limit=100,
@@ -117,11 +121,19 @@ async def test_question_about_the_bot_gets_the_commands_guide_and_keeps_punctuat
     await settle()
 
     assert telegram.sent == [llm.reply]
-    assert RoastPrompts().commands in llm.asked(GENERATOR)[0]
+    asked = llm.asked(GENERATOR)[0]
+    anime = next(
+        topic
+        for page in load_pages(Path("docs/players"))
+        for topic in topics(page)
+        if "anime" in topic.words
+    )
+    assert anime.markdown in asked  # подраздел про то, о чём спросили
+    assert "- Деньги: " in asked  # и оглавление всех команд
 
     await feed(insult("сам ты бомжиха"))
     await settle()
-    assert RoastPrompts().commands not in llm.asked(GENERATOR)[1]
+    assert anime.markdown not in llm.asked(GENERATOR)[1]
 
 
 async def test_reply_to_bots_message_about_another_player_needs_a_mention(

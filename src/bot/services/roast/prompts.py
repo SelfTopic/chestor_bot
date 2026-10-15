@@ -17,8 +17,8 @@ class RoastPrompts:
         return self._read("request.md")
 
     @property
-    def commands(self) -> str:
-        return self._read("commands.md")
+    def help(self) -> str:
+        return self._read("help.md")
 
     def examples(self) -> list[str]:
         return self._lines("examples.txt")

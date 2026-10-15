@@ -14,6 +14,7 @@ from src.database.models import RoastLog
 
 from ...repositories import PlayerFacts, RoastRepository
 from ..llm import LlmClient, LlmError
+from ..player_docs import PlayerDocsService
 from .prompts import RoastPrompts
 
 logger = logging.getLogger(__name__)
@@ -146,6 +147,7 @@ class RoastService:
         session_factory: async_sessionmaker[AsyncSession],
         llm: LlmClient,
         prompts: RoastPrompts,
+        docs: PlayerDocsService,
         *,
         enabled: bool,
         model: str,
@@ -156,6 +158,7 @@ class RoastService:
         self._session_factory = session_factory
         self._llm = llm
         self._prompts = prompts
+        self._docs = docs
         self._enabled = enabled
         self._model = model
         self._daily_limit = daily_limit
@@ -250,7 +253,7 @@ class RoastService:
         request = self._request(chat, facts_text, good)
         help_asked = HELP.search(incoming.text) is not None
         if help_asked:
-            request = f"{request}\n\n{self._prompts.commands}"
+            request = f"{request}\n\n{self._help(incoming.text)}"
 
         if not self._spend():
             return RoastOutcome()
@@ -320,6 +323,10 @@ class RoastService:
             return False
         self._spent += 1
         return True
+
+    def _help(self, question: str) -> str:
+        commands, topics = self._docs.guide(question)
+        return self._prompts.help.replace("{index}", commands).replace("{topics}", topics)
 
     def _request(self, chat: str, facts: str, good: list[RoastLog]) -> str:
         examples = self._prompts.examples()
