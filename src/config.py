@@ -32,6 +32,8 @@ class Settings(BaseSettings):
     LINK_MEDIA_MAX_DURATION: int = Field(default=900)
     USERBOT_ID: int = Field(default=0)
     MUSIC_MAX_DURATION: int = Field(default=900)
+    DOCS_CHANNEL: str = Field(default="")
+    DOCS_DIR: str = Field(default="docs/players")
 
     HTTP_PROXY: str = Field(default="")
     HTTPS_PROXY: str = Field(default="")

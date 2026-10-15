@@ -7,6 +7,7 @@ from selfrot.exceptions import CommandArgsError
 from selfrot.filter import Command
 from selfrot.types import InputFile, Message
 
+from src.bot.config import game_config
 from src.bot.dialogs import Dialogs
 from src.bot.services import VideoCutterService
 from src.bot.types import VideoCutJob
@@ -55,8 +56,11 @@ class AnimeHandler(MessageHandler[AppContext[TextMessage]]):
         message = self.ctx.message
         args = self.cmd.parse(self.ctx)
 
-        input_path = Path(
-            f"src/assets/videos/tokio_ghoul/Season_{args.season}_Episode_{args.episode}.mp4"
+        input_path = (
+            Path(game_config.path_to_assets)
+            / "videos"
+            / "tokio_ghoul"
+            / f"Season_{args.season}_Episode_{args.episode}.mp4"
         )
 
         whole = not args.start and not args.end

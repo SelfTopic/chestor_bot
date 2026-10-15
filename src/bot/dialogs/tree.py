@@ -1139,6 +1139,20 @@ class _GhoulDialogs:
         return Line("ghoul.reborn", {"kagune_type": kagune_type})
 
 
+class _HelpDialogs:
+    def did_you_mean(self, *, query: object) -> Line:
+        return Line("help.did_you_mean", {"query": query})
+
+    def more(self) -> Line:
+        return Line("help.more", {})
+
+    def not_found(self, *, query: object) -> Line:
+        return Line("help.not_found", {"query": query})
+
+    def sections(self, *, rows: object) -> Line:
+        return Line("help.sections", {"rows": rows})
+
+
 class _KaguneGuideDialogs:
     def general(self) -> Line:
         return Line("kagune.guide.general", {})
@@ -3472,6 +3486,7 @@ class _Dialogs:
     fight = _FightDialogs()
     fun = _FunDialogs()
     ghoul = _GhoulDialogs()
+    help = _HelpDialogs()
     kagune = _KaguneDialogs()
     link_media = _LinkMediaDialogs()
     lottery = _LotteryDialogs()
@@ -3496,9 +3511,6 @@ class _Dialogs:
 
     def bot(self) -> Line:
         return Line("bot", {})
-
-    def help(self) -> Line:
-        return Line("help", {})
 
     def start(self, *, name: object) -> Line:
         return Line("start", {"name": name})
@@ -3811,7 +3823,10 @@ PLACEHOLDERS: dict[str, frozenset[str]] = {
     "ghoul.rich_profile.kagune_types": frozenset(),
     "ghoul.rich_profile.stats": frozenset(),
     "ghoul.rich_profile.title": frozenset({"danger_rank", "name"}),
-    "help": frozenset(),
+    "help.did_you_mean": frozenset({"query"}),
+    "help.more": frozenset(),
+    "help.not_found": frozenset({"query"}),
+    "help.sections": frozenset({"rows"}),
     "kagune.guide.general": frozenset(),
     "kagune.guide.general_title": frozenset(),
     "kagune.guide.table_notes": frozenset(),

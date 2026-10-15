@@ -2,6 +2,7 @@ from .active_battle import ActiveBattleRepository
 from .balances_log import BalancesLogRepository
 from .analytics import ActivityKey, AnalyticsRepository, EventRecord
 from .anime_episode import AnimeEpisodeRepository
+from .docs_post import DocsPostRepository, PublishedPost
 from .base import Base
 from .battle import BattleRepository
 from .chat import ChatRepository
@@ -28,6 +29,8 @@ __all__ = [
     "ActivityKey",
     "AnalyticsRepository",
     "AnimeEpisodeRepository",
+    "DocsPostRepository",
+    "PublishedPost",
     "EventRecord",
     "Base",
     "UserRepository",
