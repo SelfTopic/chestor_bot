@@ -3866,6 +3866,12 @@ class _TopsDialogs:
     def out_of_range(self) -> Line:
         return Line("tops.out_of_range", {})
 
+    def power_title(self, *, count: object) -> Line:
+        return Line("tops.power_title", {"count": count})
+
+    def power_value(self, *, power: object, rank: object) -> Line:
+        return Line("tops.power_value", {"power": power, "rank": rank})
+
     def row(self, *, name: object, place: object, value: object) -> Line:
         return Line("tops.row", {"name": name, "place": place, "value": value})
 
@@ -5123,6 +5129,8 @@ PLACEHOLDERS: dict[str, frozenset[str]] = {
     "tops.list": frozenset({"rows", "title"}),
     "tops.not_a_number": frozenset(),
     "tops.out_of_range": frozenset(),
+    "tops.power_title": frozenset({"count"}),
+    "tops.power_value": frozenset({"power", "rank"}),
     "tops.row": frozenset({"name", "place", "value"}),
     "tops.snap_title": frozenset({"count"}),
     "tops.unknown_name": frozenset(),

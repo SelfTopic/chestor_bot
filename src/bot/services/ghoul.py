@@ -465,6 +465,9 @@ class GhoulService(Base):
     async def get_top_snap(self, count=20) -> List[Ghoul]:
         return await self.ghoul_repository.get_top_snap(count)
 
+    async def get_top_power(self, count: int = 20) -> List[Ghoul]:
+        return await self.ghoul_repository.get_top_power(count)
+
     def _first_kagune(self) -> KaguneType:
         logger.debug("Called method _first_kagune")
 

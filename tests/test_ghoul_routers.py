@@ -463,6 +463,36 @@ class TestSnap:
         assert ghoul is not None and ghoul.snap_count == 0
 
 
+def base_power(ghoul: Ghoul) -> int:
+    kagune = (
+        (ghoul.kagune_strength_ukaku or 0)
+        + (ghoul.kagune_strength_koukaku or 0)
+        + (ghoul.kagune_strength_rinkaku or 0)
+        + (ghoul.kagune_strength_bikaku or 0)
+    )
+    stats = ghoul.strength + ghoul.dexterity + ghoul.speed + ghoul.max_health + ghoul.regeneration
+    return stats + kagune
+
+
+class TestTopPower:
+    async def test_base_power_order_with_danger_rank(self, send, session_factory):
+        await seed(session_factory, UID, "Вася")
+        await seed(session_factory, UID + 1, "Петя")
+        await seed_ghoul(session_factory, UID)
+        await seed_ghoul(session_factory, UID + 1, strength=1000, hunger=0)
+        petya = await get_ghoul(session_factory, UID + 1)
+        assert petya is not None
+
+        (reply,) = await send("топ бм", uid=UID)
+
+        assert reply.startswith(only_text(Dialogs.tops.power_title(count=20)))
+        # сила 1000 плюс стартовые статы — мощь 1000–1499, ранг C; голод на место не влияет
+        value = only_text(Dialogs.tops.power_value(power=base_power(petya), rank="C"))
+        first = only_text(Dialogs.tops.row(place=1, name="Петя", value=value))
+        assert first in reply.splitlines()
+        assert reply.index("Петя") < reply.index("Вася")
+
+
 class TestTopSnap:
     # "нету топа" (пустой топ) недостижима и у прода, и в порту: GhoulMiddleware
     # не пускает в хендлер никого, кроме живого гуля — значит хотя бы сам

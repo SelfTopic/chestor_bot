@@ -466,6 +466,8 @@ tops:
     {rows}
   row: '{place}. {name} - {value}'
   snap_title: '🏆 Топ {count} самых сломанных пальцев'
+  power_title: '🏆 Топ {count} по боевой мощи'
+  power_value: '{power} ({rank})'
   kagune:
     sum_title: '🏆 Топ {count} самых сильных кагуне в сумме'
     type_title: '🏆 Топ {count} самых сильных кагуне: {kagune}'
