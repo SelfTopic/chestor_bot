@@ -2,7 +2,9 @@ from pathlib import Path
 from typing import Protocol
 
 from selfrot import Bot
-from selfrot.exceptions import TelegramAPIError, TelegramBadRequest
+# Сервисы берут упоминание отсюда: notify.py — их единственный вход в selfrot.
+from selfrot import mention_html as mention_html
+from selfrot.exceptions import MessageNotModified, TelegramAPIError
 from selfrot.types import InputFile, InputRichMessage
 
 
@@ -92,10 +94,8 @@ class TelegramDocsChannel:
                 message_id=message_id,
                 rich_message=InputRichMessage(markdown=markdown),
             )
-        except TelegramBadRequest as e:
-            # Тот же текст, что уже в посте, Telegram отвергает — значит, править нечего.
-            if "message is not modified" not in str(e):
-                raise NotifyError(str(e)) from e
+        except MessageNotModified:
+            pass
         except TelegramAPIError as e:
             raise NotifyError(str(e)) from e
 

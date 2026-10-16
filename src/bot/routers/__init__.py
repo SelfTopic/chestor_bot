@@ -24,10 +24,11 @@ from .common import (
     TransferRouter,
     UserbotInboxRouter,
     WordleRouter,
+    expire_overdue_votes,
 )
 from .chat_member_update_routers import ChatMemberUpdateRouter
 from .creator_routers import CreatorRouter
-from .ghoul_routers import GhoulRouter
+from .ghoul_routers import GhoulRouter, expire_overdue_duels
 from .moderator_routers import ModeratorRouter
 
 
@@ -64,3 +65,6 @@ class RootRouter(BaseRouter[AppContext]):
         # Последним: огрызается только на то, что не забрала ни одна команда.
         RoastRouter,
     )
+
+
+__all__ = ["RootRouter", "expire_overdue_duels", "expire_overdue_votes"]

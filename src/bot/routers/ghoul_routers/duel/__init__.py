@@ -3,11 +3,10 @@ from selfrot import BaseRouter
 from ....context import AppContext
 from .callbacks import (
     DuelPressHandler,
-    MalformedDuelButtonHandler,
     NotYourDuelButtonHandler,
 )
 from .invite import DuelHandler, DuelRepliedHandler
-from .ticker import DuelTicker
+from .expiry import expire_overdue_duels
 
 
 class DuelRouter(BaseRouter[AppContext]):
@@ -16,8 +15,7 @@ class DuelRouter(BaseRouter[AppContext]):
         DuelHandler,
         DuelPressHandler,
         NotYourDuelButtonHandler,
-        MalformedDuelButtonHandler,
     )
 
 
-__all__ = ["DuelRouter", "DuelTicker"]
+__all__ = ["DuelRouter", "expire_overdue_duels"]

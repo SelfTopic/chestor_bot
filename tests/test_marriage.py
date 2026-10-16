@@ -7,12 +7,13 @@ from datetime import timedelta
 from typing import Any
 
 import pytest
+from selfrot import mention_html
 from sqlalchemy import func, select, update
 
 from src.bot.dialogs import Dialogs
 from src.bot.game_configs import MARRIAGE_CONFIG
 from src.bot.repositories import FamilyRepository
-from src.bot.routers.common.marriage.render import mention
+from src.bot.tasks import FamilyVoteExpiry
 from src.bot.utils.service_accounts import TELEGRAM
 from src.database.models import Family, FamilyMember, MarriageProposal
 
@@ -30,6 +31,12 @@ RICH = 600_000
 @pytest.fixture(autouse=True)
 def group_admins(telegram):
     telegram.results["getChatAdministrators"] = [owner_dict(99)]
+
+
+@pytest.fixture(autouse=True)
+async def bot_username(dispatcher, telegram):
+    # Диспетчер грузит username getMe при старте; без него нет кнопок-ссылок в личку.
+    await dispatcher.api.load_me()
 
 
 async def seed_players(session_factory, **balances: int) -> None:
@@ -60,7 +67,7 @@ async def age_family(session_factory) -> None:
 
 
 def who(uid: int) -> str:
-    return mention(uid, NAMES[uid])
+    return mention_html(uid, NAMES[uid])
 
 
 def press(data: str, uid: int, message_id: int = 44) -> dict[str, Any]:
@@ -108,6 +115,19 @@ def propose(feed, telegram):
     return _propose
 
 
+def private_link(message: dict[str, Any], label) -> str:
+    """Кнопка-ссылка в личку бота → то, что Telegram пришлёт боту по переходу."""
+    (url,) = [
+        button["url"]
+        for row in message["reply_markup"]["inline_keyboard"]
+        for button in row
+        if button["text"] == only_text(label)
+    ]
+    bot, _, payload = url.removeprefix("https://t.me/").partition("?start=")
+    assert bot == "dev_bot"
+    return f"/start {payload}"
+
+
 def consent_button(invite: dict[str, Any], label) -> str:
     return button_data(invite, only_text(label))
 
@@ -140,14 +160,15 @@ async def test_newcomer_joins_only_when_every_member_agrees_in_private(
     await seed_family(session_factory, A, B, balance=RICH)
 
     invite = await propose(A, C)
+    start = private_link(invite, Dialogs.marriage.buttons.family())
     await feed(press(consent_button(invite, Dialogs.marriage.buttons.proposer()), A))
     await feed(press(consent_button(invite, Dialogs.marriage.buttons.target()), C))
     assert await family_of(session_factory, C) is None
 
-    (stranger,) = await send("/start marry_1", uid=D, first_name=NAMES[D])
+    (stranger,) = await send(start, uid=D, first_name=NAMES[D])
     assert stranger == only_text(Dialogs.marriage.link_not_family())
 
-    await send("/start marry_1", uid=B, first_name=NAMES[B])
+    await send(start, uid=B, first_name=NAMES[B])
     (vote,) = telegram.bodies("sendMessage")
     assert vote["text"] in phrase_texts(Dialogs.marriage.family_vote(proposer=who(A), target=who(C)))
     await feed(press(button_data(vote, only_text(Dialogs.marriage.buttons.family_vote())), B, 55))
@@ -259,7 +280,7 @@ async def test_an_hour_without_everyone_burns_the_proposal(
         await session.commit()
     telegram.calls.clear()
 
-    await dispatcher.marriage_ticker.tick()
+    await dispatcher.run_task(FamilyVoteExpiry)
 
     assert await proposal_stage(session_factory) == "expired"
     (edit,) = telegram.bodies("editMessageText")
@@ -353,7 +374,7 @@ async def test_family_is_named_only_when_everyone_agrees_and_the_top_shows_the_n
 
     await feed(press(agree, B, 100))
     assert await family_name(session_factory, A) is None
-    await send("/start rename_1", uid=C, first_name=NAMES[C])
+    await send(private_link(ask, Dialogs.family.rename.buttons.private()), uid=C, first_name=NAMES[C])
     (vote,) = telegram.bodies("sendMessage")
     await feed(press(button_data(vote, only_text(Dialogs.family.rename.buttons.agree())), C, 55))
 

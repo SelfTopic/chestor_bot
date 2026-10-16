@@ -297,14 +297,3 @@ class TestSelfrotBotNotifierVideo:
         (body,) = telegram.bodies("sendVideo")
         assert body["video"] == "CACHED_ID"
         assert file_id == "CACHED_ID"
-
-
-class TestLifecycle:
-    async def test_start_and_stop(self, session_factory, ticker):
-        notification_ticker, _ = ticker
-
-        await notification_ticker.start()
-        assert notification_ticker.running
-
-        await notification_ticker.stop()
-        assert not notification_ticker.running

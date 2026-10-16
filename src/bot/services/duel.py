@@ -1,3 +1,4 @@
+from collections.abc import Mapping
 from typing import Any, Optional
 
 from src.database.models import DuelSession
@@ -29,6 +30,12 @@ class DuelService:
         return await self.duel_session_repository.atomic_update(
             duel_id, expected_stage, **fields
         )
+
+    async def overdue(self, timeouts: Mapping[str, float]) -> list[tuple[int, str]]:
+        return await self.duel_session_repository.overdue(timeouts)
+
+    async def restart_countdown(self, duel_id: int, stage: str) -> None:
+        await self.duel_session_repository.restart_countdown(duel_id, stage)
 
     async def get(self, duel_id: int) -> Optional[DuelSession]:
         return await self.duel_session_repository.get(duel_id)

@@ -15,6 +15,8 @@ from ..context import AppContext
 # бы строку User залоченной до конца хендлера.
 class SyncEntitiesMiddleware(BaseMiddleware[AppContext]):
     async def pre_handle(self) -> bool:
+        if self.ctx.is_background:
+            return True
         event = self.ctx.event
 
         async with self.ctx.session_factory() as session:

@@ -3,7 +3,7 @@ from selfrot import BaseRouter
 from ...context import AppContext
 from .coffee import CoffeeRouter
 from .combat_power import CombatPowerRouter
-from .duel import DuelRouter
+from .duel import DuelRouter, expire_overdue_duels
 from .eat_human import EatHumanRouter
 from .middleware import GhoulMiddleware
 from .mob_fight import MobFightRouter
@@ -30,3 +30,6 @@ class GhoulRouter(BaseRouter[AppContext]):
         DuelRouter,
         CombatPowerRouter,
     )
+
+
+__all__ = ["GhoulRouter", "expire_overdue_duels"]

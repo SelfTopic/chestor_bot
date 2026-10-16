@@ -1,6 +1,6 @@
 from typing import Literal
 
-from selfrot import CallbackPayload
+from selfrot import CallbackPayload, StartPayload
 
 
 class ProposalPayment(CallbackPayload, prefix="marry_pay"):
@@ -21,3 +21,11 @@ class FamilyRenameAnswer(CallbackPayload, prefix="fname"):
 
 class DivorcePress(CallbackPayload, prefix="divorce"):
     expected_id: int
+
+
+class MarryLink(StartPayload, prefix="marry"):
+    proposal_id: int
+
+
+class RenameLink(StartPayload, prefix="rename"):
+    rename_id: int

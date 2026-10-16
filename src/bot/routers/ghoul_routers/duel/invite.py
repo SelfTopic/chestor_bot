@@ -1,7 +1,7 @@
 import logging
 from typing import Any
 
-from selfrot import CommandArgs, MessageHandler, Rest
+from selfrot import CommandArgs, Rest
 from selfrot.exceptions import TelegramAPIError
 from selfrot.filter import Command, HasReplyUser, HasUser
 
@@ -106,8 +106,7 @@ class DuelRepliedArgs(CommandArgs):
 
 class DuelRepliedHandler(
     DuelInvite,
-    RepliedTargetHandler[DuelRepliedArgs],
-    MessageHandler[AppContext[TextUserReplyMessage]],
+    RepliedTargetHandler[DuelRepliedArgs, AppContext[TextUserReplyMessage]],
 ):
     cmd = Command("дуэль", DuelRepliedArgs, prefixes="", ignore_case=True)
     query = cmd & HasUser() & HasReplyUser()
@@ -117,11 +116,7 @@ class DuelArgs(TargetArgs):
     target: Rest
 
 
-class DuelHandler(
-    DuelInvite,
-    ExplicitTargetHandler[DuelArgs],
-    MessageHandler[AppContext[TextUserMessage]],
-):
+class DuelHandler(DuelInvite, ExplicitTargetHandler[DuelArgs, AppContext[TextUserMessage]]):
     cmd = Command("дуэль", DuelArgs, prefixes="", ignore_case=True)
     query = cmd & HasUser() & ~HasReplyUser()
     usage = Dialogs.duel.usage()

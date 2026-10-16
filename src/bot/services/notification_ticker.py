@@ -20,7 +20,6 @@ from src.database.models import DeathLog, ScheduledNotification
 
 from .media_paths import random_media
 from .notify import NotifyError, Notifier
-from .ticker import Ticker
 
 logger = logging.getLogger(__name__)
 
@@ -31,15 +30,13 @@ _DEATH_CAUSES = {
 }
 
 
-class NotificationTicker(Ticker):
+class NotificationTicker:
     def __init__(
         self,
         session_factory: async_sessionmaker[AsyncSession],
         notifier: Notifier,
         dialog_service: DialogService,
-        interval_seconds: float = 30.0,
     ) -> None:
-        super().__init__(interval_seconds)
         self._session_factory = session_factory
         self._notifier = notifier
         self._dialog_service = dialog_service

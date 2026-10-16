@@ -1,6 +1,8 @@
+from collections.abc import Mapping
+from datetime import timedelta
 from typing import Any, Optional
 
-from sqlalchemy import insert, select, update
+from sqlalchemy import func, insert, or_, select, update
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.database.models import DuelSession
@@ -40,6 +42,8 @@ class DuelSessionRepository(Base):
     async def atomic_update(
         self, duel_id: int, expected_stage: str, **fields: Any
     ) -> Optional[DuelSession]:
+        if fields.get("stage", expected_stage) != expected_stage:
+            fields = {**fields, "stage_since": func.now()}
         stmt = (
             update(DuelSession)
             .where(DuelSession.id == duel_id, DuelSession.stage == expected_stage)
@@ -47,6 +51,24 @@ class DuelSessionRepository(Base):
             .returning(DuelSession)
         )
         return await self.session.scalar(stmt)
+
+    async def overdue(self, timeouts: Mapping[str, float]) -> list[tuple[int, str]]:
+        late = [
+            (DuelSession.stage == stage)
+            & (DuelSession.stage_since < func.now() - timedelta(seconds=seconds))
+            for stage, seconds in timeouts.items()
+        ]
+        rows = await self.session.execute(
+            select(DuelSession.id, DuelSession.stage).where(or_(*late)).order_by(DuelSession.id)
+        )
+        return [(duel_id, stage) for duel_id, stage in rows.tuples()]
+
+    async def restart_countdown(self, duel_id: int, stage: str) -> None:
+        await self.session.execute(
+            update(DuelSession)
+            .where(DuelSession.id == duel_id, DuelSession.stage == stage)
+            .values(stage_since=func.now())
+        )
 
     async def get(self, duel_id: int) -> Optional[DuelSession]:
         return await self.session.scalar(select(DuelSession).where(DuelSession.id == duel_id))

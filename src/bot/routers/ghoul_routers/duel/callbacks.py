@@ -1,13 +1,13 @@
 import logging
 
 from selfrot.exceptions import TelegramAPIError
-from selfrot.filter import CallbackDataStartswith
 from selfrot.handlers import CallbackQueryHandler
 from selfrot.types import DataCallbackQuery, Message
 
 from src.bot.dialogs import Dialogs
 
 from ....context import AppContext
+from ...utils import quiet_edit
 from .callback_data import DuelPress
 from .fight import finalize_outcome, run_and_announce_fight
 from .keyboards import consent_keyboard, fora_keyboard
@@ -53,7 +53,7 @@ class DuelPressHandler(CallbackQueryHandler[AppContext[DataCallbackQuery]]):
         if not (updated.initiator_consented and updated.target_consented):
             await callback.answer(self.ctx.text(Dialogs.duel.consent.accepted()))
             if updated.consent_message_id:
-                try:
+                with quiet_edit("duel consent"):
                     await bot.edit_message_text(
                         chat_id=updated.chat_id,
                         message_id=updated.consent_message_id,
@@ -65,8 +65,6 @@ class DuelPressHandler(CallbackQueryHandler[AppContext[DataCallbackQuery]]):
                             updated.target_telegram_id,
                         ),
                     )
-                except TelegramAPIError:
-                    pass
             return
 
         await callback.answer(self.ctx.text(Dialogs.duel.consent.both_confirmed()))
@@ -134,12 +132,10 @@ class DuelPressHandler(CallbackQueryHandler[AppContext[DataCallbackQuery]]):
 
         await callback.answer(self.ctx.text(Dialogs.duel.accepted()))
         if isinstance(callback.message, Message):
-            try:
+            with quiet_edit("duel"):
                 await callback.message.edit_text(
                     self.ctx.text(Dialogs.duel.fora.starting())
                 )
-            except TelegramAPIError:
-                pass
 
         await run_and_announce_fight(self.ctx.bot, session, services)
 
@@ -167,10 +163,3 @@ class NotYourDuelButtonHandler(CallbackQueryHandler[AppContext[DataCallbackQuery
         await self.ctx.callback_query.answer(
             self.ctx.text(Dialogs.duel.not_your_button()), show_alert=True
         )
-
-
-class MalformedDuelButtonHandler(CallbackQueryHandler[AppContext[DataCallbackQuery]]):
-    query = CallbackDataStartswith("duel:")
-
-    async def handle(self) -> None:
-        await self.ctx.callback_query.answer()

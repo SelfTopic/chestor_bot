@@ -1,4 +1,4 @@
-from selfrot import CommandArgs, MessageHandler, Rest
+from selfrot import CommandArgs, Rest
 from selfrot.filter import HasReplyUser, HasUser
 from selfrot.types import ChatMemberRestricted, ChatPermissions
 
@@ -63,8 +63,7 @@ class MuteRepliedArgs(CommandArgs):
 
 class MuteRepliedHandler(
     MuteFlow,
-    RepliedTargetHandler[MuteRepliedArgs],
-    MessageHandler[AppContext[TextUserReplyMessage]],
+    RepliedTargetHandler[MuteRepliedArgs, AppContext[TextUserReplyMessage]],
 ):
     cmd = command("mute", "мут", MuteRepliedArgs)
     query = cmd & HasUser() & HasReplyUser() & FromChatAdmin()
@@ -73,11 +72,7 @@ class MuteRepliedHandler(
         await self.mute(telegram_id, args.rest)
 
 
-class MuteHandler(
-    MuteFlow,
-    AnywhereTargetHandler,
-    MessageHandler[AppContext[TextUserMessage]],
-):
+class MuteHandler(MuteFlow, AnywhereTargetHandler[AppContext[TextUserMessage]]):
     cmd = command("mute", "мут", TargetTextArgs)
     query = cmd & HasUser() & ~HasReplyUser() & FromChatAdmin()
 
@@ -119,8 +114,7 @@ class UnmuteRepliedArgs(CommandArgs):
 
 class UnmuteRepliedHandler(
     UnmuteFlow,
-    RepliedTargetHandler[UnmuteRepliedArgs],
-    MessageHandler[AppContext[TextUserReplyMessage]],
+    RepliedTargetHandler[UnmuteRepliedArgs, AppContext[TextUserReplyMessage]],
 ):
     cmd = command("unmute", "размут", UnmuteRepliedArgs)
     query = cmd & HasUser() & HasReplyUser() & FromChatAdmin()
@@ -129,11 +123,7 @@ class UnmuteRepliedHandler(
         await self.unmute(telegram_id)
 
 
-class UnmuteHandler(
-    UnmuteFlow,
-    AnywhereTargetHandler,
-    MessageHandler[AppContext[TextUserMessage]],
-):
+class UnmuteHandler(UnmuteFlow, AnywhereTargetHandler[AppContext[TextUserMessage]]):
     cmd = command("unmute", "размут", TargetTextArgs)
     query = cmd & HasUser() & ~HasReplyUser() & FromChatAdmin()
 

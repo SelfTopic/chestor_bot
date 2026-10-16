@@ -3,7 +3,8 @@
 импортов src/bot. Тесты пользователями не считаются.
 
 - Слои по ролям — корень (context.py, bot.py, …), services/, repositories/,
-  middlewares/ — не импортируют routers/; собирает всё только __main__.
+  middlewares/ — не импортируют routers/; собирают всё только __main__ и фоновые задачи
+  tasks/, а tasks/ импортирует только __main__.
 - Модуль в корне нужен не только роутерам: иначе его место в routers/.
 - Модуль в routers/ лежит ровно в самой глубокой общей папке тех, кто его
   импортирует: не выше (тогда он уезжает к единственному пакету-пользователю) и
@@ -17,6 +18,7 @@ from pathlib import Path
 REPO = Path(__file__).resolve().parent.parent
 PORT = REPO / "src" / "bot"
 ROUTERS = PORT / "routers"
+TASKS = PORT / "tasks"
 LAYERS = ("services", "repositories", "middlewares")
 
 
@@ -77,7 +79,7 @@ def test_lower_layers_do_not_import_routers():
     modules = _port_modules()
     problems = []
     for name, path in modules.items():
-        if path.is_relative_to(ROUTERS) or path.name == "__main__.py":
+        if path.is_relative_to(ROUTERS) or path.is_relative_to(TASKS) or path.name == "__main__.py":
             continue
         routers = sorted(
             _rel(modules[m]) for m in _imports(path, modules) if modules[m].is_relative_to(ROUTERS)
@@ -86,6 +88,19 @@ def test_lower_layers_do_not_import_routers():
             problems.append(f"{_rel(path)} импортирует {routers}")
 
     assert not problems, "Нижний слой импортирует роутеры:\n" + "\n".join(problems)
+
+
+def test_only_main_imports_the_tasks():
+    modules, importers = _importers()
+    problems = [
+        f"{_rel(modules[user])} импортирует {_rel(path)}"
+        for name, path in modules.items()
+        if path.is_relative_to(TASKS)
+        for user in importers[name]
+        if not modules[user].is_relative_to(TASKS) and modules[user].name != "__main__.py"
+    ]
+
+    assert not problems, "Фоновые задачи импортирует не только __main__:\n" + "\n".join(problems)
 
 
 def test_root_modules_are_not_router_only():

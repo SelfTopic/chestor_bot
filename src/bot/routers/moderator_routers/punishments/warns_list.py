@@ -80,8 +80,7 @@ class WarnsRepliedArgs(CommandArgs):
 
 class WarnsRepliedHandler(
     WarnsListFlow,
-    RepliedTargetHandler[WarnsRepliedArgs],
-    MessageHandler[AppContext[TextUserReplyMessage]],
+    RepliedTargetHandler[WarnsRepliedArgs, AppContext[TextUserReplyMessage]],
 ):
     cmd = command("warns", LIST_WORDS, WarnsRepliedArgs)
     query = cmd & HasUser() & HasReplyUser() & FromChatAdmin()
@@ -90,11 +89,7 @@ class WarnsRepliedHandler(
         await self.show_member(telegram_id)
 
 
-class WarnsHandler(
-    WarnsListFlow,
-    AnywhereTargetHandler,
-    MessageHandler[AppContext[TextUserMessage]],
-):
+class WarnsHandler(WarnsListFlow, AnywhereTargetHandler[AppContext[TextUserMessage]]):
     cmd = command("warns", LIST_WORDS, TargetTextArgs)
     query = cmd & HasUser() & ~HasReplyUser() & FromChatAdmin()
 

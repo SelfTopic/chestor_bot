@@ -69,6 +69,20 @@ async def test_unchanged_docs_touch_nothing_and_an_edit_touches_one_post(
     assert edit["rich_message"]["markdown"] == "# Дуэли\n\nновый текст"
 
 
+async def test_edit_telegram_finds_unchanged_is_not_an_error(publish, telegram, folder):
+    await publish()
+    page(folder, "02-duels.md", "Дуэли", "# Дуэли\n\nновый текст")
+    telegram.errors["editMessageText"] = (
+        400,
+        "Bad Request: message is not modified: specified new message content and reply "
+        "markup are exactly the same as a current content and reply markup of the message",
+    )
+
+    report = await publish()
+
+    assert report.edited == ["02-duels"]
+
+
 async def test_removed_section_loses_its_post_and_its_contents_line(publish, telegram, folder):
     await publish()
 

@@ -1,6 +1,6 @@
 import html
 
-from selfrot import InlineKeyboard, button
+from selfrot import Bot, InlineKeyboard, button, mention_html
 from selfrot.types import InlineKeyboardMarkup
 
 from src.bot.dialogs import Dialogs, Line
@@ -8,21 +8,15 @@ from src.bot.game_configs import MARRIAGE_CONFIG
 from src.bot.services.family import MarriageFailure, ProposalState, RenameState
 from src.bot.session_services import SessionServices
 
-from .payloads import FamilyRenameAnswer, MarriageAnswer
+from .payloads import FamilyRenameAnswer, MarriageAnswer, MarryLink, RenameLink
 
 PHRASES = Dialogs.marriage
-LINK_PREFIX = "marry_"
-RENAME_LINK_PREFIX = "rename_"
 RENAME = Dialogs.family.rename
-
-
-def mention(telegram_id: int, name: str) -> str:
-    return f'<a href="tg://user?id={telegram_id}">{html.escape(name)}</a>'
 
 
 async def mentions(services: SessionServices, telegram_ids: tuple[int, ...]) -> dict[int, str]:
     names = await services.first_names(telegram_ids)
-    return {tid: mention(tid, names.get(tid, str(tid))) for tid in telegram_ids}
+    return {tid: mention_html(tid, names.get(tid, str(tid))) for tid in telegram_ids}
 
 
 def failure_line(state: ProposalState, who: dict[int, str]) -> Line:
@@ -39,7 +33,7 @@ def failure_line(state: ProposalState, who: dict[int, str]) -> Line:
 
 
 async def proposal_view(
-    services: SessionServices, state: ProposalState, bot_username: str | None
+    services: SessionServices, state: ProposalState, bot: Bot | None
 ) -> tuple[str, InlineKeyboardMarkup | None]:
     text = services.dialog_service.text
     who = await mentions(services, state.required)
@@ -81,14 +75,14 @@ async def proposal_view(
     keyboard.row(*target_row)
     if state.family_members:
         body += "\n\n" + text(PHRASES.family_hint(proposer=who[proposer]))
-        if bot_username:
-            link = f"https://t.me/{bot_username}?start={LINK_PREFIX}{proposal_id}"
+        if bot is not None and bot.username:
+            link = MarryLink(proposal_id=proposal_id).url(bot)
             keyboard.row(button(text(PHRASES.buttons.family()), url=link))
     return body, keyboard.markup()
 
 
 async def rename_view(
-    services: SessionServices, state: RenameState, bot_username: str | None
+    services: SessionServices, state: RenameState, bot: Bot | None
 ) -> tuple[str, InlineKeyboardMarkup | None]:
     text = services.dialog_service.text
     rename = state.rename
@@ -117,7 +111,7 @@ async def rename_view(
             FamilyRenameAnswer(rename_id=rename.id, answer="decline"),
         ),
     )
-    if bot_username:
-        link = f"https://t.me/{bot_username}?start={RENAME_LINK_PREFIX}{rename.id}"
+    if bot is not None and bot.username:
+        link = RenameLink(rename_id=rename.id).url(bot)
         keyboard.row(button(text(RENAME.buttons.private()), url=link))
     return body, keyboard.markup()

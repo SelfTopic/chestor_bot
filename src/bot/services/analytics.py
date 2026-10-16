@@ -7,7 +7,6 @@ from zoneinfo import ZoneInfo
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 
 from ..repositories import ActivityKey, AnalyticsRepository, EventRecord
-from .ticker import Ticker
 
 logger = logging.getLogger(__name__)
 
@@ -74,15 +73,4 @@ class AnalyticsRecorder:
             self._activity.update(activity)
 
 
-class AnalyticsTicker(Ticker):
-    def __init__(
-        self, recorder: AnalyticsRecorder, interval_seconds: float = FLUSH_INTERVAL
-    ) -> None:
-        super().__init__(interval_seconds)
-        self._recorder = recorder
-
-    async def tick(self) -> None:
-        await self._recorder.flush()
-
-
-__all__ = ["AnalyticsRecorder", "AnalyticsTicker"]
+__all__ = ["AnalyticsRecorder", "FLUSH_INTERVAL"]

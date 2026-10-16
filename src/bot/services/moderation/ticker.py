@@ -8,21 +8,18 @@ from src.bot.dialogs import Dialogs, Line
 from ...repositories import DueExpiration, ModerationRepository
 from ...types import ModerationActionType, ModerationVoice
 from ..dialog import DialogService
-from ..notify import NotifyError, Notifier
-from ..ticker import Ticker
+from ..notify import NotifyError, Notifier, mention_html
 
 logger = logging.getLogger(__name__)
 
 
-class ModerationTicker(Ticker):
+class ModerationTicker:
     def __init__(
         self,
         session_factory: async_sessionmaker[AsyncSession],
         notifier: Notifier,
         dialog_service: DialogService,
-        interval_seconds: float = 10.0,
     ) -> None:
-        super().__init__(interval_seconds)
         self._session_factory = session_factory
         self._notifier = notifier
         self._dialog_service = dialog_service
@@ -45,8 +42,9 @@ class ModerationTicker(Ticker):
             if expiration.voice is ModerationVoice.ROUGH
             else Dialogs.moderation.neutral
         )
-        name = html.escape(expiration.first_name or str(expiration.target_id))
-        mention = f'<a href="tg://user?id={expiration.target_id}">{name}</a>'
+        raw_name = expiration.first_name or str(expiration.target_id)
+        name = html.escape(raw_name)
+        mention = mention_html(expiration.target_id, raw_name)
         who = dict(
             chat=html.escape(expiration.chat_title or str(expiration.chat_id)),
             name=name,

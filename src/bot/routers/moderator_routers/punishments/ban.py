@@ -1,4 +1,4 @@
-from selfrot import CommandArgs, MessageHandler, Rest
+from selfrot import CommandArgs, Rest
 from selfrot.filter import HasReplyUser, HasUser
 from selfrot.types import ChatMemberBanned
 
@@ -60,8 +60,7 @@ class BanRepliedArgs(CommandArgs):
 
 class BanRepliedHandler(
     BanFlow,
-    RepliedTargetHandler[BanRepliedArgs],
-    MessageHandler[AppContext[TextUserReplyMessage]],
+    RepliedTargetHandler[BanRepliedArgs, AppContext[TextUserReplyMessage]],
 ):
     cmd = command("ban", "бан", BanRepliedArgs)
     query = cmd & HasUser() & HasReplyUser() & FromChatAdmin()
@@ -70,11 +69,7 @@ class BanRepliedHandler(
         await self.ban(telegram_id, args.rest)
 
 
-class BanHandler(
-    BanFlow,
-    AnywhereTargetHandler,
-    MessageHandler[AppContext[TextUserMessage]],
-):
+class BanHandler(BanFlow, AnywhereTargetHandler[AppContext[TextUserMessage]]):
     cmd = command("ban", "бан", TargetTextArgs)
     query = cmd & HasUser() & ~HasReplyUser() & FromChatAdmin()
 
@@ -116,8 +111,7 @@ class UnbanRepliedArgs(CommandArgs):
 
 class UnbanRepliedHandler(
     UnbanFlow,
-    RepliedTargetHandler[UnbanRepliedArgs],
-    MessageHandler[AppContext[TextUserReplyMessage]],
+    RepliedTargetHandler[UnbanRepliedArgs, AppContext[TextUserReplyMessage]],
 ):
     cmd = command("unban", "разбан", UnbanRepliedArgs)
     query = cmd & HasUser() & HasReplyUser() & FromChatAdmin()
@@ -126,11 +120,7 @@ class UnbanRepliedHandler(
         await self.unban(telegram_id)
 
 
-class UnbanHandler(
-    UnbanFlow,
-    AnywhereTargetHandler,
-    MessageHandler[AppContext[TextUserMessage]],
-):
+class UnbanHandler(UnbanFlow, AnywhereTargetHandler[AppContext[TextUserMessage]]):
     cmd = command("unban", "разбан", TargetTextArgs)
     query = cmd & HasUser() & ~HasReplyUser() & FromChatAdmin()
 

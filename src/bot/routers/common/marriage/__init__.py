@@ -3,14 +3,13 @@ from selfrot import BaseRouter
 from ....context import AppContext
 from .consent import (
     FamilyConsentLinkHandler,
-    MalformedMarriageButtonHandler,
     NotYourMarriageButtonHandler,
     ProposalAnswerHandler,
 )
 from .family import DivorceHandler, DivorcePressHandler, FamiliesHandler, FamilyHandler
 from .propose import ProposalHandler, ProposalPaymentHandler, ProposalRepliedHandler
 from .rename import RenameAnswerHandler, RenameHandler, RenameLinkHandler
-from .ticker import MarriageTicker
+from .expiry import expire_overdue_votes
 
 
 class MarriageLinkRouter(BaseRouter[AppContext]):
@@ -30,8 +29,7 @@ class MarriageRouter(BaseRouter[AppContext]):
         DivorceHandler,
         DivorcePressHandler,
         NotYourMarriageButtonHandler,
-        MalformedMarriageButtonHandler,
     )
 
 
-__all__ = ["MarriageLinkRouter", "MarriageRouter", "MarriageTicker"]
+__all__ = ["MarriageLinkRouter", "MarriageRouter", "expire_overdue_votes"]

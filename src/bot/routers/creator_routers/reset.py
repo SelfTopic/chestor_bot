@@ -1,4 +1,4 @@
-from selfrot import BaseRouter, CommandArgs, MessageHandler, Rest
+from selfrot import BaseRouter, CommandArgs, Rest
 from selfrot.filter import Command, HasReplyUser
 from selfrot.types import Message
 
@@ -30,8 +30,7 @@ async def _perform_reset_ghoul(ctx: AppContext[Message], target: str) -> None:
 
 
 class ResetGhoulRepliedHandler(
-    RepliedTargetHandler[ResetRepliedArgs],
-    MessageHandler[AppContext[ReplyUserMessage]],
+    RepliedTargetHandler[ResetRepliedArgs, AppContext[ReplyUserMessage]],
 ):
     cmd = Command("reset_ghoul", ResetRepliedArgs)
     query = cmd & HasReplyUser()
@@ -40,9 +39,7 @@ class ResetGhoulRepliedHandler(
         await _perform_reset_ghoul(self.ctx, str(telegram_id))
 
 
-class ResetGhoulHandler(
-    ExplicitTargetHandler[TargetArgs], MessageHandler[AppContext[TextMessage]]
-):
+class ResetGhoulHandler(ExplicitTargetHandler[TargetArgs, AppContext[TextMessage]]):
     cmd = Command("reset_ghoul", TargetArgs)
     query = cmd & ~HasReplyUser()
     usage = Dialogs.admin.reset.ghoul_usage()
@@ -66,10 +63,7 @@ async def _perform_reset_user(ctx: AppContext[Message], target: str) -> None:
     await ctx.say(done, parse_mode="HTML")
 
 
-class ResetUserRepliedHandler(
-    RepliedTargetHandler[ResetRepliedArgs],
-    MessageHandler[AppContext[ReplyUserMessage]],
-):
+class ResetUserRepliedHandler(RepliedTargetHandler[ResetRepliedArgs, AppContext[ReplyUserMessage]]):
     cmd = Command("reset_user", ResetRepliedArgs)
     query = cmd & HasReplyUser()
 
@@ -77,9 +71,7 @@ class ResetUserRepliedHandler(
         await _perform_reset_user(self.ctx, str(telegram_id))
 
 
-class ResetUserHandler(
-    ExplicitTargetHandler[TargetArgs], MessageHandler[AppContext[TextMessage]]
-):
+class ResetUserHandler(ExplicitTargetHandler[TargetArgs, AppContext[TextMessage]]):
     cmd = Command("reset_user", TargetArgs)
     query = cmd & ~HasReplyUser()
     usage = Dialogs.admin.reset.user_usage()

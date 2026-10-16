@@ -1,4 +1,4 @@
-from selfrot import BaseRouter, CommandArgs, MessageHandler, Rest
+from selfrot import BaseRouter, CommandArgs, Rest
 from selfrot.filter import Command, HasReplyUser
 from selfrot.types import Message
 
@@ -27,8 +27,7 @@ async def _perform_kill(ctx: AppContext[Message], telegram_id: int, cause: str) 
 
 
 class KillGhoulRepliedHandler(
-    RepliedTargetHandler[KillGhoulRepliedArgs],
-    MessageHandler[AppContext[ReplyUserMessage]],
+    RepliedTargetHandler[KillGhoulRepliedArgs, AppContext[ReplyUserMessage]],
 ):
     cmd = Command("kill_ghoul", KillGhoulRepliedArgs)
     query = cmd & HasReplyUser()
@@ -41,10 +40,7 @@ class KillGhoulArgs(TargetArgs):
     cause: Rest = ""
 
 
-class KillGhoulHandler(
-    ExplicitTargetHandler[KillGhoulArgs],
-    MessageHandler[AppContext[TextMessage]],
-):
+class KillGhoulHandler(ExplicitTargetHandler[KillGhoulArgs, AppContext[TextMessage]]):
     cmd = Command("kill_ghoul", KillGhoulArgs)
     query = cmd & ~HasReplyUser()
     usage = Dialogs.admin.kill.usage()

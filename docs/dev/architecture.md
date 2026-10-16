@@ -33,13 +33,15 @@
 ## `src/bot/`
 
 - **`__main__.py`** — `Dispatcher`: middlewares, корневой роутер, фоновые задачи
-  (`NotificationTicker`, `DuelTicker`, `ModerationTicker`, `VideoWorker`), polling (`ENV=DEV`) или вебхук.
+  (`tasks = TASKS`), `VideoWorker`, polling (`ENV=DEV`) или вебхук.
+- **`tasks/`** — фоновые задачи selfrot (`BaseTask`, `Every`): истечение дуэлей и голосований
+  семьи, уведомления, сроки модерации, сброс статистики, обновление yt-dlp. Собирающий слой,
+  как `__main__.py`: берёт роутеры из `routers/__init__.py`, импортирует его только `__main__.py`.
 - **`context.py`** — `AppContext`, контекст одного апдейта. Все зависимости хендлера —
   его типизированные ленивые свойства (`ctx.ghoul_service`, `ctx.transfer_service`, …),
   плюс общие хелперы (`ctx.say()`, `ctx.text()`, `ctx.db_user()`, `ctx.addressee()`, …).
 - **`session_services.py`** — `SessionServices`: репозитории и сервисы на текущей сессии БД
-  (`session_context`), каждый — `cached_property`. `AppContext` её наследует, тикер дуэлей
-  создаёт её сам. Процессные сервисы создаёт `Dispatcher` и передаёт полями `AppContext`.
+  (`session_context`), каждый — `cached_property`. `AppContext` её наследует. Процессные сервисы создаёт `Dispatcher` и передаёт полями `AppContext`.
 - **`bot.py`**, **`logs.py`** — класс бота (прокси) и настройка логов.
 - **`middlewares/`** — уровня диспетчера: `DatabaseMiddleware` (сессия на апдейт),
   `SyncEntitiesMiddleware` (апсерт `User`/`Chat` в отдельной сессии), `BanMiddleware`.
@@ -49,7 +51,7 @@
     `link_media_router.py` отвечает роликом на ссылку TikTok/YouTube, `userbot_inbox.py`
     принимает от юзербота серии аниме и эдиты, `edits_router.py` отвечает эдитом на «1000-7»,
     `music/` ищет, распознаёт («шазам») и присылает песни, `marriage/` — браки и семьи
-    (предложение, согласия в группе и в личке по ссылке, «семья», «развод», тикер срока). `roast_router.py` стоит
+    (предложение, согласия в группе и в личке по ссылке, «семья», «развод», истечение срока — `expiry.py`). `roast_router.py` стоит
     последним в `RootRouter`: огрызается нейросетью на то, что не забрала ни одна команда.
   - `ghoul_routers/` — механика гуля: голод, статы, кагуне, бои с мобами, дуэли (`duel/`),
     показ боя (`battle_text.py`, `battle_text_generator.py`).
@@ -131,9 +133,8 @@
 3. Сервис вызывает репозитории и другие сервисы.
 4. Хендлер отвечает; `DatabaseMiddleware` коммитит сессию по выходу из хендлера.
 
-**Важно:** в `after_handle` / `defer` и фоновых задачах сессия апдейта уже закрыта.
-Тикеры открывают свою сессию через `session_factory` и сами собирают нужные сервисы
-(см. `routers/ghoul_routers/duel/ticker.py`).
+**Важно:** в `after_handle` / `defer` сессия апдейта уже закрыта. Фоновая задача (`tasks/`)
+получает свою сессию от тех же middleware, что и апдейт.
 
 ## Тесты
 
