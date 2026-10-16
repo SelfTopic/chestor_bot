@@ -5,6 +5,7 @@ from src.bot.game_configs import STATS
 from src.bot.services.promo import (
     ChestonReward,
     Granted,
+    HungerReward,
     LevelProgressReward,
     RcReward,
     StatReward,
@@ -23,6 +24,10 @@ def reward_line(granted: Granted) -> Line:
             return Dialogs.promo.reward.rc(amount=amount)
         case LevelProgressReward(percent=percent):
             return Dialogs.promo.reward.progress(percent=percent)
+        case HungerReward(percent=percent) if percent >= 100:
+            return Dialogs.promo.reward.full_hunger()
+        case HungerReward(percent=percent):
+            return Dialogs.promo.reward.hunger(percent=percent)
         case StatReward(stat=stat, amount=amount):
             if granted.capped_to is None:
                 return Dialogs.promo.reward.stat(stat=STAT_LABELS[stat], amount=amount)

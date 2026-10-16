@@ -191,6 +191,19 @@ class TestActivate:
         assert ghoul is not None
         assert (ghoul.strength, ghoul.max_health, ghoul.health) == (100, 55, 45)
 
+    async def test_full_hunger(self, send, session_factory):
+        await send("+промо еда 1\nсытость", uid=ADMIN)
+        await seed(session_factory, UID, "Вася")
+        await seed_ghoul(session_factory, UID, hunger=40)
+
+        (reply,) = await send("промо еда", uid=UID)
+
+        rewards = only_text(Dialogs.promo.reward.full_hunger())
+        assert reply in phrase_texts(Dialogs.promo.activated(name="еда", rewards=rewards))
+        ghoul = await get_ghoul(session_factory, UID)
+        assert ghoul is not None
+        assert ghoul.hunger == 100
+
     async def test_spent_code_leaves_no_activation(self, send, session_factory):
         await add_promo(session_factory, "лето", limit=1)
         await add_ghoul(session_factory, UID)

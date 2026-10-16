@@ -13,6 +13,7 @@ from src.bot.game_configs import StatKey
 from src.bot.services.promo import (
     ChestonReward,
     Granted,
+    HungerReward,
     LevelProgressReward,
     RcReward,
     Reward,
@@ -27,6 +28,8 @@ MOSCOW = ZoneInfo("Europe/Moscow")
 CHESTON_WORDS = ("честоны", "честон", "чс", "cheston")
 RC_WORDS = ("рс", "rc", "клетки")
 PROGRESS_WORDS = ("прогресс", "опыт", "xp")
+HUNGER_WORDS = ("сытость", "еда")
+FULL_HUNGER = 100
 STAT_WORDS: dict[str, StatKey] = {
     "сила": "strength",
     "ловкость": "dexterity",
@@ -65,6 +68,9 @@ def parse_reward(line: str) -> Reward:
         return RcReward(amount=positive(words[1], line))
     if len(words) == 2 and words[0] in PROGRESS_WORDS:
         return LevelProgressReward(percent=positive(words[1].removesuffix("%"), line))
+    if words[0] in HUNGER_WORDS and len(words) <= 2:
+        percent = positive(words[1].removesuffix("%"), line) if len(words) == 2 else FULL_HUNGER
+        return HungerReward(percent=min(percent, FULL_HUNGER))
     if len(words) == 2 and words[0] in STAT_WORDS:
         return StatReward(stat=STAT_WORDS[words[0]], amount=positive(words[1], line))
     raise PromoSpecError(line)

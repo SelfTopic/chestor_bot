@@ -224,7 +224,7 @@ class SessionServices:
     def promo_service(self) -> PromoService:
         return PromoService(
             self.promo_repository,
-            self.ghoul_repository,
+            self.ghoul_service,
             self.user_service,
             self.level_up_service,
         )
