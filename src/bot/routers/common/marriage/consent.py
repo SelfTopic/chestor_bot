@@ -1,7 +1,7 @@
 import logging
 
 from selfrot import InlineKeyboard, MessageHandler, button
-from selfrot.filter import HasUser, TextRegexp
+from selfrot.filter import Command, HasUser
 from selfrot.handlers import CallbackQueryHandler
 from selfrot.types import DataCallbackQuery, Message
 
@@ -12,8 +12,8 @@ from src.bot.services.family import ConsentRefusal, ConsentRefused, ProposalStat
 from ....context import AppContext
 from ...types import UserMessage
 from ...utils import quiet_edit
-from .payloads import DivorcePress, MarriageAnswer, ProposalPayment
-from .render import LINK_PREFIX, PHRASES, mentions, proposal_view
+from .payloads import DivorcePress, MarriageAnswer, MarryLink, ProposalPayment
+from .render import PHRASES, mentions, proposal_view
 
 logger = logging.getLogger(__name__)
 
@@ -80,7 +80,7 @@ class ProposalAnswerHandler(CallbackQueryHandler[AppContext[DataCallbackQuery]])
         proposal = state.proposal
         if proposal.message_id is None:
             return
-        text, keyboard = await proposal_view(self.ctx, state, self.ctx.bot.username)
+        text, keyboard = await proposal_view(self.ctx, state, self.ctx.bot)
         with quiet_edit("marriage invite"):
             await self.ctx.bot.edit_message_text(
                 chat_id=proposal.chat_id,
@@ -92,13 +92,13 @@ class ProposalAnswerHandler(CallbackQueryHandler[AppContext[DataCallbackQuery]])
 
 
 class FamilyConsentLinkHandler(MessageHandler[AppContext[UserMessage]]):
-    link = TextRegexp(rf"/start(?:@\w+)?\s+{LINK_PREFIX}(\d+)\s*$")
+    link = Command("start", MarryLink, deep_link=True)
     query = link & HasUser()
 
     async def handle(self) -> None:
         ctx = self.ctx
         member_id = ctx.message.user.id
-        state = await ctx.family_service.state(int(self.link.match(ctx)[1]))
+        state = await ctx.family_service.state(self.link.parse(ctx).proposal_id)
         if state is None or state.proposal.stage != "awaiting":
             await ctx.say(PHRASES.link_stale())
             return

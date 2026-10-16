@@ -125,7 +125,7 @@ class ProposalPaymentHandler(CallbackQueryHandler[AppContext[DataCallbackQuery]]
             await callback.answer(ctx.text(refusal_line(refused.reason)), show_alert=True)
             return
 
-        text, keyboard = await proposal_view(ctx, state, ctx.bot.username)
+        text, keyboard = await proposal_view(ctx, state, ctx.bot)
         await message.edit_text(text, reply_markup=keyboard, parse_mode="HTML")
         await ctx.family_service.set_message(state.proposal.id, message.message_id)
         await callback.answer()
