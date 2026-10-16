@@ -1,4 +1,4 @@
-from selfrot import BaseRouter, CommandArgs, MessageHandler
+from selfrot import BaseRouter, CommandArgs
 from selfrot.filter import Command, HasReplyUser
 from selfrot.types import Message
 
@@ -40,8 +40,7 @@ class ClearCooldownRepliedArgs(CommandArgs):
 
 
 class ClearCooldownRepliedHandler(
-    RepliedTargetHandler[ClearCooldownRepliedArgs],
-    MessageHandler[AppContext[ReplyUserMessage]],
+    RepliedTargetHandler[ClearCooldownRepliedArgs, AppContext[ReplyUserMessage]],
 ):
     cmd = Command("clear_cooldown", ClearCooldownRepliedArgs)
     query = cmd & HasReplyUser()
@@ -55,9 +54,7 @@ class ClearCooldownArgs(TargetArgs):
     type_name: str
 
 
-class ClearCooldownHandler(
-    ExplicitTargetHandler[ClearCooldownArgs], MessageHandler[AppContext[TextMessage]]
-):
+class ClearCooldownHandler(ExplicitTargetHandler[ClearCooldownArgs, AppContext[TextMessage]]):
     cmd = Command("clear_cooldown", ClearCooldownArgs)
     query = cmd & ~HasReplyUser()
     usage = Dialogs.admin.cooldown.usage()

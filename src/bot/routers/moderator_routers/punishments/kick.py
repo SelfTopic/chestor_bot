@@ -1,4 +1,4 @@
-from selfrot import CommandArgs, MessageHandler, Rest
+from selfrot import CommandArgs, Rest
 from selfrot.filter import HasReplyUser, HasUser
 
 from src.bot.dialogs import Line
@@ -50,8 +50,7 @@ class KickRepliedArgs(CommandArgs):
 
 class KickRepliedHandler(
     KickFlow,
-    RepliedTargetHandler[KickRepliedArgs],
-    MessageHandler[AppContext[TextUserReplyMessage]],
+    RepliedTargetHandler[KickRepliedArgs, AppContext[TextUserReplyMessage]],
 ):
     cmd = command("kick", "кик", KickRepliedArgs)
     query = cmd & HasUser() & HasReplyUser() & FromChatAdmin()
@@ -60,11 +59,7 @@ class KickRepliedHandler(
         await self.kick(telegram_id, args.reason)
 
 
-class KickHandler(
-    KickFlow,
-    AnywhereTargetHandler,
-    MessageHandler[AppContext[TextUserMessage]],
-):
+class KickHandler(KickFlow, AnywhereTargetHandler[AppContext[TextUserMessage]]):
     cmd = command("kick", "кик", TargetTextArgs)
     query = cmd & HasUser() & ~HasReplyUser() & FromChatAdmin()
 

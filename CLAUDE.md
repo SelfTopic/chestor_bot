@@ -125,12 +125,11 @@ SQL — `coalesce(families.balance, users.balance)`. Семьи, предлож�
 `HasReplyUser()` и `XHandler` с `~HasReplyUser()`), а не один с плавающими аргументами:
 у прода на этом были реальные баги (`/ban_bot`, `/set_stat`). Используй миксины из
 `routers/targeting.py` (`RepliedTargetHandler`, `ExplicitTargetHandler`, `TargetArgs`);
-конкретный хендлер реализует только `perform(telegram_id, args)`.
-Важно: миксины намеренно не наследуют `MessageHandler[...]`. Каждый хендлер явно пишет
-его вторым базовым классом:
-`class KillGhoulHandler(ExplicitTargetHandler[KillGhoulArgs], MessageHandler[AppContext[TextMessage]])`.
-Проверка `DefinitionError` в selfrot смотрит только на прямые базовые классы, и через
-generic-миксин она молча отключилась бы.
+конкретный хендлер реализует только `perform(telegram_id, args)`. Миксин хендлера сам
+наследует `MessageHandler[TContext]` и generic по контексту, а хендлер передаёт тип контекста
+параметром: `class KillGhoulHandler(ExplicitTargetHandler[KillGhoulArgs, AppContext[TextMessage]])`.
+selfrot ищет заголовок по всему MRO, так что `DefinitionError` (фильтр не гарантирует поля из
+заголовка) срабатывает и через миксин.
 
 **Тексты — `src/bot/dialogs/`.** Фразы лежат в `*.yaml` (раздел → фраза → текст или список
 вариантов, `{имя}` — подстановка). Код обращается к ним только через сгенерированное дерево:

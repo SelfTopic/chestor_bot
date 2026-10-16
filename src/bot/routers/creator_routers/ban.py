@@ -1,4 +1,4 @@
-from selfrot import BaseRouter, CommandArgs, MessageHandler, Rest
+from selfrot import BaseRouter, CommandArgs, Rest
 from selfrot.filter import Command, HasReplyUser
 from selfrot.types import Message
 
@@ -41,9 +41,7 @@ class BanRepliedArgs(CommandArgs):
     reason: Rest = ""
 
 
-class BanRepliedHandler(
-    RepliedTargetHandler[BanRepliedArgs], MessageHandler[AppContext[ReplyUserMessage]]
-):
+class BanRepliedHandler(RepliedTargetHandler[BanRepliedArgs, AppContext[ReplyUserMessage]]):
     cmd = Command("ban_bot", BanRepliedArgs)
     query = cmd & HasReplyUser()
 
@@ -56,9 +54,7 @@ class BanArgs(TargetArgs):
     reason: Rest = ""
 
 
-class BanHandler(
-    ExplicitTargetHandler[BanArgs], MessageHandler[AppContext[TextMessage]]
-):
+class BanHandler(ExplicitTargetHandler[BanArgs, AppContext[TextMessage]]):
     cmd = Command("ban_bot", BanArgs)
     query = cmd & ~HasReplyUser()
     usage = Dialogs.admin.ban.usage()
@@ -89,10 +85,7 @@ class UnbanRepliedArgs(CommandArgs):
     note: Rest = ""
 
 
-class UnbanRepliedHandler(
-    RepliedTargetHandler[UnbanRepliedArgs],
-    MessageHandler[AppContext[ReplyUserMessage]],
-):
+class UnbanRepliedHandler(RepliedTargetHandler[UnbanRepliedArgs, AppContext[ReplyUserMessage]]):
     cmd = Command("unban_bot", UnbanRepliedArgs)
     query = cmd & HasReplyUser()
 
@@ -104,9 +97,7 @@ class UnbanArgs(TargetArgs):
     pass
 
 
-class UnbanHandler(
-    ExplicitTargetHandler[UnbanArgs], MessageHandler[AppContext[TextMessage]]
-):
+class UnbanHandler(ExplicitTargetHandler[UnbanArgs, AppContext[TextMessage]]):
     cmd = Command("unban_bot", UnbanArgs)
     query = cmd & ~HasReplyUser()
     usage = Dialogs.admin.unban.usage()

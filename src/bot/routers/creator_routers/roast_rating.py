@@ -1,3 +1,5 @@
+from typing import Generic, TypeVar
+
 from selfrot import BaseRouter, MessageHandler
 from selfrot.filter import Command, HasUser
 
@@ -7,9 +9,10 @@ from ...context import AppContext
 from ..types import TextUserMessage
 
 
-# Миксин не наследует MessageHandler: selfrot проверяет заголовок только на прямых базах.
-class RateRoastHandler:
-    ctx: AppContext[TextUserMessage]
+TContext = TypeVar("TContext", bound=AppContext[TextUserMessage])
+
+
+class RateRoastHandler(MessageHandler[TContext], Generic[TContext]):
     rating = 0
     done: Line = Dialogs.admin.roast.good()
 
@@ -25,13 +28,13 @@ class RateRoastHandler:
         await self.ctx.say(self.done if rated else Dialogs.admin.roast.not_found(), reply=True)
 
 
-class GoodRoastHandler(RateRoastHandler, MessageHandler[AppContext[TextUserMessage]]):
+class GoodRoastHandler(RateRoastHandler[AppContext[TextUserMessage]]):
     query = Command("good") & HasUser()
     rating = 1
     done = Dialogs.admin.roast.good()
 
 
-class BadRoastHandler(RateRoastHandler, MessageHandler[AppContext[TextUserMessage]]):
+class BadRoastHandler(RateRoastHandler[AppContext[TextUserMessage]]):
     query = Command("bad") & HasUser()
     rating = -1
     done = Dialogs.admin.roast.bad()

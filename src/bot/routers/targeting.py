@@ -1,6 +1,6 @@
 from typing import Any, Generic, TypeVar
 
-from selfrot import CommandArgs
+from selfrot import CommandArgs, MessageHandler
 from selfrot.exceptions import CommandArgsError
 from selfrot.filter import AnyCommand, Command
 
@@ -10,6 +10,7 @@ from ..context import AppContext
 from ..services.lookup import find_user
 
 TArgs = TypeVar("TArgs", bound=CommandArgs)
+TContext = TypeVar("TContext", bound=AppContext[Any])
 
 
 # Ботов в users быть не должно, но на это не полагаемся: про реплай и кликабельное имя
@@ -40,9 +41,7 @@ class _TargetErrors:
         raise exc
 
 
-# Миксины не наследуют MessageHandler: selfrot проверяет заголовок только на прямых базах,
-# поэтому хендлер сам пишет MessageHandler[...] вторым основанием.
-class RepliedTargetHandler(_TargetErrors, Generic[TArgs]):
+class RepliedTargetHandler(_TargetErrors, MessageHandler[TContext], Generic[TArgs, TContext]):
     cmd: Command[TArgs] | AnyCommand[TArgs]
 
     async def handle(self) -> None:
@@ -61,7 +60,9 @@ class TargetArgs(CommandArgs):
 TTargetArgs = TypeVar("TTargetArgs", bound=TargetArgs)
 
 
-class ExplicitTargetHandler(_TargetErrors, Generic[TTargetArgs]):
+class ExplicitTargetHandler(
+    _TargetErrors, MessageHandler[TContext], Generic[TTargetArgs, TContext]
+):
     cmd: Command[TTargetArgs] | AnyCommand[TTargetArgs]
 
     def not_found(self, target: str) -> Line:

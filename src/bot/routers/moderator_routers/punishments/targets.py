@@ -1,7 +1,7 @@
 import re
-from typing import Any
+from typing import Any, Generic, TypeVar
 
-from selfrot import CommandArgs, Rest
+from selfrot import CommandArgs, MessageHandler, Rest
 from selfrot.filter import AnyCommand
 
 from src.bot.dialogs import Line
@@ -38,9 +38,10 @@ class TargetTextArgs(CommandArgs):
     text: Rest = ""
 
 
-# Миксин не наследует MessageHandler: selfrot проверяет заголовок только на прямых базах.
-class AnywhereTargetHandler:
-    ctx: AppContext[Any]
+TContext = TypeVar("TContext", bound=AppContext[Any])
+
+
+class AnywhereTargetHandler(MessageHandler[TContext], Generic[TContext]):
     cmd: AnyCommand[TargetTextArgs]
 
     def not_found(self, target: str) -> Line:

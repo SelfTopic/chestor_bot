@@ -1,4 +1,4 @@
-from selfrot import CommandArgs, MessageHandler
+from selfrot import CommandArgs
 from selfrot.filter import Command, HasReplyUser
 from selfrot.types import Message
 
@@ -39,8 +39,7 @@ class RemoveKaguneRepliedArgs(CommandArgs):
 
 
 class RemoveKaguneRepliedHandler(
-    RepliedTargetHandler[RemoveKaguneRepliedArgs],
-    MessageHandler[AppContext[ReplyUserMessage]],
+    RepliedTargetHandler[RemoveKaguneRepliedArgs, AppContext[ReplyUserMessage]],
 ):
     cmd = Command("remove_kagune", RemoveKaguneRepliedArgs)
     query = cmd & HasReplyUser()
@@ -54,9 +53,7 @@ class RemoveKaguneArgs(TargetArgs):
     type_name: str
 
 
-class RemoveKaguneHandler(
-    ExplicitTargetHandler[RemoveKaguneArgs], MessageHandler[AppContext[TextMessage]]
-):
+class RemoveKaguneHandler(ExplicitTargetHandler[RemoveKaguneArgs, AppContext[TextMessage]]):
     cmd = Command("remove_kagune", RemoveKaguneArgs)
     query = cmd & ~HasReplyUser()
     usage = Dialogs.admin.kagune.remove_usage(types=TYPE_NAMES)

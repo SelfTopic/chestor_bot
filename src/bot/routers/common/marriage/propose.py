@@ -1,6 +1,6 @@
 from typing import Any
 
-from selfrot import CommandArgs, InlineKeyboard, MessageHandler, Rest
+from selfrot import CommandArgs, InlineKeyboard, Rest
 from selfrot.filter import AnyCommand, Command, HasMention, HasReplyUser, HasUser, TextRegexp
 from selfrot.handlers import CallbackQueryHandler
 from selfrot.types import DataCallbackQuery, Message
@@ -72,8 +72,7 @@ class ProposalRepliedArgs(CommandArgs):
 
 class ProposalRepliedHandler(
     Proposal,
-    RepliedTargetHandler[ProposalRepliedArgs],
-    MessageHandler[AppContext[TextUserReplyMessage]],
+    RepliedTargetHandler[ProposalRepliedArgs, AppContext[TextUserReplyMessage]],
 ):
     cmd = AnyCommand(
         *(
@@ -93,11 +92,7 @@ class ProposalArgs(TargetArgs):
 EXPLICIT_TARGET = TextRegexp(r"(?i)(брак|свадьба)\s+(@\w+|-?\d+)\s*$")
 
 
-class ProposalHandler(
-    Proposal,
-    ExplicitTargetHandler[ProposalArgs],
-    MessageHandler[AppContext[TextUserMessage]],
-):
+class ProposalHandler(Proposal, ExplicitTargetHandler[ProposalArgs, AppContext[TextUserMessage]]):
     cmd = AnyCommand(
         Command("брак", ProposalArgs, prefixes="", ignore_case=True),
         Command("свадьба", ProposalArgs, prefixes="", ignore_case=True),

@@ -1,4 +1,4 @@
-from selfrot import CommandArgs, MessageHandler, Rest
+from selfrot import CommandArgs, Rest
 from selfrot.filter import HasReplyUser, HasUser
 
 from src.bot.dialogs import Line
@@ -122,8 +122,7 @@ class WarnRepliedArgs(CommandArgs):
 
 class WarnRepliedHandler(
     WarnFlow,
-    RepliedTargetHandler[WarnRepliedArgs],
-    MessageHandler[AppContext[TextUserReplyMessage]],
+    RepliedTargetHandler[WarnRepliedArgs, AppContext[TextUserReplyMessage]],
 ):
     cmd = command("warn", WARN_WORDS, WarnRepliedArgs)
     query = cmd & HasUser() & HasReplyUser() & FromChatAdmin()
@@ -132,11 +131,7 @@ class WarnRepliedHandler(
         await self.warn(telegram_id, args.reason)
 
 
-class WarnHandler(
-    WarnFlow,
-    AnywhereTargetHandler,
-    MessageHandler[AppContext[TextUserMessage]],
-):
+class WarnHandler(WarnFlow, AnywhereTargetHandler[AppContext[TextUserMessage]]):
     cmd = command("warn", WARN_WORDS, TargetTextArgs)
     query = cmd & HasUser() & ~HasReplyUser() & FromChatAdmin()
 
@@ -187,8 +182,7 @@ class UnwarnRepliedArgs(CommandArgs):
 
 class UnwarnRepliedHandler(
     UnwarnFlow,
-    RepliedTargetHandler[UnwarnRepliedArgs],
-    MessageHandler[AppContext[TextUserReplyMessage]],
+    RepliedTargetHandler[UnwarnRepliedArgs, AppContext[TextUserReplyMessage]],
 ):
     cmd = command("unwarn", UNWARN_WORDS, UnwarnRepliedArgs)
     query = cmd & HasUser() & HasReplyUser() & FromChatAdmin()
@@ -197,11 +191,7 @@ class UnwarnRepliedHandler(
         await self.unwarn(telegram_id)
 
 
-class UnwarnHandler(
-    UnwarnFlow,
-    AnywhereTargetHandler,
-    MessageHandler[AppContext[TextUserMessage]],
-):
+class UnwarnHandler(UnwarnFlow, AnywhereTargetHandler[AppContext[TextUserMessage]]):
     cmd = command("unwarn", UNWARN_WORDS, TargetTextArgs)
     query = cmd & HasUser() & ~HasReplyUser() & FromChatAdmin()
 

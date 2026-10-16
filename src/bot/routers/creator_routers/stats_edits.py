@@ -1,4 +1,4 @@
-from selfrot import BaseRouter, CommandArgs, MessageHandler
+from selfrot import BaseRouter, CommandArgs
 from selfrot.filter import Command, HasReplyUser, HasUser
 from selfrot.types import Message
 
@@ -54,8 +54,7 @@ class SetStatRepliedArgs(CommandArgs):
 
 
 class SetStatRepliedHandler(
-    RepliedTargetHandler[SetStatRepliedArgs],
-    MessageHandler[AppContext[TextUserReplyMessage]],
+    RepliedTargetHandler[SetStatRepliedArgs, AppContext[TextUserReplyMessage]],
 ):
     cmd = Command("set_stat", SetStatRepliedArgs)
     query = cmd & HasUser() & HasReplyUser()
@@ -72,9 +71,7 @@ class SetStatArgs(TargetArgs):
     value: int
 
 
-class SetStatHandler(
-    ExplicitTargetHandler[SetStatArgs], MessageHandler[AppContext[TextUserMessage]]
-):
+class SetStatHandler(ExplicitTargetHandler[SetStatArgs, AppContext[TextUserMessage]]):
     cmd = Command("set_stat", SetStatArgs)
     query = cmd & HasUser() & ~HasReplyUser()
     usage = USAGE

@@ -1,4 +1,4 @@
-from selfrot import BaseRouter, CommandArgs, MessageHandler, Rest
+from selfrot import BaseRouter, CommandArgs, Rest
 from selfrot.filter import Command, HasReplyUser
 from selfrot.types import Message
 
@@ -35,8 +35,7 @@ class ForceLevelupRepliedArgs(CommandArgs):
 
 
 class ForceLevelupRepliedHandler(
-    RepliedTargetHandler[ForceLevelupRepliedArgs],
-    MessageHandler[AppContext[ReplyUserMessage]],
+    RepliedTargetHandler[ForceLevelupRepliedArgs, AppContext[ReplyUserMessage]],
 ):
     cmd = Command("force_levelup", ForceLevelupRepliedArgs)
     query = cmd & HasReplyUser()
@@ -45,9 +44,7 @@ class ForceLevelupRepliedHandler(
         await _perform_level_up(self.ctx, telegram_id)
 
 
-class ForceLevelupHandler(
-    ExplicitTargetHandler[TargetArgs], MessageHandler[AppContext[TextMessage]]
-):
+class ForceLevelupHandler(ExplicitTargetHandler[TargetArgs, AppContext[TextMessage]]):
     cmd = Command("force_levelup", TargetArgs)
     query = cmd & ~HasReplyUser()
     usage = Dialogs.admin.level_up.usage()
@@ -91,8 +88,7 @@ class AddProgressRepliedArgs(CommandArgs):
 
 
 class AddProgressRepliedHandler(
-    RepliedTargetHandler[AddProgressRepliedArgs],
-    MessageHandler[AppContext[ReplyUserMessage]],
+    RepliedTargetHandler[AddProgressRepliedArgs, AppContext[ReplyUserMessage]],
 ):
     cmd = Command("add_progress", AddProgressRepliedArgs)
     query = cmd & HasReplyUser()
@@ -106,9 +102,7 @@ class AddProgressArgs(TargetArgs):
     delta: float
 
 
-class AddProgressHandler(
-    ExplicitTargetHandler[AddProgressArgs], MessageHandler[AppContext[TextMessage]]
-):
+class AddProgressHandler(ExplicitTargetHandler[AddProgressArgs, AppContext[TextMessage]]):
     cmd = Command("add_progress", AddProgressArgs)
     query = cmd & ~HasReplyUser()
     usage = Dialogs.admin.progress.usage()

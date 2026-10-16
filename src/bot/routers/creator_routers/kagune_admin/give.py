@@ -1,4 +1,4 @@
-from selfrot import CommandArgs, MessageHandler
+from selfrot import CommandArgs
 from selfrot.filter import Command, HasReplyUser
 from selfrot.types import Message
 
@@ -48,8 +48,7 @@ class GiveKaguneRepliedArgs(CommandArgs):
 
 
 class GiveKaguneRepliedHandler(
-    RepliedTargetHandler[GiveKaguneRepliedArgs],
-    MessageHandler[AppContext[ReplyUserMessage]],
+    RepliedTargetHandler[GiveKaguneRepliedArgs, AppContext[ReplyUserMessage]],
 ):
     cmd = Command("give_kagune", GiveKaguneRepliedArgs)
     query = cmd & HasReplyUser()
@@ -63,9 +62,7 @@ class GiveKaguneArgs(TargetArgs):
     type_name: str
 
 
-class GiveKaguneHandler(
-    ExplicitTargetHandler[GiveKaguneArgs], MessageHandler[AppContext[TextMessage]]
-):
+class GiveKaguneHandler(ExplicitTargetHandler[GiveKaguneArgs, AppContext[TextMessage]]):
     cmd = Command("give_kagune", GiveKaguneArgs)
     query = cmd & ~HasReplyUser()
     usage = Dialogs.admin.kagune.give_usage(types=TYPE_NAMES)
