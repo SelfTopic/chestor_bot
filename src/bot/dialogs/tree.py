@@ -297,6 +297,41 @@ class _AdminProgressDialogs:
         return Line("admin.progress.usage", {})
 
 
+class _AdminPromoDialogs:
+    def bad_line(self, *, line: object) -> Line:
+        return Line("admin.promo.bad_line", {"line": line})
+
+    def created(
+        self,
+        *,
+        activations: object,
+        name: object,
+        rewards: object,
+        until: object,
+    ) -> Line:
+        return Line(
+            "admin.promo.created",
+            {
+                "activations": activations,
+                "name": name,
+                "rewards": rewards,
+                "until": until,
+            },
+        )
+
+    def forever(self) -> Line:
+        return Line("admin.promo.forever", {})
+
+    def name_taken(self, *, name: object) -> Line:
+        return Line("admin.promo.name_taken", {"name": name})
+
+    def until(self, *, date: object) -> Line:
+        return Line("admin.promo.until", {"date": date})
+
+    def usage(self) -> Line:
+        return Line("admin.promo.usage", {})
+
+
 class _AdminResetDialogs:
     def ghoul_deleted(self) -> Line:
         return Line("admin.reset.ghoul_deleted", {})
@@ -398,6 +433,7 @@ class _AdminDialogs:
     media = _AdminMediaDialogs()
     profile = _AdminProfileDialogs()
     progress = _AdminProgressDialogs()
+    promo = _AdminPromoDialogs()
     reset = _AdminResetDialogs()
     roast = _AdminRoastDialogs()
     stats = _AdminStatsDialogs()
@@ -3395,6 +3431,33 @@ class _ProfileDialogs:
         return Line("profile.unknown_race", {})
 
 
+class _PromoRewardDialogs:
+    def cheston(self, *, amount: object) -> Line:
+        return Line("promo.reward.cheston", {"amount": amount})
+
+
+class _PromoDialogs:
+    reward = _PromoRewardDialogs()
+
+    def activated(self, *, name: object, rewards: object) -> Line:
+        return Line("promo.activated", {"name": name, "rewards": rewards})
+
+    def already(self, *, name: object) -> Line:
+        return Line("promo.already", {"name": name})
+
+    def exhausted(self, *, name: object) -> Line:
+        return Line("promo.exhausted", {"name": name})
+
+    def expired(self, *, name: object) -> Line:
+        return Line("promo.expired", {"name": name})
+
+    def not_found(self, *, name: object) -> Line:
+        return Line("promo.not_found", {"name": name})
+
+    def usage(self) -> Line:
+        return Line("promo.usage", {})
+
+
 class _QuizDialogs:
     def correct(self, *, award: object) -> Line:
         return Line("quiz.correct", {"award": award})
@@ -3877,6 +3940,7 @@ class _Dialogs:
     music = _MusicDialogs()
     notify = _NotifyDialogs()
     profile = _ProfileDialogs()
+    promo = _PromoDialogs()
     quiz = _QuizDialogs()
     rich = _RichDialogs()
     roast = _RoastDialogs()
@@ -3986,6 +4050,12 @@ PLACEHOLDERS: dict[str, frozenset[str]] = {
     "admin.progress.level": frozenset({"cheston", "level", "notified", "rc"}),
     "admin.progress.replied_usage": frozenset(),
     "admin.progress.usage": frozenset(),
+    "admin.promo.bad_line": frozenset({"line"}),
+    "admin.promo.created": frozenset({"activations", "name", "rewards", "until"}),
+    "admin.promo.forever": frozenset(),
+    "admin.promo.name_taken": frozenset({"name"}),
+    "admin.promo.until": frozenset({"date"}),
+    "admin.promo.usage": frozenset(),
     "admin.reset.ghoul_deleted": frozenset(),
     "admin.reset.ghoul_done": frozenset({"id"}),
     "admin.reset.ghoul_missing": frozenset(),
@@ -4799,6 +4869,13 @@ PLACEHOLDERS: dict[str, frozenset[str]] = {
     "notify.level_up": frozenset({"cheston", "level", "rc", "stat_changes"}),
     "profile.card": frozenset({"balance", "name", "race"}),
     "profile.unknown_race": frozenset(),
+    "promo.activated": frozenset({"name", "rewards"}),
+    "promo.already": frozenset({"name"}),
+    "promo.exhausted": frozenset({"name"}),
+    "promo.expired": frozenset({"name"}),
+    "promo.not_found": frozenset({"name"}),
+    "promo.reward.cheston": frozenset({"amount"}),
+    "promo.usage": frozenset(),
     "quiz.correct": frozenset({"award"}),
     "quiz.not_active": frozenset(),
     "quiz.play_again": frozenset(),

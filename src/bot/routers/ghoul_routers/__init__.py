@@ -8,6 +8,7 @@ from .eat_human import EatHumanRouter
 from .middleware import GhoulMiddleware
 from .mob_fight import MobFightRouter
 from .passive_status import PassiveStatusRouter
+from .promo import PromoRouter
 from .quiz import QuizRouter
 from .snap import SnapRouter
 from .subscription import ChannelSubscriptionMiddleware, SubscriptionCheckRouter
@@ -30,6 +31,7 @@ class GhoulRouter(BaseRouter[AppContext]):
         MobFightRouter,
         DuelRouter,
         CombatPowerRouter,
+        PromoRouter,
     )
 
 

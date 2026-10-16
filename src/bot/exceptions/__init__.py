@@ -47,6 +47,14 @@ from .moderation import (
     WarnLimitOutOfRange,
 )
 from .music import MusicError
+from .promo import (
+    PromoAlreadyActivated,
+    PromoError,
+    PromoExhausted,
+    PromoExpired,
+    PromoNameTaken,
+    PromoNotFound,
+)
 from .quiz import QuizBusy, QuizEmailMissing, QuizSessionMissing, QuizUnavailable
 from .rp_commands import RpCommandError, RpCommandLimitReached, RpCommandNotFound
 from .search import SearchCooldown, SearchError, SearchLimitReached, SearchUnavailable
@@ -68,6 +76,12 @@ from .user_not_found import UserNotFound
 from .wordle import WordleGuessError, WordleNotRussian, WordleWrongLength
 
 __all__ = [
+    "PromoAlreadyActivated",
+    "PromoError",
+    "PromoExhausted",
+    "PromoExpired",
+    "PromoNameTaken",
+    "PromoNotFound",
     "DocsError",
     "BattleError",
     "FighterHasPendingBattleError",
