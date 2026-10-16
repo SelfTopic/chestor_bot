@@ -1,6 +1,6 @@
 import html
 
-from selfrot import InlineKeyboard, button
+from selfrot import InlineKeyboard, button, mention_html
 from selfrot.types import InlineKeyboardMarkup
 
 from src.bot.dialogs import Dialogs, Line
@@ -16,13 +16,9 @@ RENAME_LINK_PREFIX = "rename_"
 RENAME = Dialogs.family.rename
 
 
-def mention(telegram_id: int, name: str) -> str:
-    return f'<a href="tg://user?id={telegram_id}">{html.escape(name)}</a>'
-
-
 async def mentions(services: SessionServices, telegram_ids: tuple[int, ...]) -> dict[int, str]:
     names = await services.first_names(telegram_ids)
-    return {tid: mention(tid, names.get(tid, str(tid))) for tid in telegram_ids}
+    return {tid: mention_html(tid, names.get(tid, str(tid))) for tid in telegram_ids}
 
 
 def failure_line(state: ProposalState, who: dict[int, str]) -> Line:

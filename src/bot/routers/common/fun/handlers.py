@@ -4,7 +4,7 @@ import re
 from typing import Annotated
 
 from pydantic import Field
-from selfrot import CommandArgs, MessageHandler, Rest
+from selfrot import CommandArgs, MessageHandler, Rest, mention_html
 from selfrot.filter import AnyCommand, Command
 
 from src.bot.dialogs import Dialogs
@@ -111,7 +111,7 @@ class AskBotHandler(MessageHandler[AppContext[TextMessage]]):
         user = await self.ctx.chat_service.random_participant(self.ctx.message.chat.id)
         if user is None:
             return None
-        return f'<a href="tg://user?id={user.telegram_id}">{html.escape(user.full_name)}</a>'
+        return mention_html(user.telegram_id, user.full_name)
 
 
 class CalculatorHandler(MessageHandler[AppContext[TextMessage]]):

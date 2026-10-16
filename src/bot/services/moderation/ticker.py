@@ -8,7 +8,7 @@ from src.bot.dialogs import Dialogs, Line
 from ...repositories import DueExpiration, ModerationRepository
 from ...types import ModerationActionType, ModerationVoice
 from ..dialog import DialogService
-from ..notify import NotifyError, Notifier
+from ..notify import NotifyError, Notifier, mention_html
 from ..ticker import Ticker
 
 logger = logging.getLogger(__name__)
@@ -45,8 +45,9 @@ class ModerationTicker(Ticker):
             if expiration.voice is ModerationVoice.ROUGH
             else Dialogs.moderation.neutral
         )
-        name = html.escape(expiration.first_name or str(expiration.target_id))
-        mention = f'<a href="tg://user?id={expiration.target_id}">{name}</a>'
+        raw_name = expiration.first_name or str(expiration.target_id)
+        name = html.escape(raw_name)
+        mention = mention_html(expiration.target_id, raw_name)
         who = dict(
             chat=html.escape(expiration.chat_title or str(expiration.chat_id)),
             name=name,

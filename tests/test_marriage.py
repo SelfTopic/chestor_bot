@@ -7,12 +7,12 @@ from datetime import timedelta
 from typing import Any
 
 import pytest
+from selfrot import mention_html
 from sqlalchemy import func, select, update
 
 from src.bot.dialogs import Dialogs
 from src.bot.game_configs import MARRIAGE_CONFIG
 from src.bot.repositories import FamilyRepository
-from src.bot.routers.common.marriage.render import mention
 from src.bot.utils.service_accounts import TELEGRAM
 from src.database.models import Family, FamilyMember, MarriageProposal
 
@@ -60,7 +60,7 @@ async def age_family(session_factory) -> None:
 
 
 def who(uid: int) -> str:
-    return mention(uid, NAMES[uid])
+    return mention_html(uid, NAMES[uid])
 
 
 def press(data: str, uid: int, message_id: int = 44) -> dict[str, Any]:

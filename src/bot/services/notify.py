@@ -2,6 +2,8 @@ from pathlib import Path
 from typing import Protocol
 
 from selfrot import Bot
+# Сервисы берут упоминание отсюда: notify.py — их единственный вход в selfrot.
+from selfrot import mention_html as mention_html
 from selfrot.exceptions import TelegramAPIError, TelegramBadRequest
 from selfrot.types import InputFile, InputRichMessage
 
