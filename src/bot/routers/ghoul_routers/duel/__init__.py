@@ -3,7 +3,6 @@ from selfrot import BaseRouter
 from ....context import AppContext
 from .callbacks import (
     DuelPressHandler,
-    MalformedDuelButtonHandler,
     NotYourDuelButtonHandler,
 )
 from .invite import DuelHandler, DuelRepliedHandler
@@ -16,7 +15,6 @@ class DuelRouter(BaseRouter[AppContext]):
         DuelHandler,
         DuelPressHandler,
         NotYourDuelButtonHandler,
-        MalformedDuelButtonHandler,
     )
 
 

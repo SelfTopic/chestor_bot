@@ -1,7 +1,6 @@
 import logging
 
 from selfrot.exceptions import TelegramAPIError
-from selfrot.filter import CallbackDataStartswith
 from selfrot.handlers import CallbackQueryHandler
 from selfrot.types import DataCallbackQuery, Message
 
@@ -167,10 +166,3 @@ class NotYourDuelButtonHandler(CallbackQueryHandler[AppContext[DataCallbackQuery
         await self.ctx.callback_query.answer(
             self.ctx.text(Dialogs.duel.not_your_button()), show_alert=True
         )
-
-
-class MalformedDuelButtonHandler(CallbackQueryHandler[AppContext[DataCallbackQuery]]):
-    query = CallbackDataStartswith("duel:")
-
-    async def handle(self) -> None:
-        await self.ctx.callback_query.answer()

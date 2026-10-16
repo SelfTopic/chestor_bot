@@ -2,7 +2,7 @@ import logging
 
 from selfrot import InlineKeyboard, MessageHandler, button
 from selfrot.exceptions import TelegramAPIError
-from selfrot.filter import CallbackDataStartswith, HasUser, TextRegexp
+from selfrot.filter import HasUser, TextRegexp
 from selfrot.handlers import CallbackQueryHandler
 from selfrot.types import DataCallbackQuery, Message
 
@@ -134,14 +134,3 @@ class NotYourMarriageButtonHandler(CallbackQueryHandler[AppContext[DataCallbackQ
         await self.ctx.callback_query.answer(
             self.ctx.text(PHRASES.not_your_button()), show_alert=True
         )
-
-
-class MalformedMarriageButtonHandler(CallbackQueryHandler[AppContext[DataCallbackQuery]]):
-    query = (
-        CallbackDataStartswith("marry")
-        | CallbackDataStartswith("fname:")
-        | CallbackDataStartswith("divorce:")
-    )
-
-    async def handle(self) -> None:
-        await self.ctx.callback_query.answer()

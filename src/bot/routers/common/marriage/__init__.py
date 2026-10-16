@@ -3,7 +3,6 @@ from selfrot import BaseRouter
 from ....context import AppContext
 from .consent import (
     FamilyConsentLinkHandler,
-    MalformedMarriageButtonHandler,
     NotYourMarriageButtonHandler,
     ProposalAnswerHandler,
 )
@@ -30,7 +29,6 @@ class MarriageRouter(BaseRouter[AppContext]):
         DivorceHandler,
         DivorcePressHandler,
         NotYourMarriageButtonHandler,
-        MalformedMarriageButtonHandler,
     )
 
 
