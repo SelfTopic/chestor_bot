@@ -24,6 +24,7 @@ from src.bot.utils import (
     health_regen_per_hour,
     hours_until_full_health,
 )
+from src.config import settings
 from src.database.models import Cooldown, Ghoul
 
 from .conftest import (
@@ -31,6 +32,7 @@ from .conftest import (
     callback_update,
     chat_dict,
     matches_phrase,
+    member_dict,
     message_update,
     only_text,
     owner_dict,
@@ -102,6 +104,61 @@ class TestGhoulMiddleware:
         # по другой причине (не хинт "ты не гуль")
         (reply,) = await send("пить кофе", uid=UID)
         assert matches_phrase(reply, "coffee.snap_limit")
+
+
+CHANNEL = "@chestor_channel"
+
+
+class TestChannelSubscription:
+    @pytest.fixture(autouse=True)
+    def channel(self, monkeypatch: pytest.MonkeyPatch) -> None:
+        monkeypatch.setattr(settings, "SUBSCRIPTION_CHANNEL", CHANNEL)
+
+    async def test_unsubscribed_player_gets_buttons_instead_of_the_game(self, feed, telegram):
+        telegram.results["getChatMember"] = member_dict("left", UID)
+
+        await feed(message_update("пить кофе", uid=UID))
+
+        (asked,) = telegram.bodies("getChatMember")
+        assert asked["chat_id"] == CHANNEL
+        (body,) = telegram.bodies("sendMessage")
+        assert body["text"] in phrase_texts(Dialogs.subscription.required(channel=CHANNEL))
+        buttons = [b for row in body["reply_markup"]["inline_keyboard"] for b in row]
+        assert buttons[0] == {
+            "text": only_text(Dialogs.subscription.subscribe_button()),
+            "url": "https://t.me/chestor_channel",
+        }
+        assert button_data(body, only_text(Dialogs.subscription.check_button()))
+
+    async def test_subscriber_reaches_the_game_and_is_not_asked_again(self, send, telegram):
+        telegram.results["getChatMember"] = member_dict("member", UID)
+
+        (reply,) = await send("пить кофе", uid=UID)
+        assert matches_phrase(reply, "ghoul.not_a_ghoul")
+
+        await send("пить кофе", uid=UID)
+        assert telegram.methods_called("getChatMember") == 0
+
+    async def test_check_button_answers_by_the_current_subscription(self, feed, telegram):
+        telegram.results["getChatMember"] = member_dict("left", UID)
+        await feed(message_update("пить кофе", uid=UID))
+        (body,) = telegram.bodies("sendMessage")
+        press = callback_update(button_data(body, only_text(Dialogs.subscription.check_button())), uid=UID)
+
+        await feed(press)
+        (answer,) = telegram.bodies("answerCallbackQuery")
+        assert answer["text"] in phrase_texts(Dialogs.subscription.not_yet())
+
+        telegram.results["getChatMember"] = member_dict("member", UID)
+        await feed(press)
+        (answer,) = telegram.bodies("answerCallbackQuery")
+        assert answer["text"] in phrase_texts(Dialogs.subscription.confirmed())
+
+    async def test_unanswered_check_keeps_the_game_open(self, send, telegram):
+        telegram.errors["getChatMember"] = (400, "Bad Request: member list is inaccessible")
+
+        (reply,) = await send("пить кофе", uid=UID)
+        assert matches_phrase(reply, "ghoul.not_a_ghoul")
 
 
 class TestCoffee:

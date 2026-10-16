@@ -37,6 +37,7 @@ from .services.music import MusicService
 from .services.player_docs import PlayerDocsService
 from .services.roast import RoastService
 from .services.search import SearchService
+from .services.subscribers import SubscriberCache
 
 logger = logging.getLogger(__name__)
 
@@ -66,6 +67,7 @@ class AppContext(BaseContext[TEvent], SessionServices):
     player_docs_service: PlayerDocsService
     rp_commands_service: RpCommandsService
     wordle_service: WordleService
+    subscriber_cache: SubscriberCache
     wikipedia_service: WikipediaService
     mob_service: MobService
     video_cutter_service: VideoCutterService

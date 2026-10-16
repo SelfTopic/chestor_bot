@@ -10,13 +10,14 @@ from .mob_fight import MobFightRouter
 from .passive_status import PassiveStatusRouter
 from .quiz import QuizRouter
 from .snap import SnapRouter
+from .subscription import ChannelSubscriptionMiddleware, SubscriptionCheckRouter
 from .tops import TopsGhoulRouter
 from .upgrade_kagune import UpgradeKaguneRouter
 from .upgrade_stat import UpgradeStatRouter
 
 
 class GhoulRouter(BaseRouter[AppContext]):
-    middlewares = (GhoulMiddleware,)
+    middlewares = (ChannelSubscriptionMiddleware, GhoulMiddleware)
     routers = (
         UpgradeKaguneRouter,
         SnapRouter,
@@ -32,4 +33,4 @@ class GhoulRouter(BaseRouter[AppContext]):
     )
 
 
-__all__ = ["GhoulRouter", "expire_overdue_duels"]
+__all__ = ["GhoulRouter", "SubscriptionCheckRouter", "expire_overdue_duels"]
