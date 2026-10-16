@@ -312,7 +312,7 @@ class TestKaguneChoice:
         ghoul = await get_ghoul(session_factory, UID)
         assert ghoul is not None and ghoul.kagune_strength_ukaku == 2
 
-    async def test_wrong_invoker_press_is_silently_ignored(
+    async def test_wrong_invoker_press_only_stops_the_spinner(
         self, feed, telegram, session_factory
     ):
         await self._seed_two_types(session_factory)
@@ -325,9 +325,9 @@ class TestKaguneChoice:
             callback_update(f"kagune_upgrade:{UID}:ukaku", uid=UID + 1)
         )
 
-        # pressed_by("invoker_id") не пропускает чужое нажатие ни в один хендлер —
-        # апдейт просто ни на что не отвечает
-        assert telegram.calls == []
+        # pressed_by("invoker_id") не пропускает чужое нажатие ни в один хендлер — диспетчер
+        # только останавливает «часики» пустым ответом, без алерта и правок
+        assert telegram.calls == [("answerCallbackQuery", {"callback_query_id": "cq1"})]
 
         ghoul = await get_ghoul(session_factory, UID)
         assert ghoul is not None and ghoul.kagune_strength_ukaku == 1

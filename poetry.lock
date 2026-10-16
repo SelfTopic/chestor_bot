@@ -2637,14 +2637,14 @@ files = [
 
 [[package]]
 name = "selfrotgram"
-version = "0.1.7"
+version = "0.1.13"
 description = "Async Python library for Telegram Bot API: types and methods generated from the spec, filters, routers, webhooks"
 optional = false
 python-versions = ">=3.11"
 groups = ["main"]
 files = [
-    {file = "selfrotgram-0.1.7-py3-none-any.whl", hash = "sha256:d4ffd278646ff27cbb0d236ba401cb4cf385179f07e51c3e40ed517228f3d37f"},
-    {file = "selfrotgram-0.1.7.tar.gz", hash = "sha256:8a535480c65ec8beb903905b85ca5b093a3390f0fdee27ecec60a24ade5f0be4"},
+    {file = "selfrotgram-0.1.13-py3-none-any.whl", hash = "sha256:a6ab87ad155bcdfa8e565a1cc85974ac9593f3dc2b25b25c7a0ba0ef7fd1ffdc"},
+    {file = "selfrotgram-0.1.13.tar.gz", hash = "sha256:7863f5c43a4044d2b984a0f805d2154b467e191c894020fb064cd0496ac4f5fd"},
 ]
 
 [package.dependencies]
@@ -3172,4 +3172,4 @@ propcache = ">=0.2.1"
 [metadata]
 lock-version = "2.1"
 python-versions = ">=3.11,<3.15"
-content-hash = "34f370de2b484f470c30a2f509d796f3cda1d3965d895067f94f86048a29687e"
+content-hash = "e3314c674a9b6dbd486d6af9b33c4e5542d4f99cb9e43973619b2478a0f27e18"
