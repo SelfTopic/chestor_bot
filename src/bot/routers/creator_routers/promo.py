@@ -9,7 +9,12 @@ from selfrot.filter import Command, HasUser
 from src.bot.dialogs import Dialogs, Line
 from src.bot.exceptions import DurationParseError, PromoNameTaken
 from src.bot.services import DurationParser
-from src.bot.services.promo import ChestonReward, RcReward, Reward
+from src.bot.services.promo import (
+    ChestonReward,
+    LevelProgressReward,
+    RcReward,
+    Reward,
+)
 
 from ...context import AppContext
 from ..promo_rewards import reward_lines
@@ -18,6 +23,7 @@ from ..types import TextUserMessage
 MOSCOW = ZoneInfo("Europe/Moscow")
 CHESTON_WORDS = ("честоны", "честон", "чс", "cheston")
 RC_WORDS = ("рс", "rc", "клетки")
+PROGRESS_WORDS = ("прогресс", "опыт", "xp")
 
 
 class PromoSpecError(Exception):
@@ -45,6 +51,8 @@ def parse_reward(line: str) -> Reward:
         return ChestonReward(amount=positive(words[1], line))
     if len(words) == 2 and words[0] in RC_WORDS:
         return RcReward(amount=positive(words[1], line))
+    if len(words) == 2 and words[0] in PROGRESS_WORDS:
+        return LevelProgressReward(percent=positive(words[1].removesuffix("%"), line))
     raise PromoSpecError(line)
 
 

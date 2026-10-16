@@ -15,6 +15,7 @@ from ..exceptions.promo import (
 from ..repositories.ghoul import GhoulRepository
 from ..repositories.promo import PromoRepository
 from ..utils import utcnow_naive
+from .level_up import LevelUpService
 from .user import UserService
 
 
@@ -28,7 +29,14 @@ class RcReward(BaseModel, frozen=True):
     amount: PositiveInt
 
 
-Reward = Annotated[ChestonReward | RcReward, Field(discriminator="kind")]
+class LevelProgressReward(BaseModel, frozen=True):
+    kind: Literal["progress"] = "progress"
+    percent: PositiveInt
+
+
+Reward = Annotated[
+    ChestonReward | RcReward | LevelProgressReward, Field(discriminator="kind")
+]
 
 _REWARDS = TypeAdapter(list[Reward])
 
@@ -39,10 +47,12 @@ class PromoService:
         promo_repository: PromoRepository,
         ghoul_repository: GhoulRepository,
         user_service: UserService,
+        level_up_service: LevelUpService,
     ) -> None:
         self.promo_repository = promo_repository
         self.ghoul_repository = ghoul_repository
         self.user_service = user_service
+        self.level_up_service = level_up_service
 
     async def create(
         self,
@@ -93,3 +103,5 @@ class PromoService:
                 await self.ghoul_repository.increment_fields(
                     telegram_id, rc_money=amount, lifetime_rc_earned=amount
                 )
+            case LevelProgressReward(percent=percent):
+                await self.level_up_service.add_progress(telegram_id, percent)

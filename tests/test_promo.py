@@ -140,6 +140,26 @@ class TestActivate:
         assert ghoul is not None
         assert (ghoul.rc_money, ghoul.lifetime_rc_earned) == (210, 230)
 
+    async def test_progress_over_full_level_levels_up_like_a_fight(self, send, session_factory):
+        async with session_factory() as session:
+            await PromoRepository(session).create(
+                name="опыт",
+                rewards=[{"kind": "progress", "percent": 50}],
+                activations_limit=1,
+                expires_at=None,
+                created_by=ADMIN,
+            )
+            await session.commit()
+        await seed(session_factory, UID, "Вася")
+        await seed_ghoul(session_factory, UID, level=1, level_progress=80)
+
+        sent = await send("промо опыт", uid=UID)
+
+        assert any(matches_phrase(text, "notify.level_up") for text in sent)
+        ghoul = await get_ghoul(session_factory, UID)
+        assert ghoul is not None
+        assert (ghoul.level, ghoul.level_progress) == (2, 0)
+
     async def test_spent_code_leaves_no_activation(self, send, session_factory):
         await add_promo(session_factory, "лето", limit=1)
         await add_ghoul(session_factory, UID)

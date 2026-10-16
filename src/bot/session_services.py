@@ -222,7 +222,12 @@ class SessionServices:
 
     @cached_property
     def promo_service(self) -> PromoService:
-        return PromoService(self.promo_repository, self.ghoul_repository, self.user_service)
+        return PromoService(
+            self.promo_repository,
+            self.ghoul_repository,
+            self.user_service,
+            self.level_up_service,
+        )
 
     @cached_property
     def family_service(self) -> FamilyService:

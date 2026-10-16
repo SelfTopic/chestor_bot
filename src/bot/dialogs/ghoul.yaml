@@ -592,3 +592,4 @@ promo:
   reward:
     cheston: +{amount} CheSton
     rc: +{amount} RC-клеток
+    progress: +{percent}% прогресса уровня
