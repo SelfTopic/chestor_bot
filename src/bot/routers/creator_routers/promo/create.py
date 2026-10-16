@@ -1,8 +1,7 @@
 from dataclasses import dataclass
 from datetime import timedelta
-from zoneinfo import ZoneInfo
 
-from selfrot import BaseRouter, CommandArgs, MessageHandler, Rest
+from selfrot import CommandArgs, MessageHandler, Rest
 from selfrot.exceptions import CommandArgsError
 from selfrot.filter import Command, HasUser
 
@@ -22,11 +21,11 @@ from src.bot.services.promo import (
     StatReward,
 )
 
-from ...context import AppContext
-from ..promo_rewards import reward_lines
-from ..types import TextUserMessage
+from ....context import AppContext
+from ...promo_rewards import reward_lines
+from ...types import TextUserMessage
+from .dates import moscow_time
 
-MOSCOW = ZoneInfo("Europe/Moscow")
 CHESTON_WORDS = ("честоны", "честон", "чс", "cheston")
 RC_WORDS = ("рс", "rc", "клетки")
 PROGRESS_WORDS = ("прогресс", "опыт", "xp")
@@ -139,8 +138,7 @@ class CreatePromoHandler(MessageHandler[AppContext[TextUserMessage]]):
         if promo.expires_at is None:
             until = phrases.forever()
         else:
-            expires = promo.expires_at.replace(tzinfo=ZoneInfo("UTC")).astimezone(MOSCOW)
-            until = phrases.until(date=expires.strftime("%d.%m.%Y %H:%M"))
+            until = phrases.until(date=moscow_time(promo.expires_at))
         created = phrases.created(
             name=promo.name,
             activations=promo.activations_limit,
@@ -161,7 +159,3 @@ class CreatePromoHandler(MessageHandler[AppContext[TextUserMessage]]):
             case _:
                 raise exc
         await self.ctx.say(line, reply=True)
-
-
-class PromoAdminRouter(BaseRouter[AppContext]):
-    handlers = (CreatePromoHandler,)

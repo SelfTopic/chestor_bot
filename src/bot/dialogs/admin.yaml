@@ -159,3 +159,38 @@ admin:
       {rewards}
     forever: без срока
     until: действует до {date} МСК
+    status:
+      active: ✅ действует
+      expired: ⌛ истёк
+      exhausted: 📭 разобран
+      deleted: 🗑 удалён
+    card:
+      usage: 'Использование: /promo <название>'
+      not_found: Промокода «{name}» нет и не было.
+      gone: Этого промокода больше нет.
+      title: 🎁 Промокод {name}
+      column_field: Поле
+      column_value: Значение
+      status: Статус
+      rewards: Награды
+      activations: Активации
+      activations_value: '{used} из {limit}'
+      term: Срок
+      created: Создан
+      deleted: Удалён
+      who_when: '{date} МСК, {who}'
+      until: до {date} МСК, осталось {left}
+      expired_at: истёк {date} МСК
+      delete_button: 🗑 Удалить
+      confirm_question: Точно удалить? Активировать его больше не смогут, а вся информация о нём останется.
+      confirm_button: ✅ Да, удалить
+      cancel_button: Отмена
+      back_button: « К списку
+    catalog:
+      title: 🎁 Промокоды
+      empty: Промокодов пока нет. Создать — +промо.
+      column_name: Название
+      column_status: Статус
+      column_activations: Активации
+      column_term: Срок
+      term_until: до {date}

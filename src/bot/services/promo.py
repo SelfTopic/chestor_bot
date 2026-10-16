@@ -1,5 +1,6 @@
 from dataclasses import dataclass
-from datetime import timedelta
+from datetime import datetime, timedelta
+from enum import StrEnum
 from typing import Annotated, Literal, Optional
 
 from pydantic import BaseModel, Field, PositiveInt, TypeAdapter
@@ -68,6 +69,23 @@ Reward = Annotated[
 ]
 
 
+class PromoStatus(StrEnum):
+    ACTIVE = "active"
+    EXPIRED = "expired"
+    EXHAUSTED = "exhausted"
+    DELETED = "deleted"
+
+
+def promo_status(promo: PromoCode, now: datetime) -> PromoStatus:
+    if promo.deleted_at is not None:
+        return PromoStatus.DELETED
+    if promo.expires_at is not None and promo.expires_at <= now:
+        return PromoStatus.EXPIRED
+    if promo.activations_used >= promo.activations_limit:
+        return PromoStatus.EXHAUSTED
+    return PromoStatus.ACTIVE
+
+
 @dataclass(frozen=True)
 class Granted:
     reward: Reward
@@ -110,12 +128,27 @@ class PromoService:
             raise PromoNameTaken(name)
         return promo
 
+    async def find(self, name: str) -> Optional[PromoCode]:
+        return await self.promo_repository.latest_by_name(name.casefold())
+
+    async def get(self, promo_id: int) -> Optional[PromoCode]:
+        return await self.promo_repository.by_id(promo_id)
+
+    async def count(self) -> int:
+        return await self.promo_repository.count()
+
+    async def page(self, page: int, per_page: int) -> list[PromoCode]:
+        return await self.promo_repository.page(page * per_page, per_page)
+
+    async def delete(self, promo_id: int, deleted_by: int) -> bool:
+        return await self.promo_repository.delete(promo_id, utcnow_naive(), deleted_by)
+
     def rewards(self, promo: PromoCode) -> list[Reward]:
         return _REWARDS.validate_python(promo.rewards)
 
     async def activate(self, name: str, telegram_id: int) -> list[Granted]:
         repository = self.promo_repository
-        promo = await repository.by_name(name.casefold())
+        promo = await repository.live_by_name(name.casefold())
         if promo is None:
             raise PromoNotFound(name)
         if promo.expires_at is not None and promo.expires_at <= utcnow_naive():

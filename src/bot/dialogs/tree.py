@@ -297,7 +297,119 @@ class _AdminProgressDialogs:
         return Line("admin.progress.usage", {})
 
 
+class _AdminPromoCardDialogs:
+    def activations(self) -> Line:
+        return Line("admin.promo.card.activations", {})
+
+    def activations_value(self, *, limit: object, used: object) -> Line:
+        return Line(
+            "admin.promo.card.activations_value",
+            {
+                "limit": limit,
+                "used": used,
+            },
+        )
+
+    def back_button(self) -> Line:
+        return Line("admin.promo.card.back_button", {})
+
+    def cancel_button(self) -> Line:
+        return Line("admin.promo.card.cancel_button", {})
+
+    def column_field(self) -> Line:
+        return Line("admin.promo.card.column_field", {})
+
+    def column_value(self) -> Line:
+        return Line("admin.promo.card.column_value", {})
+
+    def confirm_button(self) -> Line:
+        return Line("admin.promo.card.confirm_button", {})
+
+    def confirm_question(self) -> Line:
+        return Line("admin.promo.card.confirm_question", {})
+
+    def created(self) -> Line:
+        return Line("admin.promo.card.created", {})
+
+    def delete_button(self) -> Line:
+        return Line("admin.promo.card.delete_button", {})
+
+    def deleted(self) -> Line:
+        return Line("admin.promo.card.deleted", {})
+
+    def expired_at(self, *, date: object) -> Line:
+        return Line("admin.promo.card.expired_at", {"date": date})
+
+    def gone(self) -> Line:
+        return Line("admin.promo.card.gone", {})
+
+    def not_found(self, *, name: object) -> Line:
+        return Line("admin.promo.card.not_found", {"name": name})
+
+    def rewards(self) -> Line:
+        return Line("admin.promo.card.rewards", {})
+
+    def status(self) -> Line:
+        return Line("admin.promo.card.status", {})
+
+    def term(self) -> Line:
+        return Line("admin.promo.card.term", {})
+
+    def title(self, *, name: object) -> Line:
+        return Line("admin.promo.card.title", {"name": name})
+
+    def until(self, *, date: object, left: object) -> Line:
+        return Line("admin.promo.card.until", {"date": date, "left": left})
+
+    def usage(self) -> Line:
+        return Line("admin.promo.card.usage", {})
+
+    def who_when(self, *, date: object, who: object) -> Line:
+        return Line("admin.promo.card.who_when", {"date": date, "who": who})
+
+
+class _AdminPromoCatalogDialogs:
+    def column_activations(self) -> Line:
+        return Line("admin.promo.catalog.column_activations", {})
+
+    def column_name(self) -> Line:
+        return Line("admin.promo.catalog.column_name", {})
+
+    def column_status(self) -> Line:
+        return Line("admin.promo.catalog.column_status", {})
+
+    def column_term(self) -> Line:
+        return Line("admin.promo.catalog.column_term", {})
+
+    def empty(self) -> Line:
+        return Line("admin.promo.catalog.empty", {})
+
+    def term_until(self, *, date: object) -> Line:
+        return Line("admin.promo.catalog.term_until", {"date": date})
+
+    def title(self) -> Line:
+        return Line("admin.promo.catalog.title", {})
+
+
+class _AdminPromoStatusDialogs:
+    def active(self) -> Line:
+        return Line("admin.promo.status.active", {})
+
+    def deleted(self) -> Line:
+        return Line("admin.promo.status.deleted", {})
+
+    def exhausted(self) -> Line:
+        return Line("admin.promo.status.exhausted", {})
+
+    def expired(self) -> Line:
+        return Line("admin.promo.status.expired", {})
+
+
 class _AdminPromoDialogs:
+    card = _AdminPromoCardDialogs()
+    catalog = _AdminPromoCatalogDialogs()
+    status = _AdminPromoStatusDialogs()
+
     def bad_line(self, *, line: object) -> Line:
         return Line("admin.promo.bad_line", {"line": line})
 
@@ -4075,9 +4187,41 @@ PLACEHOLDERS: dict[str, frozenset[str]] = {
     "admin.progress.replied_usage": frozenset(),
     "admin.progress.usage": frozenset(),
     "admin.promo.bad_line": frozenset({"line"}),
+    "admin.promo.card.activations": frozenset(),
+    "admin.promo.card.activations_value": frozenset({"limit", "used"}),
+    "admin.promo.card.back_button": frozenset(),
+    "admin.promo.card.cancel_button": frozenset(),
+    "admin.promo.card.column_field": frozenset(),
+    "admin.promo.card.column_value": frozenset(),
+    "admin.promo.card.confirm_button": frozenset(),
+    "admin.promo.card.confirm_question": frozenset(),
+    "admin.promo.card.created": frozenset(),
+    "admin.promo.card.delete_button": frozenset(),
+    "admin.promo.card.deleted": frozenset(),
+    "admin.promo.card.expired_at": frozenset({"date"}),
+    "admin.promo.card.gone": frozenset(),
+    "admin.promo.card.not_found": frozenset({"name"}),
+    "admin.promo.card.rewards": frozenset(),
+    "admin.promo.card.status": frozenset(),
+    "admin.promo.card.term": frozenset(),
+    "admin.promo.card.title": frozenset({"name"}),
+    "admin.promo.card.until": frozenset({"date", "left"}),
+    "admin.promo.card.usage": frozenset(),
+    "admin.promo.card.who_when": frozenset({"date", "who"}),
+    "admin.promo.catalog.column_activations": frozenset(),
+    "admin.promo.catalog.column_name": frozenset(),
+    "admin.promo.catalog.column_status": frozenset(),
+    "admin.promo.catalog.column_term": frozenset(),
+    "admin.promo.catalog.empty": frozenset(),
+    "admin.promo.catalog.term_until": frozenset({"date"}),
+    "admin.promo.catalog.title": frozenset(),
     "admin.promo.created": frozenset({"activations", "name", "rewards", "until"}),
     "admin.promo.forever": frozenset(),
     "admin.promo.name_taken": frozenset({"name"}),
+    "admin.promo.status.active": frozenset(),
+    "admin.promo.status.deleted": frozenset(),
+    "admin.promo.status.exhausted": frozenset(),
+    "admin.promo.status.expired": frozenset(),
     "admin.promo.until": frozenset({"date"}),
     "admin.promo.usage": frozenset(),
     "admin.reset.ghoul_deleted": frozenset(),

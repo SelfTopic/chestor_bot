@@ -13,7 +13,15 @@ from src.bot.utils import utcnow_naive
 from src.config import settings
 from src.database.models import PromoActivation, PromoCode, UserCooldown
 
-from .conftest import matches_phrase, only_text, phrase_texts
+from .conftest import (
+    button_data,
+    callback_update,
+    matches_phrase,
+    message_update,
+    only_text,
+    phrase_texts,
+    rich_texts,
+)
 from .test_common_routers import seed
 from .test_ghoul_routers import balance_of, get_ghoul, seed_active_cooldown, seed_ghoul
 
@@ -29,7 +37,7 @@ def admin(monkeypatch: pytest.MonkeyPatch) -> None:
 
 async def promo(session_factory, name: str) -> PromoCode | None:
     async with session_factory() as session:
-        return await PromoRepository(session).by_name(name)
+        return await PromoRepository(session).live_by_name(name)
 
 
 async def add_promo(
@@ -251,3 +259,75 @@ class TestActivate:
 
         (reply,) = await send("промо зима", uid=UID)
         assert reply in phrase_texts(Dialogs.promo.not_found(name="зима"))
+
+
+async def card_body(feed, telegram, name: str) -> dict:
+    await feed(message_update(f"/promo {name}", uid=ADMIN))
+    (body,) = telegram.bodies("sendRichMessage")
+    return body
+
+
+async def press(feed, telegram, body: dict, label: str) -> dict:
+    await feed(callback_update(button_data(body, label), uid=ADMIN))
+    (edit,) = telegram.bodies("editMessageText")
+    return edit
+
+
+class TestManage:
+    async def test_card_shows_rewards_activations_and_status(self, feed, telegram, session_factory):
+        await add_promo(session_factory, "лето", amount=500, limit=10)
+
+        texts = rich_texts(await card_body(feed, telegram, "ЛЕТО"))
+
+        card = Dialogs.admin.promo.card
+        assert only_text(Dialogs.admin.promo.status.active()) in texts
+        assert cheston(500) in texts
+        assert only_text(card.activations_value(used=0, limit=10)) in texts
+        assert only_text(Dialogs.admin.promo.forever()) in texts
+
+    async def test_unknown_name(self, send):
+        (reply,) = await send("/promo зима", uid=ADMIN)
+        assert reply == only_text(Dialogs.admin.promo.card.not_found(name="зима"))
+
+    async def test_delete_after_confirmation_keeps_the_history(
+        self, feed, send, telegram, session_factory
+    ):
+        await add_promo(session_factory, "лето")
+        await add_ghoul(session_factory, UID)
+        card = Dialogs.admin.promo.card
+
+        confirm = await press(feed, telegram, await card_body(feed, telegram, "лето"), only_text(card.delete_button()))
+        assert only_text(card.confirm_question()) in rich_texts(confirm)
+        assert await promo(session_factory, "лето") is not None
+
+        deleted = await press(feed, telegram, confirm, only_text(card.confirm_button()))
+        assert only_text(Dialogs.admin.promo.status.deleted()) in rich_texts(deleted)
+        assert await promo(session_factory, "лето") is None
+
+        (reply,) = await send("промо лето", uid=UID)
+        assert reply in phrase_texts(Dialogs.promo.not_found(name="лето"))
+
+        texts = rich_texts(await card_body(feed, telegram, "лето"))
+        assert only_text(Dialogs.admin.promo.status.deleted()) in texts
+        assert only_text(card.deleted()) in texts
+
+        await send("+промо лето 100 5", uid=ADMIN)
+        assert await promo(session_factory, "лето") is not None
+
+    async def test_catalog_pages_and_opens_a_card(self, feed, telegram, session_factory):
+        for number in range(9):
+            await add_promo(session_factory, f"код{number}")
+
+        await feed(message_update("/promos", uid=ADMIN))
+        (first,) = telegram.bodies("sendRichMessage")
+        assert "код8" in rich_texts(first) and "код0" not in rich_texts(first)
+
+        await feed(callback_update(button_data(first, "»"), uid=ADMIN))
+        (second,) = telegram.bodies("editMessageText")
+        assert "код0" in rich_texts(second)
+
+        card = await press(feed, telegram, second, "код0")
+        assert only_text(Dialogs.admin.promo.card.title(name="код0")) in rich_texts(card)
+
+        back = await press(feed, telegram, card, only_text(Dialogs.admin.promo.card.back_button()))
+        assert "код0" in rich_texts(back)

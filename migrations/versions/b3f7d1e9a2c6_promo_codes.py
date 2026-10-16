@@ -1,4 +1,4 @@
-"""promo_codes, promo_activations: промокоды и кто их активировал
+"""promo_codes, promo_activations: промокоды (удалённые остаются в истории) и кто их активировал
 
 Revision ID: b3f7d1e9a2c6
 Revises: e9b1c3d5f760
@@ -30,8 +30,16 @@ def upgrade() -> None:
         sa.Column("expires_at", sa.DateTime(), nullable=True),
         sa.Column("created_by", sa.BigInteger(), nullable=False),
         sa.Column("created_at", sa.DateTime(), server_default=sa.func.now(), nullable=False),
+        sa.Column("deleted_at", sa.DateTime(), nullable=True),
+        sa.Column("deleted_by", sa.BigInteger(), nullable=True),
         sa.PrimaryKeyConstraint("id"),
-        sa.UniqueConstraint("name"),
+    )
+    op.create_index(
+        "uq_promo_codes_live_name",
+        "promo_codes",
+        ["name"],
+        unique=True,
+        postgresql_where=sa.text("deleted_at IS NULL"),
     )
     op.create_table(
         "promo_activations",
@@ -45,4 +53,5 @@ def upgrade() -> None:
 
 def downgrade() -> None:
     op.drop_table("promo_activations")
+    op.drop_index("uq_promo_codes_live_name", table_name="promo_codes")
     op.drop_table("promo_codes")
