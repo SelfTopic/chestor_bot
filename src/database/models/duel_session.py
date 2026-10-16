@@ -25,6 +25,7 @@ class DuelSession(Base):
     )
 
     stage: Mapped[str] = mapped_column(nullable=False, default="awaiting_consent")
+    stage_since: Mapped[datetime] = mapped_column(nullable=False, server_default=func.now())
 
     initiator_consented: Mapped[bool] = mapped_column(nullable=False, default=False)
     target_consented: Mapped[bool] = mapped_column(nullable=False, default=False)

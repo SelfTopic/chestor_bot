@@ -5,11 +5,12 @@
 одинаковая (перевес 1 < порога 2, шаг "фора" пропускается). Для шага "фора" A
 вдвое мощнее B."""
 
-import asyncio
 import json
+from datetime import timedelta
 from typing import Any
 
 import pytest
+from sqlalchemy import update
 
 from src.bot.dialogs import Dialogs
 from src.bot.repositories import (
@@ -516,27 +517,19 @@ class TestDraw:
         assert not await is_busy(session_factory, A)
 
 
-class FakeClock:
-    def __init__(self) -> None:
-        self.now = 1000.0
-
-    def __call__(self) -> float:
-        return self.now
-
-
 class TestTicker:
     @pytest.fixture
-    def clock(self, dispatcher) -> FakeClock:
-        clock = FakeClock()
-        dispatcher.duel_ticker.clock = clock
-        return clock
-
-    @pytest.fixture
-    def tick(self, dispatcher, telegram, clock):
-        """Тик через seconds секунд после предыдущего; вызовы Telegram — только его."""
+    def tick(self, dispatcher, telegram, session_factory):
+        """Тик через seconds секунд: стадия всех дуэлей началась на seconds раньше."""
 
         async def _tick(seconds: float = 0):
-            clock.now += seconds
+            async with session_factory() as session:
+                await session.execute(
+                    update(DuelSession).values(
+                        stage_since=DuelSession.stage_since - timedelta(seconds=seconds)
+                    )
+                )
+                await session.commit()
             telegram.calls.clear()
             await dispatcher.duel_ticker.tick()
             return telegram
@@ -550,8 +543,6 @@ class TestTicker:
     async def test_consent_timeout(self, session_factory, invite, tick):
         await self._seed(session_factory)
         duel_id = await invite(session_factory)
-        await tick()  # тикер впервые видит дуэль
-
         telegram = await tick(59)
         assert telegram.calls == []
 
@@ -617,21 +608,22 @@ class TestTicker:
         duel = await get_duel(session_factory, duel_id)
         assert duel.stage == "awaiting_winner_choice"
 
-    async def test_start_runs_ticks_and_stop_cancels(
-        self, dispatcher, session_factory, invite, clock
+    async def test_failed_expiry_is_retried_after_a_full_stage(
+        self, dispatcher, session_factory, invite, tick, monkeypatch
     ):
         await self._seed(session_factory)
         duel_id = await invite(session_factory)
         ticker = dispatcher.duel_ticker
-        ticker._interval = 0.01
-        clock.now = -1000.0  # первый тик видит дуэль "давно"; дальше время стоит
 
-        await ticker.start()
-        await asyncio.sleep(0.2)
-        clock.now = 0.0
-        await asyncio.sleep(0.2)
-        await ticker.stop()
+        async def broken(duel_id: int, stage: str) -> None:
+            raise RuntimeError("boom")
 
-        duel = await get_duel(session_factory, duel_id)
-        assert duel.stage == "done"
-        assert ticker._task is None
+        expire = ticker._expire
+        monkeypatch.setattr(ticker, "_expire", broken)
+        await tick(60)
+        monkeypatch.setattr(ticker, "_expire", expire)
+
+        await tick(59)
+        assert (await get_duel(session_factory, duel_id)).stage == "awaiting_consent"
+        await tick(1)
+        assert (await get_duel(session_factory, duel_id)).stage == "done"

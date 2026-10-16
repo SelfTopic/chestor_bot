@@ -1,11 +1,9 @@
 import logging
-import time
-from collections.abc import AsyncIterator, Callable
+from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
 
 from selfrot import Bot
 from selfrot.exceptions import TelegramAPIError
-from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 
 from src.bot.dialogs import Dialogs
@@ -13,7 +11,6 @@ from src.bot.game_configs import DUEL_CONFIG
 from src.bot.services import MobService
 from src.bot.services.dialog import DialogService
 from src.bot.session_services import SessionServices, session_context
-from src.database.models import DuelSession
 
 from ....services.notify import SelfrotBotNotifier
 from ....services.ticker import Ticker
@@ -31,8 +28,7 @@ def stage_timeouts() -> dict[str, float]:
     }
 
 
-# Отсчёт идёт с момента, когда тикер впервые увидел дуэль на стадии, поэтому таймаут может
-# сработать на interval позже. Гонку «нажатие против таймаута» закрывает atomic_update.
+# Гонку «нажатие против таймаута» закрывает atomic_update: стадию уводит тот, кто первый.
 class DuelTicker(Ticker):
     def __init__(
         self,
@@ -41,42 +37,26 @@ class DuelTicker(Ticker):
         dialog_service: DialogService,
         mob_service: MobService,
         interval_seconds: float = 1.0,
-        clock: Callable[[], float] = time.monotonic,
     ) -> None:
         super().__init__(interval_seconds)
         self._session_factory = session_factory
         self._bot = bot
         self._dialog_service = dialog_service
         self._mob_service = mob_service
-        self.clock = clock
-        self._seen: dict[tuple[int, str], float] = {}
 
     async def tick(self) -> None:
-        timeouts = stage_timeouts()
-        now = self.clock()
+        async with self._services() as services:
+            overdue = await services.duel_service.overdue(stage_timeouts())
 
-        async with self._session_factory() as session:
-            rows = await session.execute(
-                select(DuelSession.id, DuelSession.stage).where(
-                    DuelSession.stage.in_(timeouts)
-                )
-            )
-            waiting = {(duel_id, stage) for duel_id, stage in rows}
-
-        self._seen = {key: self._seen.get(key, now) for key in waiting}
-
-        for key, since in list(self._seen.items()):
-            duel_id, stage = key
-            if now - since < timeouts[stage]:
-                continue
-
-            # Упавший таймаут не повторяется на каждом тике: дуэль увидится заново и получит
-            # новый срок.
-            del self._seen[key]
+        for duel_id, stage in overdue:
             try:
                 await self._expire(duel_id, stage)
             except Exception:
                 logger.exception("duel %s: %s expiry failed", duel_id, stage)
+                # Иначе упавший таймаут повторялся бы каждый тик: следующая попытка — через
+                # полный срок стадии.
+                async with self._services() as services:
+                    await services.duel_service.restart_countdown(duel_id, stage)
 
     @asynccontextmanager
     async def _services(self) -> AsyncIterator[DuelServices]:
