@@ -13,6 +13,15 @@ from .base import Base
 logger = logging.getLogger(__name__)
 
 
+def _total_kagune_strength() -> Any:
+    return (
+        func.coalesce(Ghoul.kagune_strength_ukaku, 0)
+        + func.coalesce(Ghoul.kagune_strength_koukaku, 0)
+        + func.coalesce(Ghoul.kagune_strength_rinkaku, 0)
+        + func.coalesce(Ghoul.kagune_strength_bikaku, 0)
+    )
+
+
 class GhoulRepository(Base):
     session: AsyncSession
 
@@ -134,20 +143,31 @@ class GhoulRepository(Base):
 
         return list(execute)
 
+    async def get_top_power(self, count: int) -> List[Ghoul]:
+        power = (
+            Ghoul.strength
+            + Ghoul.dexterity
+            + Ghoul.speed
+            + Ghoul.max_health
+            + Ghoul.regeneration
+            + _total_kagune_strength()
+        )
+        stmt = (
+            select(Ghoul)
+            .where(Ghoul.is_dead.is_(False))
+            .order_by(desc(power), Ghoul.id)
+            .limit(count)
+        )
+        return list(await self.session.scalars(stmt))
+
     async def get_top_kagune(
         self, count: int, kagune_type: Optional[KaguneType] = None
     ) -> List[Ghoul]:
         if kagune_type is None:
-            total_strength = (
-                func.coalesce(Ghoul.kagune_strength_ukaku, 0)
-                + func.coalesce(Ghoul.kagune_strength_koukaku, 0)
-                + func.coalesce(Ghoul.kagune_strength_rinkaku, 0)
-                + func.coalesce(Ghoul.kagune_strength_bikaku, 0)
-            )
             stmt = (
                 select(Ghoul)
                 .where(Ghoul.is_dead.is_(False))
-                .order_by(desc(total_strength))
+                .order_by(desc(_total_kagune_strength()))
                 .limit(count)
             )
         else:
