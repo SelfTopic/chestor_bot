@@ -34,6 +34,7 @@ class Settings(BaseSettings):
     MUSIC_MAX_DURATION: int = Field(default=900)
     DOCS_CHANNEL: str = Field(default="")
     DOCS_DIR: str = Field(default="docs/players")
+    SUBSCRIPTION_CHANNEL: str = Field(default="")
 
     HTTP_PROXY: str = Field(default="")
     HTTPS_PROXY: str = Field(default="")

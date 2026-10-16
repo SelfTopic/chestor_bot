@@ -28,7 +28,7 @@ from .common import (
 )
 from .chat_member_update_routers import ChatMemberUpdateRouter
 from .creator_routers import CreatorRouter
-from .ghoul_routers import GhoulRouter, expire_overdue_duels
+from .ghoul_routers import GhoulRouter, SubscriptionCheckRouter, expire_overdue_duels
 from .moderator_routers import ModeratorRouter
 
 
@@ -39,6 +39,8 @@ class RootRouter(BaseRouter[AppContext]):
         MarriageLinkRouter,
         StartRouter,
         BotRouter,
+        # Вне GhoulRouter: кнопку проверки жмут те, кого его подписка не пускает.
+        SubscriptionCheckRouter,
         GhoulRouter,
         BalanceRouter,
         HelpRouter,

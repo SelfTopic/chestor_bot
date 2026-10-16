@@ -32,6 +32,7 @@ from src.bot.services import (
     WordleService,
 )
 from src.bot.services.dialog import DialogService
+from src.bot.services.subscribers import SubscriberCache
 from src.config import settings
 from src.database import session_factory as default_session_factory
 
@@ -121,6 +122,7 @@ class Dispatcher(BaseDispatcher[AppContext]):
         # Живут весь процесс: кэши RP-команд, партии вордли, очередь нарезки видео.
         self.rp_commands_service = RpCommandsService(rp_commands_repository)
         self.wordle_service = WordleService()
+        self.subscriber_cache = SubscriberCache()
         self.wikipedia_service = WikipediaService()
         self.mob_service = MobService()
         self.video_cutter_service = VideoCutterService()
@@ -221,6 +223,7 @@ class Dispatcher(BaseDispatcher[AppContext]):
             player_docs_service=self.player_docs,
             rp_commands_service=self.rp_commands_service,
             wordle_service=self.wordle_service,
+            subscriber_cache=self.subscriber_cache,
             wikipedia_service=self.wikipedia_service,
             mob_service=self.mob_service,
             video_cutter_service=self.video_cutter_service,

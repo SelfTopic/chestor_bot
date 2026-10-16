@@ -3599,6 +3599,26 @@ class _StatusDialogs:
         return Line("status.until_starved", {"duration": duration})
 
 
+class _SubscriptionDialogs:
+    def check_button(self) -> Line:
+        return Line("subscription.check_button", {})
+
+    def confirmed(self) -> Line:
+        return Line("subscription.confirmed", {})
+
+    def not_yet(self) -> Line:
+        return Line("subscription.not_yet", {})
+
+    def required(self, *, channel: object) -> Line:
+        return Line("subscription.required", {"channel": channel})
+
+    def required_alert(self, *, channel: object) -> Line:
+        return Line("subscription.required_alert", {"channel": channel})
+
+    def subscribe_button(self) -> Line:
+        return Line("subscription.subscribe_button", {})
+
+
 class _TopsBalanceDialogs:
     def bad_count(self) -> Line:
         return Line("tops.balance.bad_count", {})
@@ -3865,6 +3885,7 @@ class _Dialogs:
     snap = _SnapDialogs()
     stats = _StatsDialogs()
     status = _StatusDialogs()
+    subscription = _SubscriptionDialogs()
     tops = _TopsDialogs()
     transfer = _TransferDialogs()
     wordle = _WordleDialogs()
@@ -4832,6 +4853,12 @@ PLACEHOLDERS: dict[str, frozenset[str]] = {
     "status.starved": frozenset(),
     "status.until_healthy": frozenset({"duration"}),
     "status.until_starved": frozenset({"duration"}),
+    "subscription.check_button": frozenset(),
+    "subscription.confirmed": frozenset(),
+    "subscription.not_yet": frozenset(),
+    "subscription.required": frozenset({"channel"}),
+    "subscription.required_alert": frozenset({"channel"}),
+    "subscription.subscribe_button": frozenset(),
     "tops.balance.bad_count": frozenset(),
     "tops.balance.message": frozenset({"count", "rows"}),
     "tops.balance.row": frozenset({"balance", "name", "place"}),
