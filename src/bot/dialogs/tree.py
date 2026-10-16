@@ -3435,6 +3435,9 @@ class _PromoRewardDialogs:
     def cheston(self, *, amount: object) -> Line:
         return Line("promo.reward.cheston", {"amount": amount})
 
+    def rc(self, *, amount: object) -> Line:
+        return Line("promo.reward.rc", {"amount": amount})
+
 
 class _PromoDialogs:
     reward = _PromoRewardDialogs()
@@ -4875,6 +4878,7 @@ PLACEHOLDERS: dict[str, frozenset[str]] = {
     "promo.expired": frozenset({"name"}),
     "promo.not_found": frozenset({"name"}),
     "promo.reward.cheston": frozenset({"amount"}),
+    "promo.reward.rc": frozenset({"amount"}),
     "promo.usage": frozenset(),
     "quiz.correct": frozenset({"award"}),
     "quiz.not_active": frozenset(),

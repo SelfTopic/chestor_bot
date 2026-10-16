@@ -591,3 +591,4 @@ promo:
     - Жадность до добра не доводит. «{name}» у тебя уже был.
   reward:
     cheston: +{amount} CheSton
+    rc: +{amount} RC-клеток

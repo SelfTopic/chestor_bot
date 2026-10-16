@@ -1,7 +1,7 @@
 from datetime import timedelta
-from typing import Literal, Optional
+from typing import Annotated, Literal, Optional
 
-from pydantic import BaseModel, PositiveInt, TypeAdapter
+from pydantic import BaseModel, Field, PositiveInt, TypeAdapter
 
 from src.database.models import PromoCode
 
@@ -12,6 +12,7 @@ from ..exceptions.promo import (
     PromoNameTaken,
     PromoNotFound,
 )
+from ..repositories.ghoul import GhoulRepository
 from ..repositories.promo import PromoRepository
 from ..utils import utcnow_naive
 from .user import UserService
@@ -22,14 +23,25 @@ class ChestonReward(BaseModel, frozen=True):
     amount: PositiveInt
 
 
-Reward = ChestonReward
+class RcReward(BaseModel, frozen=True):
+    kind: Literal["rc"] = "rc"
+    amount: PositiveInt
+
+
+Reward = Annotated[ChestonReward | RcReward, Field(discriminator="kind")]
 
 _REWARDS = TypeAdapter(list[Reward])
 
 
 class PromoService:
-    def __init__(self, promo_repository: PromoRepository, user_service: UserService) -> None:
+    def __init__(
+        self,
+        promo_repository: PromoRepository,
+        ghoul_repository: GhoulRepository,
+        user_service: UserService,
+    ) -> None:
         self.promo_repository = promo_repository
+        self.ghoul_repository = ghoul_repository
         self.user_service = user_service
 
     async def create(
@@ -76,4 +88,8 @@ class PromoService:
             case ChestonReward(amount=amount):
                 await self.user_service.plus_balance(
                     telegram_id, amount, log=f"promo {promo_name}"
+                )
+            case RcReward(amount=amount):
+                await self.ghoul_repository.increment_fields(
+                    telegram_id, rc_money=amount, lifetime_rc_earned=amount
                 )

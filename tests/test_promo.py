@@ -14,7 +14,7 @@ from src.database.models import PromoActivation, PromoCode
 
 from .conftest import matches_phrase, only_text, phrase_texts
 from .test_common_routers import seed
-from .test_ghoul_routers import balance_of, seed_ghoul
+from .test_ghoul_routers import balance_of, get_ghoul, seed_ghoul
 
 ADMIN = 999
 UID = 700001
@@ -75,14 +75,14 @@ class TestCreate:
 
     async def test_reward_lines_and_a_deadline(self, send, session_factory):
         before = utcnow_naive()
-        (reply,) = await send("+промо лето 2 24ч\nчестоны 1000\n\nчс 50", uid=ADMIN)
+        (reply,) = await send("+промо лето 2 24ч\nчестоны 1000\n\nрс 200", uid=ADMIN)
 
         assert matches_phrase(reply, "admin.promo.created")
         code = await promo(session_factory, "лето")
         assert code is not None and code.expires_at is not None
         assert code.rewards == [
             {"kind": "cheston", "amount": 1000},
-            {"kind": "cheston", "amount": 50},
+            {"kind": "rc", "amount": 200},
         ]
         assert code.activations_limit == 2
         assert timedelta(hours=24) <= code.expires_at - before < timedelta(hours=24, minutes=1)
@@ -118,6 +118,27 @@ class TestActivate:
         (reply,) = await send("промо лето", uid=UID)
         assert reply in phrase_texts(Dialogs.promo.already(name="лето"))
         assert await balance_of(session_factory, UID) == balance + 500
+
+    async def test_rc_count_towards_lifetime_earnings(self, send, session_factory):
+        async with session_factory() as session:
+            await PromoRepository(session).create(
+                name="рс",
+                rewards=[{"kind": "rc", "amount": 200}],
+                activations_limit=1,
+                expires_at=None,
+                created_by=ADMIN,
+            )
+            await session.commit()
+        await seed(session_factory, UID, "Вася")
+        await seed_ghoul(session_factory, UID, rc_money=10, lifetime_rc_earned=30)
+
+        (reply,) = await send("промо рс", uid=UID)
+
+        rewards = only_text(Dialogs.promo.reward.rc(amount=200))
+        assert reply in phrase_texts(Dialogs.promo.activated(name="рс", rewards=rewards))
+        ghoul = await get_ghoul(session_factory, UID)
+        assert ghoul is not None
+        assert (ghoul.rc_money, ghoul.lifetime_rc_earned) == (210, 230)
 
     async def test_spent_code_leaves_no_activation(self, send, session_factory):
         await add_promo(session_factory, "лето", limit=1)
