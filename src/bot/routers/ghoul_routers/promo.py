@@ -26,8 +26,8 @@ class PromoHandler(MessageHandler[AppContext[TextUserMessage]]):
 
     async def handle(self) -> None:
         name = self.cmd.parse(self.ctx).name
-        rewards = await self.ctx.promo_service.activate(name, self.ctx.message.user.id)
-        activated = Dialogs.promo.activated(name=name, rewards=reward_lines(self.ctx, rewards))
+        granted = await self.ctx.promo_service.activate(name, self.ctx.message.user.id)
+        activated = Dialogs.promo.activated(name=name, rewards=reward_lines(self.ctx, granted))
         await self.ctx.say(activated, reply=True)
 
     async def on_error(self, exc: Exception) -> None:

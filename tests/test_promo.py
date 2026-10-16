@@ -8,6 +8,7 @@ from sqlalchemy import func, select
 
 from src.bot.dialogs import Dialogs
 from src.bot.repositories import PromoRepository
+from src.bot.routers.promo_rewards import STAT_LABELS
 from src.bot.utils import utcnow_naive
 from src.config import settings
 from src.database.models import PromoActivation, PromoCode
@@ -75,7 +76,7 @@ class TestCreate:
 
     async def test_reward_lines_and_a_deadline(self, send, session_factory):
         before = utcnow_naive()
-        (reply,) = await send("+промо лето 2 24ч\nчестоны 1000\n\nрс 200", uid=ADMIN)
+        (reply,) = await send("+промо лето 2 24ч\nчестоны 1000\n\nрс 200\nхп 5", uid=ADMIN)
 
         assert matches_phrase(reply, "admin.promo.created")
         code = await promo(session_factory, "лето")
@@ -83,6 +84,7 @@ class TestCreate:
         assert code.rewards == [
             {"kind": "cheston", "amount": 1000},
             {"kind": "rc", "amount": 200},
+            {"kind": "stat", "stat": "max_health", "amount": 5},
         ]
         assert code.activations_limit == 2
         assert timedelta(hours=24) <= code.expires_at - before < timedelta(hours=24, minutes=1)
@@ -159,6 +161,35 @@ class TestActivate:
         ghoul = await get_ghoul(session_factory, UID)
         assert ghoul is not None
         assert (ghoul.level, ghoul.level_progress) == (2, 0)
+
+    async def test_stats_stop_at_the_level_cap(self, send, session_factory):
+        async with session_factory() as session:
+            await PromoRepository(session).create(
+                name="сила",
+                rewards=[
+                    {"kind": "stat", "stat": "strength", "amount": 10},
+                    {"kind": "stat", "stat": "max_health", "amount": 5},
+                ],
+                activations_limit=1,
+                expires_at=None,
+                created_by=ADMIN,
+            )
+            await session.commit()
+        await seed(session_factory, UID, "Вася")
+        await seed_ghoul(session_factory, UID, level=1, strength=97, max_health=50, health=40)
+
+        (reply,) = await send("промо сила", uid=UID)
+
+        rewards = "\n".join(
+            [
+                only_text(Dialogs.promo.reward.stat_capped(stat=STAT_LABELS["strength"], amount=3)),
+                only_text(Dialogs.promo.reward.stat(stat=STAT_LABELS["max_health"], amount=5)),
+            ]
+        )
+        assert reply in phrase_texts(Dialogs.promo.activated(name="сила", rewards=rewards))
+        ghoul = await get_ghoul(session_factory, UID)
+        assert ghoul is not None
+        assert (ghoul.strength, ghoul.max_health, ghoul.health) == (100, 55, 45)
 
     async def test_spent_code_leaves_no_activation(self, send, session_factory):
         await add_promo(session_factory, "лето", limit=1)

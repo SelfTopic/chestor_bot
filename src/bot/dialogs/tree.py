@@ -3441,6 +3441,12 @@ class _PromoRewardDialogs:
     def rc(self, *, amount: object) -> Line:
         return Line("promo.reward.rc", {"amount": amount})
 
+    def stat(self, *, amount: object, stat: object) -> Line:
+        return Line("promo.reward.stat", {"amount": amount, "stat": stat})
+
+    def stat_capped(self, *, amount: object, stat: object) -> Line:
+        return Line("promo.reward.stat_capped", {"amount": amount, "stat": stat})
+
 
 class _PromoDialogs:
     reward = _PromoRewardDialogs()
@@ -4883,6 +4889,8 @@ PLACEHOLDERS: dict[str, frozenset[str]] = {
     "promo.reward.cheston": frozenset({"amount"}),
     "promo.reward.progress": frozenset({"percent"}),
     "promo.reward.rc": frozenset({"amount"}),
+    "promo.reward.stat": frozenset({"amount", "stat"}),
+    "promo.reward.stat_capped": frozenset({"amount", "stat"}),
     "promo.usage": frozenset(),
     "quiz.correct": frozenset({"award"}),
     "quiz.not_active": frozenset(),

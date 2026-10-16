@@ -1,6 +1,6 @@
 from dataclasses import dataclass, field
 from random import randint, uniform
-from typing import List, Optional
+from typing import List, Literal, Optional
 
 
 @dataclass
@@ -119,6 +119,8 @@ class StatUpgradeConfig:
 
 
 STAT_UPGRADE_CONFIG = StatUpgradeConfig()
+
+StatKey = Literal["strength", "dexterity", "speed", "max_health", "regeneration"]
 
 STATS = [
     ("Сила", "strength", "💪"),

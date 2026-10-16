@@ -593,3 +593,5 @@ promo:
     cheston: +{amount} CheSton
     rc: +{amount} RC-клеток
     progress: +{percent}% прогресса уровня
+    stat: +{amount} {stat}
+    stat_capped: +{amount} {stat}, дальше потолок уровня

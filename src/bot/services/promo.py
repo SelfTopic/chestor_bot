@@ -1,3 +1,4 @@
+from dataclasses import dataclass
 from datetime import timedelta
 from typing import Annotated, Literal, Optional
 
@@ -12,6 +13,7 @@ from ..exceptions.promo import (
     PromoNameTaken,
     PromoNotFound,
 )
+from ..game_configs import StatKey, stat_cap_for_level
 from ..repositories.ghoul import GhoulRepository
 from ..repositories.promo import PromoRepository
 from ..utils import utcnow_naive
@@ -34,9 +36,21 @@ class LevelProgressReward(BaseModel, frozen=True):
     percent: PositiveInt
 
 
+class StatReward(BaseModel, frozen=True):
+    kind: Literal["stat"] = "stat"
+    stat: StatKey
+    amount: PositiveInt
+
+
 Reward = Annotated[
-    ChestonReward | RcReward | LevelProgressReward, Field(discriminator="kind")
+    ChestonReward | RcReward | LevelProgressReward | StatReward, Field(discriminator="kind")
 ]
+
+
+@dataclass(frozen=True)
+class Granted:
+    reward: Reward
+    capped_to: Optional[int] = None
 
 _REWARDS = TypeAdapter(list[Reward])
 
@@ -76,7 +90,7 @@ class PromoService:
     def rewards(self, promo: PromoCode) -> list[Reward]:
         return _REWARDS.validate_python(promo.rewards)
 
-    async def activate(self, name: str, telegram_id: int) -> list[Reward]:
+    async def activate(self, name: str, telegram_id: int) -> list[Granted]:
         repository = self.promo_repository
         promo = await repository.by_name(name.casefold())
         if promo is None:
@@ -88,12 +102,11 @@ class PromoService:
         if not await repository.claim_activation(promo.id):
             raise PromoExhausted(name)
 
-        rewards = self.rewards(promo)
-        for reward in rewards:
-            await self._grant(reward, telegram_id, promo.name)
-        return rewards
+        return [
+            await self._grant(reward, telegram_id, promo.name) for reward in self.rewards(promo)
+        ]
 
-    async def _grant(self, reward: Reward, telegram_id: int, promo_name: str) -> None:
+    async def _grant(self, reward: Reward, telegram_id: int, promo_name: str) -> Granted:
         match reward:
             case ChestonReward(amount=amount):
                 await self.user_service.plus_balance(
@@ -105,3 +118,22 @@ class PromoService:
                 )
             case LevelProgressReward(percent=percent):
                 await self.level_up_service.add_progress(telegram_id, percent)
+            case StatReward(stat=stat, amount=amount):
+                return await self._grant_stat(reward, telegram_id, stat, amount)
+        return Granted(reward)
+
+    # Потолок стата по уровню, как у покупки: ошибка в промокоде не сломает баланс боёв.
+    async def _grant_stat(
+        self, reward: StatReward, telegram_id: int, stat: StatKey, amount: int
+    ) -> Granted:
+        ghoul = await self.ghoul_repository.get(telegram_id)
+        if ghoul is None:
+            return Granted(reward, capped_to=0)
+        room = max(0, stat_cap_for_level(ghoul.level, stat) - getattr(ghoul, stat))
+        added = min(amount, room)
+        if added:
+            deltas = {stat: added}
+            if stat == "max_health":
+                deltas["health"] = added
+            await self.ghoul_repository.increment_fields(telegram_id, **deltas)
+        return Granted(reward) if added == amount else Granted(reward, capped_to=added)
