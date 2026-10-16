@@ -1,4 +1,4 @@
-from typing import Any, Literal, get_args
+from typing import Any, get_args
 
 from selfrot import BaseRouter, CallbackPayload, InlineKeyboard, MessageHandler, button
 from selfrot.filter import HasMessageCallbackQuery, HasUser, Text
@@ -6,13 +6,12 @@ from selfrot.handlers import CallbackQueryHandler
 from selfrot.types import InlineKeyboardMarkup, Message
 
 from src.bot.dialogs import Dialogs
-from src.bot.game_configs import STAT_UPGRADE_CONFIG, STATS, stat_cap_for_level
+from src.bot.game_configs import STAT_UPGRADE_CONFIG, STATS, StatKey, stat_cap_for_level
 from src.database.models import Ghoul
 
 from ...context import AppContext
 from ..types import DataMessageCallbackQuery, TextUserMessage
 
-StatKey = Literal["strength", "dexterity", "speed", "max_health", "regeneration"]
 STAT_KEYS: tuple[StatKey, ...] = get_args(StatKey)
 
 STAT_LABELS = {key: f"{emoji}{label}" for label, key, emoji in STATS}

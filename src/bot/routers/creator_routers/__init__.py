@@ -10,6 +10,7 @@ from .level_up import LevelUpRouter
 from .media import MediaRouter
 from .middleware import CreatorMiddleware
 from .players_lookup import PlayersLookupRouter
+from .promo import PromoAdminRouter
 from .reset import ResetRouter
 from .roast_rating import RoastRatingRouter
 from .stats_edits import StatsEditRouter
@@ -29,4 +30,5 @@ class CreatorRouter(BaseRouter[AppContext]):
         BroadcastRouter,
         LevelUpRouter,
         RoastRatingRouter,
+        PromoAdminRouter,
     )

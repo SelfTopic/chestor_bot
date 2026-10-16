@@ -24,6 +24,7 @@ from .user_coldown import UserCooldownRepository
 from .wallet import TopWallet, WalletRepository
 from .roast import PlayerFacts, RoastRepository
 from .rp_commands import RpCommandsRepository
+from .promo import PromoRepository
 
 __all__ = [
     "ActiveBattleRepository",
@@ -60,4 +61,5 @@ __all__ = [
     "Member",
     "PlayerFacts",
     "RoastRepository",
+    "PromoRepository",
 ]

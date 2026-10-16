@@ -217,20 +217,37 @@ class GhoulService(Base):
     async def set_fields(self, telegram_id: int, **values: Any) -> Ghoul:
         return await self.ghoul_repository.upsert(telegram_id, **values)
 
+    # Метка двигается вместе со здоровьем, а расписание пересчитывается: иначе придёт пуш
+    # «здоровье восстановлено», рассчитанный по старому здоровью.
+    async def heal_fully(self, telegram_id: int) -> Ghoul:
+        ghoul = await self.get(telegram_id)
+        if not ghoul:
+            raise GhoulNotFound(telegram_id)
+        now = utcnow_naive()
+        healed = await self.ghoul_repository.upsert(
+            telegram_id=telegram_id, health=ghoul.max_health, health_updated_at=now
+        )
+        await self.sync_notification_schedule(healed, now=now)
+        return healed
+
     async def restore_hunger_from_eating(
         self, telegram_id: int, **extra_upsert_fields: Any
     ) -> Tuple[Ghoul, int]:
-        logger.debug(
-            f"Called method restore_hunger_from_eating. Params: telegram_id={telegram_id}"
+        return await self.restore_hunger(
+            telegram_id, EAT_HUMAN_CONFIG.hunger_restore, **extra_upsert_fields
         )
+
+    async def restore_hunger(
+        self, telegram_id: int, restore: int, **extra_upsert_fields: Any
+    ) -> Tuple[Ghoul, int]:
+        logger.debug(f"Called method restore_hunger. Params: telegram_id={telegram_id}")
 
         ghoul = await self.get(telegram_id)
 
         if not ghoul:
-            logger.error("Ghoul not found for restore_hunger_from_eating operation")
+            logger.error("Ghoul not found for restore_hunger operation")
             raise GhoulNotFound(telegram_id)
 
-        restore = EAT_HUMAN_CONFIG.hunger_restore
         new_hunger = apply_hunger_restore(ghoul.hunger, restore)
 
         updated_ghoul = await self.ghoul_repository.upsert(
@@ -243,7 +260,7 @@ class GhoulService(Base):
         await self.sync_notification_schedule(updated_ghoul, now=utcnow_naive())
 
         logger.debug(
-            f"restore_hunger_from_eating: hunger {ghoul.hunger}->{new_hunger} (+{restore})"
+            f"restore_hunger: hunger {ghoul.hunger}->{new_hunger} (+{restore})"
         )
 
         return updated_ghoul, restore

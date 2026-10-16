@@ -23,6 +23,7 @@ from .link_media import LinkMediaCache
 from .music_track import MusicTrack
 from .roast_log import RoastLog
 from .rp_commands import Rp
+from .promo import PromoActivation, PromoCode
 from .moderation import ModerationAction, ModerationSettings, ModerationWarning
 
 __all__ = [
@@ -56,6 +57,8 @@ __all__ = [
     "FamilyRename",
     "MarriageConsent",
     "MarriageProposal",
+    "PromoActivation",
+    "PromoCode",
     "ModerationAction",
     "ModerationSettings",
     "ModerationWarning",

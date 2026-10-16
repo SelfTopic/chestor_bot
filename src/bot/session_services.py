@@ -18,6 +18,7 @@ from .repositories import (
     GhoulRepository,
     LotteryRepository,
     MediaRepository,
+    PromoRepository,
     ModerationRepository,
     RpCommandsRepository,
     ScheduledNotificationRepository,
@@ -52,6 +53,7 @@ from .services.ghoul_game import CoffeeService, LotteryService
 from .services.level_up import LevelUpService
 from .services.moderation import ModerationService
 from .services.notify import Notifier
+from .services.promo import PromoService
 from .services.stat_upgrade import StatUpgradeService
 
 # Сессия БД текущей работы: в апдейте её ставит DatabaseMiddleware, вне апдейта (тикер
@@ -212,6 +214,20 @@ class SessionServices:
             self.ghoul_repository,
             self.user_cooldown_repository,
             self.chat_repository,
+        )
+
+    @cached_property
+    def promo_repository(self) -> PromoRepository:
+        return PromoRepository(self.session)
+
+    @cached_property
+    def promo_service(self) -> PromoService:
+        return PromoService(
+            self.promo_repository,
+            self.ghoul_service,
+            self.user_service,
+            self.level_up_service,
+            self.cooldown_service,
         )
 
     @cached_property
