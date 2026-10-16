@@ -1,7 +1,6 @@
 import logging
 
 from selfrot import InlineKeyboard, MessageHandler, button
-from selfrot.exceptions import TelegramAPIError
 from selfrot.filter import HasUser, TextRegexp
 from selfrot.handlers import CallbackQueryHandler
 from selfrot.types import DataCallbackQuery, Message
@@ -12,6 +11,7 @@ from src.bot.services.family import ConsentRefusal, ConsentRefused, ProposalStat
 
 from ....context import AppContext
 from ...types import UserMessage
+from ...utils import quiet_edit
 from .payloads import DivorcePress, MarriageAnswer, ProposalPayment
 from .render import LINK_PREFIX, PHRASES, mentions, proposal_view
 
@@ -72,10 +72,8 @@ class ProposalAnswerHandler(CallbackQueryHandler[AppContext[DataCallbackQuery]])
         message = self.ctx.callback_query.message
         # Член семьи отвечает в личке: там правится его сообщение, а приглашение — в группе.
         if isinstance(message, Message) and message.message_id != state.proposal.message_id:
-            try:
+            with quiet_edit("marriage private answer"):
                 await message.edit_text(self.ctx.text(private_line))
-            except TelegramAPIError:
-                pass
         await self.ctx.callback_query.answer(self.ctx.text(alert))
 
     async def refresh_invite(self, state: ProposalState) -> None:
@@ -83,7 +81,7 @@ class ProposalAnswerHandler(CallbackQueryHandler[AppContext[DataCallbackQuery]])
         if proposal.message_id is None:
             return
         text, keyboard = await proposal_view(self.ctx, state, self.ctx.bot.username)
-        try:
+        with quiet_edit("marriage invite"):
             await self.ctx.bot.edit_message_text(
                 chat_id=proposal.chat_id,
                 message_id=proposal.message_id,
@@ -91,8 +89,6 @@ class ProposalAnswerHandler(CallbackQueryHandler[AppContext[DataCallbackQuery]])
                 reply_markup=keyboard,
                 parse_mode="HTML",
             )
-        except TelegramAPIError:
-            logger.warning("marriage %s: failed to update the invite", proposal.id)
 
 
 class FamilyConsentLinkHandler(MessageHandler[AppContext[UserMessage]]):

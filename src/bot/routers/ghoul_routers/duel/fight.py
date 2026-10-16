@@ -9,6 +9,7 @@ from src.database.models import DuelSession
 
 from ....repositories.fight import Score
 from ....services.battle import DuelOutcome
+from ...utils import quiet_edit
 from ..battle_text import BattleMessage
 from .keyboards import outcome_keyboard
 from .services import DuelServices
@@ -53,12 +54,10 @@ async def finalize_outcome(
     outcome = await services.battle.resolve_duel_outcome(duel, action)
 
     if duel.outcome_message_id:
-        try:
+        with quiet_edit("duel outcome"):
             await bot.edit_message_reply_markup(
                 chat_id=duel.chat_id, message_id=duel.outcome_message_id, reply_markup=None
             )
-        except TelegramAPIError:
-            pass
 
     chat_ids = {duel.initiator_telegram_id, duel.target_telegram_id}
     if not duel.is_private_origin:

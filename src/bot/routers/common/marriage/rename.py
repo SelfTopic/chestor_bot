@@ -1,7 +1,6 @@
 import logging
 
 from selfrot import CommandArgs, InlineKeyboard, MessageHandler, Rest, button
-from selfrot.exceptions import TelegramAPIError
 from selfrot.filter import Command, HasUser, TextRegexp
 from selfrot.handlers import CallbackQueryHandler
 from selfrot.types import DataCallbackQuery, Message
@@ -12,6 +11,7 @@ from src.bot.services.family import ConsentRefused, RenameRefusal, RenameRefused
 
 from ....context import AppContext
 from ...types import TextUserMessage, UserMessage
+from ...utils import quiet_edit
 from .consent import refusal_line
 from .payloads import FamilyRenameAnswer
 from .render import RENAME, RENAME_LINK_PREFIX, rename_view
@@ -89,7 +89,7 @@ class RenameAnswerHandler(CallbackQueryHandler[AppContext[DataCallbackQuery]]):
         callback = self.ctx.callback_query
         if rename.message_id is not None:
             text, keyboard = await rename_view(self.ctx, state, self.ctx.bot.username)
-            try:
+            with quiet_edit("family rename"):
                 await self.ctx.bot.edit_message_text(
                     chat_id=rename.chat_id,
                     message_id=rename.message_id,
@@ -97,15 +97,11 @@ class RenameAnswerHandler(CallbackQueryHandler[AppContext[DataCallbackQuery]]):
                     reply_markup=keyboard,
                     parse_mode="HTML",
                 )
-            except TelegramAPIError:
-                logger.warning("family rename %s: failed to update the message", rename.id)
         message = callback.message
         # Ответ из лички: там правится своё сообщение, а предложение — в чате.
         if isinstance(message, Message) and message.message_id != rename.message_id:
-            try:
+            with quiet_edit("family rename private answer"):
                 await message.edit_text(self.ctx.text(private_line))
-            except TelegramAPIError:
-                pass
         await callback.answer(self.ctx.text(alert))
 
 

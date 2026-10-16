@@ -1,7 +1,6 @@
 import logging
 
 from selfrot import Bot
-from selfrot.exceptions import TelegramAPIError
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 
 from src.bot.services import MobService
@@ -10,6 +9,7 @@ from src.bot.session_services import SessionServices, session_context
 
 from ....services.notify import SelfrotBotNotifier
 from ....services.ticker import Ticker
+from ...utils import quiet_edit
 from .render import proposal_view, rename_view
 
 logger = logging.getLogger(__name__)
@@ -55,9 +55,7 @@ class MarriageTicker(Ticker):
         for chat_id, message_id, text in edits:
             if message_id is None:
                 continue
-            try:
+            with quiet_edit("family ticker"):
                 await self._bot.edit_message_text(
                     chat_id=chat_id, message_id=message_id, text=text, parse_mode="HTML"
                 )
-            except TelegramAPIError:
-                logger.warning("family ticker: failed to mark %s/%s expired", chat_id, message_id)
