@@ -227,6 +227,7 @@ class SessionServices:
             self.ghoul_service,
             self.user_service,
             self.level_up_service,
+            self.cooldown_service,
         )
 
     @cached_property

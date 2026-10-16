@@ -11,11 +11,11 @@ from src.bot.repositories import PromoRepository
 from src.bot.routers.promo_rewards import STAT_LABELS
 from src.bot.utils import utcnow_naive
 from src.config import settings
-from src.database.models import PromoActivation, PromoCode
+from src.database.models import PromoActivation, PromoCode, UserCooldown
 
 from .conftest import matches_phrase, only_text, phrase_texts
 from .test_common_routers import seed
-from .test_ghoul_routers import balance_of, get_ghoul, seed_ghoul
+from .test_ghoul_routers import balance_of, get_ghoul, seed_active_cooldown, seed_ghoul
 
 ADMIN = 999
 UID = 700001
@@ -203,6 +203,27 @@ class TestActivate:
         ghoul = await get_ghoul(session_factory, UID)
         assert ghoul is not None
         assert ghoul.hunger == 100
+
+    async def test_heal_and_cooldown_reset(self, send, session_factory):
+        await send("+промо отдых 1\nлечение\nсброс кд", uid=ADMIN)
+        await seed(session_factory, UID, "Вася")
+        await seed_ghoul(session_factory, UID, health=10, max_health=50)
+        await seed_active_cooldown(session_factory, UID, "SNAP")
+
+        (reply,) = await send("промо отдых", uid=UID)
+
+        rewards = "\n".join(
+            [
+                only_text(Dialogs.promo.reward.heal()),
+                only_text(Dialogs.promo.reward.cooldown_reset()),
+            ]
+        )
+        assert reply in phrase_texts(Dialogs.promo.activated(name="отдых", rewards=rewards))
+        ghoul = await get_ghoul(session_factory, UID)
+        assert ghoul is not None
+        assert ghoul.health == 50
+        async with session_factory() as session:
+            assert await session.scalar(select(func.count()).select_from(UserCooldown)) == 0
 
     async def test_spent_code_leaves_no_activation(self, send, session_factory):
         await add_promo(session_factory, "лето", limit=1)

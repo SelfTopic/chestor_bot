@@ -3435,8 +3435,14 @@ class _PromoRewardDialogs:
     def cheston(self, *, amount: object) -> Line:
         return Line("promo.reward.cheston", {"amount": amount})
 
+    def cooldown_reset(self) -> Line:
+        return Line("promo.reward.cooldown_reset", {})
+
     def full_hunger(self) -> Line:
         return Line("promo.reward.full_hunger", {})
+
+    def heal(self) -> Line:
+        return Line("promo.reward.heal", {})
 
     def hunger(self, *, percent: object) -> Line:
         return Line("promo.reward.hunger", {"percent": percent})
@@ -4893,7 +4899,9 @@ PLACEHOLDERS: dict[str, frozenset[str]] = {
     "promo.expired": frozenset({"name"}),
     "promo.not_found": frozenset({"name"}),
     "promo.reward.cheston": frozenset({"amount"}),
+    "promo.reward.cooldown_reset": frozenset(),
     "promo.reward.full_hunger": frozenset(),
+    "promo.reward.heal": frozenset(),
     "promo.reward.hunger": frozenset({"percent"}),
     "promo.reward.progress": frozenset({"percent"}),
     "promo.reward.rc": frozenset({"amount"}),

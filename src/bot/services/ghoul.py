@@ -217,6 +217,19 @@ class GhoulService(Base):
     async def set_fields(self, telegram_id: int, **values: Any) -> Ghoul:
         return await self.ghoul_repository.upsert(telegram_id, **values)
 
+    # Метка двигается вместе со здоровьем, а расписание пересчитывается: иначе придёт пуш
+    # «здоровье восстановлено», рассчитанный по старому здоровью.
+    async def heal_fully(self, telegram_id: int) -> Ghoul:
+        ghoul = await self.get(telegram_id)
+        if not ghoul:
+            raise GhoulNotFound(telegram_id)
+        now = utcnow_naive()
+        healed = await self.ghoul_repository.upsert(
+            telegram_id=telegram_id, health=ghoul.max_health, health_updated_at=now
+        )
+        await self.sync_notification_schedule(healed, now=now)
+        return healed
+
     async def restore_hunger_from_eating(
         self, telegram_id: int, **extra_upsert_fields: Any
     ) -> Tuple[Ghoul, int]:

@@ -4,7 +4,9 @@ from src.bot.dialogs import Dialogs, Line
 from src.bot.game_configs import STATS
 from src.bot.services.promo import (
     ChestonReward,
+    CooldownResetReward,
     Granted,
+    HealReward,
     HungerReward,
     LevelProgressReward,
     RcReward,
@@ -28,6 +30,10 @@ def reward_line(granted: Granted) -> Line:
             return Dialogs.promo.reward.full_hunger()
         case HungerReward(percent=percent):
             return Dialogs.promo.reward.hunger(percent=percent)
+        case HealReward():
+            return Dialogs.promo.reward.heal()
+        case CooldownResetReward():
+            return Dialogs.promo.reward.cooldown_reset()
         case StatReward(stat=stat, amount=amount):
             if granted.capped_to is None:
                 return Dialogs.promo.reward.stat(stat=STAT_LABELS[stat], amount=amount)

@@ -595,5 +595,7 @@ promo:
     progress: +{percent}% прогресса уровня
     hunger: +{percent}% сытости
     full_hunger: полная сытость
+    heal: полное здоровье
+    cooldown_reset: все кулдауны сброшены
     stat: +{amount} {stat}
     stat_capped: +{amount} {stat}, дальше потолок уровня

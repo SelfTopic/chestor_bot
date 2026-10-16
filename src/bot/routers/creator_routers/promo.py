@@ -12,7 +12,9 @@ from src.bot.services import DurationParser
 from src.bot.game_configs import StatKey
 from src.bot.services.promo import (
     ChestonReward,
+    CooldownResetReward,
     Granted,
+    HealReward,
     HungerReward,
     LevelProgressReward,
     RcReward,
@@ -30,6 +32,8 @@ RC_WORDS = ("рс", "rc", "клетки")
 PROGRESS_WORDS = ("прогресс", "опыт", "xp")
 HUNGER_WORDS = ("сытость", "еда")
 FULL_HUNGER = 100
+HEAL_LINES = ("лечение", "хил", "полное здоровье")
+COOLDOWN_RESET_LINES = ("сброс кд", "сброс кулдаунов")
 STAT_WORDS: dict[str, StatKey] = {
     "сила": "strength",
     "ловкость": "dexterity",
@@ -62,6 +66,10 @@ def positive(word: str, line: str) -> int:
 
 def parse_reward(line: str) -> Reward:
     words = line.casefold().split()
+    if " ".join(words) in HEAL_LINES:
+        return HealReward()
+    if " ".join(words) in COOLDOWN_RESET_LINES:
+        return CooldownResetReward()
     if len(words) == 2 and words[0] in CHESTON_WORDS:
         return ChestonReward(amount=positive(words[1], line))
     if len(words) == 2 and words[0] in RC_WORDS:

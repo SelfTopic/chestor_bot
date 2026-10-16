@@ -16,6 +16,7 @@ from ..exceptions.promo import (
 from ..game_configs import StatKey, stat_cap_for_level
 from ..repositories.promo import PromoRepository
 from ..utils import utcnow_naive
+from .cooldown import CooldownService
 from .ghoul import GhoulService
 from .level_up import LevelUpService
 from .user import UserService
@@ -47,8 +48,22 @@ class HungerReward(BaseModel, frozen=True):
     percent: PositiveInt
 
 
+class HealReward(BaseModel, frozen=True):
+    kind: Literal["heal"] = "heal"
+
+
+class CooldownResetReward(BaseModel, frozen=True):
+    kind: Literal["cooldown_reset"] = "cooldown_reset"
+
+
 Reward = Annotated[
-    ChestonReward | RcReward | LevelProgressReward | StatReward | HungerReward,
+    ChestonReward
+    | RcReward
+    | LevelProgressReward
+    | StatReward
+    | HungerReward
+    | HealReward
+    | CooldownResetReward,
     Field(discriminator="kind"),
 ]
 
@@ -68,11 +83,13 @@ class PromoService:
         ghoul_service: GhoulService,
         user_service: UserService,
         level_up_service: LevelUpService,
+        cooldown_service: CooldownService,
     ) -> None:
         self.promo_repository = promo_repository
         self.ghoul_service = ghoul_service
         self.user_service = user_service
         self.level_up_service = level_up_service
+        self.cooldown_service = cooldown_service
 
     async def create(
         self,
@@ -128,6 +145,10 @@ class PromoService:
                 return await self._grant_stat(reward, telegram_id, stat, amount)
             case HungerReward(percent=percent):
                 await self.ghoul_service.restore_hunger(telegram_id, percent)
+            case HealReward():
+                await self.ghoul_service.heal_fully(telegram_id)
+            case CooldownResetReward():
+                await self.cooldown_service.clear_all_cooldowns(telegram_id)
         return Granted(reward)
 
     # Потолок стата по уровню, как у покупки: ошибка в промокоде не сломает баланс боёв.
