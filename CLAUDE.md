@@ -51,9 +51,8 @@ Postgres + SQLAlchemy (async), миграции Alembic, запуск в Docker 
 **Зависимости — через `AppContext`** (`context.py`). Сервисы там — типизированные ленивые
 `cached_property`, один экземпляр на апдейт: `self.ctx.transfer_service`, `self.ctx.ghoul_service`.
 Всё, что стоит на сессии БД (репозитории и сервисы на них), объявлено один раз в
-`SessionServices` (`session_services.py`): `AppContext` её наследует, а вне апдейта (тикер
-дуэлей) объект создаётся сам. Нужен новый сервис на сессии — одно свойство в
-`SessionServices`. Процессный сервис (кэш, очередь, соединение) создаётся в `Dispatcher` и
+`SessionServices` (`session_services.py`): `AppContext` её наследует. Нужен новый сервис на
+сессии — одно свойство в `SessionServices`. Процессный сервис (кэш, очередь, соединение) создаётся в `Dispatcher` и
 передаётся полем `AppContext` из `create_context`; тесты подменяют его присваиванием
 `dispatcher.<сервис> = …`.
 
@@ -85,6 +84,14 @@ Postgres + SQLAlchemy (async), миграции Alembic, запуск в Docker 
 SQL — `coalesce(families.balance, users.balance)`. Семьи, предложения брака и развод —
 `ctx.family_service` (`services/family.py`), роутер — `routers/common/marriage/`.
 
+**Фоновые задачи — `tasks/`** (`Dispatcher.tasks = TASKS`, `Every(интервал, Задача)` из selfrot):
+истечение дуэлей и голосований семьи, уведомления о голоде, сроки модерации, сброс статистики,
+обновление yt-dlp. Задача получает такой же `ctx`, как хендлер, после тех же middleware
+(сессия БД, сервисы), с `ctx.is_background`; middleware, которым апдейт нужен, такой прогон
+пропускают. Задача — тонкий класс: логика в сервисе или в функции роутера, выставленной в
+`routers/__init__.py` (`expire_overdue_duels`). Тест прогоняет задачу один раз —
+`await dispatcher.run_task(DuelExpiry)`. `Every` ждёт интервал до первого прогона.
+
 **Telegram — не в сервисах.** Сервис не принимает `Message` и не шлёт сообщения сам.
 Если сервису нужно отправлять (рассылка, level up, тикер уведомлений), он получает
 `Notifier` из `services/notify.py`: это единственное место в `services/`, где импортируется
@@ -95,7 +102,8 @@ SQL — `coalesce(families.balance, users.balance)`. Семьи, предлож�
 - **Слои по ролям** — корень `src/bot` (`context.py`, `bot.py`, `session_services.py`, `config.py`,
   `game_configs.py`, `logs.py`), `services/`, `repositories/`, `middlewares/`, `types/`,
   `exceptions/`, `utils/`, `dialogs/`. Сервис глобален, потому что он сервис, сколько бы роутеров им ни
-  пользовалось. Слои не импортируют `routers/`; собирает всё только `__main__.py`.
+  пользовалось. Слои не импортируют `routers/`; собирают всё только `__main__.py` и фоновые
+  задачи `tasks/` (их импортирует только `__main__.py`, роутеры они берут из `routers/__init__.py`).
 - **Всё, что нужно только хендлерам** (миксины, фильтры, типы сообщений, хелперы отправки),
   лежит в самой глубокой общей папке тех, кто это импортирует: нужен одному пакету — в пакете
   (`common/transfer/flow.py`), нескольким пакетам области — в папке области

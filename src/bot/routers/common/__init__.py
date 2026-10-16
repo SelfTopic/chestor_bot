@@ -13,7 +13,7 @@ from .rich_router import RichRouter
 from .role_play import RolePlayRouter
 from .edits_router import EditsRouter
 from .link_media_router import LinkMediaRouter
-from .marriage import MarriageLinkRouter, MarriageRouter, MarriageTicker
+from .marriage import MarriageLinkRouter, MarriageRouter, expire_overdue_votes
 from .music import MusicRouter
 from .roast_router import RoastRouter
 from .userbot_inbox import UserbotInboxRouter
@@ -38,7 +38,7 @@ __all__ = [
     "LinkMediaRouter",
     "MarriageLinkRouter",
     "MarriageRouter",
-    "MarriageTicker",
+    "expire_overdue_votes",
     "MusicRouter",
     "RoastRouter",
     "UserbotInboxRouter",

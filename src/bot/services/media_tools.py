@@ -7,7 +7,6 @@ from pathlib import Path
 
 from src.bot.exceptions import MediaToolError
 
-from .ticker import Ticker
 
 logger = logging.getLogger(__name__)
 
@@ -50,9 +49,8 @@ async def _kill(process: asyncio.subprocess.Process) -> None:
 
 # yt-dlp и gallery-dl живут в своём venv и обновляются в нём: сайты ломают скачивание
 # чаще, чем выходит новый образ бота, а зависимости самого бота это не трогает.
-class MediaToolsUpdater(Ticker):
-    def __init__(self, tools: Path, interval_seconds: float = TOOLS_UPDATE_INTERVAL) -> None:
-        super().__init__(interval_seconds)
+class MediaToolsUpdater:
+    def __init__(self, tools: Path) -> None:
         self._tools = tools
 
     async def tick(self) -> None:

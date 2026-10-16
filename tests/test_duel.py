@@ -18,7 +18,9 @@ from src.bot.repositories import (
     BattleRepository,
     DuelSessionRepository,
 )
+from src.bot.routers.ghoul_routers.duel import expiry
 from src.bot.services.battle_record import BattleRecordService
+from src.bot.tasks import DuelExpiry
 from src.database.models import DuelSession
 
 from .conftest import (
@@ -531,7 +533,7 @@ class TestTicker:
                 )
                 await session.commit()
             telegram.calls.clear()
-            await dispatcher.duel_ticker.tick()
+            await dispatcher.run_task(DuelExpiry)
             return telegram
 
         return _tick
@@ -609,19 +611,17 @@ class TestTicker:
         assert duel.stage == "awaiting_winner_choice"
 
     async def test_failed_expiry_is_retried_after_a_full_stage(
-        self, dispatcher, session_factory, invite, tick, monkeypatch
+        self, session_factory, invite, tick, monkeypatch
     ):
         await self._seed(session_factory)
         duel_id = await invite(session_factory)
-        ticker = dispatcher.duel_ticker
 
-        async def broken(duel_id: int, stage: str) -> None:
+        async def broken(*args: Any) -> None:
             raise RuntimeError("boom")
 
-        expire = ticker._expire
-        monkeypatch.setattr(ticker, "_expire", broken)
-        await tick(60)
-        monkeypatch.setattr(ticker, "_expire", expire)
+        with monkeypatch.context() as patch:
+            patch.setattr(expiry, "_expire_consent", broken)
+            await tick(60)
 
         await tick(59)
         assert (await get_duel(session_factory, duel_id)).stage == "awaiting_consent"

@@ -9,7 +9,7 @@ from .consent import (
 from .family import DivorceHandler, DivorcePressHandler, FamiliesHandler, FamilyHandler
 from .propose import ProposalHandler, ProposalPaymentHandler, ProposalRepliedHandler
 from .rename import RenameAnswerHandler, RenameHandler, RenameLinkHandler
-from .ticker import MarriageTicker
+from .expiry import expire_overdue_votes
 
 
 class MarriageLinkRouter(BaseRouter[AppContext]):
@@ -32,4 +32,4 @@ class MarriageRouter(BaseRouter[AppContext]):
     )
 
 
-__all__ = ["MarriageLinkRouter", "MarriageRouter", "MarriageTicker"]
+__all__ = ["MarriageLinkRouter", "MarriageRouter", "expire_overdue_votes"]

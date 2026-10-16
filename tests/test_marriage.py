@@ -13,6 +13,7 @@ from sqlalchemy import func, select, update
 from src.bot.dialogs import Dialogs
 from src.bot.game_configs import MARRIAGE_CONFIG
 from src.bot.repositories import FamilyRepository
+from src.bot.tasks import FamilyVoteExpiry
 from src.bot.utils.service_accounts import TELEGRAM
 from src.database.models import Family, FamilyMember, MarriageProposal
 
@@ -279,7 +280,7 @@ async def test_an_hour_without_everyone_burns_the_proposal(
         await session.commit()
     telegram.calls.clear()
 
-    await dispatcher.marriage_ticker.tick()
+    await dispatcher.run_task(FamilyVoteExpiry)
 
     assert await proposal_stage(session_factory) == "expired"
     (edit,) = telegram.bodies("editMessageText")

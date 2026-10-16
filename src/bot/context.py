@@ -30,6 +30,7 @@ from .services.lookup import find_user
 from .services.media_paths import media_for, random_file
 from .services.notify import Notifier, SelfrotBotNotifier
 from .session_services import SessionServices
+from .services.analytics import AnalyticsRecorder
 from .services.quiz import QuizService
 from .services.link_media import LinkMediaService
 from .services.music import MusicService
@@ -69,6 +70,7 @@ class AppContext(BaseContext[TEvent], SessionServices):
     mob_service: MobService
     video_cutter_service: VideoCutterService
     video_worker: VideoWorker
+    analytics: AnalyticsRecorder
     _administrators: list[ChatMember] | None = field(
         default=None, init=False, repr=False, compare=False
     )

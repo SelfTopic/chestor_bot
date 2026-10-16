@@ -9,7 +9,6 @@ from typing import Any
 from ghoul_quiz import DEFAULT_BASE_URL as DEFAULT_QUIZ_URL
 from selfrot import BaseDispatcher
 from selfrot.handlers import BaseHandler
-from selfrot.middleware import LoggingMiddleware
 from selfrot.types import Message, Update
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 
@@ -39,21 +38,22 @@ from src.database import session_factory as default_session_factory
 from .bot import AppBot
 from .context import AppContext
 from .logs import setup_logging
-from .middlewares import BanMiddleware, DatabaseMiddleware, SyncEntitiesMiddleware
+from .middlewares import (
+    BanMiddleware,
+    DatabaseMiddleware,
+    SyncEntitiesMiddleware,
+    UpdateLoggingMiddleware,
+)
 from .routers import RootRouter
-from .routers.common import MarriageTicker
-from .routers.ghoul_routers.duel import DuelTicker
 from .session_services import rp_commands_repository
-from .services.moderation import ModerationTicker
-from .services.notification_ticker import NotificationTicker
+from .tasks import TASKS, MediaToolsUpdate
 from .services.notify import NotifyError, SelfrotBotNotifier
 from .services.quiz import QuizService
 from .services.llm import LlmClient
-from .services.analytics import AnalyticsRecorder, AnalyticsTicker
+from .services.analytics import AnalyticsRecorder
 from .services.notify import TelegramDocsChannel
 from .services.player_docs import PlayerDocsService
 from .services.link_media import Downloader, LinkMediaService
-from .services.media_tools import MediaToolsUpdater
 from .services.music import MusicFinder, MusicService, Recognizer
 from .services.roast import RoastPrompts, RoastService
 from .services.search import SearchService, TavilyClient
@@ -96,10 +96,11 @@ def error_line(exc: Exception) -> Line:
 class Dispatcher(BaseDispatcher[AppContext]):
     bot = AppBot
     routers = (RootRouter,)
+    tasks = TASKS
     context = AppContext
     # Порядок важен: первая middleware — внешняя.
     middlewares = (
-        LoggingMiddleware,
+        UpdateLoggingMiddleware,
         DatabaseMiddleware,
         SyncEntitiesMiddleware,
         BanMiddleware,
@@ -116,7 +117,6 @@ class Dispatcher(BaseDispatcher[AppContext]):
         self.alerts: set[asyncio.Task[None]] = set()
         self.session_factory = session_factory
         self.analytics = AnalyticsRecorder(session_factory)
-        self.analytics_ticker = AnalyticsTicker(self.analytics)
         self.player_docs = PlayerDocsService(session_factory, Path(settings.DOCS_DIR))
         # Живут весь процесс: кэши RP-команд, партии вордли, очередь нарезки видео.
         self.rp_commands_service = RpCommandsService(rp_commands_repository)
@@ -125,16 +125,6 @@ class Dispatcher(BaseDispatcher[AppContext]):
         self.mob_service = MobService()
         self.video_cutter_service = VideoCutterService()
         self.video_worker = VideoWorker(self.video_cutter_service)
-        self.notification_ticker = NotificationTicker(
-            session_factory=session_factory,
-            notifier=SelfrotBotNotifier(self.api),
-            dialog_service=self.dialog_service,
-        )
-        self.moderation_ticker = ModerationTicker(
-            session_factory=session_factory,
-            notifier=SelfrotBotNotifier(self.api),
-            dialog_service=self.dialog_service,
-        )
         # Один клиент квиза на процесс: refresh-токены ghoul_quiz 0.2 одноразовые.
         self.quiz_service = QuizService(
             email=os.environ.get("GHOUL_QUIZ_EMAIL"),
@@ -173,19 +163,6 @@ class Dispatcher(BaseDispatcher[AppContext]):
             Recognizer(),
             session_factory,
             enabled=self.link_media_service.enabled,
-        )
-        self.media_tools_updater = MediaToolsUpdater(tools)
-        self.duel_ticker = DuelTicker(
-            session_factory=session_factory,
-            bot=self.api,
-            dialog_service=self.dialog_service,
-            mob_service=self.mob_service,
-        )
-        self.marriage_ticker = MarriageTicker(
-            session_factory=session_factory,
-            bot=self.api,
-            dialog_service=self.dialog_service,
-            mob_service=self.mob_service,
         )
 
     def report_broken_texts(self, error: Exception) -> None:
@@ -248,6 +225,7 @@ class Dispatcher(BaseDispatcher[AppContext]):
             mob_service=self.mob_service,
             video_cutter_service=self.video_cutter_service,
             video_worker=self.video_worker,
+            analytics=self.analytics,
         )
 
     async def on_startup(self) -> None:
@@ -255,18 +233,16 @@ class Dispatcher(BaseDispatcher[AppContext]):
         # накопившиеся апдейты отбрасываются.
         await self.api.delete_webhook(drop_pending_updates=True)
         await self.video_worker.start()
-        await self.notification_ticker.start()
-        await self.moderation_ticker.start()
-        await self.duel_ticker.start()
-        await self.marriage_ticker.start()
-        await self.analytics_ticker.start()
         if settings.DOCS_CHANNEL:
             # Правка десятков постов упирается во флуд-контроль: запуск бота её не ждёт.
             task = asyncio.create_task(self.publish_docs(settings.DOCS_CHANNEL))
             self.alerts.add(task)
             task.add_done_callback(self.alerts.discard)
-        if self.link_media_service.enabled:
-            await self.media_tools_updater.start()
+        # Every ждёт интервал до первого прогона, а сайты ломают yt-dlp чаще, чем выходит образ:
+        # обновление и при запуске, не дожидаясь суток.
+        task = asyncio.create_task(self.run_task(MediaToolsUpdate))
+        self.alerts.add(task)
+        task.add_done_callback(self.alerts.discard)
         self.roast_service.bot_id = (await self.api.get_me()).id
         await self.roast_service.cleanup()
 
@@ -286,13 +262,7 @@ class Dispatcher(BaseDispatcher[AppContext]):
 
     async def on_shutdown(self) -> None:
         await self.video_worker.stop()
-        await self.notification_ticker.stop()
-        await self.moderation_ticker.stop()
-        await self.duel_ticker.stop()
-        await self.marriage_ticker.stop()
-        await self.analytics_ticker.stop()
         await self.analytics.flush()
-        await self.media_tools_updater.stop()
         await self.quiz_service.close()
         await self.search_service.close()
         await self.llm.close()

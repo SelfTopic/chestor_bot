@@ -9,20 +9,17 @@ from ...repositories import DueExpiration, ModerationRepository
 from ...types import ModerationActionType, ModerationVoice
 from ..dialog import DialogService
 from ..notify import NotifyError, Notifier, mention_html
-from ..ticker import Ticker
 
 logger = logging.getLogger(__name__)
 
 
-class ModerationTicker(Ticker):
+class ModerationTicker:
     def __init__(
         self,
         session_factory: async_sessionmaker[AsyncSession],
         notifier: Notifier,
         dialog_service: DialogService,
-        interval_seconds: float = 10.0,
     ) -> None:
-        super().__init__(interval_seconds)
         self._session_factory = session_factory
         self._notifier = notifier
         self._dialog_service = dialog_service
