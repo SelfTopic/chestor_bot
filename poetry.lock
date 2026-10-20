@@ -860,7 +860,7 @@ files = [
 
 [[package]]
 name = "ghoul-quiz-lib"
-version = "0.3.0"
+version = "0.3.1"
 description = "Async Python library for Questions Ghoul API"
 optional = false
 python-versions = ">=3.9"
@@ -878,7 +878,7 @@ dev = ["pytest (>=7.0)", "pytest-asyncio (>=0.23.0)"]
 type = "git"
 url = "https://github.com/SelfTopic/questions_ghoul_api_lib.git"
 reference = "HEAD"
-resolved_reference = "355964958615854151178d1dfd13a18257ef28f8"
+resolved_reference = "49ff804717aa754cb848ae1d9cb51e867b569fff"
 
 [[package]]
 name = "greenlet"
