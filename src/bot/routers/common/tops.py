@@ -4,6 +4,7 @@ from selfrot.exceptions import CommandArgsError
 from selfrot.filter import Command
 
 from src.bot.dialogs import Dialogs
+from src.bot.utils import format_amount
 
 from ...context import AppContext
 from ...repositories import TopWallet
@@ -28,7 +29,9 @@ class TopBalanceHandler(MessageHandler[AppContext[TextMessage]]):
         rows = "\n".join(
             self.ctx.text(
                 Dialogs.tops.balance.row(
-                    place=place, name=self.wallet_name(wallet), balance=wallet.balance
+                    place=place,
+                    name=self.wallet_name(wallet),
+                    balance=format_amount(wallet.balance),
                 )
             )
             for place, wallet in enumerate(top, start=1)

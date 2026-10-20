@@ -8,7 +8,7 @@ from selfrot.types import DataCallbackQuery, Message
 
 from src.bot.dialogs import Dialogs
 from src.bot.services.family import NotMarried
-from src.bot.utils import format_age, utcnow_naive
+from src.bot.utils import format_age, format_amount, utcnow_naive
 
 from ....context import AppContext
 from ...types import TextUserMessage
@@ -46,7 +46,7 @@ class FamilyHandler(MessageHandler[AppContext[TextUserMessage]]):
             if family.name
             else Dialogs.family.title()
         )
-        view = Dialogs.family.view(title=title, balance=family.balance, rows=rows)
+        view = Dialogs.family.view(title=title, balance=format_amount(family.balance), rows=rows)
         await ctx.say(view, reply=True, parse_mode="HTML")
 
 
