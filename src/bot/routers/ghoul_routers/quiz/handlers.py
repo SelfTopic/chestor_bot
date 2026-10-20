@@ -16,7 +16,6 @@ from src.bot.game_configs import QUIZ_CONFIG
 
 from ....context import AppContext
 from ...types import TextUserMessage
-from ...utils import quiet_edit
 from .blocks import media_block, paragraphs, question_blocks
 from .payloads import QuizAnswer, QuizRestart
 from .questions import send_question
@@ -47,7 +46,7 @@ class QuizHandler(MessageHandler[AppContext[TextUserMessage]]):
             self.ctx.message,
             streak=0,
             owner_id=self.ctx.message.user.id,
-            reply=True,
+            edit=False,
         )
 
 
@@ -156,11 +155,8 @@ class QuizRestartHandler(CallbackQueryHandler[AppContext[DataCallbackQuery]]):
 
         await ctx.fsm.set(QuizStates.waiting_for_answer)
         await send_question(
-            ctx, message, streak, ctx.callback_query.user.id, reply=False, notice=notice
+            ctx, message, streak, ctx.callback_query.user.id, edit=True, notice=notice
         )
-        # Новый вопрос уходит отдельным сообщением: у вопроса с картинкой текст не поправить.
-        with quiet_edit("quiz restart"):
-            await message.edit_reply_markup(reply_markup=None)
 
 
 class QuizForeignPressHandler(CallbackQueryHandler[AppContext[DataCallbackQuery]]):

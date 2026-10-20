@@ -1021,7 +1021,7 @@ class TestQuiz:
 
     async def _next(self, feed, result: dict) -> dict:
         telegram = await feed(keyboard_callback(result, self.AGAIN, UID))
-        (question,) = telegram.bodies(SEND)
+        (question,) = telegram.bodies("editMessageText")
         return question
 
     async def test_question_is_a_rich_message_with_four_options(
@@ -1106,18 +1106,16 @@ class TestQuiz:
         (body,) = telegram.bodies(SEND)
         assert lines(body) == ["Кто?"]
 
-    async def test_play_again_sends_a_new_question_and_closes_the_old_one(
-        self, feed, session_factory, quiz
-    ):
+    async def test_play_again_edits_the_same_message(self, feed, session_factory, quiz):
         body = await self._ask(feed, session_factory)
         result = await self._answer(feed, body, "Тоука")
 
         telegram = await feed(keyboard_callback(result, self.AGAIN, UID))
 
-        (question,) = telegram.bodies(SEND)
+        (question,) = telegram.bodies("editMessageText")
+        assert question["message_id"] == result["message_id"]
         assert lines(question) == ["Кто?"]
-        assert "reply_parameters" not in question
-        assert telegram.methods_called("editMessageReplyMarkup") == 1
+        assert telegram.methods_called(SEND) == 0
         result = await self._answer(feed, question, "Канеки")
         assert lines(result)[0] == "Кто?"
         assert await balance_of(session_factory, UID) > 0
@@ -1200,7 +1198,7 @@ class TestQuiz:
         status = Dialogs.quiz.correct(award=award, streak=1, multiplier="1", minutes=5)
         assert result_text(edited) in result_variants("Канеки", "Канеки", status)
 
-    async def test_next_question_after_a_photo_is_a_new_message(
+    async def test_photo_question_turns_into_a_text_one_in_place(
         self, feed, session_factory, whois_only, monkeypatch
     ):
         body = await self._ask(feed, session_factory)

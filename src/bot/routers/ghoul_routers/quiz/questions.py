@@ -100,9 +100,12 @@ async def ask(
     return AskedQuestion([paragraph(question.question)], keyboard)
 
 
-async def deliver(target: Message, asked: AskedQuestion, *, reply: bool) -> None:
-    send = target.reply_rich_message if reply else target.answer_rich_message
-    await send(InputRichMessage(blocks=asked.blocks), reply_markup=asked.keyboard)
+async def deliver(target: Message, asked: AskedQuestion, *, edit: bool) -> None:
+    rich = InputRichMessage(blocks=asked.blocks)
+    if edit:
+        await target.edit_text(rich_message=rich, reply_markup=asked.keyboard)
+    else:
+        await target.reply_rich_message(rich, reply_markup=asked.keyboard)
 
 
 async def send_question(
@@ -111,7 +114,7 @@ async def send_question(
     streak: int,
     owner_id: int,
     *,
-    reply: bool,
+    edit: bool,
     notice: str | None = None,
 ) -> None:
     try:
@@ -120,13 +123,13 @@ async def send_question(
         asked = await ask(ctx, QuizMode.TEXT, streak, owner_id)
 
     try:
-        await deliver(target, with_notice(asked, notice), reply=reply)
+        await deliver(target, with_notice(asked, notice), edit=edit)
     except TelegramAPIError:
         # Telegram не смог скачать картинку или видео по ссылке: вопрос без медиа не теряем.
         if not asked.has_media:
             raise
         asked = await ask(ctx, QuizMode.TEXT, streak, owner_id)
-        await deliver(target, with_notice(asked, notice), reply=reply)
+        await deliver(target, with_notice(asked, notice), edit=edit)
 
 
 def with_notice(asked: AskedQuestion, notice: str | None) -> AskedQuestion:
