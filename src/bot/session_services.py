@@ -16,6 +16,7 @@ from .repositories import (
     FamilyRepository,
     GhoulEditRepository,
     GhoulRepository,
+    LevelUpLogRepository,
     LotteryRepository,
     MediaRepository,
     PromoRepository,
@@ -145,6 +146,10 @@ class SessionServices:
     @cached_property
     def death_log_repository(self) -> DeathLogRepository:
         return DeathLogRepository(self.session)
+
+    @cached_property
+    def level_up_log_repository(self) -> LevelUpLogRepository:
+        return LevelUpLogRepository(self.session)
 
     @cached_property
     def active_battle_repository(self) -> ActiveBattleRepository:
@@ -303,7 +308,11 @@ class SessionServices:
     @cached_property
     def level_up_service(self) -> LevelUpService:
         return LevelUpService(
-            self.user_service, self.ghoul_service, self.dialog_service, self.notifier
+            self.user_service,
+            self.ghoul_service,
+            self.dialog_service,
+            self.notifier,
+            level_up_log_repository=self.level_up_log_repository,
         )
 
     @cached_property

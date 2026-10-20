@@ -13,6 +13,7 @@ from .players_lookup import PlayersLookupRouter
 from .promo import PromoAdminRouter
 from .reset import ResetRouter
 from .roast_rating import RoastRatingRouter
+from .service_flag import ServiceFlagRouter
 from .stats_edits import StatsEditRouter
 
 
@@ -31,4 +32,5 @@ class CreatorRouter(BaseRouter[AppContext]):
         LevelUpRouter,
         RoastRatingRouter,
         PromoAdminRouter,
+        ServiceFlagRouter,
     )

@@ -21,7 +21,7 @@ class User(Base):
 
     race_bit: Mapped[int] = mapped_column(nullable=False, default=0)
 
-    balance: Mapped[int] = mapped_column(nullable=False, default=0)
+    balance: Mapped[int] = mapped_column(BigInteger, nullable=False, default=0)
 
     energy: Mapped[int] = mapped_column(nullable=False, default=100)
 
@@ -38,6 +38,11 @@ class User(Base):
     banned_until: Mapped[Optional[datetime]] = mapped_column(nullable=True)
 
     has_private_chat: Mapped[bool] = mapped_column(nullable=False, default=False)
+
+    is_service: Mapped[bool] = mapped_column(nullable=False, default=False)
+
+    # NULL — активность до включения трекинга не известна, а не «не был активен».
+    last_active_at: Mapped[Optional[datetime]] = mapped_column(nullable=True)
 
     @property
     def full_name(self) -> str:

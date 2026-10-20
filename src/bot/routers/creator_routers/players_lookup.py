@@ -4,6 +4,7 @@ from selfrot.filter import Command
 
 from src.bot.dialogs import Dialogs
 from src.bot.services.admin.player_lookup import PlayerProfile
+from src.bot.utils import format_amount
 
 from ...context import AppContext
 from ..types import TextMessage
@@ -59,7 +60,7 @@ class AdminProfileHandler(MessageHandler[AppContext[TextMessage]]):
                 id=user.telegram_id,
                 name=user.full_name,
                 username=user.username or "—",
-                balance=balance,
+                balance=format_amount(balance),
                 status=self.ctx.text(status),
                 ban=ban,
                 ghoul=ghoul_text,

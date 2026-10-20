@@ -7,6 +7,7 @@ from src.bot.exceptions import GhoulNotFound
 from src.bot.repositories.balances_log import BalancesLogRepository
 from src.bot.repositories.chat import ChatRepository
 from src.bot.repositories.ghoul import GhoulRepository
+from src.bot.repositories.level_up_log import LevelUpLogRepository
 from src.bot.repositories.user import UserRepository
 from src.bot.repositories.user_coldown import UserCooldownRepository
 from src.bot.repositories.wallet import WalletRepository
@@ -15,7 +16,7 @@ from src.bot.services.ghoul import GhoulService
 from src.bot.services.level_up import LevelUpService
 from src.bot.services.notify import NotifyError
 from src.bot.services.user import UserService
-from src.database.models import User
+from src.database.models import LevelUpLog, User
 
 
 class FakeBot:
@@ -40,7 +41,7 @@ class FakeBot:
         raise AssertionError("левелап не шлёт видео")
 
 
-def _make_level_up_service(session, bot):
+def _make_level_up_service(session, bot, *, with_log: bool = False):
     ghoul_service = GhoulService(
         user_repository=UserRepository(session),
         ghoul_repository=GhoulRepository(session),
@@ -60,6 +61,7 @@ def _make_level_up_service(session, bot):
         ghoul_service=ghoul_service,
         dialog_service=DialogService(),
         notifier=bot,
+        level_up_log_repository=LevelUpLogRepository(session) if with_log else None,
     )
 
 
@@ -278,3 +280,57 @@ async def test_add_progress_raises_for_unknown_ghoul(session):
     service = _make_level_up_service(session, FakeBot())
     with pytest.raises(GhoulNotFound):
         await service.add_progress(999_999_998, 10.0)
+
+
+async def test_level_up_writes_log_entry_with_source_and_rewards(
+    make_user, make_ghoul, session
+):
+    await make_user(telegram_id=700_000_016)
+    await make_ghoul(telegram_id=700_000_016, level=1)
+
+    service = _make_level_up_service(session, FakeBot(), with_log=True)
+    result = await service.level_up(700_000_016, source="duel")
+
+    (row,) = await session.scalars(
+        select(LevelUpLog).where(LevelUpLog.telegram_id == 700_000_016)
+    )
+    assert row.source == "duel"
+    assert row.level == 2
+    assert row.cheston_reward == result.cheston_reward
+    assert row.rc_reward == result.rc_reward
+
+
+async def test_level_up_without_log_repository_writes_nothing(
+    make_user, make_ghoul, session
+):
+    await make_user(telegram_id=700_000_017)
+    await make_ghoul(telegram_id=700_000_017, level=1)
+
+    service = _make_level_up_service(session, FakeBot(), with_log=False)
+    await service.level_up(700_000_017)
+
+    rows = await session.scalars(
+        select(LevelUpLog).where(LevelUpLog.telegram_id == 700_000_017)
+    )
+    assert list(rows) == []
+
+
+async def test_add_progress_logs_an_entry_per_call_with_the_given_source(
+    make_user, make_ghoul, session
+):
+    await make_user(telegram_id=700_000_018)
+    await make_ghoul(telegram_id=700_000_018, level=1, level_progress=0.0)
+
+    service = _make_level_up_service(session, FakeBot(), with_log=True)
+    # add_progress никогда не даёт больше одного уровня за вызов (apply_level_progress),
+    # поэтому для двух записей в журнале нужны два отдельных вызова.
+    await service.add_progress(700_000_018, 100.0, source="promo")
+    await service.add_progress(700_000_018, 100.0, source="promo")
+
+    rows = await session.scalars(
+        select(LevelUpLog)
+        .where(LevelUpLog.telegram_id == 700_000_018)
+        .order_by(LevelUpLog.level)
+    )
+    levels_and_sources = [(row.level, row.source) for row in rows]
+    assert levels_and_sources == [(2, "promo"), (3, "promo")]

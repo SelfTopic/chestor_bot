@@ -7,6 +7,7 @@ from selfrot.types import InlineKeyboardMarkup, Message
 
 from src.bot.dialogs import Dialogs
 from src.bot.game_configs import STAT_UPGRADE_CONFIG, STATS, StatKey, stat_cap_for_level
+from src.bot.utils import format_amount
 from src.database.models import Ghoul
 
 from ...context import AppContext
@@ -64,7 +65,7 @@ def build_shop(
         )
         keyboard.row(*buttons)
 
-    text = Dialogs.stats.shop.message(balance=balance, rows="\n".join(rows))
+    text = Dialogs.stats.shop.message(balance=format_amount(balance), rows="\n".join(rows))
     return ctx.text(text), keyboard.markup()
 
 

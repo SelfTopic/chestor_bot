@@ -29,6 +29,11 @@ admin:
   kill:
     usage: 'Использование: /kill_ghoul <id или @username> [причина]'
     done: '💀 Гуль <code>{id}</code> убит (причина: {cause}). Смертей: {deaths}. Некролог придёт с ближайшим тиком (≤30с).'
+  service:
+    usage: 'Использование: /mark_service <id или @username> (или реплаем)'
+    unmark_usage: 'Использование: /unmark_service <id или @username> (или реплаем)'
+    marked: '✅ Пользователь <code>{id}</code> помечен служебным — исключается из аналитики.'
+    unmarked: '✅ Пользователь <code>{id}</code> снова обычный, учитывается в аналитике.'
   reset:
     ghoul_usage: 'Использование: /reset_ghoul <id или @username>'
     user_usage: 'Использование: /reset_user <id или @username>'

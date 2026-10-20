@@ -5,6 +5,7 @@ from selfrot.filter import Command, HasUser, Text
 
 from src.bot.dialogs import Dialogs
 from src.bot.types import Race
+from src.bot.utils import format_amount
 from src.database.models import Ghoul, User
 
 from ....context import AppContext
@@ -70,5 +71,7 @@ class RaceProfileHandler(MessageHandler[AppContext[UserMessage]]):
 
         balance = await self.ctx.user_service.balance(user.telegram_id)
         await self.ctx.say(
-            Dialogs.profile.card(name=user.full_name, race=race.value["name"], balance=balance)
+            Dialogs.profile.card(
+                name=user.full_name, race=race.value["name"], balance=format_amount(balance)
+            )
         )

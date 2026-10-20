@@ -484,6 +484,20 @@ class _AdminRoastDialogs:
         return Line("admin.roast.usage", {})
 
 
+class _AdminServiceDialogs:
+    def marked(self, *, id: object) -> Line:
+        return Line("admin.service.marked", {"id": id})
+
+    def unmark_usage(self) -> Line:
+        return Line("admin.service.unmark_usage", {})
+
+    def unmarked(self, *, id: object) -> Line:
+        return Line("admin.service.unmarked", {"id": id})
+
+    def usage(self) -> Line:
+        return Line("admin.service.usage", {})
+
+
 class _AdminStatsDialogs:
     def done(self, *, field: object, target: object, value: object) -> Line:
         return Line(
@@ -548,6 +562,7 @@ class _AdminDialogs:
     promo = _AdminPromoDialogs()
     reset = _AdminResetDialogs()
     roast = _AdminRoastDialogs()
+    service = _AdminServiceDialogs()
     stats = _AdminStatsDialogs()
     unban = _AdminUnbanDialogs()
 
@@ -4242,6 +4257,10 @@ PLACEHOLDERS: dict[str, frozenset[str]] = {
     "admin.roast.not_found": frozenset(),
     "admin.roast.reset": frozenset({"count"}),
     "admin.roast.usage": frozenset(),
+    "admin.service.marked": frozenset({"id"}),
+    "admin.service.unmark_usage": frozenset(),
+    "admin.service.unmarked": frozenset({"id"}),
+    "admin.service.usage": frozenset(),
     "admin.stats.done": frozenset({"field", "target", "value"}),
     "admin.stats.no_ghoul": frozenset(),
     "admin.stats.target_ghoul": frozenset(),
