@@ -16,6 +16,7 @@ from src.bot.game_configs import LOTTERY_CONFIG
 from src.bot.services.ghoul_game import LotteryService
 from src.bot.services.ghoul_game.lottery import COLOR_TO_FOLDER
 from src.bot.types.dep import DepColor, DepResult
+from src.bot.utils import format_amount
 
 from ...context import AppContext
 from ..types import TextUserMessage
@@ -42,7 +43,7 @@ class DepnutHandler(MessageHandler[AppContext[TextUserMessage]]):
                 winning_color=dep_result.winning_color.value,
                 bet=dep_result.bet_amount,
                 earned=dep_result.earned,
-                balance=dep_result.balance,
+                balance=format_amount(dep_result.balance),
                 multiplier=f"{multiplier}x",
             )
 
@@ -50,7 +51,7 @@ class DepnutHandler(MessageHandler[AppContext[TextUserMessage]]):
             chosen_color=dep_result.chosen_color.value,
             winning_color=dep_result.winning_color.value,
             bet=dep_result.bet_amount,
-            balance=dep_result.balance,
+            balance=format_amount(dep_result.balance),
         )
 
     async def reply_later(self, line: Line) -> None:

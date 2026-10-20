@@ -14,6 +14,7 @@ from src.bot.dialogs import Dialogs
 from src.bot.game_configs import MARRIAGE_CONFIG
 from src.bot.repositories import FamilyRepository
 from src.bot.tasks import FamilyVoteExpiry
+from src.bot.utils import format_amount
 from src.bot.utils.service_accounts import TELEGRAM
 from src.database.models import Family, FamilyMember, MarriageProposal
 
@@ -321,10 +322,12 @@ async def test_family_shares_one_account_and_one_line_in_the_top(send, session_f
     (balance,) = await send("бал", uid=B, first_name=NAMES[B])
     (top,) = await send("топ бал 2", uid=C, first_name=NAMES[C])
 
-    assert balance in phrase_texts(Dialogs.balance(balance="1000", name=NAMES[B]))
+    assert balance in phrase_texts(Dialogs.balance(balance=format_amount(1000), name=NAMES[B]))
     family = only_text(Dialogs.family.top_name(members="Вася, Петя"))
     rows = "\n".join(
-        only_text(Dialogs.tops.balance.row(place=place, name=name, balance=amount))
+        only_text(
+            Dialogs.tops.balance.row(place=place, name=name, balance=format_amount(amount))
+        )
         for place, (name, amount) in enumerate([(family, 1000), ("Коля", 700)], start=1)
     )
     assert top == only_text(Dialogs.tops.balance.message(count=2, rows=rows))
@@ -380,7 +383,9 @@ async def test_family_is_named_only_when_everyone_agrees_and_the_top_shows_the_n
 
     assert await family_name(session_factory, A) == "Антейку навсегда"
     (top,) = await send("топ бал 1", uid=D, first_name=NAMES[D])
-    row = only_text(Dialogs.tops.balance.row(place=1, name="Антейку навсегда", balance=1000))
+    row = only_text(
+        Dialogs.tops.balance.row(place=1, name="Антейку навсегда", balance=format_amount(1000))
+    )
     assert top == only_text(Dialogs.tops.balance.message(count=1, rows=row))
 
 
@@ -404,7 +409,9 @@ async def test_family_view_shows_the_name_the_account_and_the_members(send, sess
         for m in members
     )
     title = only_text(Dialogs.family.title_named(name="Антейку"))
-    assert reply == only_text(Dialogs.family.view(title=title, balance=1000, rows=rows))
+    assert reply == only_text(
+        Dialogs.family.view(title=title, balance=format_amount(1000), rows=rows)
+    )
 
 
 async def test_one_member_against_keeps_the_old_name(feed, telegram, session_factory, rename):

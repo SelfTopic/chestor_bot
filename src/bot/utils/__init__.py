@@ -1,3 +1,4 @@
+from .format_amount import format_amount
 from .kagune_calculate import calculate_kagune
 from .level_progress_calculate import apply_level_progress, level_progress_bar
 from .parse_time import format_age, format_duration, parse_seconds
@@ -17,6 +18,7 @@ from .service_accounts import is_service_account
 from .time_now import utcnow_naive
 
 __all__ = [
+    "format_amount",
     "calculate_kagune",
     "apply_level_progress",
     "level_progress_bar",

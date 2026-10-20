@@ -19,6 +19,7 @@ from src.bot.routers.ghoul_routers.upgrade_stat import STAT_LABELS
 from src.bot.types import KaguneType
 from src.bot.utils import (
     calculate_kagune,
+    format_amount,
     format_duration,
     get_hunger_tier,
     health_regen_per_hour,
@@ -668,7 +669,8 @@ class TestUpgradeStat:
         telegram = await feed(message_update("Качаться", uid=UID))
 
         (body,) = telegram.bodies("sendMessage")
-        assert matches_phrase(body["text"], "stats.shop.message") and "12345" in body["text"]
+        assert matches_phrase(body["text"], "stats.shop.message")
+        assert format_amount(12345) in body["text"]
         price5 = STAT_UPGRADE_CONFIG.price(1, 5, "strength")
         price10 = STAT_UPGRADE_CONFIG.price(1, 10, "strength")
         row = self.row(current=1, x5=price5, x10=price10)
@@ -704,7 +706,7 @@ class TestUpgradeStat:
 
         (edited,) = telegram.bodies("editMessageText")
         assert matches_phrase(edited["text"], "stats.shop.message")
-        assert str(100000 - price) in edited["text"]
+        assert format_amount(100000 - price) in edited["text"]
         row = self.row(
             current=6,
             x5=STAT_UPGRADE_CONFIG.price(6, 5, "strength"),

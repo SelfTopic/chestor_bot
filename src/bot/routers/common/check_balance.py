@@ -2,6 +2,7 @@ from selfrot import BaseRouter, MessageHandler
 from selfrot.filter import HasUser, Text
 
 from src.bot.dialogs import Dialogs
+from src.bot.utils import format_amount
 
 from ...context import AppContext
 from ..types import UserMessage
@@ -14,7 +15,9 @@ class BalanceHandler(MessageHandler[AppContext[UserMessage]]):
         user = await self.ctx.db_user()
         balance = await self.ctx.user_service.balance(user.telegram_id)
 
-        await self.ctx.say(Dialogs.balance(balance=str(balance), name=user.first_name))
+        await self.ctx.say(
+            Dialogs.balance(balance=format_amount(balance), name=user.first_name)
+        )
 
 
 class BalanceRouter(BaseRouter[AppContext]):
