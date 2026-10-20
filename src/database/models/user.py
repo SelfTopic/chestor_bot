@@ -21,7 +21,7 @@ class User(Base):
 
     race_bit: Mapped[int] = mapped_column(nullable=False, default=0)
 
-    balance: Mapped[int] = mapped_column(nullable=False, default=0)
+    balance: Mapped[int] = mapped_column(BigInteger, nullable=False, default=0)
 
     energy: Mapped[int] = mapped_column(nullable=False, default=100)
 

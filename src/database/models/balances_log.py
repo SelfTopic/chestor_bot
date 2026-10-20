@@ -21,14 +21,17 @@ class BalancesLog(Base):
     )
 
     change_balance: Mapped[int] = mapped_column(
+        BigInteger,
         nullable=False,
     )
 
     before_balance: Mapped[int] = mapped_column(
+        BigInteger,
         nullable=False,
     )
 
     after_balance: Mapped[int] = mapped_column(
+        BigInteger,
         nullable=False,
     )
 
