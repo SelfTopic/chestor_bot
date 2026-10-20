@@ -41,6 +41,9 @@ class User(Base):
 
     is_service: Mapped[bool] = mapped_column(nullable=False, default=False)
 
+    # NULL — активность до включения трекинга не известна, а не «не был активен».
+    last_active_at: Mapped[Optional[datetime]] = mapped_column(nullable=True)
+
     @property
     def full_name(self) -> str:
         return self.first_name + " " + (self.last_name or "")

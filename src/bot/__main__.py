@@ -198,6 +198,8 @@ class Dispatcher(BaseDispatcher[AppContext]):
 
     def observe(self, ctx: AppContext, handler: BaseHandler[Any] | None, seconds: float) -> None:
         user, chat, event = ctx.user, ctx.chat, ctx.event
+        if user is not None:
+            self.analytics.touch(user.id)
         if isinstance(event, Message) and user is not None and chat is not None:
             self.analytics.message(chat_id=chat.id, user_id=user.id, chat_type=chat.type)
         if handler is not None and getattr(handler, "counted", True):

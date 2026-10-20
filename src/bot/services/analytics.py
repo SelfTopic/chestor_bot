@@ -6,7 +6,7 @@ from zoneinfo import ZoneInfo
 
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 
-from ..repositories import ActivityKey, AnalyticsRepository, EventRecord
+from ..repositories import ActivityKey, AnalyticsRepository, EventRecord, UserRepository
 
 logger = logging.getLogger(__name__)
 
@@ -27,6 +27,7 @@ class AnalyticsRecorder:
         self._now = now
         self._events: list[EventRecord] = []
         self._activity: Counter[ActivityKey] = Counter()
+        self._last_seen: dict[int, datetime] = {}
 
     def command(
         self,
@@ -56,21 +57,34 @@ class AnalyticsRecorder:
         day = self._now().astimezone(MOSCOW).date()
         self._activity[ActivityKey(day, chat_id, user_id, chat_type)] += 1
 
+    # Любое действие игрока, а не только сообщения в чатах: личка и кнопки тоже активность.
+    def touch(self, user_id: int) -> None:
+        self._merge_last_seen({user_id: self._now().replace(tzinfo=None)})
+
     async def flush(self) -> None:
         events, self._events = self._events, []
         activity, self._activity = self._activity, Counter()
-        if not events and not activity:
+        last_seen, self._last_seen = self._last_seen, {}
+        if not events and not activity and not last_seen:
             return
         try:
             async with self._session_factory() as session:
                 repository = AnalyticsRepository(session)
                 await repository.add_events(events)
                 await repository.add_activity(dict(activity))
+                await UserRepository(session).bump_last_active(last_seen)
                 await session.commit()
         except Exception:
             logger.warning("Статистика не записалась, повторю позже", exc_info=True)
             self._events = (events + self._events)[:MAX_PENDING_EVENTS]
             self._activity.update(activity)
+            self._merge_last_seen(last_seen)
+
+    def _merge_last_seen(self, seen: dict[int, datetime]) -> None:
+        for user_id, at in seen.items():
+            current = self._last_seen.get(user_id)
+            if current is None or at > current:
+                self._last_seen[user_id] = at
 
 
 __all__ = ["AnalyticsRecorder", "FLUSH_INTERVAL"]

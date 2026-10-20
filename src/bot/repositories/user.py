@@ -2,7 +2,7 @@ import logging
 from datetime import datetime
 from typing import Any, Optional, Union
 
-from sqlalchemy import exists, select, update
+from sqlalchemy import bindparam, exists, select, update
 from sqlalchemy.dialects.postgresql import insert
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -172,6 +172,25 @@ class UserRepository(Base):
             return
         await self.session.execute(
             update(User).where(User.telegram_id.in_(telegram_ids)).values(is_service=True)
+        )
+
+    async def bump_last_active(self, at_by_telegram_id: dict[int, datetime]) -> None:
+        if not at_by_telegram_id:
+            return
+        stmt = (
+            update(User)
+            .where(User.telegram_id == bindparam("_telegram_id"))
+            .values(last_active_at=bindparam("_last_active_at"))
+            # executemany по telegram_id, не по PK: без dml_strategy="core_only" ORM
+            # принимает это за bulk UPDATE по первичному ключу и требует User.id в параметрах.
+            .execution_options(synchronize_session=False, dml_strategy="core_only")
+        )
+        await self.session.execute(
+            stmt,
+            [
+                {"_telegram_id": telegram_id, "_last_active_at": at}
+                for telegram_id, at in at_by_telegram_id.items()
+            ],
         )
 
     async def get_all(self) -> list[User]:
