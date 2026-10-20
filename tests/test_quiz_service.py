@@ -1,13 +1,14 @@
-"""QuizService: один клиент ghoul_quiz 0.2 на процесс, сессия из TokenManager."""
+"""QuizService: один клиент ghoul_quiz на процесс, сессия из TokenManager."""
 
 import time
 
 import pytest
 from ghoul_quiz import Question, TokenManager, TokenPair
-from ghoul_quiz.errors import RateLimitError
+from ghoul_quiz.errors import NotFoundError, RateLimitError
 
 from src.bot.dialogs import Dialogs
-from src.bot.exceptions import QuizBusy, QuizEmailMissing, QuizSessionMissing
+from src.bot.exceptions import QuizBusy, QuizEmailMissing, QuizModeDisabled, QuizSessionMissing
+from src.bot.game_configs import QUIZ_CONFIG
 from src.bot.services.quiz import QuizService
 
 from .conftest import only_text, phrase_texts
@@ -129,6 +130,8 @@ async def test_rate_limited_quiz_asks_to_wait(dispatcher, send, session_factory,
 
     quiz._api.get_random_question = limited  # type: ignore[method-assign]
     monkeypatch.setattr(dispatcher, "quiz_service", quiz)
+    monkeypatch.setattr(QUIZ_CONFIG, "whois_chance", 0.0)
+    monkeypatch.setattr(QUIZ_CONFIG, "true_false_chance", 0.0)
     await seed(session_factory, 700001)
     await seed_ghoul(session_factory, 700001)
 
@@ -139,3 +142,30 @@ async def test_rate_limited_quiz_asks_to_wait(dispatcher, send, session_factory,
     assert isinstance(error, QuizBusy)
     dispatcher.errors.clear()  # ошибка ожидаемая
     await quiz.close()
+
+
+async def test_mode_the_server_did_not_enable_is_reported(service):
+    save_session()
+
+    async def missing() -> None:
+        raise NotFoundError(404, "Режим не включён")
+
+    service._api.get_random_whois = missing  # type: ignore[method-assign]
+    service._api.get_random_true_false = missing  # type: ignore[method-assign]
+
+    with pytest.raises(QuizModeDisabled):
+        await service.get_random_whois()
+    with pytest.raises(QuizModeDisabled):
+        await service.get_random_true_false()
+
+
+async def test_rate_limit_in_a_mode_is_busy(service):
+    save_session()
+
+    async def limited() -> None:
+        raise RateLimitError(429, "Слишком много запросов", headers={"Retry-After": "30"})
+
+    service._api.get_random_whois = limited  # type: ignore[method-assign]
+
+    with pytest.raises(QuizBusy):
+        await service.get_random_whois()

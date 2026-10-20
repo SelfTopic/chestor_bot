@@ -22,6 +22,7 @@ from .docs_post import DocsPost
 from .ghoul_edit import GhoulEdit
 from .link_media import LinkMediaCache
 from .music_track import MusicTrack
+from .quiz_streak import QuizStreak
 from .roast_log import RoastLog
 from .rp_commands import Rp
 from .promo import PromoActivation, PromoCode
@@ -50,6 +51,7 @@ __all__ = [
     "RoastLog",
     "BalancesLog",
     "Transfer",
+    "QuizStreak",
     "ScheduledNotification",
     "DeathLog",
     "LevelUpLog",

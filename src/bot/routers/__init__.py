@@ -28,7 +28,12 @@ from .common import (
 )
 from .chat_member_update_routers import ChatMemberUpdateRouter
 from .creator_routers import CreatorRouter
-from .ghoul_routers import GhoulRouter, SubscriptionCheckRouter, expire_overdue_duels
+from .ghoul_routers import (
+    GhoulRouter,
+    SubscriptionCheckRouter,
+    expire_overdue_duels,
+    expire_overdue_streaks,
+)
 from .moderator_routers import ModeratorRouter
 
 
@@ -69,4 +74,9 @@ class RootRouter(BaseRouter[AppContext]):
     )
 
 
-__all__ = ["RootRouter", "expire_overdue_duels", "expire_overdue_votes"]
+__all__ = [
+    "RootRouter",
+    "expire_overdue_duels",
+    "expire_overdue_streaks",
+    "expire_overdue_votes",
+]

@@ -9,7 +9,7 @@ from .middleware import GhoulMiddleware
 from .mob_fight import MobFightRouter
 from .passive_status import PassiveStatusRouter
 from .promo import PromoRouter
-from .quiz import QuizRouter
+from .quiz import QuizRouter, expire_overdue_streaks
 from .snap import SnapRouter
 from .subscription import ChannelSubscriptionMiddleware, SubscriptionCheckRouter
 from .tops import TopsGhoulRouter
@@ -35,4 +35,9 @@ class GhoulRouter(BaseRouter[AppContext]):
     )
 
 
-__all__ = ["GhoulRouter", "SubscriptionCheckRouter", "expire_overdue_duels"]
+__all__ = [
+    "GhoulRouter",
+    "SubscriptionCheckRouter",
+    "expire_overdue_duels",
+    "expire_overdue_streaks",
+]

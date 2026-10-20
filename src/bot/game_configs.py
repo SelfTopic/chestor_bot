@@ -45,10 +45,19 @@ COFFEE_CONFIG = CoffeeConfig()
 class QuizConfig:
     min_award: int = 5000
     max_award: int = 10000
+    streak_ttl_seconds: int = 300
+    streak_bonus: float = 0.25
+    max_multiplier: float = 3.0
+    whois_chance: float = 0.25
+    true_false_chance: float = 0.25
+    true_false_share: float = 0.5
 
-    @property
-    def award(self) -> int:
-        return randint(self.min_award, self.max_award)
+    def multiplier(self, streak: int) -> float:
+        return min(1 + self.streak_bonus * (streak - 1), self.max_multiplier)
+
+    def award(self, streak: int, share: float = 1.0) -> int:
+        base = randint(self.min_award, self.max_award)
+        return round(base * share * self.multiplier(streak))
 
 
 QUIZ_CONFIG = QuizConfig()

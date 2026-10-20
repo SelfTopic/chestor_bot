@@ -92,13 +92,13 @@ class FakeTelegram:
         # значением поля падает этой ошибкой один раз, дальше — как обычно. Для
         # тестов кэша устаревшего telegram_file_id (первая попытка с ним падает,
         # повторная — с диска — проходит).
-        self._fail_once: dict[str, tuple[str, str, int, str]] = {}
+        self._fail_once: dict[str, tuple[str, str | Callable[[Any], bool], int, str]] = {}
 
     def fail_next(
         self,
         method: str,
         field: str,
-        value: str,
+        value: str | Callable[[Any], bool],
         code: int = 400,
         description: str = "Bad Request: wrong file identifier/HTTP URL specified",
     ) -> None:
@@ -141,7 +141,7 @@ class FakeTelegram:
         once = self._fail_once.get(method)
         if once is not None:
             field, value, code, description = once
-            if body.get(field) == value:
+            if value(body.get(field)) if callable(value) else body.get(field) == value:
                 del self._fail_once[method]
                 return web.json_response(
                     {"ok": False, "error_code": code, "description": description},

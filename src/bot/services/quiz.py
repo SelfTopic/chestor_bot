@@ -1,13 +1,26 @@
 import logging
+from collections.abc import Awaitable, Callable
+from typing import TypeVar
 
-from ghoul_quiz import DEFAULT_BASE_URL, Answer, GhoulQuizAPI, Question
-from ghoul_quiz.errors import RateLimitError
+from ghoul_quiz import (
+    DEFAULT_BASE_URL,
+    Answer,
+    GhoulQuizAPI,
+    Question,
+    TrueFalseAnswer,
+    TrueFalseQuestion,
+    WhoisAnswer,
+    WhoisQuestion,
+)
+from ghoul_quiz.errors import NotFoundError, RateLimitError
 
-from ..exceptions import QuizBusy, QuizEmailMissing, QuizSessionMissing
+from ..exceptions import QuizBusy, QuizEmailMissing, QuizModeDisabled, QuizSessionMissing
 
 logger = logging.getLogger(__name__)
 
 DEFAULT_RETRY_AFTER = 60
+
+Result = TypeVar("Result")
 
 
 class QuizService:
@@ -25,19 +38,37 @@ class QuizService:
         if not self._api.load_saved_token(self._email):
             raise QuizSessionMissing(self._email)
 
-    async def get_random_quiz(self) -> Question:
+    async def _call(self, request: Callable[[], Awaitable[Result]]) -> Result:
         self._ensure_session()
         try:
-            return await self._api.get_random_question()
+            return await request()
         except RateLimitError as exc:
             raise self._busy(exc) from exc
 
-    async def get_answer_by_id(self, question_id: int) -> Answer:
-        self._ensure_session()
+    async def _call_optional_mode(self, request: Callable[[], Awaitable[Result]]) -> Result:
+        # Сервер может не включать режим: тогда на вопрос он отвечает 404.
         try:
-            return await self._api.get_answer(question_id=question_id)
-        except RateLimitError as exc:
-            raise self._busy(exc) from exc
+            return await self._call(request)
+        except NotFoundError as exc:
+            raise QuizModeDisabled() from exc
+
+    async def get_random_quiz(self) -> Question:
+        return await self._call(self._api.get_random_question)
+
+    async def get_answer_by_id(self, question_id: int) -> Answer:
+        return await self._call(lambda: self._api.get_answer(question_id=question_id))
+
+    async def get_random_whois(self) -> WhoisQuestion:
+        return await self._call_optional_mode(self._api.get_random_whois)
+
+    async def get_whois_answer(self, question_id: int) -> WhoisAnswer:
+        return await self._call(lambda: self._api.get_whois_answer(question_id))
+
+    async def get_random_true_false(self) -> TrueFalseQuestion:
+        return await self._call_optional_mode(self._api.get_random_true_false)
+
+    async def get_true_false_answer(self, question_id: int) -> TrueFalseAnswer:
+        return await self._call(lambda: self._api.get_true_false_answer(question_id))
 
     def _busy(self, exc: RateLimitError) -> QuizBusy:
         # У API два лимита с одним текстом ошибки (на IP в минуту и на аккаунт в час):

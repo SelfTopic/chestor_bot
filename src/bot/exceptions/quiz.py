@@ -14,3 +14,6 @@ class QuizBusy(QuizUnavailable):
     def __init__(self, retry_after: int) -> None:
         super().__init__(retry_after)
         self.retry_after = retry_after
+
+
+class QuizModeDisabled(Exception): ...

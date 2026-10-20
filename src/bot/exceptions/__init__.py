@@ -55,7 +55,13 @@ from .promo import (
     PromoNameTaken,
     PromoNotFound,
 )
-from .quiz import QuizBusy, QuizEmailMissing, QuizSessionMissing, QuizUnavailable
+from .quiz import (
+    QuizBusy,
+    QuizEmailMissing,
+    QuizModeDisabled,
+    QuizSessionMissing,
+    QuizUnavailable,
+)
 from .rp_commands import RpCommandError, RpCommandLimitReached, RpCommandNotFound
 from .search import SearchCooldown, SearchError, SearchLimitReached, SearchUnavailable
 from .time import DurationParseError
@@ -110,6 +116,7 @@ __all__ = [
     "MusicError",
     "QuizBusy",
     "QuizEmailMissing",
+    "QuizModeDisabled",
     "QuizSessionMissing",
     "QuizUnavailable",
     "SearchCooldown",
