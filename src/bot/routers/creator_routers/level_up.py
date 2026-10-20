@@ -16,7 +16,7 @@ def _flag(ctx: AppContext[Message], value: bool) -> str:
 
 async def _perform_level_up(ctx: AppContext[Message], telegram_id: int) -> None:
     try:
-        result = await ctx.level_up_service.level_up(telegram_id)
+        result = await ctx.level_up_service.level_up(telegram_id, source="admin_force")
     except GhoulNotFound:
         await ctx.say(Dialogs.admin.ghoul_not_found())
         return
@@ -62,7 +62,9 @@ async def _perform_add_progress(
         return
 
     try:
-        result = await ctx.level_up_service.add_progress(telegram_id, delta)
+        result = await ctx.level_up_service.add_progress(
+            telegram_id, delta, source="admin_progress"
+        )
     except GhoulNotFound:
         await ctx.say(Dialogs.admin.ghoul_not_found())
         return

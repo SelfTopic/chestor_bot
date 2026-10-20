@@ -296,7 +296,7 @@ class BattleService:
         winner_power = self._ghouls.calculate_power(winner.ghoul)
         loser_power = self._ghouls.calculate_power(loser.ghoul)
         progress = 1.0 * loser_power / winner_power if winner_power > 0 else 0.0
-        await self._level_up.add_progress(winner.telegram_id, progress)
+        await self._level_up.add_progress(winner.telegram_id, progress, source="duel")
         return DuelFight(report, winner.telegram_id, loser.telegram_id, progress)
 
     async def finish_duel_fight(
@@ -420,7 +420,9 @@ class BattleService:
                 if player_power > 0
                 else 0.0
             )
-            await self._level_up.add_progress(player.telegram_id, reward_level_progress)
+            await self._level_up.add_progress(
+                player.telegram_id, reward_level_progress, source="mob"
+            )
 
             if random.random() < MOB_CONFIG.rc_drop_chance:
                 reward_rc = random.randint(MOB_CONFIG.rc_drop_min, MOB_CONFIG.rc_drop_max)

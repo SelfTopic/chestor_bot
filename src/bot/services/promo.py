@@ -173,7 +173,7 @@ class PromoService:
                     telegram_id, rc_money=amount, lifetime_rc_earned=amount
                 )
             case LevelProgressReward(percent=percent):
-                await self.level_up_service.add_progress(telegram_id, percent)
+                await self.level_up_service.add_progress(telegram_id, percent, source="promo")
             case StatReward(stat=stat, amount=amount):
                 return await self._grant_stat(reward, telegram_id, stat, amount)
             case HungerReward(percent=percent):

@@ -1,9 +1,11 @@
 import logging
 from dataclasses import dataclass, field
+from typing import Optional
 
 from src.bot.dialogs import Dialogs
 from src.bot.exceptions import GhoulNotFound
 from src.bot.game_configs import LEVEL_UP_CONFIG, STATS, stat_cap_for_level
+from src.bot.repositories import LevelUpLogRepository
 from src.bot.services import DialogService, GhoulService, UserService
 from src.bot.utils import apply_level_progress
 from src.database.models import Ghoul
@@ -36,13 +38,15 @@ class LevelUpService:
         ghoul_service: GhoulService,
         dialog_service: DialogService,
         notifier: Notifier,
+        level_up_log_repository: Optional[LevelUpLogRepository] = None,
     ) -> None:
         self.user_service = user_service
         self.ghoul_service = ghoul_service
         self.dialog_service = dialog_service
         self._notifier = notifier
+        self.level_up_log_repository = level_up_log_repository
 
-    async def level_up(self, telegram_id: int) -> LevelUpResult:
+    async def level_up(self, telegram_id: int, source: str = "unknown") -> LevelUpResult:
         old_ghoul = await self.ghoul_service.get(telegram_id)
         if not old_ghoul:
             raise GhoulNotFound(telegram_id)
@@ -71,6 +75,15 @@ class LevelUpService:
         if not final_ghoul:
             raise GhoulNotFound(telegram_id)
 
+        if self.level_up_log_repository is not None:
+            await self.level_up_log_repository.insert(
+                telegram_id=telegram_id,
+                source=source,
+                level=new_level,
+                cheston_reward=cheston_reward,
+                rc_reward=rc_reward,
+            )
+
         notified = await self._notify(
             telegram_id, old_level, new_level, cheston_reward, rc_reward
         )
@@ -82,7 +95,9 @@ class LevelUpService:
             notified=notified,
         )
 
-    async def add_progress(self, telegram_id: int, delta: float) -> ProgressResult:
+    async def add_progress(
+        self, telegram_id: int, delta: float, source: str = "unknown"
+    ) -> ProgressResult:
         ghoul = await self.ghoul_service.get(telegram_id)
         if not ghoul:
             raise GhoulNotFound(telegram_id)
@@ -94,7 +109,7 @@ class LevelUpService:
         )
 
         level_up_results = [
-            await self.level_up(telegram_id) for _ in range(levels_gained)
+            await self.level_up(telegram_id, source=source) for _ in range(levels_gained)
         ]
 
         return ProgressResult(
