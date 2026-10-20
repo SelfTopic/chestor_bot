@@ -3610,35 +3610,66 @@ class _PromoDialogs:
 
 
 class _QuizDialogs:
-    def correct(self, *, award: object) -> Line:
-        return Line("quiz.correct", {"award": award})
+    def correct(
+        self,
+        *,
+        award: object,
+        minutes: object,
+        multiplier: object,
+        streak: object,
+    ) -> Line:
+        return Line(
+            "quiz.correct",
+            {
+                "award": award,
+                "minutes": minutes,
+                "multiplier": multiplier,
+                "streak": streak,
+            },
+        )
+
+    def false_button(self) -> Line:
+        return Line("quiz.false_button", {})
 
     def not_active(self) -> Line:
         return Line("quiz.not_active", {})
 
+    def not_yours(self) -> Line:
+        return Line("quiz.not_yours", {})
+
     def play_again(self) -> Line:
         return Line("quiz.play_again", {})
 
-    def result(
-        self,
-        *,
-        answer: object,
-        choice: object,
-        question: object,
-        status: object,
-    ) -> Line:
+    def result(self, *, answer: object, choice: object, status: object) -> Line:
         return Line(
             "quiz.result",
             {
                 "answer": answer,
                 "choice": choice,
-                "question": question,
                 "status": status,
             },
         )
 
+    def streak_broken(self, *, streak: object) -> Line:
+        return Line("quiz.streak_broken", {"streak": streak})
+
+    def streak_expired(self, *, streak: object) -> Line:
+        return Line("quiz.streak_expired", {"streak": streak})
+
+    def true_button(self) -> Line:
+        return Line("quiz.true_button", {})
+
+    def true_false_title(self) -> Line:
+        return Line("quiz.true_false_title", {})
+
+    def whois_title(self) -> Line:
+        return Line("quiz.whois_title", {})
+
     def wrong(self) -> Line:
         return Line("quiz.wrong", {})
+
+    def wrong_streak(self, *, streak: object) -> Line:
+        return Line("quiz.wrong_streak", {"streak": streak})
 
 
 class _RichDialogs:
@@ -5077,11 +5108,19 @@ PLACEHOLDERS: dict[str, frozenset[str]] = {
     "promo.reward.stat": frozenset({"amount", "stat"}),
     "promo.reward.stat_capped": frozenset({"amount", "stat"}),
     "promo.usage": frozenset(),
-    "quiz.correct": frozenset({"award"}),
+    "quiz.correct": frozenset({"award", "minutes", "multiplier", "streak"}),
+    "quiz.false_button": frozenset(),
     "quiz.not_active": frozenset(),
+    "quiz.not_yours": frozenset(),
     "quiz.play_again": frozenset(),
-    "quiz.result": frozenset({"answer", "choice", "question", "status"}),
+    "quiz.result": frozenset({"answer", "choice", "status"}),
+    "quiz.streak_broken": frozenset({"streak"}),
+    "quiz.streak_expired": frozenset({"streak"}),
+    "quiz.true_button": frozenset(),
+    "quiz.true_false_title": frozenset(),
+    "quiz.whois_title": frozenset(),
     "quiz.wrong": frozenset(),
+    "quiz.wrong_streak": frozenset({"streak"}),
     "rich.download_failed": frozenset(),
     "rich.empty": frozenset(),
     "rich.not_utf8": frozenset(),

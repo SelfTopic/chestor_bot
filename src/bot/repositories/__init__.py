@@ -18,6 +18,7 @@ from .lottery import LotteryRepository
 from .media import MediaRepository
 from .moderation import DueExpiration, ModerationRepository
 from .music_track import MusicTrackRepository
+from .quiz_streak import ExpiredStreak, HeldStreak, QuizStreakRepository
 from .scheduled_notification import ScheduledNotificationRepository
 from .transfer import TransferRepository
 from .user import UserRepository
@@ -29,6 +30,9 @@ from .promo import PromoRepository
 
 __all__ = [
     "ActiveBattleRepository",
+    "ExpiredStreak",
+    "HeldStreak",
+    "QuizStreakRepository",
     "BattleRepository",
     "ActivityKey",
     "AnalyticsRepository",

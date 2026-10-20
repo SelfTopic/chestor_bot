@@ -416,7 +416,6 @@ mob:
     📊 Боёв с мобами: {total} ({wins} побед / {losses} поражений)
 quiz:
   result: |-
-    Вопрос: {question}
     Ответ: {answer}.
     Твой выбор: {choice}
     {status}
@@ -425,15 +424,33 @@ quiz:
       Статус: верно
 
       💸 CheSton: +{award}
+      🔥 Серия: {streak} (×{multiplier}). Продолжи за {minutes} мин, иначе сгорит.
     - |-
       Статус: верно, умник
 
       💸 CheSton: +{award}
+      🔥 Серия: {streak} (×{multiplier}). Продолжи за {minutes} мин, иначе сгорит.
   wrong:
     - 'Статус: неверно'
     - 'Статус: неверно, иди пересматривай аниме'
+  wrong_streak:
+    - |-
+      Статус: неверно
+
+      💔 Серия из {streak} оборвалась.
+    - |-
+      Статус: неверно, иди пересматривай аниме
+
+      💔 Серия из {streak} оборвалась.
+  streak_broken: '⌛ Серия из {streak} прервана: ты не продолжил за 5 минут.'
+  streak_expired: '⌛ Серия из {streak} сгорела: ты не продолжил вовремя.'
   play_again: 'Ещё вопрос'
+  whois_title: '🖼 Кто это?'
+  true_false_title: 'Верно ли утверждение?'
+  true_button: 'Верно'
+  false_button: 'Неверно'
   not_active: 'Этот квиз уже закончился.'
+  not_yours: 'Это не твой квиз. Запусти свой: /quiz'
 stats:
   shop:
     message: |-

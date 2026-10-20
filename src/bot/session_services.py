@@ -1,4 +1,5 @@
 from collections.abc import Collection
+from datetime import timedelta
 from contextvars import ContextVar
 from functools import cached_property
 
@@ -10,6 +11,7 @@ from .repositories import (
     BalancesLogRepository,
     BattleRepository,
     ChatParticipantRepository,
+    QuizStreakRepository,
     ChatRepository,
     DeathLogRepository,
     DuelSessionRepository,
@@ -28,6 +30,7 @@ from .repositories import (
     UserRepository,
     WalletRepository,
 )
+from .game_configs import QUIZ_CONFIG
 from .repositories.fight import FightRepository
 from .repositories.user_names import UserNameRepository
 from .services import (
@@ -55,6 +58,7 @@ from .services.level_up import LevelUpService
 from .services.moderation import ModerationService
 from .services.notify import Notifier
 from .services.promo import PromoService
+from .services.quiz_streak import QuizStreakService
 from .services.stat_upgrade import StatUpgradeService
 
 # Сессия БД текущей работы: в апдейте её ставит DatabaseMiddleware, вне апдейта (тикер
@@ -138,6 +142,16 @@ class SessionServices:
     @cached_property
     def transfer_repository(self) -> TransferRepository:
         return TransferRepository(self.session)
+
+    @cached_property
+    def quiz_streak_repository(self) -> QuizStreakRepository:
+        return QuizStreakRepository(self.session)
+
+    @cached_property
+    def quiz_streak_service(self) -> QuizStreakService:
+        return QuizStreakService(
+            self.quiz_streak_repository, timedelta(seconds=QUIZ_CONFIG.streak_ttl_seconds)
+        )
 
     @cached_property
     def scheduled_notification_repository(self) -> ScheduledNotificationRepository:

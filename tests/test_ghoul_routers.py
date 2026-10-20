@@ -7,15 +7,27 @@ ctx.cooldown_remaining, а CoffeeService.execute_cooldown, который сам
 типизированный KaguneUpgradePress вместо ручного parse_kagune_callback_payload."""
 
 import json
+from datetime import timedelta
 
 import pytest
-from ghoul_quiz import Answer, Question
+from sqlalchemy import func, select, update
+from ghoul_quiz import (
+    Answer,
+    Media,
+    Question,
+    TrueFalseAnswer,
+    TrueFalseQuestion,
+    WhoisAnswer,
+    WhoisQuestion,
+)
 
 from src.bot.config import game_config
 from src.bot.dialogs import Dialogs
-from src.bot.game_configs import STAT_UPGRADE_CONFIG
+from src.bot.exceptions import QuizModeDisabled
+from src.bot.game_configs import QUIZ_CONFIG, STAT_UPGRADE_CONFIG
 from src.bot.repositories import GhoulRepository, UserCooldownRepository
 from src.bot.routers.ghoul_routers.upgrade_stat import STAT_LABELS
+from src.bot.tasks import QuizStreakExpiry
 from src.bot.types import KaguneType
 from src.bot.utils import (
     calculate_kagune,
@@ -26,7 +38,7 @@ from src.bot.utils import (
     hours_until_full_health,
 )
 from src.config import settings
-from src.database.models import Cooldown, Ghoul
+from src.database.models import Cooldown, Ghoul, QuizStreak
 
 from .conftest import (
     button_data,
@@ -38,6 +50,7 @@ from .conftest import (
     only_text,
     owner_dict,
     phrase_texts,
+    rich_texts,
 )
 from .test_common_routers import seed
 from .test_update_middlewares import get_user
@@ -872,6 +885,15 @@ class FakeQuiz:
         self.answer = Answer(
             id=17, question="Кто?", answer=answer, answer_group="g"
         )
+        self.whois = WhoisQuestion(
+            id=21,
+            prompt_media=Media(url="https://x/pic.jpg", kind="image"),
+            answer_options=options,
+        )
+        self.whois_answer = WhoisAnswer(id=21, answer=answer)
+        self.true_false = TrueFalseQuestion(id=33, statement="Канеки — гуль")
+        self.truth = TrueFalseAnswer(id=33, correct=True)
+        self.whois_enabled = True
 
     async def get_random_quiz(self) -> Question:
         return self.question
@@ -880,42 +902,140 @@ class FakeQuiz:
         assert question_id == self.question.id
         return self.answer
 
+    async def get_random_whois(self) -> WhoisQuestion:
+        if not self.whois_enabled:
+            raise QuizModeDisabled()
+        return self.whois
+
+    async def get_whois_answer(self, question_id: int) -> WhoisAnswer:
+        assert question_id == self.whois.id
+        return self.whois_answer
+
+    async def get_random_true_false(self) -> TrueFalseQuestion:
+        return self.true_false
+
+    async def get_true_false_answer(self, question_id: int) -> TrueFalseAnswer:
+        assert question_id == self.true_false.id
+        return self.truth
+
+
+PHOTO = "https://x/pic.jpg"
+SEND = "sendRichMessage"
+
+
+def incoming_block(block: dict) -> dict:
+    """Блок rich-сообщения, как его присылает Telegram: медиа — с file_id вместо ссылки."""
+    if block["type"] == "photo":
+        photo = {"file_id": block["photo"]["media"], "file_unique_id": "u", "width": 1, "height": 1}
+        return {"type": "photo", "photo": [photo]}
+    if block["type"] == "video":
+        video = {
+            "file_id": block["video"]["media"],
+            "file_unique_id": "u",
+            "width": 1,
+            "height": 1,
+            "duration": 1,
+        }
+        return {"type": "video", "video": video}
+    return block
+
 
 def keyboard_callback(body: dict, label: str, uid: int) -> dict:
-    """Нажатие кнопки label под сообщением body, с клавиатурой этого сообщения."""
+    """Нажатие кнопки label под сообщением body, с содержимым и клавиатурой этого сообщения."""
     update = callback_update(button_data(body, label), uid=uid)
-    update["callback_query"]["message"]["reply_markup"] = body["reply_markup"]
+    message = update["callback_query"]["message"]
+    message["reply_markup"] = body["reply_markup"]
+    del message["text"]
+    blocks = [incoming_block(block) for block in body["rich_message"]["blocks"]]
+    message["rich_message"] = {"blocks": blocks}
     return update
+
+
+def lines(body: dict) -> list[str]:
+    return rich_texts(body["rich_message"])
+
+
+def block_types(body: dict) -> list[str]:
+    return [block["type"] for block in body["rich_message"]["blocks"]]
+
+
+def normalized(text: str) -> str:
+    return "\n".join(line for line in text.split("\n") if line)
+
+
+def result_variants(answer: str, choice: str, status) -> set[str]:
+    variants = phrase_texts(Dialogs.quiz.result(answer=answer, choice=choice, status=status))
+    return {normalized(text) for text in variants}
+
+
+def result_text(body: dict, question_lines: int = 1) -> str:
+    return "\n".join(lines(body)[question_lines:])
+
+
+async def streak_rows(session_factory) -> list[QuizStreak]:
+    async with session_factory() as session:
+        return list((await session.scalars(select(QuizStreak))).all())
+
+
+async def expire_streaks(session_factory) -> None:
+    async with session_factory() as session:
+        await session.execute(
+            update(QuizStreak).values(expires_at=func.now() - timedelta(seconds=1))
+        )
+        await session.commit()
 
 
 class TestQuiz:
     OPTIONS = ["Канеки", "Тоука", "Хинами", "Ута"]
+    AGAIN = only_text(Dialogs.quiz.play_again())
 
     @pytest.fixture
     def quiz(self, dispatcher, monkeypatch) -> FakeQuiz:
         fake = FakeQuiz(self.OPTIONS, answer="Канеки")
         monkeypatch.setattr(dispatcher, "quiz_service", fake)
+        monkeypatch.setattr(QUIZ_CONFIG, "whois_chance", 0.0)
+        monkeypatch.setattr(QUIZ_CONFIG, "true_false_chance", 0.0)
         return fake
+
+    @pytest.fixture
+    def whois_only(self, quiz, monkeypatch) -> FakeQuiz:
+        monkeypatch.setattr(QUIZ_CONFIG, "whois_chance", 1.0)
+        return quiz
+
+    @pytest.fixture
+    def true_false_only(self, quiz, monkeypatch) -> FakeQuiz:
+        monkeypatch.setattr(QUIZ_CONFIG, "true_false_chance", 1.0)
+        return quiz
 
     async def _ask(self, feed, session_factory, uid: int = UID) -> dict:
         await seed(session_factory, uid, "Вася")
         await seed_ghoul(session_factory, uid)
         telegram = await feed(message_update("/quiz", uid=uid))
-        (body,) = telegram.bodies("sendMessage")
+        (body,) = telegram.bodies(SEND)
         return body
 
-    async def test_question_with_four_options_two_per_row(
+    async def _answer(self, feed, body: dict, label: str) -> dict:
+        telegram = await feed(keyboard_callback(body, label, UID))
+        (edited,) = telegram.bodies("editMessageText")
+        return edited
+
+    async def _next(self, feed, result: dict) -> dict:
+        telegram = await feed(keyboard_callback(result, self.AGAIN, UID))
+        (question,) = telegram.bodies("editMessageText")
+        return question
+
+    async def test_question_is_a_rich_message_with_four_options(
         self, feed, session_factory, quiz
     ):
         body = await self._ask(feed, session_factory)
 
-        assert body["text"] == "Кто?"
+        assert lines(body) == ["Кто?"]
         assert body["reply_parameters"]["message_id"] == 1
         rows = body["reply_markup"]["inline_keyboard"]
         assert [len(row) for row in rows] == [2, 2]
         labels = [b["text"] for row in rows for b in row]
         assert sorted(labels) == sorted(self.OPTIONS)
-        assert button_data(body, labels[3]) == "quiz_answer:17:3"
+        assert button_data(body, labels[3]) == f"quiz_answer:17:3:0:0:{UID}"
 
     async def test_correct_answer_pays_and_offers_restart(
         self, feed, session_factory, quiz
@@ -927,29 +1047,19 @@ class TestQuiz:
         (edited,) = telegram.bodies("editMessageText")
         award = await balance_of(session_factory, UID)
         assert award > 0
-        assert edited["text"] in phrase_texts(
-            Dialogs.quiz.result(
-                question="Кто?",
-                answer="Канеки",
-                choice="Канеки",
-                status=Dialogs.quiz.correct(award=award),
-            )
-        )
-        assert button_data(edited, only_text(Dialogs.quiz.play_again())) == "quiz_restart"
+        assert lines(edited)[0] == "Кто?"
+        status = Dialogs.quiz.correct(award=award, streak=1, multiplier="1", minutes=5)
+        assert result_text(edited) in result_variants("Канеки", "Канеки", status)
+        assert button_data(edited, self.AGAIN) == f"quiz_restart:{UID}"
         # как у прода: часики на кнопке не закрываются
         assert telegram.methods_called("answerCallbackQuery") == 0
 
     async def test_wrong_answer(self, feed, session_factory, quiz):
         body = await self._ask(feed, session_factory)
 
-        telegram = await feed(keyboard_callback(body, "Тоука", UID))
+        edited = await self._answer(feed, body, "Тоука")
 
-        (edited,) = telegram.bodies("editMessageText")
-        assert edited["text"] in phrase_texts(
-            Dialogs.quiz.result(
-                question="Кто?", answer="Канеки", choice="Тоука", status=Dialogs.quiz.wrong()
-            )
-        )
+        assert result_text(edited) in result_variants("Канеки", "Тоука", Dialogs.quiz.wrong())
         assert await balance_of(session_factory, UID) == 0
 
     async def test_second_answer_is_not_active(self, feed, session_factory, quiz):
@@ -962,7 +1072,7 @@ class TestQuiz:
         assert answer["text"] == only_text(Dialogs.quiz.not_active())
         assert await balance_of(session_factory, UID) == 0
 
-    async def test_someone_elses_quiz_is_not_active(self, feed, session_factory, quiz):
+    async def test_someone_elses_quiz_is_not_theirs(self, feed, session_factory, quiz):
         body = await self._ask(feed, session_factory)
         await seed(session_factory, UID + 1, "Петя")
         await seed_ghoul(session_factory, UID + 1)
@@ -970,21 +1080,255 @@ class TestQuiz:
         telegram = await feed(keyboard_callback(body, "Канеки", UID + 1))
 
         (answer,) = telegram.bodies("answerCallbackQuery")
-        assert answer["text"] == only_text(Dialogs.quiz.not_active())
+        assert answer["text"] == only_text(Dialogs.quiz.not_yours())
+        assert await balance_of(session_factory, UID + 1) == 0
 
-    async def test_play_again_asks_a_new_question(self, feed, session_factory, quiz):
+    async def test_someone_elses_restart_keeps_the_streak(self, feed, session_factory, quiz):
         body = await self._ask(feed, session_factory)
-        telegram = await feed(keyboard_callback(body, "Тоука", UID))
-        (edited,) = telegram.bodies("editMessageText")
+        result = await self._answer(feed, body, "Канеки")
+        await seed(session_factory, UID + 1, "Петя")
+        await seed_ghoul(session_factory, UID + 1)
 
-        telegram = await feed(keyboard_callback(edited, only_text(Dialogs.quiz.play_again()), UID))
+        telegram = await feed(keyboard_callback(result, self.AGAIN, UID + 1))
+
+        (answer,) = telegram.bodies("answerCallbackQuery")
+        assert answer["text"] == only_text(Dialogs.quiz.not_yours())
+        assert telegram.methods_called(SEND) == 0
+        assert [row.streak for row in await streak_rows(session_factory)] == [1]
+
+    @pytest.mark.parametrize("trigger", ["квиз", "Викторина", "/quiz"])
+    async def test_triggers(self, feed, session_factory, quiz, trigger):
+        await seed(session_factory, UID, "Вася")
+        await seed_ghoul(session_factory, UID)
+
+        telegram = await feed(message_update(trigger, uid=UID))
+
+        (body,) = telegram.bodies(SEND)
+        assert lines(body) == ["Кто?"]
+
+    async def test_play_again_edits_the_same_message(self, feed, session_factory, quiz):
+        body = await self._ask(feed, session_factory)
+        result = await self._answer(feed, body, "Тоука")
+
+        telegram = await feed(keyboard_callback(result, self.AGAIN, UID))
 
         (question,) = telegram.bodies("editMessageText")
-        assert question["text"] == "Кто?"
-        telegram = await feed(keyboard_callback(question, "Канеки", UID))
-        (result,) = telegram.bodies("editMessageText")
-        assert matches_phrase(result["text"], "quiz.result")
+        assert question["message_id"] == result["message_id"]
+        assert lines(question) == ["Кто?"]
+        assert telegram.methods_called(SEND) == 0
+        result = await self._answer(feed, question, "Канеки")
+        assert lines(result)[0] == "Кто?"
         assert await balance_of(session_factory, UID) > 0
+
+    async def test_streak_raises_the_award(self, feed, session_factory, quiz):
+        body = await self._ask(feed, session_factory)
+        result = await self._answer(feed, body, "Канеки")
+        first = await balance_of(session_factory, UID)
+
+        question = await self._next(feed, result)
+        assert button_data(question, "Канеки").endswith(f":1:0:{UID}")
+        await self._answer(feed, question, "Канеки")
+
+        second = await balance_of(session_factory, UID) - first
+        assert 5000 * 1.25 <= second <= 10000 * 1.25
+
+    async def test_wrong_answer_breaks_the_streak(self, feed, session_factory, quiz):
+        body = await self._ask(feed, session_factory)
+        result = await self._answer(feed, body, "Канеки")
+        question = await self._next(feed, result)
+
+        edited = await self._answer(feed, question, "Тоука")
+
+        status = Dialogs.quiz.wrong_streak(streak=1)
+        assert result_text(edited) in result_variants("Канеки", "Тоука", status)
+        assert await streak_rows(session_factory) == []
+
+    async def test_streak_burns_if_continued_late(self, feed, session_factory, quiz):
+        body = await self._ask(feed, session_factory)
+        result = await self._answer(feed, body, "Канеки")
+        await expire_streaks(session_factory)
+
+        question = await self._next(feed, result)
+
+        assert lines(question) == ["Кто?", only_text(Dialogs.quiz.streak_expired(streak=1))]
+        assert button_data(question, "Канеки").endswith(f":0:0:{UID}")
+
+    async def test_ticker_breaks_the_streak_by_itself(
+        self, feed, session_factory, quiz, dispatcher, telegram
+    ):
+        body = await self._ask(feed, session_factory)
+        result = await self._answer(feed, body, "Канеки")
+        telegram.calls.clear()
+        await dispatcher.run_task(QuizStreakExpiry)
+        assert telegram.calls == []
+        await expire_streaks(session_factory)
+
+        await dispatcher.run_task(QuizStreakExpiry)
+
+        (edited,) = telegram.bodies("editMessageText")
+        broken = only_text(Dialogs.quiz.streak_broken(streak=1))
+        assert lines(edited) == [*lines(result), broken]
+        assert "reply_markup" not in edited
+        assert await streak_rows(session_factory) == []
+
+    async def test_whois_is_a_heading_with_a_photo(self, feed, session_factory, whois_only):
+        body = await self._ask(feed, session_factory)
+
+        assert block_types(body) == ["heading", "photo"]
+        assert lines(body) == [only_text(Dialogs.quiz.whois_title())]
+        assert body["rich_message"]["blocks"][1]["photo"]["media"] == PHOTO
+        assert button_data(body, "Канеки").endswith(f":0:1:{UID}")
+
+    async def test_whois_video_is_a_video_block(self, feed, session_factory, whois_only):
+        whois_only.whois.prompt_media = Media(url="https://x/clip.mp4", kind="video")
+
+        body = await self._ask(feed, session_factory)
+
+        assert block_types(body) == ["heading", "video"]
+
+    async def test_whois_result_keeps_the_photo(self, feed, session_factory, whois_only):
+        body = await self._ask(feed, session_factory)
+
+        edited = await self._answer(feed, body, "Канеки")
+
+        award = await balance_of(session_factory, UID)
+        assert award > 0
+        assert block_types(edited)[:2] == ["heading", "photo"]
+        assert edited["rich_message"]["blocks"][1]["photo"]["media"] == PHOTO
+        status = Dialogs.quiz.correct(award=award, streak=1, multiplier="1", minutes=5)
+        assert result_text(edited) in result_variants("Канеки", "Канеки", status)
+
+    async def test_photo_question_turns_into_a_text_one_in_place(
+        self, feed, session_factory, whois_only, monkeypatch
+    ):
+        body = await self._ask(feed, session_factory)
+        result = await self._answer(feed, body, "Канеки")
+        monkeypatch.setattr(QUIZ_CONFIG, "whois_chance", 0.0)
+
+        question = await self._next(feed, result)
+
+        assert block_types(question) == ["paragraph"]
+        assert button_data(question, "Канеки").endswith(f":1:0:{UID}")
+
+    async def test_answer_illustration_is_shown_in_the_result(
+        self, feed, session_factory, quiz
+    ):
+        quiz.answer.answer_media = Media(url="https://x/kaneki.jpg", kind="image")
+        body = await self._ask(feed, session_factory)
+
+        edited = await self._answer(feed, body, "Канеки")
+
+        assert block_types(edited)[-1] == "photo"
+        assert edited["rich_message"]["blocks"][-1]["photo"]["media"] == "https://x/kaneki.jpg"
+
+    async def test_result_without_illustration_when_telegram_cannot_fetch_it(
+        self, feed, session_factory, quiz, telegram
+    ):
+        quiz.answer.answer_media = Media(url="https://x/kaneki.jpg", kind="image")
+        body = await self._ask(feed, session_factory)
+        telegram.fail_next(
+            "editMessageText",
+            "rich_message",
+            lambda rich: "https://x/kaneki.jpg" in json.dumps(rich),
+            description="Bad Request: failed to get HTTP URL content",
+        )
+
+        await feed(keyboard_callback(body, "Канеки", UID))
+
+        failed, edited = telegram.bodies("editMessageText")
+        assert "photo" in block_types(failed)
+        assert "photo" not in block_types(edited)
+        assert lines(edited)[0] == "Кто?"
+
+    async def test_ticker_rewrites_the_rich_result(
+        self, feed, session_factory, whois_only, dispatcher, telegram
+    ):
+        body = await self._ask(feed, session_factory)
+        result = await self._answer(feed, body, "Канеки")
+        await expire_streaks(session_factory)
+        telegram.calls.clear()
+
+        await dispatcher.run_task(QuizStreakExpiry)
+
+        (edited,) = telegram.bodies("editMessageText")
+        broken = only_text(Dialogs.quiz.streak_broken(streak=1))
+        assert lines(edited) == [*lines(result), broken]
+        assert block_types(edited)[:2] == ["heading", "photo"]
+
+    async def test_disabled_mode_falls_back_to_a_text_question(
+        self, feed, session_factory, whois_only
+    ):
+        whois_only.whois_enabled = False
+
+        body = await self._ask(feed, session_factory)
+
+        assert lines(body) == ["Кто?"]
+
+    async def test_media_telegram_cannot_fetch_falls_back_to_a_text_question(
+        self, feed, session_factory, whois_only, telegram
+    ):
+        telegram.fail_next(
+            SEND,
+            "rich_message",
+            lambda rich: PHOTO in json.dumps(rich),
+            description="Bad Request: failed to get HTTP URL content",
+        )
+
+        await seed(session_factory, UID, "Вася")
+        await seed_ghoul(session_factory, UID)
+
+        await feed(message_update("/quiz", uid=UID))
+
+        failed, body = telegram.bodies(SEND)
+        assert "photo" in block_types(failed)
+        assert lines(body) == ["Кто?"]
+        assert block_types(body) == ["paragraph"]
+
+    async def test_true_false_has_two_buttons(self, feed, session_factory, true_false_only):
+        body = await self._ask(feed, session_factory)
+
+        assert block_types(body) == ["heading", "paragraph"]
+        assert lines(body) == [only_text(Dialogs.quiz.true_false_title()), "Канеки — гуль"]
+        labels = [b["text"] for row in body["reply_markup"]["inline_keyboard"] for b in row]
+        assert labels == [
+            only_text(Dialogs.quiz.true_button()),
+            only_text(Dialogs.quiz.false_button()),
+        ]
+        assert button_data(body, labels[1]) == f"quiz_answer:33:1:0:2:{UID}"
+
+    async def test_true_false_with_a_picture(self, feed, session_factory, true_false_only):
+        true_false_only.true_false.prompt_media = Media(url=PHOTO, kind="image")
+
+        body = await self._ask(feed, session_factory)
+
+        assert block_types(body) == ["heading", "paragraph", "photo"]
+
+    async def test_true_false_pays_part_of_the_award(
+        self, feed, session_factory, true_false_only
+    ):
+        body = await self._ask(feed, session_factory)
+
+        edited = await self._answer(feed, body, only_text(Dialogs.quiz.true_button()))
+
+        award = await balance_of(session_factory, UID)
+        share = QUIZ_CONFIG.true_false_share
+        assert 5000 * share <= award <= 10000 * share
+        assert lines(edited)[:2] == [
+            only_text(Dialogs.quiz.true_false_title()),
+            "Канеки — гуль",
+        ]
+
+    async def test_true_false_wrong(self, feed, session_factory, true_false_only):
+        body = await self._ask(feed, session_factory)
+
+        edited = await self._answer(feed, body, only_text(Dialogs.quiz.false_button()))
+
+        assert await balance_of(session_factory, UID) == 0
+        true_label = only_text(Dialogs.quiz.true_button())
+        false_label = only_text(Dialogs.quiz.false_button())
+        assert result_text(edited, 2) in result_variants(
+            true_label, false_label, Dialogs.quiz.wrong()
+        )
 
     async def test_long_option_fits_the_button(
         self, feed, session_factory, dispatcher, monkeypatch
@@ -993,20 +1337,15 @@ class TestQuiz:
         long = "Кен Канеки после встречи с Ризе Камиширо"
         fake = FakeQuiz([long, "а_б", "в", "г"], answer=long)
         monkeypatch.setattr(dispatcher, "quiz_service", fake)
+        monkeypatch.setattr(QUIZ_CONFIG, "whois_chance", 0.0)
+        monkeypatch.setattr(QUIZ_CONFIG, "true_false_chance", 0.0)
         body = await self._ask(feed, session_factory)
 
-        telegram = await feed(keyboard_callback(body, long, UID))
+        edited = await self._answer(feed, body, long)
 
-        (edited,) = telegram.bodies("editMessageText")
         award = await balance_of(session_factory, UID)
-        assert edited["text"] in phrase_texts(
-            Dialogs.quiz.result(
-                question="Кто?",
-                answer=long,
-                choice=long,
-                status=Dialogs.quiz.correct(award=award),
-            )
-        )
+        status = Dialogs.quiz.correct(award=award, streak=1, multiplier="1", minutes=5)
+        assert result_text(edited) in result_variants(long, long, status)
 
 
 class TestCombatPower:

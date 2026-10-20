@@ -6,7 +6,7 @@ from selfrot import BaseTask, Every
 from src.config import settings
 
 from ..context import AppContext
-from ..routers import expire_overdue_duels, expire_overdue_votes
+from ..routers import expire_overdue_duels, expire_overdue_streaks, expire_overdue_votes
 from ..services.analytics import FLUSH_INTERVAL
 from ..services.media_tools import TOOLS_UPDATE_INTERVAL, MediaToolsUpdater
 from ..services.moderation import ModerationTicker
@@ -21,6 +21,11 @@ class DuelExpiry(BaseTask[AppContext[Any]]):
 class FamilyVoteExpiry(BaseTask[AppContext[Any]]):
     async def run(self) -> None:
         await expire_overdue_votes(self.ctx, self.ctx.bot)
+
+
+class QuizStreakExpiry(BaseTask[AppContext[Any]]):
+    async def run(self) -> None:
+        await expire_overdue_streaks(self.ctx, self.ctx.bot)
 
 
 class Notifications(BaseTask[AppContext[Any]]):
@@ -49,6 +54,7 @@ class MediaToolsUpdate(BaseTask[AppContext[Any]]):
 TASKS = (
     Every(1, DuelExpiry),
     Every(30, FamilyVoteExpiry),
+    Every(10, QuizStreakExpiry),
     Every(30, Notifications),
     Every(10, ModerationExpiry),
     Every(FLUSH_INTERVAL, AnalyticsFlush),
@@ -58,6 +64,7 @@ TASKS = (
 __all__ = [
     "TASKS",
     "AnalyticsFlush",
+    "QuizStreakExpiry",
     "DuelExpiry",
     "FamilyVoteExpiry",
     "MediaToolsUpdate",
