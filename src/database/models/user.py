@@ -39,6 +39,8 @@ class User(Base):
 
     has_private_chat: Mapped[bool] = mapped_column(nullable=False, default=False)
 
+    is_service: Mapped[bool] = mapped_column(nullable=False, default=False)
+
     @property
     def full_name(self) -> str:
         return self.first_name + " " + (self.last_name or "")

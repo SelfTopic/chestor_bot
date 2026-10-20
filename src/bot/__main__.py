@@ -45,6 +45,7 @@ from .middlewares import (
     SyncEntitiesMiddleware,
     UpdateLoggingMiddleware,
 )
+from .repositories import UserRepository
 from .routers import RootRouter
 from .session_services import rp_commands_repository
 from .tasks import TASKS, MediaToolsUpdate
@@ -235,6 +236,7 @@ class Dispatcher(BaseDispatcher[AppContext]):
         # Перед любым режимом старый вебхук снимается (иначе polling получит 409),
         # накопившиеся апдейты отбрасываются.
         await self.api.delete_webhook(drop_pending_updates=True)
+        await self.mark_service_admins()
         await self.video_worker.start()
         if settings.DOCS_CHANNEL:
             # Правка десятков постов упирается во флуд-контроль: запуск бота её не ждёт.
@@ -248,6 +250,13 @@ class Dispatcher(BaseDispatcher[AppContext]):
         task.add_done_callback(self.alerts.discard)
         self.roast_service.bot_id = (await self.api.get_me()).id
         await self.roast_service.cleanup()
+
+    async def mark_service_admins(self) -> None:
+        if not settings.ADMIN_IDS:
+            return
+        async with self.session_factory() as session:
+            await UserRepository(session).mark_services(list(settings.ADMIN_IDS))
+            await session.commit()
 
     async def publish_docs(self, channel: str) -> None:
         try:

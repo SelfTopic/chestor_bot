@@ -2,7 +2,7 @@ import logging
 from datetime import datetime
 from typing import Any, Optional, Union
 
-from sqlalchemy import exists, select
+from sqlalchemy import exists, select, update
 from sqlalchemy.dialects.postgresql import insert
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -161,6 +161,18 @@ class UserRepository(Base):
         if user and user.is_banned:
             return user
         return None
+
+    async def set_service(self, telegram_id: int, value: bool) -> None:
+        await self.session.execute(
+            update(User).where(User.telegram_id == telegram_id).values(is_service=value)
+        )
+
+    async def mark_services(self, telegram_ids: list[int]) -> None:
+        if not telegram_ids:
+            return
+        await self.session.execute(
+            update(User).where(User.telegram_id.in_(telegram_ids)).values(is_service=True)
+        )
 
     async def get_all(self) -> list[User]:
         result = await self.session.scalars(select(User))

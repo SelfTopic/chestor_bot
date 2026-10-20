@@ -49,6 +49,9 @@ class UserService(Base):
         balance = await self.wallet_repository.balance(telegram_id)
         return 0 if balance is None else balance
 
+    async def set_service(self, telegram_id: int, value: bool) -> None:
+        await self.user_repository.set_service(telegram_id, value)
+
     async def plus_balance(self, telegram_id: int, change_balance: int, log: str) -> int:
         return await self._change(telegram_id, change_balance, log)
 
