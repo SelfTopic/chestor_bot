@@ -240,6 +240,44 @@ class TestKill:
         assert reply == only_text(Dialogs.errors.user_not_found(query="@nobody"))
 
 
+class TestServiceFlag:
+    async def test_mark_by_reply(self, feed, telegram, session_factory):
+        await seed(session_factory, 42, "Вася")
+
+        await feed(message_update("/mark_service", uid=ADMIN, reply_to_uid=42))
+
+        user = await get_user(session_factory, 42)
+        assert user is not None and user.is_service
+
+    async def test_mark_explicit(self, send, session_factory):
+        await seed(session_factory, 42, "Вася", username="vasya")
+
+        (reply,) = await send("/mark_service @vasya", uid=ADMIN)
+        assert matches_phrase(reply, "admin.service.marked")
+
+        user = await get_user(session_factory, 42)
+        assert user is not None and user.is_service
+
+    async def test_unmark_by_reply(self, feed, telegram, session_factory):
+        await seed(session_factory, 42, "Вася", is_service=True)
+
+        await feed(message_update("/unmark_service", uid=ADMIN, reply_to_uid=42))
+
+        user = await get_user(session_factory, 42)
+        assert user is not None and not user.is_service
+
+    async def test_startup_marks_only_admins(self, dispatcher, session_factory):
+        await seed(session_factory, ADMIN, "Админ")
+        await seed(session_factory, 42, "Вася")
+
+        await dispatcher.mark_service_admins()
+
+        admin_user = await get_user(session_factory, ADMIN)
+        other = await get_user(session_factory, 42)
+        assert admin_user is not None and admin_user.is_service
+        assert other is not None and not other.is_service
+
+
 class TestCooldownAdmin:
     async def seed_cooldown(
         self, session_factory, telegram_id: int, name: str = "SNAP"

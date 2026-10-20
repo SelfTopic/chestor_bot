@@ -5,10 +5,13 @@ from datetime import date, datetime, timezone
 
 from sqlalchemy import select
 
+from src.bot.repositories import UserRepository
 from src.bot.services.analytics import AnalyticsRecorder
 from src.database.models import BotEvent, ChatActivity
 
 from .conftest import message_update, owner_dict
+from .test_common_routers import seed
+from .test_update_middlewares import get_user
 
 GROUP = -100500
 
@@ -60,3 +63,41 @@ async def test_day_is_moscow_and_counts_add_up_across_flushes(session_factory):
     async with session_factory() as session:
         (row,) = await session.scalars(select(ChatActivity))
     assert (row.day, row.messages) == (date(2026, 10, 15), 2)
+
+
+async def test_any_update_from_user_bumps_last_active_at(feed, dispatcher, session_factory):
+    await feed(message_update("/start", uid=42))
+    await dispatcher.analytics.flush()
+
+    user = await get_user(session_factory, 42)
+    assert user is not None and user.last_active_at is not None
+
+
+async def test_last_active_at_keeps_the_latest_timestamp_across_flushes(session_factory):
+    await seed(session_factory, 7)
+    earlier = datetime(2026, 10, 14, 10, 0)
+    later = datetime(2026, 10, 14, 12, 0)
+    times = iter([earlier, later])
+    recorder = AnalyticsRecorder(session_factory, now=lambda: next(times))
+
+    recorder.touch(7)
+    await recorder.flush()
+    recorder.touch(7)
+    await recorder.flush()
+
+    user = await get_user(session_factory, 7)
+    assert user is not None and user.last_active_at == later
+
+
+async def test_failed_flush_keeps_last_active_at_pending(monkeypatch, session_factory):
+    moment = datetime(2026, 10, 14, 12, 0)
+    recorder = AnalyticsRecorder(session_factory, now=lambda: moment)
+    recorder.touch(7)
+
+    async def boom(self, *_args, **_kwargs):
+        raise RuntimeError("база недоступна")
+
+    monkeypatch.setattr(UserRepository, "bump_last_active", boom)
+    await recorder.flush()
+
+    assert recorder._last_seen == {7: moment}

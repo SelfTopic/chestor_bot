@@ -9,6 +9,7 @@ from .death_log import DeathLog
 from .duel_session import DuelSession
 from .family import Family, FamilyMember, FamilyRename, MarriageConsent, MarriageProposal
 from .ghoul import Ghoul
+from .level_up_log import LevelUpLog
 from .lottery import Lottery
 from .media import Media
 from .scheduled_notification import ScheduledNotification
@@ -51,6 +52,7 @@ __all__ = [
     "Transfer",
     "ScheduledNotification",
     "DeathLog",
+    "LevelUpLog",
     "DuelSession",
     "Family",
     "FamilyMember",
