@@ -22,7 +22,6 @@ from .community import CommunityRouter, expire_overdue_votes
 from .creator import CreatorRouter
 from .ghoul import (
     GhoulRouter,
-    SubscriptionCheckRouter,
     expire_overdue_duels,
     expire_overdue_streaks,
 )
@@ -39,8 +38,6 @@ class RootRouter(BaseRouter[AppContext]):
         CommunityRouter,
         StartRouter,
         BotRouter,
-        # Вне GhoulRouter: кнопку проверки жмут те, кого его подписка не пускает.
-        SubscriptionCheckRouter,
         GhoulRouter,
         BalanceRouter,
         HelpRouter,

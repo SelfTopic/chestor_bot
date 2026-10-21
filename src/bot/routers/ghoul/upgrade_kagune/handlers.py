@@ -128,9 +128,9 @@ class KaguneChoiceHandler(CallbackQueryHandler[AppContext[DataMessageCallbackQue
         await ctx.say(line)
 
 
+class RegistrationRouter(BaseRouter[AppContext]):
+    handlers = (RegisterOrRebirthHandler,)
+
+
 class UpgradeKaguneRouter(BaseRouter[AppContext]):
-    handlers = (
-        RegisterOrRebirthHandler,
-        UpgradeKaguneHandler,
-        KaguneChoiceHandler,
-    )
+    handlers = (UpgradeKaguneHandler, KaguneChoiceHandler)

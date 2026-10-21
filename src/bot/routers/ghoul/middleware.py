@@ -5,21 +5,12 @@ from src.bot.dialogs import Dialogs
 
 from ...context import AppContext
 
-_GROW_KAGUNE_BYPASS = "растить кагуне"
-
 
 class GhoulMiddleware(BaseMiddleware[AppContext]):
     async def pre_handle(self) -> bool:
         event = self.ctx.event
         if not isinstance(event, (Message, CallbackQuery)):
             return False
-
-        if (
-            isinstance(event, Message)
-            and event.text
-            and event.text.lower() == _GROW_KAGUNE_BYPASS
-        ):
-            return True
 
         user = self.ctx.user
         if user is None:

@@ -1,3 +1,3 @@
-from .handlers import UpgradeKaguneRouter
+from .handlers import RegistrationRouter, UpgradeKaguneRouter
 
-__all__ = ["UpgradeKaguneRouter"]
+__all__ = ["RegistrationRouter", "UpgradeKaguneRouter"]

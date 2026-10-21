@@ -8,17 +8,23 @@ from .eat_human import EatHumanRouter
 from .middleware import GhoulMiddleware
 from .mob_fight import MobFightRouter
 from .passive_status import PassiveStatusRouter
+from .profile import GhoulProfileRouter
 from .promo import PromoRouter
 from .quiz import QuizRouter, expire_overdue_streaks
 from .snap import SnapRouter
 from .subscription import ChannelSubscriptionMiddleware, SubscriptionCheckRouter
 from .tops import TopsGhoulRouter
-from .upgrade_kagune import UpgradeKaguneRouter
+from .upgrade_kagune import RegistrationRouter, UpgradeKaguneRouter
 from .upgrade_stat import UpgradeStatRouter
 
 
-class GhoulRouter(BaseRouter[AppContext]):
-    middlewares = (ChannelSubscriptionMiddleware, GhoulMiddleware)
+# Без проверок: кнопку «я подписался» жмут как раз те, кого подписка не пускает.
+class GhoulOpenRouter(BaseRouter[AppContext]):
+    routers = (SubscriptionCheckRouter, GhoulProfileRouter)
+
+
+class GhoulAliveRouter(BaseRouter[AppContext]):
+    middlewares = (GhoulMiddleware,)
     routers = (
         UpgradeKaguneRouter,
         SnapRouter,
@@ -35,9 +41,18 @@ class GhoulRouter(BaseRouter[AppContext]):
     )
 
 
+# Регистрация раньше живых: «растить кагуне» без гуля или с мёртвым — рождение, а не прокачка.
+class GhoulSubscribedRouter(BaseRouter[AppContext]):
+    middlewares = (ChannelSubscriptionMiddleware,)
+    routers = (RegistrationRouter, GhoulAliveRouter)
+
+
+class GhoulRouter(BaseRouter[AppContext]):
+    routers = (GhoulOpenRouter, GhoulSubscribedRouter)
+
+
 __all__ = [
     "GhoulRouter",
-    "SubscriptionCheckRouter",
     "expire_overdue_duels",
     "expire_overdue_streaks",
 ]
