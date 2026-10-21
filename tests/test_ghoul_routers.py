@@ -1,4 +1,4 @@
-"""routers/ghoul_routers: GhoulMiddleware гейтит весь роутер (без гуля — молчание с
+"""routers/ghoul: GhoulMiddleware гейтит весь роутер (без гуля — молчание с
 подсказкой, кроме "растить кагуне"; мёртвому гулю тоже отказ). coffee.py: использует
 ctx.say (гифка фразы coffee.done из папки coffee; кулдаун — не через
 ctx.cooldown_remaining, а CoffeeService.execute_cooldown, который сам решает COFFEE
@@ -26,7 +26,7 @@ from src.bot.dialogs import Dialogs
 from src.bot.exceptions import QuizModeDisabled
 from src.bot.game_configs import QUIZ_CONFIG, STAT_UPGRADE_CONFIG
 from src.bot.repositories import GhoulRepository, UserCooldownRepository
-from src.bot.routers.ghoul_routers.upgrade_stat import STAT_LABELS
+from src.bot.routers.ghoul.upgrade_stat import STAT_LABELS
 from src.bot.tasks import QuizStreakExpiry
 from src.bot.types import KaguneType
 from src.bot.utils import (

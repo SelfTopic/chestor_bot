@@ -26,15 +26,15 @@ from .common import (
     WordleRouter,
     expire_overdue_votes,
 )
-from .chat_member_update_routers import ChatMemberUpdateRouter
-from .creator_routers import CreatorRouter
-from .ghoul_routers import (
+from .chat_member_update import ChatMemberUpdateRouter
+from .creator import CreatorRouter
+from .ghoul import (
     GhoulRouter,
     SubscriptionCheckRouter,
     expire_overdue_duels,
     expire_overdue_streaks,
 )
-from .moderator_routers import ModeratorRouter
+from .moderator import ModeratorRouter
 
 
 class RootRouter(BaseRouter[AppContext]):

@@ -1,4 +1,4 @@
-"""routers/ghoul_routers/duel: приглашение (ответом и по @username/id), согласие,
+"""routers/ghoul/duel: приглашение (ответом и по @username/id), согласие,
 "всерьёз/фора", бой, выбор победителя и таймауты DuelTicker.
 
 Исход боя без случайности: у B нулевая сила, он не может ранить A, а мощь у обоих
@@ -18,7 +18,7 @@ from src.bot.repositories import (
     BattleRepository,
     DuelSessionRepository,
 )
-from src.bot.routers.ghoul_routers.duel import expiry
+from src.bot.routers.ghoul.duel import expiry
 from src.bot.services.battle_record import BattleRecordService
 from src.bot.tasks import DuelExpiry
 from src.database.models import DuelSession

@@ -141,7 +141,7 @@ def test_the_checks_see_the_graph():
     """Страховка от молча пустого графа: известные связи находятся."""
     modules, importers = _importers()
     assert "src.bot.routers.rich" in importers
-    assert "src.bot.routers.ghoul_routers.battle_text" in importers[
+    assert "src.bot.routers.ghoul.battle_text" in importers[
         "src.bot.routers.rich"
     ]
     assert len(modules) > 100
