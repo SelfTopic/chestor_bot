@@ -1,29 +1,33 @@
-# Роутеры по отдельности, а не одним CommonRouter: RootRouter ставит их вперемешку с
-# другими областями, а порядок решает, какой хендлер сработает первым.
+from selfrot import BaseRouter
+
+from ...context import AppContext
 from .bot_router import BotRouter
 from .check_balance import BalanceRouter
 from .check_rules_router import CheckRulesRouter
+from .edits_router import EditsRouter
 from .fun import FunRouter
 from .help_router import HelpRouter
 from .profile_router import ProfileRouter
 from .race_profile import RaceProfileRouter
 from .rich_router import RichRouter
-from .edits_router import EditsRouter
 from .start_router import StartRouter
 from .tops import CommonTopsRouter
 from .transfer import TransferRouter
 
-__all__ = [
-    "BalanceRouter",
-    "BotRouter",
-    "CheckRulesRouter",
-    "CommonTopsRouter",
-    "FunRouter",
-    "HelpRouter",
-    "ProfileRouter",
-    "RaceProfileRouter",
-    "RichRouter",
-    "EditsRouter",
-    "StartRouter",
-    "TransferRouter",
-]
+
+class CommonRouter(BaseRouter[AppContext]):
+    routers = (
+        StartRouter,
+        BotRouter,
+        BalanceRouter,
+        HelpRouter,
+        RichRouter,
+        ProfileRouter,
+        RaceProfileRouter,
+        CheckRulesRouter,
+        CommonTopsRouter,
+        TransferRouter,
+        # Раньше FunRouter: иначе «1000-7» посчитал бы калькулятор.
+        EditsRouter,
+        FunRouter,
+    )

@@ -4,27 +4,10 @@ from ..context import AppContext
 from .ai import AIRouter
 from .arcade import ArcadeRouter
 from .chat_member_update import ChatMemberUpdateRouter
-from .common import (
-    BalanceRouter,
-    BotRouter,
-    CheckRulesRouter,
-    CommonTopsRouter,
-    EditsRouter,
-    FunRouter,
-    HelpRouter,
-    ProfileRouter,
-    RaceProfileRouter,
-    RichRouter,
-    StartRouter,
-    TransferRouter,
-)
+from .common import CommonRouter
 from .community import CommunityRouter, expire_overdue_votes
 from .creator import CreatorRouter
-from .ghoul import (
-    GhoulRouter,
-    expire_overdue_duels,
-    expire_overdue_streaks,
-)
+from .ghoul import GhoulRouter, expire_overdue_duels, expire_overdue_streaks
 from .media import MediaRouter
 from .moderator import ModeratorRouter
 from .role_play import RolePlayRouter
@@ -34,28 +17,21 @@ from .system import SystemRouter
 class RootRouter(BaseRouter[AppContext]):
     # Порядок важен: апдейт достаётся первому подошедшему роутеру.
     routers = (
-        # Раньше StartRouter: тот приветствует на любой /start, а здесь ссылки из брака.
+        # Раньше Common: «/start» там приветствует на любой текст после команды, а здесь
+        # ссылки из брака.
         CommunityRouter,
-        StartRouter,
-        BotRouter,
+        # Раньше Common: «распрофиль» в Common отвечает человеческой карточкой кому угодно.
         GhoulRouter,
-        BalanceRouter,
-        HelpRouter,
-        RichRouter,
-        ProfileRouter,
-        RaceProfileRouter,
+        # Явные команды с ограниченным доступом раньше пассивных: калькулятор в Common
+        # ловит любую арифметику, Media — любую ссылку.
         ModeratorRouter,
-        CheckRulesRouter,
-        ChatMemberUpdateRouter,
         CreatorRouter,
-        CommonTopsRouter,
+        ChatMemberUpdateRouter,
+        CommonRouter,
+        # После Common: свои команды чата не перекрывают встроенные.
         RolePlayRouter,
         ArcadeRouter,
-        TransferRouter,
         SystemRouter,
-        # Раньше FunRouter: иначе «1000-7» посчитал бы калькулятор.
-        EditsRouter,
-        FunRouter,
         MediaRouter,
         # Последним: огрызается только на то, что не забрала ни одна команда.
         AIRouter,
