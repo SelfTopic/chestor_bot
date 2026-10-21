@@ -22,7 +22,6 @@ from .common import (
     RolePlayRouter,
     StartRouter,
     TransferRouter,
-    UserbotInboxRouter,
     WordleRouter,
     expire_overdue_votes,
 )
@@ -35,6 +34,7 @@ from .ghoul import (
     expire_overdue_streaks,
 )
 from .moderator import ModeratorRouter
+from .system import SystemRouter
 
 
 class RootRouter(BaseRouter[AppContext]):
@@ -63,7 +63,7 @@ class RootRouter(BaseRouter[AppContext]):
         TransferRouter,
         MarriageRouter,
         DepRouter,
-        UserbotInboxRouter,
+        SystemRouter,
         # Раньше FunRouter: иначе «1000-7» посчитал бы калькулятор.
         EditsRouter,
         FunRouter,

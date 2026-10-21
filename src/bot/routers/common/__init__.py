@@ -16,7 +16,6 @@ from .link_media_router import LinkMediaRouter
 from .marriage import MarriageLinkRouter, MarriageRouter, expire_overdue_votes
 from .music import MusicRouter
 from .roast_router import RoastRouter
-from .userbot_inbox import UserbotInboxRouter
 from .start_router import StartRouter
 from .tops import CommonTopsRouter
 from .transfer import TransferRouter
@@ -41,7 +40,6 @@ __all__ = [
     "expire_overdue_votes",
     "MusicRouter",
     "RoastRouter",
-    "UserbotInboxRouter",
     "RolePlayRouter",
     "StartRouter",
     "TransferRouter",
