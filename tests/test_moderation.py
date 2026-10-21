@@ -1,4 +1,4 @@
-"""routers/moderator_routers/punishments: мут, бан, кик и их снятие. Модератор — админ Telegram с нужным
+"""routers/moderator/punishments: мут, бан, кик и их снятие. Модератор — админ Telegram с нужным
 правом; права, бот и цель берутся из getChatAdministrators / getChatMember."""
 
 import time

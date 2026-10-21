@@ -12,7 +12,7 @@ from src.bot.dialogs import Dialogs
 from ....context import AppContext
 from ...types import TextMessage
 from .calculator import DivisionByZero, ResultTooBig
-from .commands import bot_command
+from ...bot_command import bot_command
 from .filters import Arithmetic
 
 ITEM_SEPARATOR = re.compile(r"\s*(?:,|\bили\b)\s*", re.IGNORECASE)

@@ -1,4 +1,4 @@
-"""routers/creator_routers: админ-команды за CreatorMiddleware. Админ — settings.ADMIN_IDS
+"""routers/creator: админ-команды за CreatorMiddleware. Админ — settings.ADMIN_IDS
 (здесь uid=999, патчится autouse-фикстурой), проверка молчания для остальных — отдельно."""
 
 from datetime import datetime, timedelta, timezone
@@ -17,8 +17,8 @@ from src.bot.repositories import (
 from src.bot.types import KaguneType
 from src.config import settings
 from src.database.models import Cooldown, Media
-from src.bot.routers.creator_routers.media import USAGE as ADD_GIF_USAGE
-from src.bot.routers.creator_routers.stats_edits import USAGE as SET_STAT_USAGE
+from src.bot.routers.creator.media import USAGE as ADD_GIF_USAGE
+from src.bot.routers.creator.stats_edits import USAGE as SET_STAT_USAGE
 from src.bot.services.broadcast import BroadcastService
 from src.bot.services.notify import NotifyError, SelfrotBotNotifier
 

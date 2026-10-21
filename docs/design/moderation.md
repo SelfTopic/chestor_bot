@@ -41,18 +41,18 @@
 
 ## Часть 1 — что уже есть
 
-- `routers/moderator_routers/` — админы чата меняют правила, приветствие и прощание
+- `routers/moderator/` — админы чата меняют правила, приветствие и прощание
   текстовыми командами («новые правила …»). Права проверяет `ModeratorMiddleware`:
   живой `get_chat_member` на каждую команду, только супергруппы.
 - `routers/common/check_rules_router.py` — «правила» показывает правила чата.
-- `routers/chat_member_update_routers/` — вход и выход участников, фраза при добавлении
+- `routers/chat_member_update/` — вход и выход участников, фраза при добавлении
   бота; в `ChatParticipant` пишутся дата и способ входа (`join_method`).
 - `SyncEntitiesMiddleware` — на каждое сообщение в группе: апсерт чата и счётчики сообщений
   участника (`messages_today/week/month/total`).
 - `services/duration_parser.py` — `DurationParser`: «30 мин», `2h`, `1d` → `Duration`.
   Им читают сроки мута и бана.
 
-Не путать с **модерацией самого бота**: `/ban_bot` и `/unban_bot` в `creator_routers/ban.py`
+Не путать с **модерацией самого бота**: `/ban_bot` и `/unban_bot` в `creator/ban.py`
 запрещают человеку пользоваться ботом (`BanMiddleware`) и доступны только админам бота из
 `ADMIN_IDS`. Это отдельная область, в этот модуль она не входит.
 
@@ -331,7 +331,7 @@
   сработал ли антифлуд), журнал, настройки.
 - ✅ **5.1.** `restrictChatMember`, `banChatMember` и прочие вызовы Telegram делают роутеры,
   сервис про них не знает.
-- `routers/moderator_routers/` вырастет в пакет с подпакетами (наказания, варны,
+- `routers/moderator/` вырастет в пакет с подпакетами (наказания, варны,
   настройки, жалобы). Команды «ответом или по @username/id» — два хендлера и миксины
   из `routers/targeting.py`.
 - Антифлуд и антиспам должны видеть сообщение раньше игровых команд: это middleware

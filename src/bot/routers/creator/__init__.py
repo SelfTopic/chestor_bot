@@ -7,7 +7,7 @@ from .cooldown_admin import CooldownAdminRouter
 from .kagune_admin import KaguneAdminRouter
 from .kill import KillRouter
 from .level_up import LevelUpRouter
-from .media import MediaRouter
+from .media import GifAdminRouter
 from .middleware import CreatorMiddleware
 from .players_lookup import PlayersLookupRouter
 from .promo import PromoAdminRouter
@@ -20,7 +20,7 @@ from .stats_edits import StatsEditRouter
 class CreatorRouter(BaseRouter[AppContext]):
     middlewares = (CreatorMiddleware,)
     routers = (
-        MediaRouter,
+        GifAdminRouter,
         BanRouter,
         PlayersLookupRouter,
         StatsEditRouter,

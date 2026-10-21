@@ -21,7 +21,7 @@ async def test_ignores_everything_else(send, text):
 
 async def test_polls_messages_and_callbacks(send):
     # callback_query нужен кнопкам перевода; chat_member/my_chat_member —
-    # chat_member_update_routers (вход/выход участников)
+    # chat_member_update (вход/выход участников)
     assert send.dispatcher.used_update_types() == {
         "message",
         "callback_query",

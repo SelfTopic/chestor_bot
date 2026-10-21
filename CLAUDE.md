@@ -82,7 +82,7 @@ Postgres + SQLAlchemy (async), миграции Alembic, запуск в Docker 
 баланс — `ctx.user_service.balance(id)`, изменения — `plus_balance` / `minus_balance` /
 `debit_if_sufficient` (`WalletRepository` сам выбирает счёт семьи или личный баланс), а в
 SQL — `coalesce(families.balance, users.balance)`. Семьи, предложения брака и развод —
-`ctx.family_service` (`services/family.py`), роутер — `routers/common/marriage/`.
+`ctx.family_service` (`services/family.py`), роутер — `routers/community/marriage/`.
 
 **Фоновые задачи — `tasks/`** (`Dispatcher.tasks = TASKS`, `Every(интервал, Задача)` из selfrot):
 истечение дуэлей и голосований семьи, уведомления о голоде, сроки модерации, сброс статистики,
@@ -107,7 +107,7 @@ SQL — `coalesce(families.balance, users.balance)`. Семьи, предлож�
 - **Всё, что нужно только хендлерам** (миксины, фильтры, типы сообщений, хелперы отправки),
   лежит в самой глубокой общей папке тех, кто это импортирует: нужен одному пакету — в пакете
   (`common/transfer/flow.py`), нескольким пакетам области — в папке области
-  (`ghoul_routers/battle_text.py`), нескольким областям — в `routers/` (`routers/types.py`,
+  (`ghoul/battle_text.py`), нескольким областям — в `routers/` (`routers/types.py`,
   `routers/targeting.py`, `routers/rich.py`, `routers/utils.py`). Модуль корня, который
   нужен только роутерам, тоже уезжает в `routers/`.
 - **Не импортировать вбок и внутрь чужого пакета.** Понадобилось соседу — поднять до общей
@@ -115,7 +115,7 @@ SQL — `coalesce(families.balance, users.balance)`. Семьи, предлож�
   модули (так `routers/__init__.py` берёт роутеры `common`).
 - Тесты пользователями не считаются. Перенос — `git mv` и правка импортов, логика не меняется.
 
-**Раскладка роутеров** (образец — `routers/common/role_play/`):
+**Раскладка роутеров** (образец — `routers/role_play/`):
 
 - Роутер длиннее ~150 строк становится пакетом (`flow.py`, `commands.py`, `handlers.py`, …).
 - Фильтр или middleware, нужный одному роутеру, живёт в его пакете.
@@ -158,7 +158,7 @@ selfrot ищет заголовок по всему MRO, так что `Definiti
 
 **Огрызания — `ctx.roast_service`** (`services/roast/`). Процессный сервис, как квиз: одно
 соединение с Cloud.ru, состояние споров в памяти, свои сессии БД для журнала `roast_log`.
-Модель зовёт `routers/common/roast_router.py` (последний в `RootRouter`, только группы): в
+Модель зовёт `routers/ai/roast_router.py` (последний в `RootRouter`, только группы): в
 `handle` решает, стоит ли, сам запрос — в `after_handle`. Отвечает только на явное обращение:
 реплай боту или «бот»/«честор» в тексте; реплай на игровое сообщение бота другому игроку без
 упоминания бота не в счёт. Характер, шаблон запроса, примеры и обращения — файлы в
@@ -177,7 +177,7 @@ selfrot ищет заголовок по всему MRO, так что `Definiti
 `LLM_API_KEY`; модель — `SEARCH_MODEL`.
 
 **Видео по ссылкам — `ctx.link_media_service`** (`services/link_media/`). На ссылку TikTok или
-YouTube в любом чате бот отвечает роликом (`routers/common/link_media_router.py`, перед
+YouTube в любом чате бот отвечает роликом (`routers/media/link_media_router.py`, перед
 огрызаниями; скачивание — в `after_handle`). yt-dlp — подпроцессом из своего venv
 `MEDIA_TOOLS_DIR` (`/opt/media-tools/bin` в образе), запасной вариант для TikTok — tikwm.
 Формат выбирает `formats.pick`: лучшее качество до 1080p, которое влезает в 50 МБ Bot API;
@@ -189,7 +189,7 @@ YouTube в любом чате бот отвечает роликом (`routers/
 обновляет yt-dlp и gallery-dl в их venv раз в сутки. Без yt-dlp в `MEDIA_TOOLS_DIR` ссылки
 не трогаются.
 
-**Песни — `ctx.music_service`** (`services/music/`, `routers/common/music/`).
+**Песни — `ctx.music_service`** (`services/music/`, `routers/media/music/`).
 «песня <название>» ищет на YouTube через yt-dlp (`ytsearch`, до 5 треков не длиннее
 `MUSIC_MAX_DURATION`) и показывает их кнопками; по нажатию бот качает звук с обложкой и шлёт
 аудио. YouTube отдаёт звук с IP сервера не всегда (403 или зависание), поэтому та же песня
@@ -214,14 +214,14 @@ shazamio (`recognize.py`, звук сначала сводится ffmpeg) и п
 показывает его целиком (поиск по словам заголовка, разбитого по `/`, `,` и скобкам); не нашёл —
 подсказывает до трёх похожих слов кнопками (`difflib`, опечатка «щелу» → «щелк»). **Новая
 команда для игроков — подраздел в `docs/players/`**: тест `test_player_docs.py` сверяет все
-триггеры роутеров (кроме `creator_routers` и юзербота) с заголовками и без этого красный.
+триггеры роутеров (кроме `creator` и юзербота) с заголовками и без этого красный.
 
 **Юзербот** (`src/userbot_parser`, сервис `userbot_parser`, свой `.env`). Качает серии аниме
 для нарезки `/anime` и пересылает боту в личку видео-посты: серии из `CHANNEL_ID` (подпись
 «Токийский гуль N сезон M.») и эдиты из `EDIT_CHANNELS`. Каждый новый пост — сразу, а при
 запуске и раз в час — сверка: на `/userbot_sync` бот отвечает последним сохранённым постом по
 каналу, юзербот досылает всё новее (так доходят и посты, выброшенные ботом при перезапуске).
-Бот принимает пересылки только от `USERBOT_ID` (`routers/common/userbot_inbox.py`): серии —
+Бот принимает пересылки только от `USERBOT_ID` (`routers/system/userbot_inbox.py`): серии —
 в `anime_episodes`, и `/anime S E` целиком уходит по `file_id` (файлы серий больше 50 МБ,
 которые Bot API принимает на загрузку); остальное — эдиты в `ghoul_edits` для «1000-7»
 (`edits_router.py`, раньше `FunRouter`: иначе «1000-7» посчитал бы калькулятор).

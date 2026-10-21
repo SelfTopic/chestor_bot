@@ -16,9 +16,9 @@ from src.bot.services.ghoul_game.lottery import COLOR_TO_FOLDER
 from src.bot.services.lottery_video_genertor import LotteryGenerator
 from src.bot.services.wikipedia import WikipediaSummary
 from src.database.models import Chat
-from src.bot.routers.common.anime.guard import cut_guard
+from src.bot.routers.media.anime.guard import cut_guard
 from src.bot.routers.common.transfer.flow import TransferPress
-from src.bot.routers.common.wordle.captions import attempts_word
+from src.bot.routers.arcade.wordle.captions import attempts_word
 
 from src.bot.utils.service_accounts import TELEGRAM
 from .conftest import (

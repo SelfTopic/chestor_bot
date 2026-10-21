@@ -106,7 +106,7 @@ def test_real_docs_have_valid_headers_and_contents_template() -> None:
 
 ROUTERS = Path("src/bot/routers")
 # Команды владельца бота и обмен с юзерботом игрокам не нужны и в справку не идут.
-NOT_FOR_PLAYERS = (ROUTERS / "creator_routers", ROUTERS / "common" / "userbot_inbox.py")
+NOT_FOR_PLAYERS = (ROUTERS / "creator", ROUTERS / "system")
 TRIGGERS = (
     re.compile(r'\bCommand\(\s*"([^"]+)"'),
     re.compile(r'\bText\(\s*"([^"]+)"'),

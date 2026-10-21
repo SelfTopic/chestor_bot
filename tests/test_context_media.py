@@ -1,6 +1,6 @@
 """AppContext.answer_gif/reply_gif: общий хелпер для гифок с кэшем telegram_file_id,
 рассчитанный на переиспользование в любом будущем роутере (common/moderator/ghoul),
-который шлёт гифки — не только в ghoul_routers. Сама отправка идёт через selfrot
+который шлёт гифки — не только в ghoul. Сама отправка идёт через selfrot
 (ctx.answer_animation/reply_animation), кэш — через ctx.media_repository, уже
 переиспользуемый в порте (см. context.py). Тот же приём уже есть у NotificationTicker
 для видео (test_notification_ticker.py), там он проверяется через FakeNotifier —

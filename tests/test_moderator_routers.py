@@ -1,4 +1,4 @@
-"""routers/moderator_routers: настройка чата (правила/приветствие/прощание). В отличие
+"""routers/moderator: настройка чата (правила/приветствие/прощание). В отличие
 от CreatorMiddleware (settings.ADMIN_IDS), ModeratorMiddleware проверяет живым
 getChatMember — только админ/создатель супергруппы, молчит и для private/group/channel,
 и для не-админа в супергруппе."""

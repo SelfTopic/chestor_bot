@@ -189,5 +189,5 @@ class RemoveGifHandler(MessageHandler[AppContext[TextUserMessage]]):
         await self.ctx.say(Dialogs.admin.media.removed(paths=paths), reply=True)
 
 
-class MediaRouter(BaseRouter[AppContext]):
+class GifAdminRouter(BaseRouter[AppContext]):
     handlers = (AddGifHandler, RemoveGifHandler)
