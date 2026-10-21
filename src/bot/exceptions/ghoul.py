@@ -20,3 +20,9 @@ class KaguneAlreadyOwned(Exception):
 
 
 class LastKaguneType(Exception): ...
+
+
+class AllKaguneTypesOwned(Exception): ...
+
+
+class AlreadyKakuja(Exception): ...

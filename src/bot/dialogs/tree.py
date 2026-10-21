@@ -1046,6 +1046,9 @@ class _ErrorsDialogs:
     def not_enough_money(self, *, money: object) -> Line:
         return Line("errors.not_enough_money", {"money": money})
 
+    def not_enough_rc(self, *, rc: object) -> Line:
+        return Line("errors.not_enough_rc", {"rc": rc})
+
     def unexpected(self, *, error: object) -> Line:
         return Line("errors.unexpected", {"error": error})
 
@@ -1487,6 +1490,81 @@ class _HelpDialogs:
         return Line("help.sections", {"rows": rows})
 
 
+class _KaguneEvolutionDialogs:
+    def all_kagune_done(self) -> Line:
+        return Line("kagune.evolution.all_kagune_done", {})
+
+    def already_kakuja(self) -> Line:
+        return Line("kagune.evolution.already_kakuja", {})
+
+    def buy_kagune_button(self, *, cheston: object, kagune: object, rc: object) -> Line:
+        return Line(
+            "kagune.evolution.buy_kagune_button",
+            {
+                "cheston": cheston,
+                "kagune": kagune,
+                "rc": rc,
+            },
+        )
+
+    def buy_kakuja_button(self, *, cheston: object, rc: object) -> Line:
+        return Line(
+            "kagune.evolution.buy_kakuja_button",
+            {
+                "cheston": cheston,
+                "rc": rc,
+            },
+        )
+
+    def column_status(self) -> Line:
+        return Line("kagune.evolution.column_status", {})
+
+    def column_type(self) -> Line:
+        return Line("kagune.evolution.column_type", {})
+
+    def kagune_done(
+        self,
+        *,
+        cheston: object,
+        kagune: object,
+        rc: object,
+        strength: object,
+    ) -> Line:
+        return Line(
+            "kagune.evolution.kagune_done",
+            {
+                "cheston": cheston,
+                "kagune": kagune,
+                "rc": rc,
+                "strength": strength,
+            },
+        )
+
+    def kakuja_done(self, *, cheston: object, rc: object) -> Line:
+        return Line("kagune.evolution.kakuja_done", {"cheston": cheston, "rc": rc})
+
+    def kakuja_no(self) -> Line:
+        return Line("kagune.evolution.kakuja_no", {})
+
+    def kakuja_row(self) -> Line:
+        return Line("kagune.evolution.kakuja_row", {})
+
+    def kakuja_yes(self) -> Line:
+        return Line("kagune.evolution.kakuja_yes", {})
+
+    def not_owned(self) -> Line:
+        return Line("kagune.evolution.not_owned", {})
+
+    def owned(self, *, strength: object) -> Line:
+        return Line("kagune.evolution.owned", {"strength": strength})
+
+    def title(self) -> Line:
+        return Line("kagune.evolution.title", {})
+
+    def warning(self) -> Line:
+        return Line("kagune.evolution.warning", {})
+
+
 class _KaguneGuideDialogs:
     def general(self) -> Line:
         return Line("kagune.guide.general", {})
@@ -1549,6 +1627,7 @@ class _KaguneUpgradeDialogs:
 
 
 class _KaguneDialogs:
+    evolution = _KaguneEvolutionDialogs()
     guide = _KaguneGuideDialogs()
     upgrade = _KaguneUpgradeDialogs()
 
@@ -4414,6 +4493,7 @@ PLACEHOLDERS: dict[str, frozenset[str]] = {
     "errors.ghoul_not_found": frozenset(),
     "errors.media_not_found": frozenset(),
     "errors.not_enough_money": frozenset({"money"}),
+    "errors.not_enough_rc": frozenset({"rc"}),
     "errors.quiz.busy": frozenset({"seconds"}),
     "errors.quiz.email_missing": frozenset(),
     "errors.quiz.session_missing": frozenset({"email"}),
@@ -4542,6 +4622,21 @@ PLACEHOLDERS: dict[str, frozenset[str]] = {
     "help.more": frozenset(),
     "help.not_found": frozenset({"query"}),
     "help.sections": frozenset({"rows"}),
+    "kagune.evolution.all_kagune_done": frozenset(),
+    "kagune.evolution.already_kakuja": frozenset(),
+    "kagune.evolution.buy_kagune_button": frozenset({"cheston", "kagune", "rc"}),
+    "kagune.evolution.buy_kakuja_button": frozenset({"cheston", "rc"}),
+    "kagune.evolution.column_status": frozenset(),
+    "kagune.evolution.column_type": frozenset(),
+    "kagune.evolution.kagune_done": frozenset({"cheston", "kagune", "rc", "strength"}),
+    "kagune.evolution.kakuja_done": frozenset({"cheston", "rc"}),
+    "kagune.evolution.kakuja_no": frozenset(),
+    "kagune.evolution.kakuja_row": frozenset(),
+    "kagune.evolution.kakuja_yes": frozenset(),
+    "kagune.evolution.not_owned": frozenset(),
+    "kagune.evolution.owned": frozenset({"strength"}),
+    "kagune.evolution.title": frozenset(),
+    "kagune.evolution.warning": frozenset(),
     "kagune.guide.general": frozenset(),
     "kagune.guide.general_title": frozenset(),
     "kagune.guide.table_notes": frozenset(),

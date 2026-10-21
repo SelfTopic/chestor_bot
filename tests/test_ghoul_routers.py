@@ -1,10 +1,11 @@
-"""routers/ghoul: GhoulMiddleware гейтит весь роутер (без гуля — молчание с
-подсказкой, кроме "растить кагуне"; мёртвому гулю тоже отказ). coffee.py: использует
-ctx.say (гифка фразы coffee.done из папки coffee; кулдаун — не через
+"""routers/ghoul: GhoulAliveRouter (GhoulMiddleware) гейтит всё, что требует живого
+гуля (без гуля — молчание с подсказкой, мёртвому тоже отказ). Регистрация и
+перерождение ("растить кагуне" без гуля или с мёртвым) лежат отдельно, в
+RegistrationRouter — вне GhoulMiddleware, не байпасом внутри неё. coffee.py:
+использует ctx.say (гифка фразы coffee.done из папки coffee; кулдаун — не через
 ctx.cooldown_remaining, а CoffeeService.execute_cooldown, который сам решает COFFEE
-это или COFFEE_DAY, см. coffee.py). upgrade_kagune/: единственная команда, доступная
-и без гуля (регистрация), и мёртвому гулю (возрождение) — bypass в GhoulMiddleware;
-типизированный KaguneUpgradePress вместо ручного parse_kagune_callback_payload."""
+это или COFFEE_DAY, см. coffee.py). upgrade_kagune/: типизированный
+KaguneUpgradePress вместо ручного parse_kagune_callback_payload."""
 
 import json
 from datetime import timedelta

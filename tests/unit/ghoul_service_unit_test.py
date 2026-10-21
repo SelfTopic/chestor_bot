@@ -1,11 +1,14 @@
 import pytest
 
 from src.bot.exceptions import (
+    AllKaguneTypesOwned,
+    AlreadyKakuja,
     GhoulNotFound,
     KaguneAlreadyOwned,
     KaguneNotOwned,
     LastKaguneType,
 )
+from src.bot.game_configs import KAGUNE_CONFIG
 from src.bot.repositories.chat import ChatRepository
 from src.bot.repositories.ghoul import GhoulRepository
 from src.bot.repositories.user import UserRepository
@@ -216,6 +219,21 @@ async def test_register_assigns_initial_strength_to_chosen_type(
     assert ghoul_service.get_kagune_strength(ghoul, owned[0]) == 1
 
 
+async def test_register_birth_weights_skew_the_chosen_type(
+    ghoul_service, make_user, monkeypatch
+):
+    # Вместо статистики на много прогонов - крайний случай: 100% веса на один тип
+    # детерминированно выбирает его всегда.
+    monkeypatch.setattr(
+        KAGUNE_CONFIG, "birth_weights", {KaguneType.BIKAKU: 1.0, KaguneType.UKAKU: 0.0}
+    )
+    await make_user(telegram_id=200_000_307)
+
+    result = await ghoul_service.register(telegram_id=200_000_307)
+
+    assert ghoul_service.owned_kagune_types(result.ghoul) == [KaguneType.BIKAKU]
+
+
 # --- Управление типами кагуне через creator-команды ---
 
 
@@ -370,3 +388,76 @@ async def test_calculate_power(ghoul_service, make_user, make_ghoul):
 )
 def test_get_danger_rank(ghoul_service, power, expected_rank):
     assert ghoul_service.get_danger_rank(power) == expected_rank
+
+
+# --- Эволюция: новый тип кагуне и какуджа ---
+
+
+async def test_next_missing_kagune_type_follows_the_ladder(
+    ghoul_service, make_user, make_ghoul
+):
+    await make_user(telegram_id=200_000_400)
+    ghoul = await make_ghoul(
+        telegram_id=200_000_400,
+        kagune_type_bit=KaguneType.UKAKU.value["bit"],
+        kagune_strength_ukaku=1,
+    )
+    assert ghoul_service.next_missing_kagune_type(ghoul) == KaguneType.KOUKAKU
+
+
+async def test_next_missing_kagune_type_none_when_all_owned(
+    ghoul_service, make_user, make_ghoul
+):
+    await make_user(telegram_id=200_000_401)
+    await make_ghoul(telegram_id=200_000_401)
+    ghoul = await ghoul_service.grant_all_kagune_types(200_000_401)
+    assert ghoul_service.next_missing_kagune_type(ghoul) is None
+
+
+async def test_evolve_new_kagune_grants_next_missing_type(
+    ghoul_service, make_user, make_ghoul
+):
+    await make_user(telegram_id=200_000_402)
+    await make_ghoul(
+        telegram_id=200_000_402,
+        kagune_type_bit=KaguneType.UKAKU.value["bit"],
+        kagune_strength_ukaku=1,
+    )
+
+    ghoul = await ghoul_service.evolve_new_kagune(200_000_402)
+
+    assert set(ghoul_service.owned_kagune_types(ghoul)) == {
+        KaguneType.UKAKU,
+        KaguneType.KOUKAKU,
+    }
+    assert ghoul_service.get_kagune_strength(ghoul, KaguneType.KOUKAKU) == 1
+
+
+async def test_evolve_new_kagune_rejects_when_all_owned(
+    ghoul_service, make_user, make_ghoul
+):
+    await make_user(telegram_id=200_000_403)
+    await make_ghoul(telegram_id=200_000_403)
+    await ghoul_service.grant_all_kagune_types(200_000_403)
+
+    with pytest.raises(AllKaguneTypesOwned):
+        await ghoul_service.evolve_new_kagune(200_000_403)
+
+
+async def test_become_kakuja_sets_the_flag(ghoul_service, make_user, make_ghoul):
+    await make_user(telegram_id=200_000_404)
+    await make_ghoul(telegram_id=200_000_404)
+
+    ghoul = await ghoul_service.become_kakuja(200_000_404)
+
+    assert ghoul.is_kakuja is True
+
+
+async def test_become_kakuja_rejects_if_already_kakuja(
+    ghoul_service, make_user, make_ghoul
+):
+    await make_user(telegram_id=200_000_405)
+    await make_ghoul(telegram_id=200_000_405, is_kakuja=True)
+
+    with pytest.raises(AlreadyKakuja):
+        await ghoul_service.become_kakuja(200_000_405)
