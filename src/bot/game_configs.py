@@ -265,7 +265,7 @@ class MobConfig:
         ]
     )
 
-    level_progress_divisor: float = 5.0
+    level_progress_divisor: float = 1.0
 
     rc_drop_chance: float = 0.15
     rc_drop_min: int = 1
