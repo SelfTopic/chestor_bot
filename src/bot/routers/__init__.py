@@ -1,31 +1,24 @@
 from selfrot import BaseRouter
 
 from ..context import AppContext
+from .ai import AIRouter
+from .arcade import ArcadeRouter
+from .chat_member_update import ChatMemberUpdateRouter
 from .common import (
-    AnimeRouter,
     BalanceRouter,
     BotRouter,
     CheckRulesRouter,
     CommonTopsRouter,
-    DepRouter,
     EditsRouter,
     FunRouter,
     HelpRouter,
-    LinkMediaRouter,
-    MarriageLinkRouter,
-    MarriageRouter,
-    MusicRouter,
     ProfileRouter,
     RaceProfileRouter,
     RichRouter,
-    RoastRouter,
-    RolePlayRouter,
     StartRouter,
     TransferRouter,
-    WordleRouter,
-    expire_overdue_votes,
 )
-from .chat_member_update import ChatMemberUpdateRouter
+from .community import CommunityRouter, expire_overdue_votes
 from .creator import CreatorRouter
 from .ghoul import (
     GhoulRouter,
@@ -33,15 +26,17 @@ from .ghoul import (
     expire_overdue_duels,
     expire_overdue_streaks,
 )
+from .media import MediaRouter
 from .moderator import ModeratorRouter
+from .role_play import RolePlayRouter
 from .system import SystemRouter
 
 
 class RootRouter(BaseRouter[AppContext]):
     # Порядок важен: апдейт достаётся первому подошедшему роутеру.
     routers = (
-        # Раньше StartRouter: тот приветствует на любой /start, а это ссылка из брака.
-        MarriageLinkRouter,
+        # Раньше StartRouter: тот приветствует на любой /start, а здесь ссылки из брака.
+        CommunityRouter,
         StartRouter,
         BotRouter,
         # Вне GhoulRouter: кнопку проверки жмут те, кого его подписка не пускает.
@@ -58,19 +53,15 @@ class RootRouter(BaseRouter[AppContext]):
         CreatorRouter,
         CommonTopsRouter,
         RolePlayRouter,
-        WordleRouter,
-        AnimeRouter,
+        ArcadeRouter,
         TransferRouter,
-        MarriageRouter,
-        DepRouter,
         SystemRouter,
         # Раньше FunRouter: иначе «1000-7» посчитал бы калькулятор.
         EditsRouter,
         FunRouter,
-        MusicRouter,
-        LinkMediaRouter,
+        MediaRouter,
         # Последним: огрызается только на то, что не забрала ни одна команда.
-        RoastRouter,
+        AIRouter,
     )
 
 

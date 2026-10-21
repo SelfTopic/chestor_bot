@@ -1,7 +1,7 @@
 from selfrot import BaseMiddleware
 from selfrot.types import Message
 
-from ....context import AppContext
+from ...context import AppContext
 
 
 class RpCommandsMiddleware(BaseMiddleware[AppContext]):

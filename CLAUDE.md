@@ -82,7 +82,7 @@ Postgres + SQLAlchemy (async), миграции Alembic, запуск в Docker 
 баланс — `ctx.user_service.balance(id)`, изменения — `plus_balance` / `minus_balance` /
 `debit_if_sufficient` (`WalletRepository` сам выбирает счёт семьи или личный баланс), а в
 SQL — `coalesce(families.balance, users.balance)`. Семьи, предложения брака и развод —
-`ctx.family_service` (`services/family.py`), роутер — `routers/common/marriage/`.
+`ctx.family_service` (`services/family.py`), роутер — `routers/community/marriage/`.
 
 **Фоновые задачи — `tasks/`** (`Dispatcher.tasks = TASKS`, `Every(интервал, Задача)` из selfrot):
 истечение дуэлей и голосований семьи, уведомления о голоде, сроки модерации, сброс статистики,
@@ -115,7 +115,7 @@ SQL — `coalesce(families.balance, users.balance)`. Семьи, предлож�
   модули (так `routers/__init__.py` берёт роутеры `common`).
 - Тесты пользователями не считаются. Перенос — `git mv` и правка импортов, логика не меняется.
 
-**Раскладка роутеров** (образец — `routers/common/role_play/`):
+**Раскладка роутеров** (образец — `routers/role_play/`):
 
 - Роутер длиннее ~150 строк становится пакетом (`flow.py`, `commands.py`, `handlers.py`, …).
 - Фильтр или middleware, нужный одному роутеру, живёт в его пакете.
@@ -158,7 +158,7 @@ selfrot ищет заголовок по всему MRO, так что `Definiti
 
 **Огрызания — `ctx.roast_service`** (`services/roast/`). Процессный сервис, как квиз: одно
 соединение с Cloud.ru, состояние споров в памяти, свои сессии БД для журнала `roast_log`.
-Модель зовёт `routers/common/roast_router.py` (последний в `RootRouter`, только группы): в
+Модель зовёт `routers/ai/roast_router.py` (последний в `RootRouter`, только группы): в
 `handle` решает, стоит ли, сам запрос — в `after_handle`. Отвечает только на явное обращение:
 реплай боту или «бот»/«честор» в тексте; реплай на игровое сообщение бота другому игроку без
 упоминания бота не в счёт. Характер, шаблон запроса, примеры и обращения — файлы в
@@ -177,7 +177,7 @@ selfrot ищет заголовок по всему MRO, так что `Definiti
 `LLM_API_KEY`; модель — `SEARCH_MODEL`.
 
 **Видео по ссылкам — `ctx.link_media_service`** (`services/link_media/`). На ссылку TikTok или
-YouTube в любом чате бот отвечает роликом (`routers/common/link_media_router.py`, перед
+YouTube в любом чате бот отвечает роликом (`routers/media/link_media_router.py`, перед
 огрызаниями; скачивание — в `after_handle`). yt-dlp — подпроцессом из своего venv
 `MEDIA_TOOLS_DIR` (`/opt/media-tools/bin` в образе), запасной вариант для TikTok — tikwm.
 Формат выбирает `formats.pick`: лучшее качество до 1080p, которое влезает в 50 МБ Bot API;
@@ -189,7 +189,7 @@ YouTube в любом чате бот отвечает роликом (`routers/
 обновляет yt-dlp и gallery-dl в их venv раз в сутки. Без yt-dlp в `MEDIA_TOOLS_DIR` ссылки
 не трогаются.
 
-**Песни — `ctx.music_service`** (`services/music/`, `routers/common/music/`).
+**Песни — `ctx.music_service`** (`services/music/`, `routers/media/music/`).
 «песня <название>» ищет на YouTube через yt-dlp (`ytsearch`, до 5 треков не длиннее
 `MUSIC_MAX_DURATION`) и показывает их кнопками; по нажатию бот качает звук с обложкой и шлёт
 аудио. YouTube отдаёт звук с IP сервера не всегда (403 или зависание), поэтому та же песня

@@ -4,9 +4,9 @@ from selfrot.filter import HasUser
 from src.bot.dialogs import Dialogs
 from src.bot.exceptions import SearchCooldown, SearchLimitReached, SearchUnavailable
 
-from ....context import AppContext
-from ...types import TextUserMessage
-from .commands import bot_command
+from ...context import AppContext
+from ..types import TextUserMessage
+from ..bot_command import bot_command
 
 SEARCH = Dialogs.fun.search
 

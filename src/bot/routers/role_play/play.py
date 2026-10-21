@@ -1,8 +1,8 @@
 from selfrot import CommandArgs, MessageHandler, Rest
 from selfrot.filter import HasUser
 
-from ....context import AppContext
-from ...types import TextUserMessage
+from ...context import AppContext
+from ..types import TextUserMessage
 from .filters import RpCommandFilter
 from .sending import send_rp
 
