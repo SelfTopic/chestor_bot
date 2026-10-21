@@ -15,7 +15,14 @@ from .media_download import (
     ValidationMediaError,
 )
 from .docs import DocsError
-from .ghoul import GhoulNotFound, KaguneAlreadyOwned, KaguneNotOwned, LastKaguneType
+from .ghoul import (
+    AllKaguneTypesOwned,
+    AlreadyKakuja,
+    GhoulNotFound,
+    KaguneAlreadyOwned,
+    KaguneNotOwned,
+    LastKaguneType,
+)
 from .link_media import LinkMediaError, LinkMediaTooLarge
 from .media_tools import MediaToolError
 from .lottery import (
@@ -127,6 +134,8 @@ __all__ = [
     "KaguneAlreadyOwned",
     "KaguneNotOwned",
     "LastKaguneType",
+    "AllKaguneTypesOwned",
+    "AlreadyKakuja",
     "LinkMediaError",
     "LinkMediaTooLarge",
     "MediaToolError",

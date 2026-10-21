@@ -137,6 +137,31 @@ kagune:
       - Кагуне ещё не отросло после прошлого раза. ⏳ {minutes} мин {seconds} сек
       - RC-клетки не резиновые, дебил. ⏳ {minutes} мин {seconds} сек
       - Хочешь, чтобы кагуне отвалилось нахуй? Жди. ⏳ {minutes} мин {seconds} сек
+  evolution:
+    title: 🧬 Эволюция
+    column_type: Тип
+    column_status: Статус
+    owned: 'сила {strength}'
+    not_owned: не открыт
+    kakuja_row: Какуджа
+    kakuja_yes: есть
+    kakuja_no: нет
+    warning: |-
+      Эволюция — навсегда, пока гуль жив, но смерть сжигает всё: новое кагуне и какуджа не переживают возрождение.
+    buy_kagune_button: 'Открыть {kagune} — {cheston} CheSton + {rc} RC'
+    all_kagune_done: Все 4 типа кагуне уже открыты.
+    buy_kakuja_button: 'Стать какуджей — {cheston} CheSton + {rc} RC'
+    already_kakuja: Какуджа уже есть, назад дороги нет.
+    kagune_done:
+      gifs: upgrade_kagune/{kagune}
+      text: |-
+        🧬 Новый тип кагуне: {kagune}!
+        💪 Сила: {strength}
+        💸 -{cheston} CheSton, 🧫 -{rc} RC
+    kakuja_done: |-
+      🧬 Мутация завершена. Теперь ты какуджа.
+      Статы и сила кагуне ×3, голод тает ×4. Назад дороги нет.
+      💸 -{cheston} CheSton, 🧫 -{rc} RC
 snap:
   done:
     gifs: snap_finger

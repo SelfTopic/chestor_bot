@@ -5,7 +5,14 @@ from typing import Any, List, Optional, Tuple
 
 from src.database.models import Ghoul
 
-from ..exceptions import GhoulNotFound, KaguneAlreadyOwned, KaguneNotOwned, LastKaguneType
+from ..exceptions import (
+    AllKaguneTypesOwned,
+    AlreadyKakuja,
+    GhoulNotFound,
+    KaguneAlreadyOwned,
+    KaguneNotOwned,
+    LastKaguneType,
+)
 from ..game_configs import EAT_HUMAN_CONFIG, KAGUNE_CONFIG
 from ..repositories import DeathLogRepository, ScheduledNotificationRepository
 from ..types import KaguneType, NotificationType, Race, RegisterGhoulType
@@ -363,6 +370,14 @@ class GhoulService(Base):
     def get_kagune_strength(self, ghoul: Ghoul, kagune_type: KaguneType) -> Optional[int]:
         return getattr(ghoul, kagune_type.value["strength_column"])
 
+    # Эволюция всегда даёт следующий тип по лестнице слабости (порядок объявления в
+    # KaguneType), а не случайный и не на выбор игрока.
+    def next_missing_kagune_type(self, ghoul: Ghoul) -> Optional[KaguneType]:
+        for kagune_type in KaguneType:
+            if getattr(ghoul, kagune_type.value["strength_column"]) is None:
+                return kagune_type
+        return None
+
     def total_kagune_strength(self, ghoul: Ghoul) -> int:
         return sum(
             getattr(ghoul, kagune_type.value["strength_column"]) or 0
@@ -400,6 +415,27 @@ class GhoulService(Base):
 
         all_bits = sum(kagune_type.value["bit"] for kagune_type in KaguneType)
         return await self.set_fields(telegram_id, kagune_type_bit=all_bits, **updates)
+
+    async def evolve_new_kagune(self, telegram_id: int) -> Ghoul:
+        ghoul = await self.get(telegram_id)
+        if not ghoul:
+            raise GhoulNotFound(telegram_id)
+
+        kagune_type = self.next_missing_kagune_type(ghoul)
+        if kagune_type is None:
+            raise AllKaguneTypesOwned()
+
+        return await self.grant_kagune_type(telegram_id, kagune_type)
+
+    async def become_kakuja(self, telegram_id: int) -> Ghoul:
+        ghoul = await self.get(telegram_id)
+        if not ghoul:
+            raise GhoulNotFound(telegram_id)
+
+        if ghoul.is_kakuja:
+            raise AlreadyKakuja()
+
+        return await self.set_fields(telegram_id, is_kakuja=True)
 
     async def revoke_kagune_type(self, telegram_id: int, kagune_type: KaguneType) -> Ghoul:
         ghoul = await self.get(telegram_id)
@@ -471,7 +507,8 @@ class GhoulService(Base):
     def _first_kagune(self) -> KaguneType:
         logger.debug("Called method _first_kagune")
 
-        selected = random.choice(list(KaguneType))
+        weights = KAGUNE_CONFIG.birth_weights
+        selected = random.choices(list(weights), weights=list(weights.values()))[0]
         logger.debug(f"Selected kagune: {selected}")
         return selected
 

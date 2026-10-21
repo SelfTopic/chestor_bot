@@ -5,6 +5,7 @@ from .coffee import CoffeeRouter
 from .combat_power import CombatPowerRouter
 from .duel import DuelRouter, expire_overdue_duels
 from .eat_human import EatHumanRouter
+from .evolution import EvolutionRouter
 from .middleware import GhoulMiddleware
 from .mob_fight import MobFightRouter
 from .passive_status import PassiveStatusRouter
@@ -34,6 +35,7 @@ class GhoulAliveRouter(BaseRouter[AppContext]):
         UpgradeStatRouter,
         PassiveStatusRouter,
         EatHumanRouter,
+        EvolutionRouter,
         MobFightRouter,
         DuelRouter,
         CombatPowerRouter,

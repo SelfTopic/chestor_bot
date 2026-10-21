@@ -1,6 +1,8 @@
 from dataclasses import dataclass, field
 from random import randint, uniform
-from typing import List, Literal, Optional
+from typing import Dict, List, Literal, Optional
+
+from src.bot.types import KaguneType
 
 
 @dataclass
@@ -9,8 +11,29 @@ class KaguneConfig:
     exponent: float = 1.7
     linear_multiplier: int = 50
 
+    # Бикаку объективно сильнее в бою (трогает все 4 боевых стата), поэтому выпадает реже.
+    birth_weights: Dict[KaguneType, float] = field(
+        default_factory=lambda: {
+            KaguneType.UKAKU: 0.60,
+            KaguneType.KOUKAKU: 0.20,
+            KaguneType.RINKAKU: 0.15,
+            KaguneType.BIKAKU: 0.05,
+        }
+    )
+
 
 KAGUNE_CONFIG = KaguneConfig()
+
+
+@dataclass
+class EvolutionConfig:
+    new_kagune_cheston: int = 6_000_000
+    new_kagune_rc: int = 6_000
+    kakuja_cheston: int = 12_000_000
+    kakuja_rc: int = 12_000
+
+
+EVOLUTION_CONFIG = EvolutionConfig()
 
 
 @dataclass

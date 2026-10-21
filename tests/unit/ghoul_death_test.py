@@ -205,3 +205,13 @@ async def test_reset_for_rebirth_grants_exactly_one_new_kagune_type(
     owned = ghoul_service.owned_kagune_types(reborn)
     assert len(owned) == 1
     assert ghoul_service.get_kagune_strength(reborn, owned[0]) == 1
+
+
+async def test_reset_for_rebirth_resets_kakuja(ghoul_service, make_user, make_ghoul):
+    # Эволюция (ghoul/evolution/) горит при смерти вместе с лишними типами кагуне.
+    await make_user(telegram_id=800_000_010)
+    await make_ghoul(telegram_id=800_000_010, is_dead=True, is_kakuja=True)
+
+    reborn = await ghoul_service.reset_for_rebirth(800_000_010)
+
+    assert reborn.is_kakuja is False
