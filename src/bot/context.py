@@ -14,6 +14,7 @@ from src.bot.dialogs import Line
 from src.bot.exceptions import UserNotFound
 from src.bot.services import (
     MobService,
+    QuoteService,
     RpCommandsService,
     VideoCutterService,
     VideoWorker,
@@ -65,6 +66,7 @@ class AppContext(BaseContext[TEvent], SessionServices):
     link_media_service: LinkMediaService
     music_service: MusicService
     player_docs_service: PlayerDocsService
+    quote_service: QuoteService
     rp_commands_service: RpCommandsService
     wordle_service: WordleService
     subscriber_cache: SubscriberCache

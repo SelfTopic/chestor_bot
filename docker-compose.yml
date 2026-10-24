@@ -53,10 +53,17 @@ services:
     init: true
     # Перед ботом — дерево фраз из YAML: код смонтирован томом, так что новый tree.py
     # появляется и в репозитории, его остаётся закоммитить.
+    # Цитаты тянутся с citaty.info только если файла ещё нет — иначе каждый
+    # перезапуск бота заново бы долбил внешний сайт; src/assets смонтирован тем же
+    # томом, что код, так что скачанное один раз остаётся на сервере навсегда.
     command:
       - sh
       - -c
-      - poetry run python -m src.bot.dialogs.generate && exec poetry run python -m src.bot
+      - >-
+        poetry run python -m src.bot.dialogs.generate &&
+        ([ -f src/assets/data/quotes/quotes.json ] ||
+         poetry run python -m src.bot.utils.fetch_quotes) &&
+        exec poetry run python -m src.bot
     env_file:
       - .env
     environment:

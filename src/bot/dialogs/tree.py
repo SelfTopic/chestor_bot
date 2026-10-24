@@ -1346,6 +1346,11 @@ class _FunPickDialogs:
         return Line("fun.pick.too_many", {"max_items": max_items})
 
 
+class _FunQuoteDialogs:
+    def not_found(self) -> Line:
+        return Line("fun.quote.not_found", {})
+
+
 class _FunSearchDialogs:
     def cooldown(self, *, seconds: object) -> Line:
         return Line("fun.search.cooldown", {"seconds": seconds})
@@ -1367,6 +1372,7 @@ class _FunDialogs:
     calculator = _FunCalculatorDialogs()
     edits = _FunEditsDialogs()
     pick = _FunPickDialogs()
+    quote = _FunQuoteDialogs()
     search = _FunSearchDialogs()
 
     def nobody(self) -> Line:
@@ -4575,6 +4581,7 @@ PLACEHOLDERS: dict[str, frozenset[str]] = {
     "fun.pick.too_few": frozenset(),
     "fun.pick.too_long": frozenset(),
     "fun.pick.too_many": frozenset({"max_items"}),
+    "fun.quote.not_found": frozenset(),
     "fun.random_participant": frozenset({"mention"}),
     "fun.search.cooldown": frozenset({"seconds"}),
     "fun.search.failed": frozenset(),

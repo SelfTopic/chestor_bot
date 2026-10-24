@@ -1,10 +1,13 @@
-"""routers/common/fun: «бот/честор выбери|кто|случайный участник|число» и пассивный
-калькулятор."""
+"""routers/common/fun: «бот/честор выбери|кто|случайный участник|число», «цитата» и
+пассивный калькулятор."""
+
+import json
 
 import pytest
 
 from src.bot.dialogs import Dialogs
 from src.bot.routers.common.fun import handlers
+from src.bot.services.quotes import QuoteService
 
 from .conftest import matches_phrase, message_update, owner_dict, phrase_texts, texts
 
@@ -145,3 +148,112 @@ class TestCalculator:
     async def test_too_big_gets_an_easter_egg(self, send, text):
         (reply,) = await send(text)
         assert reply in TEXTS["fun.calculator.too_big"].variants
+
+
+def _quote_service(tmp_path, entries: list[dict]) -> QuoteService:
+    path = tmp_path / "quotes.json"
+    full = [
+        {"character_name": "", "text": "", "source": "anime", "season": None, "series": None} | e
+        for e in entries
+    ]
+    path.write_text(json.dumps(full), encoding="utf-8")
+    return QuoteService(path)
+
+
+def _quote_markdowns(telegram) -> set[str]:
+    return {body["rich_message"]["markdown"] for body in telegram.bodies("sendRichMessage")}
+
+
+class TestQuote:
+    async def test_known_character_returns_its_quote(self, feed, telegram, dispatcher, tmp_path):
+        dispatcher.quote_service = _quote_service(
+            tmp_path,
+            [{"character_name": "Тестовый Персонаж", "text": "тестовая цитата", "source": "anime"}],
+        )
+
+        telegram = await feed(message_update("цитата персонаж"))
+        (markdown,) = _quote_markdowns(telegram)
+        assert "Тестовый Персонаж" in markdown
+        assert "тестовая цитата" in markdown
+        assert "Аниме" in markdown
+
+    async def test_season_and_series_are_shown_when_known(self, feed, telegram, dispatcher, tmp_path):
+        dispatcher.quote_service = _quote_service(
+            tmp_path,
+            [
+                {
+                    "character_name": "Тестовый Персонаж",
+                    "text": "текст",
+                    "source": "anime",
+                    "season": 1,
+                    "series": 4,
+                }
+            ],
+        )
+
+        telegram = await feed(message_update("цитата персонаж"))
+        (markdown,) = _quote_markdowns(telegram)
+        assert "1 сезон" in markdown and "4 серия" in markdown
+
+    async def test_name_spelling_variants_are_merged(self, feed, telegram, dispatcher, tmp_path):
+        dispatcher.quote_service = _quote_service(
+            tmp_path,
+            [
+                {"character_name": "Ризе Камиширо", "text": "цитата А"},
+                {"character_name": "Ризэ Камиширо", "text": "цитата Б"},
+            ],
+        )
+
+        markdowns: set[str] = set()
+        for _ in range(20):
+            telegram = await feed(message_update("цитата ризе"))
+            markdowns |= _quote_markdowns(telegram)
+        assert any("Ризе Камиширо" in m and "цитата А" in m for m in markdowns)
+        assert any("Ризэ Камиширо" in m and "цитата Б" in m for m in markdowns)
+
+    async def test_typo_still_matches(self, feed, telegram, dispatcher, tmp_path):
+        dispatcher.quote_service = _quote_service(
+            tmp_path, [{"character_name": "Тестовый Персонаж", "text": "текст"}]
+        )
+
+        telegram = await feed(message_update("цитата персонаш"))
+        (markdown,) = _quote_markdowns(telegram)
+        assert "Тестовый Персонаж" in markdown
+
+    async def test_ambiguous_query_pools_every_match(self, feed, telegram, dispatcher, tmp_path):
+        dispatcher.quote_service = _quote_service(
+            tmp_path,
+            [
+                {"character_name": "Иван Мадо", "text": "раз"},
+                {"character_name": "Пётр Мадо", "text": "два"},
+            ],
+        )
+
+        markdowns: set[str] = set()
+        for _ in range(20):
+            telegram = await feed(message_update("цитата мадо"))
+            markdowns |= _quote_markdowns(telegram)
+        assert any("Иван Мадо" in m for m in markdowns)
+        assert any("Пётр Мадо" in m for m in markdowns)
+
+    async def test_unknown_character(self, send, dispatcher, tmp_path):
+        dispatcher.quote_service = _quote_service(tmp_path, [])
+
+        (reply,) = await send("цитата абырвалг")
+        assert matches_phrase(reply, "fun.quote.not_found")
+
+    async def test_no_name_picks_fully_random(self, feed, telegram, dispatcher, tmp_path):
+        dispatcher.quote_service = _quote_service(
+            tmp_path,
+            [
+                {"character_name": "Персонаж Один", "text": "раз"},
+                {"character_name": "Персонаж Два", "text": "два"},
+            ],
+        )
+
+        markdowns: set[str] = set()
+        for _ in range(20):
+            telegram = await feed(message_update("цитата"))
+            markdowns |= _quote_markdowns(telegram)
+        assert any("Персонаж Один" in m for m in markdowns)
+        assert any("Персонаж Два" in m for m in markdowns)
