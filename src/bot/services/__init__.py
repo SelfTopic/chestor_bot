@@ -15,6 +15,7 @@ from .duration_parser import DurationParser
 from .ghoul import GhoulService
 from .ghoul_game import CoffeeService, LotteryService
 from .media import MediaService
+from .quotes import QuoteService
 from .rp_commands import RpCommandsService
 from .transfer import TransferService
 from .user import UserService
@@ -47,4 +48,5 @@ __all__ = [
     "VideoWorker",
     "WikipediaService",
     "TransferService",
+    "QuoteService",
 ]

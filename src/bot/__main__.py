@@ -25,6 +25,7 @@ from src.bot.exceptions import (
 )
 from src.bot.services import (
     MobService,
+    QuoteService,
     RpCommandsService,
     VideoCutterService,
     VideoWorker,
@@ -123,6 +124,7 @@ class Dispatcher(BaseDispatcher[AppContext]):
         # Живут весь процесс: кэши RP-команд, партии вордли, очередь нарезки видео.
         self.rp_commands_service = RpCommandsService(rp_commands_repository)
         self.wordle_service = WordleService()
+        self.quote_service = QuoteService()
         self.subscriber_cache = SubscriberCache()
         self.wikipedia_service = WikipediaService()
         self.mob_service = MobService()
@@ -224,6 +226,7 @@ class Dispatcher(BaseDispatcher[AppContext]):
             link_media_service=self.link_media_service,
             music_service=self.music_service,
             player_docs_service=self.player_docs,
+            quote_service=self.quote_service,
             rp_commands_service=self.rp_commands_service,
             wordle_service=self.wordle_service,
             subscriber_cache=self.subscriber_cache,

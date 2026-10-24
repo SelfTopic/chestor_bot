@@ -1,12 +1,15 @@
-"""routers/common/fun: «бот/честор выбери|кто|случайный участник|число» и пассивный
-калькулятор."""
+"""routers/common/fun: «бот/честор выбери|кто|случайный участник|число», «цитата» и
+пассивный калькулятор."""
+
+import json
 
 import pytest
 
 from src.bot.dialogs import Dialogs
 from src.bot.routers.common.fun import handlers
+from src.bot.services.quotes import QuoteService
 
-from .conftest import matches_phrase, message_update, owner_dict, phrase_texts, texts
+from .conftest import matches_phrase, message_update, only_text, owner_dict, phrase_texts, texts
 
 GROUP = -100555
 TEXTS = texts()
@@ -145,3 +148,86 @@ class TestCalculator:
     async def test_too_big_gets_an_easter_egg(self, send, text):
         (reply,) = await send(text)
         assert reply in TEXTS["fun.calculator.too_big"].variants
+
+
+def _quote_service(tmp_path, entries: list[dict]) -> QuoteService:
+    path = tmp_path / "quotes.json"
+    full = [
+        {"character_name": "", "text": "", "source": "anime", "season": None, "series": None} | e
+        for e in entries
+    ]
+    path.write_text(json.dumps(full), encoding="utf-8")
+    return QuoteService(path)
+
+
+class TestQuote:
+    async def test_known_character_returns_its_quote(self, send, dispatcher, tmp_path):
+        dispatcher.quote_service = _quote_service(
+            tmp_path, [{"character_name": "Тестовый Персонаж", "text": "тестовая цитата"}]
+        )
+
+        (reply,) = await send("цитата персонаж")
+        assert reply == only_text(
+            Dialogs.fun.quote.result(character="Тестовый Персонаж", text="тестовая цитата")
+        )
+
+    async def test_name_spelling_variants_are_merged(self, send, dispatcher, tmp_path):
+        dispatcher.quote_service = _quote_service(
+            tmp_path,
+            [
+                {"character_name": "Ризе Камиширо", "text": "цитата А"},
+                {"character_name": "Ризэ Камиширо", "text": "цитата Б"},
+            ],
+        )
+
+        seen = {(await send("цитата ризе"))[0] for _ in range(20)}
+        assert seen == {
+            only_text(Dialogs.fun.quote.result(character="Ризе Камиширо", text="цитата А")),
+            only_text(Dialogs.fun.quote.result(character="Ризэ Камиширо", text="цитата Б")),
+        }
+
+    async def test_typo_still_matches(self, send, dispatcher, tmp_path):
+        dispatcher.quote_service = _quote_service(
+            tmp_path, [{"character_name": "Тестовый Персонаж", "text": "текст"}]
+        )
+
+        (reply,) = await send("цитата персонаш")
+        assert reply == only_text(
+            Dialogs.fun.quote.result(character="Тестовый Персонаж", text="текст")
+        )
+
+    async def test_ambiguous_query_pools_every_match(self, send, dispatcher, tmp_path):
+        dispatcher.quote_service = _quote_service(
+            tmp_path,
+            [
+                {"character_name": "Иван Мадо", "text": "раз"},
+                {"character_name": "Пётр Мадо", "text": "два"},
+            ],
+        )
+
+        seen = {(await send("цитата мадо"))[0] for _ in range(20)}
+        assert seen == {
+            only_text(Dialogs.fun.quote.result(character="Иван Мадо", text="раз")),
+            only_text(Dialogs.fun.quote.result(character="Пётр Мадо", text="два")),
+        }
+
+    async def test_unknown_character(self, send, dispatcher, tmp_path):
+        dispatcher.quote_service = _quote_service(tmp_path, [])
+
+        (reply,) = await send("цитата абырвалг")
+        assert matches_phrase(reply, "fun.quote.not_found")
+
+    async def test_no_name_picks_fully_random(self, send, dispatcher, tmp_path):
+        dispatcher.quote_service = _quote_service(
+            tmp_path,
+            [
+                {"character_name": "Персонаж Один", "text": "раз"},
+                {"character_name": "Персонаж Два", "text": "два"},
+            ],
+        )
+
+        seen = {(await send("цитата"))[0] for _ in range(20)}
+        assert seen == {
+            only_text(Dialogs.fun.quote.result(character="Персонаж Один", text="раз")),
+            only_text(Dialogs.fun.quote.result(character="Персонаж Два", text="два")),
+        }
