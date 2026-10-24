@@ -9,7 +9,7 @@ from src.bot.dialogs import Dialogs
 from src.bot.routers.common.fun import handlers
 from src.bot.services.quotes import QuoteService
 
-from .conftest import matches_phrase, message_update, only_text, owner_dict, phrase_texts, texts
+from .conftest import matches_phrase, message_update, owner_dict, phrase_texts, texts
 
 GROUP = -100555
 TEXTS = texts()
@@ -160,18 +160,42 @@ def _quote_service(tmp_path, entries: list[dict]) -> QuoteService:
     return QuoteService(path)
 
 
+def _quote_markdowns(telegram) -> set[str]:
+    return {body["rich_message"]["markdown"] for body in telegram.bodies("sendRichMessage")}
+
+
 class TestQuote:
-    async def test_known_character_returns_its_quote(self, send, dispatcher, tmp_path):
+    async def test_known_character_returns_its_quote(self, feed, telegram, dispatcher, tmp_path):
         dispatcher.quote_service = _quote_service(
-            tmp_path, [{"character_name": "Тестовый Персонаж", "text": "тестовая цитата"}]
+            tmp_path,
+            [{"character_name": "Тестовый Персонаж", "text": "тестовая цитата", "source": "anime"}],
         )
 
-        (reply,) = await send("цитата персонаж")
-        assert reply == only_text(
-            Dialogs.fun.quote.result(character="Тестовый Персонаж", text="тестовая цитата")
+        telegram = await feed(message_update("цитата персонаж"))
+        (markdown,) = _quote_markdowns(telegram)
+        assert "Тестовый Персонаж" in markdown
+        assert "тестовая цитата" in markdown
+        assert "Аниме" in markdown
+
+    async def test_season_and_series_are_shown_when_known(self, feed, telegram, dispatcher, tmp_path):
+        dispatcher.quote_service = _quote_service(
+            tmp_path,
+            [
+                {
+                    "character_name": "Тестовый Персонаж",
+                    "text": "текст",
+                    "source": "anime",
+                    "season": 1,
+                    "series": 4,
+                }
+            ],
         )
 
-    async def test_name_spelling_variants_are_merged(self, send, dispatcher, tmp_path):
+        telegram = await feed(message_update("цитата персонаж"))
+        (markdown,) = _quote_markdowns(telegram)
+        assert "1 сезон" in markdown and "4 серия" in markdown
+
+    async def test_name_spelling_variants_are_merged(self, feed, telegram, dispatcher, tmp_path):
         dispatcher.quote_service = _quote_service(
             tmp_path,
             [
@@ -180,23 +204,23 @@ class TestQuote:
             ],
         )
 
-        seen = {(await send("цитата ризе"))[0] for _ in range(20)}
-        assert seen == {
-            only_text(Dialogs.fun.quote.result(character="Ризе Камиширо", text="цитата А")),
-            only_text(Dialogs.fun.quote.result(character="Ризэ Камиширо", text="цитата Б")),
-        }
+        markdowns: set[str] = set()
+        for _ in range(20):
+            telegram = await feed(message_update("цитата ризе"))
+            markdowns |= _quote_markdowns(telegram)
+        assert any("Ризе Камиширо" in m and "цитата А" in m for m in markdowns)
+        assert any("Ризэ Камиширо" in m and "цитата Б" in m for m in markdowns)
 
-    async def test_typo_still_matches(self, send, dispatcher, tmp_path):
+    async def test_typo_still_matches(self, feed, telegram, dispatcher, tmp_path):
         dispatcher.quote_service = _quote_service(
             tmp_path, [{"character_name": "Тестовый Персонаж", "text": "текст"}]
         )
 
-        (reply,) = await send("цитата персонаш")
-        assert reply == only_text(
-            Dialogs.fun.quote.result(character="Тестовый Персонаж", text="текст")
-        )
+        telegram = await feed(message_update("цитата персонаш"))
+        (markdown,) = _quote_markdowns(telegram)
+        assert "Тестовый Персонаж" in markdown
 
-    async def test_ambiguous_query_pools_every_match(self, send, dispatcher, tmp_path):
+    async def test_ambiguous_query_pools_every_match(self, feed, telegram, dispatcher, tmp_path):
         dispatcher.quote_service = _quote_service(
             tmp_path,
             [
@@ -205,11 +229,12 @@ class TestQuote:
             ],
         )
 
-        seen = {(await send("цитата мадо"))[0] for _ in range(20)}
-        assert seen == {
-            only_text(Dialogs.fun.quote.result(character="Иван Мадо", text="раз")),
-            only_text(Dialogs.fun.quote.result(character="Пётр Мадо", text="два")),
-        }
+        markdowns: set[str] = set()
+        for _ in range(20):
+            telegram = await feed(message_update("цитата мадо"))
+            markdowns |= _quote_markdowns(telegram)
+        assert any("Иван Мадо" in m for m in markdowns)
+        assert any("Пётр Мадо" in m for m in markdowns)
 
     async def test_unknown_character(self, send, dispatcher, tmp_path):
         dispatcher.quote_service = _quote_service(tmp_path, [])
@@ -217,7 +242,7 @@ class TestQuote:
         (reply,) = await send("цитата абырвалг")
         assert matches_phrase(reply, "fun.quote.not_found")
 
-    async def test_no_name_picks_fully_random(self, send, dispatcher, tmp_path):
+    async def test_no_name_picks_fully_random(self, feed, telegram, dispatcher, tmp_path):
         dispatcher.quote_service = _quote_service(
             tmp_path,
             [
@@ -226,8 +251,9 @@ class TestQuote:
             ],
         )
 
-        seen = {(await send("цитата"))[0] for _ in range(20)}
-        assert seen == {
-            only_text(Dialogs.fun.quote.result(character="Персонаж Один", text="раз")),
-            only_text(Dialogs.fun.quote.result(character="Персонаж Два", text="два")),
-        }
+        markdowns: set[str] = set()
+        for _ in range(20):
+            telegram = await feed(message_update("цитата"))
+            markdowns |= _quote_markdowns(telegram)
+        assert any("Персонаж Один" in m for m in markdowns)
+        assert any("Персонаж Два" in m for m in markdowns)

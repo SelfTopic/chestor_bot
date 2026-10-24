@@ -1350,9 +1350,6 @@ class _FunQuoteDialogs:
     def not_found(self) -> Line:
         return Line("fun.quote.not_found", {})
 
-    def result(self, *, character: object, text: object) -> Line:
-        return Line("fun.quote.result", {"character": character, "text": text})
-
 
 class _FunSearchDialogs:
     def cooldown(self, *, seconds: object) -> Line:
@@ -4585,7 +4582,6 @@ PLACEHOLDERS: dict[str, frozenset[str]] = {
     "fun.pick.too_long": frozenset(),
     "fun.pick.too_many": frozenset({"max_items"}),
     "fun.quote.not_found": frozenset(),
-    "fun.quote.result": frozenset({"character", "text"}),
     "fun.random_participant": frozenset({"mention"}),
     "fun.search.cooldown": frozenset({"seconds"}),
     "fun.search.failed": frozenset(),

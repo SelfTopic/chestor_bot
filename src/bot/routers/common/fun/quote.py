@@ -1,10 +1,22 @@
 from selfrot import CommandArgs, MessageHandler, Rest
 from selfrot.filter import Command
+from selfrot.types import InputRichMessage
 
 from src.bot.dialogs import Dialogs
+from src.bot.services.quotes import Quote
 
 from ....context import AppContext
 from ...types import TextMessage
+
+SOURCE_LABEL = {"anime": "Аниме", "comics": "Манга"}
+
+
+def quote_markdown(quote: Quote) -> str:
+    label = SOURCE_LABEL.get(quote.source, quote.source)
+    if quote.season is not None and quote.series is not None:
+        label += f", {quote.season} сезон, {quote.series} серия"
+
+    return f"# {quote.character_name}\n\n## {quote.text}\n\n_{label}_"
 
 
 class QuoteArgs(CommandArgs):
@@ -22,7 +34,6 @@ class QuoteHandler(MessageHandler[AppContext[TextMessage]]):
             await self.ctx.say(Dialogs.fun.quote.not_found(), reply=True)
             return
 
-        await self.ctx.say(
-            Dialogs.fun.quote.result(character=quote.character_name, text=quote.text),
-            reply=True,
+        await self.ctx.message.reply_rich_message(
+            rich_message=InputRichMessage(markdown=quote_markdown(quote))
         )
