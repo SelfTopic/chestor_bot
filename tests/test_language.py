@@ -1,13 +1,24 @@
 """Язык ответа: в группе — язык чата, в личке — выбранный игроком, иначе язык его Telegram."""
 
 import pytest
-from sqlalchemy import update
+from sqlalchemy import select, update
 
-from src.bot.dialogs import DIALOGS_DIR, Dialogs
+from src.bot.dialogs import DIALOGS_DIR, Dialogs, load_texts
+from src.bot.routers.common.language_router import LanguagePress
 from src.bot.services.dialog import DialogService
 from src.database.models import Chat, User
 
-from .conftest import matches_phrase, message_update, only_text, owner_dict, phrase_texts
+from .conftest import (
+    button_data,
+    callback_update,
+    chat_dict,
+    chat_member_update,
+    matches_phrase,
+    message_update,
+    only_text,
+    owner_dict,
+    phrase_texts,
+)
 
 GROUP = -100123
 
@@ -133,3 +144,60 @@ async def test_search_is_silent_outside_russian(feed):
     # без запроса поиск сразу отвечает подсказкой, а вне русского — молчит
     assert await said(feed, "бот найди", "en") == []
     assert await said(feed, "бот найди", "ru") == [only_text(Dialogs.fun.search.usage())]
+
+
+async def chat_language(session_factory) -> str | None:
+    async with session_factory() as session:
+        return await session.scalar(select(Chat.language).where(Chat.telegram_id == GROUP))
+
+
+async def test_new_chat_speaks_the_adders_language_and_keeps_it(feed, session_factory):
+    added = chat_member_update(42, GROUP, "left", "member", my_chat_member=True)
+    added["my_chat_member"]["from"]["language_code"] = "en"
+
+    (greeting,) = (await feed(added)).sent
+
+    english = load_texts(DIALOGS_DIR / "en")[Dialogs.moderation.bot_added().key].variants
+    hint = only_text(Dialogs.language.hint())
+    assert greeting in {f"{text}\n\n{hint}" for text in english}
+    assert await chat_language(session_factory) == "en"
+
+    added["my_chat_member"]["from"]["language_code"] = "ru"
+    await feed(added)
+    assert await chat_language(session_factory) == "en"
+
+
+async def press(feed, data: str, uid: int, chat: int):
+    update = callback_update(data, uid=uid)
+    update["callback_query"]["message"]["chat"] = chat_dict(chat)
+    return await feed(update)
+
+
+async def test_player_picks_own_language_in_private(feed, dispatcher, telegram, session_factory):
+    await said(feed, "/lang", "ru")
+    (body,) = telegram.bodies("sendMessage")
+    english = only_text(Dialogs.language.name.en())
+
+    telegram = await press(feed, button_data(body, english), uid=42, chat=42)
+
+    (edit,) = telegram.bodies("editMessageText")
+    assert edit["text"] == dispatcher.dialog_service.text(
+        Dialogs.language.private_set(language=Dialogs.language.name.en()), "en"
+    )
+    async with session_factory() as session:
+        assert await session.scalar(select(User.language).where(User.telegram_id == 42)) == "en"
+
+
+async def test_only_admins_change_the_chat_language(feed, telegram, session_factory):
+    telegram.results["getChatAdministrators"] = [owner_dict(99)]
+    (refused,) = await said(feed, "/lang", "ru", chat=GROUP)
+    assert refused == only_text(Dialogs.language.admins_only())
+
+    data = LanguagePress(language="en").pack()
+    telegram = await press(feed, data, uid=42, chat=GROUP)
+    (alert,) = telegram.bodies("answerCallbackQuery")
+    assert alert["show_alert"] is True
+    assert await chat_language(session_factory) != "en"
+
+    await press(feed, data, uid=99, chat=GROUP)
+    assert await chat_language(session_factory) == "en"

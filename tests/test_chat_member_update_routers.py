@@ -17,6 +17,7 @@ from .conftest import (
     chat_member_update,
     message_update,
     owner_dict,
+    only_text,
     phrase_texts,
     user_dict,
 )
@@ -38,7 +39,8 @@ class TestBotAdded:
         )
 
         (sent,) = telegram.sent
-        assert sent in phrase_texts(Dialogs.moderation.bot_added())
+        hint = only_text(Dialogs.language.hint())
+        assert sent in {f"{text}\n\n{hint}" for text in phrase_texts(Dialogs.moderation.bot_added())}
 
     async def test_bot_leave_transition_has_no_handler(self, feed):
         # прод держит тут пустой TODO-хендлер (см. left_chat_member.py); порт его не

@@ -1739,6 +1739,33 @@ class _KaguneDialogs:
         return Line("kagune.info", {})
 
 
+class _LanguageNameDialogs:
+    def en(self) -> Line:
+        return Line("language.name.en", {})
+
+    def ru(self) -> Line:
+        return Line("language.name.ru", {})
+
+
+class _LanguageDialogs:
+    name = _LanguageNameDialogs()
+
+    def admins_only(self) -> Line:
+        return Line("language.admins_only", {})
+
+    def chat_set(self, *, language: object) -> Line:
+        return Line("language.chat_set", {"language": language})
+
+    def choose(self) -> Line:
+        return Line("language.choose", {})
+
+    def hint(self) -> Line:
+        return Line("language.hint", {})
+
+    def private_set(self, *, language: object) -> Line:
+        return Line("language.private_set", {"language": language})
+
+
 class _LinkMediaDialogs:
     def too_large(self) -> Line:
         return Line("link_media.too_large", {})
@@ -4416,6 +4443,7 @@ class _Dialogs:
     ghoul = _GhoulDialogs()
     help = _HelpDialogs()
     kagune = _KaguneDialogs()
+    language = _LanguageDialogs()
     link_media = _LinkMediaDialogs()
     lottery = _LotteryDialogs()
     marriage = _MarriageDialogs()
@@ -4895,6 +4923,13 @@ PLACEHOLDERS: dict[str, frozenset[str]] = {
     "kagune.upgrade.no_user": frozenset(),
     "kagune.upgrade.not_owned": frozenset(),
     "kagune.upgrade.unknown_type": frozenset(),
+    "language.admins_only": frozenset(),
+    "language.chat_set": frozenset({"language"}),
+    "language.choose": frozenset(),
+    "language.hint": frozenset(),
+    "language.name.en": frozenset(),
+    "language.name.ru": frozenset(),
+    "language.private_set": frozenset({"language"}),
     "link_media.too_large": frozenset(),
     "lottery.bet_out_of_range": frozenset({"max_bet", "min_bet"}),
     "lottery.failed": frozenset(),

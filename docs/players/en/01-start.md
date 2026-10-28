@@ -32,6 +32,12 @@ events and giveaways. Without a subscription the bot shows two buttons instead o
 "Subscribe" and "I subscribed". Subscribe, press the second one and play. Everything else
 (profile, music, videos, moderation) works without a subscription.
 
+### language (/lang)
+
+The language the bot speaks: buttons with languages. In a group only admins can change it, and
+it's one for the whole chat. In a private chat everyone picks their own. Until you pick one, the
+bot speaks your Telegram language, and in a new chat the language of whoever added it.
+
 ### profile (/profile)
 
 Your card: name, race (human or ghoul), CheSton balance. The ghoul profile with stats is

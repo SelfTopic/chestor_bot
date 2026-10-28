@@ -14,6 +14,21 @@ class LanguageService:
         self.chat_repository = chat_repository
         self.dialog_service = dialog_service
 
+    async def choose_for_user(self, telegram_id: int, language: str) -> None:
+        await self.user_repository.change_data(telegram_id, language=language)
+
+    async def choose_for_chat(self, chat_id: int, title: str | None, language: str) -> None:
+        await self.chat_repository.set_language(chat_id, title, language)
+
+    # Новый чат говорит на языке Telegram того, кто добавил бота.
+    async def greet_chat(
+        self, chat_id: int, title: str | None, telegram_code: str | None
+    ) -> str:
+        language = self.dialog_service.language_for(telegram_code)
+        return await self.chat_repository.set_language(
+            chat_id, title, language, keep_chosen=True
+        )
+
     async def text_for(self, chat_id: int) -> LineText:
         return self.dialog_service.text_in(await self.of_chat(chat_id))
 

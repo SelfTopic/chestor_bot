@@ -15,7 +15,15 @@ class BotAddedHandler(MyChatMemberHandler[AppContext[ChatMemberUpdated]]):
     query = MemberJoined()
 
     async def handle(self) -> None:
-        await self.ctx.my_chat_member.answer(self.ctx.text(Dialogs.moderation.bot_added()))
+        event = self.ctx.my_chat_member
+        language = await self.ctx.language_service.greet_chat(
+            event.chat.id, event.chat.title, event.user.language_code
+        )
+        text = self.ctx.dialog_service.text_in(language)
+        # Подсказка всегда по-английски: её поймут, даже если язык выбран неверно.
+        await event.answer(
+            f"{text(Dialogs.moderation.bot_added())}\n\n{text(Dialogs.language.hint())}"
+        )
 
 
 class NewChatMemberHandler(ChatMemberHandler[AppContext[ChatMemberUpdated]]):
