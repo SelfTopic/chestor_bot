@@ -3,6 +3,7 @@ from dataclasses import dataclass, field
 from typing import Optional
 
 from src.bot.dialogs import Dialogs
+from src.bot.dialogs.vocab import STAT_NAMES
 from src.bot.exceptions import GhoulNotFound
 from src.bot.game_configs import LEVEL_UP_CONFIG, STATS, stat_cap_for_level
 from src.bot.repositories import LevelUpLogRepository
@@ -128,13 +129,14 @@ class LevelUpService:
         cheston_reward: int,
         rc_reward: int,
     ) -> bool:
+        text = await self.language_service.text_for(telegram_id)
         stat_lines = "\n".join(
-            f"{emoji} {label}: {stat_cap_for_level(old_level, key)} -> "
+            f"{emoji} {text(STAT_NAMES[key])}: {stat_cap_for_level(old_level, key)} -> "
             f"{stat_cap_for_level(new_level, key)}"
-            for label, key, emoji in STATS
+            for key, emoji in STATS
         )
 
-        text = (await self.language_service.text_for(telegram_id))(
+        message = text(
             Dialogs.notify.level_up(
                 level=new_level,
                 cheston=cheston_reward,
@@ -144,7 +146,7 @@ class LevelUpService:
         )
 
         try:
-            await self._notifier.send_message(telegram_id, text)
+            await self._notifier.send_message(telegram_id, message)
             return True
         except NotifyError:
             logger.warning(

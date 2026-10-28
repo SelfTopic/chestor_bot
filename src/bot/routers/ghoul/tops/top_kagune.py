@@ -7,6 +7,7 @@ from selfrot.keyboard import button
 from selfrot.types import DataCallbackQuery, InlineKeyboardMarkup, Message, TextMessage
 
 from src.bot.dialogs import Dialogs
+from src.bot.dialogs.vocab import KAGUNE_NAMES
 from src.bot.types import KaguneType
 
 from ....context import AppContext
@@ -14,15 +15,15 @@ from .callback_data import TopKaguneView, ViewName
 from .count import GhoulTopHandler, top_command, top_row, top_text
 
 _VIEWS: tuple[ViewName, ...] = get_args(ViewName)
-_KAGUNE_LABELS: dict[ViewName, str] = {
-    kt.value["name_english"]: kt.value["name"] for kt in KaguneType
+_KAGUNE_BY_VIEW: dict[ViewName, KaguneType] = {
+    kt.value["name_english"]: kt for kt in KaguneType
 }
 
 
 def _view_label(ctx: AppContext[Any], view: ViewName) -> str:
     if view == "sum":
         return ctx.text(Dialogs.tops.kagune.sum_button())
-    return _KAGUNE_LABELS[view]
+    return ctx.text(KAGUNE_NAMES[_KAGUNE_BY_VIEW[view]])
 
 
 def _kagune_type_for_view(view: ViewName) -> KaguneType | None:

@@ -3,6 +3,7 @@ from selfrot.filter import Command, HasReplyUser
 from selfrot.types import Message
 
 from src.bot.dialogs import Dialogs, Line
+from src.bot.dialogs.vocab import KAGUNE_NAMES
 from src.bot.exceptions import GhoulNotFound, KaguneNotOwned, LastKaguneType
 
 from ....context import AppContext
@@ -20,7 +21,7 @@ async def _perform_remove(
         await ctx.say(phrases.unknown_type(types=TYPE_NAMES))
         return
 
-    name = kagune_type.value["name"]
+    name = KAGUNE_NAMES[kagune_type]
     error: Line | None = None
     try:
         await ctx.ghoul_service.revoke_kagune_type(telegram_id, kagune_type)

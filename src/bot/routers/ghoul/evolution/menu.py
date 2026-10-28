@@ -10,6 +10,7 @@ from selfrot.types import (
 )
 
 from src.bot.dialogs import Dialogs
+from src.bot.dialogs.vocab import KAGUNE_NAMES
 from src.bot.game_configs import EVOLUTION_CONFIG
 from src.bot.types import KaguneType
 from src.bot.utils import format_amount
@@ -32,7 +33,7 @@ def _status_rows(ctx: AppContext[Any], ghoul: Ghoul) -> list[str]:
             if strength is not None
             else ctx.text(EVOLUTION.not_owned())
         )
-        rows.append((kagune_type.value["name"], status))
+        rows.append((ctx.text(KAGUNE_NAMES[kagune_type]), status))
 
     kakuja_status = ctx.text(EVOLUTION.kakuja_yes() if ghoul.is_kakuja else EVOLUTION.kakuja_no())
     rows.append((ctx.text(EVOLUTION.kakuja_row()), kakuja_status))
@@ -44,7 +45,7 @@ def _keyboard(ctx: AppContext[Any], ghoul: Ghoul, invoker_id: int) -> InlineKeyb
     missing = ctx.ghoul_service.next_missing_kagune_type(ghoul)
     if missing is not None:
         label = EVOLUTION.buy_kagune_button(
-            kagune=missing.value["name"],
+            kagune=KAGUNE_NAMES[missing],
             cheston=format_amount(EVOLUTION_CONFIG.new_kagune_cheston),
             rc=format_amount(EVOLUTION_CONFIG.new_kagune_rc),
         )

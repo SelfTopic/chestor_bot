@@ -1,0 +1,22 @@
+vocab:
+  kagune:
+    ukaku: Укаку
+    koukaku: Коукаку
+    rinkaku: Ринкаку
+    bikaku: Бикаку
+  race:
+    human: Человек
+    ghoul: Гуль
+    ccg: Человек. Агент ССG
+  stat:
+    strength: Сила
+    dexterity: Ловкость
+    speed: Скорость
+    max_health: Макс. здоровье
+    health: Здоровье
+    regeneration: Регенерация
+  hunger:
+    full: не голоден
+    light: лёгкий голод
+    strong: сильный голод
+    deadly: смертельный голод

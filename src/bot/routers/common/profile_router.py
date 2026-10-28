@@ -2,6 +2,7 @@ from selfrot import BaseRouter, MessageHandler
 from selfrot.filter import Command, HasUser, Text
 
 from src.bot.dialogs import Dialogs
+from src.bot.dialogs.vocab import RACE_NAMES
 from src.bot.utils import format_amount
 
 from ...context import AppContext
@@ -16,11 +17,7 @@ class ProfileHandler(MessageHandler[AppContext[UserMessage]]):
 
         race = self.ctx.user_service.race(user.race_bit)
 
-        race_name = (
-            self.ctx.text(Dialogs.profile.unknown_race())
-            if not race
-            else race.value["name"]
-        )
+        race_name = Dialogs.profile.unknown_race() if not race else RACE_NAMES[race]
 
         balance = await self.ctx.user_service.balance(user.telegram_id)
         await self.ctx.say(

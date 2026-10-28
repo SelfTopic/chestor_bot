@@ -154,12 +154,12 @@ STAT_UPGRADE_CONFIG = StatUpgradeConfig()
 
 StatKey = Literal["strength", "dexterity", "speed", "max_health", "regeneration"]
 
-STATS = [
-    ("Сила", "strength", "💪"),
-    ("Ловкость", "dexterity", "🤸‍♂️"),
-    ("Скорость", "speed", "🏃"),
-    ("Макс. здоровье", "max_health", "❤️"),
-    ("Регенерация", "regeneration", "❣️"),
+STATS: list[tuple[StatKey, str]] = [
+    ("strength", "💪"),
+    ("dexterity", "🤸‍♂️"),
+    ("speed", "🏃"),
+    ("max_health", "❤️"),
+    ("regeneration", "❣️"),
 ]
 
 

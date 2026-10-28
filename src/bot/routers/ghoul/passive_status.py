@@ -2,6 +2,7 @@ from selfrot import BaseRouter, MessageHandler
 from selfrot.filter import HasUser, Text
 
 from src.bot.dialogs import Dialogs
+from src.bot.dialogs.vocab import HUNGER_NAMES
 from src.bot.utils import (
     format_duration,
     get_hunger_tier,
@@ -76,7 +77,7 @@ class HungerStatusHandler(MessageHandler[AppContext[TextUserMessage]]):
         await ctx.say(
             Dialogs.status.hunger(
                 hunger=ghoul.hunger,
-                tier=tier.name,
+                tier=HUNGER_NAMES[tier.key],
                 time_left=ctx.text(time_left),
                 falling_multiplier=tier.falling_multiplier,
                 rising_multiplier=tier.rising_multiplier,

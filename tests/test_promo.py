@@ -8,7 +8,7 @@ from sqlalchemy import func, select
 
 from src.bot.dialogs import Dialogs
 from src.bot.repositories import PromoRepository
-from src.bot.routers.promo_rewards import STAT_LABELS
+from src.bot.dialogs.vocab import stat_label
 from src.bot.utils import utcnow_naive
 from src.config import settings
 from src.database.models import PromoActivation, PromoCode, UserCooldown
@@ -190,8 +190,8 @@ class TestActivate:
 
         rewards = "\n".join(
             [
-                only_text(Dialogs.promo.reward.stat_capped(stat=STAT_LABELS["strength"], amount=3)),
-                only_text(Dialogs.promo.reward.stat(stat=STAT_LABELS["max_health"], amount=5)),
+                only_text(Dialogs.promo.reward.stat_capped(stat=stat_label(only_text, "strength"), amount=3)),
+                only_text(Dialogs.promo.reward.stat(stat=stat_label(only_text, "max_health"), amount=5)),
             ]
         )
         assert reply in phrase_texts(Dialogs.promo.activated(name="сила", rewards=rewards))

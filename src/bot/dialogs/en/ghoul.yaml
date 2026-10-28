@@ -7,6 +7,23 @@ ghoul:
     title: 👤 Profile of {danger_rank}-rank ghoul {name}
     kagune_types: 👁‍🗨 Kagune types - strength
     stats: Stats
+    kagune_row: '{kagune} - {strength}'
+    stat_row: '{stat}: {value}'
+    level: '📈 Level: {level}'
+    hunger: '🍖 Hunger: {hunger}% ({tier})'
+    rc: '♦️ RC cells: {rc}'
+    snaps: '👌 Fingers snapped: {count}'
+    coffee: '☕️ Coffee drunk: {count}'
+    humans: '🥩 Humans eaten: {count}'
+    health: '❤️ Health: {health}/{max_health}'
+    power: '⚡ Combat power: {power}'
+    ghouls: '🥩 Ghouls eaten: {count}'
+    fights: '⚔️ Total fights: {total} ({wins} wins / {losses} losses)'
+    mob_fights: '👹 Mob fights: {total} ({wins} wins / {losses} losses)'
+    kakuja: '🧬 Kakuja: {status}'
+    kakuja_yes: 'Yes'
+    kakuja_no: 'No'
+    deaths: '☠️ Deaths: {count}'
   new:
     - |-
       🐣 The birth of a ghoul is joy for some and grief for others. Yours will bring nothing but grief, it seems.
@@ -76,6 +93,7 @@ kagune:
 
       Defense: a raised kagune blocks 45-75% of a physical attack, and against an enemy kagune hit 10-20% (if your kagune strength is not lower than theirs) or 0%. Without a raised kagune, the bare body blocks 10-20% of physical hits (if your health is not lower than the attacker's) and doesn't block kagune hits at all. The chance to raise your kagune in time for a given hit depends on dexterity and speed - 50/50 with equal stats.
     table_title: ♦️ How kagune types affect stats
+    column_type: Type
     table_notes: |-
       ★ - the type's priority stat: if several unlocked types touch the same stat, the "owner" (★) wins, otherwise the smallest multiplier applies (the stacking rule, see BATTLE_DESIGN.md).
 
@@ -307,6 +325,12 @@ combat_power:
   rich:
     title: ⚡ Combat power of {danger_rank}-rank ghoul {name}
     combat_note: The rightmost value in the table below is the one actually used in a fight.
+    column_stat: Stat
+    column_value: Value
+    column_hunger: Hunger effect
+    column_kagune: Kagune effect
+    kagune_row: Kagune
+    total_row: Total
     hints: |-
       To see how hunger affects your stats, write "hunger".
 

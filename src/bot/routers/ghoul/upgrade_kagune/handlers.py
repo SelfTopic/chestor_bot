@@ -6,6 +6,7 @@ from selfrot.handlers import CallbackQueryHandler
 from selfrot.types import Message
 
 from src.bot.dialogs import Dialogs
+from src.bot.dialogs.vocab import KAGUNE_NAMES
 from src.bot.types import KaguneType
 from src.bot.utils import calculate_kagune, parse_seconds
 
@@ -37,7 +38,7 @@ class RegisterOrRebirthHandler(MessageHandler[AppContext[TextUserMessage]]):
             await ctx.say(
                 Dialogs.ghoul.new(
                     name=message.user.first_name,
-                    kagune_type=kagune_type.value["name"],
+                    kagune_type=KAGUNE_NAMES[kagune_type],
                 ),
                 reply=True,
             )
@@ -46,7 +47,7 @@ class RegisterOrRebirthHandler(MessageHandler[AppContext[TextUserMessage]]):
         reborn = await ctx.ghoul_service.reset_for_rebirth(telegram_id)
         new_type = calculate_kagune(reborn.kagune_type_bit)[0]
         await ctx.say(
-            Dialogs.ghoul.reborn(kagune_type=new_type.value["name"]), reply=True
+            Dialogs.ghoul.reborn(kagune_type=KAGUNE_NAMES[new_type]), reply=True
         )
 
 

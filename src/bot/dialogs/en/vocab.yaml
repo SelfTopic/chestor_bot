@@ -1,0 +1,22 @@
+vocab:
+  kagune:
+    ukaku: Ukaku
+    koukaku: Koukaku
+    rinkaku: Rinkaku
+    bikaku: Bikaku
+  race:
+    human: Human
+    ghoul: Ghoul
+    ccg: Human. CCG agent
+  stat:
+    strength: Strength
+    dexterity: Dexterity
+    speed: Speed
+    max_health: Max health
+    health: Health
+    regeneration: Regeneration
+  hunger:
+    full: not hungry
+    light: slightly hungry
+    strong: very hungry
+    deadly: starving to death

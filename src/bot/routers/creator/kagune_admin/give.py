@@ -3,6 +3,7 @@ from selfrot.filter import Command, HasReplyUser
 from selfrot.types import Message
 
 from src.bot.dialogs import Dialogs
+from src.bot.dialogs.vocab import KAGUNE_NAMES
 from src.bot.exceptions import GhoulNotFound, KaguneAlreadyOwned
 
 from ....context import AppContext
@@ -21,7 +22,7 @@ async def _perform_give(
         if type_name == "all":
             ghoul = await ghoul_service.grant_all_kagune_types(telegram_id)
             names = ", ".join(
-                kt.value["name"] for kt in ghoul_service.owned_kagune_types(ghoul)
+                ctx.text(KAGUNE_NAMES[kt]) for kt in ghoul_service.owned_kagune_types(ghoul)
             )
             await ctx.say(phrases.all_given(names=names))
             return
@@ -34,12 +35,12 @@ async def _perform_give(
 
         ghoul = await ghoul_service.grant_kagune_type(telegram_id, kagune_type)
         strength = ghoul_service.get_kagune_strength(ghoul, kagune_type)
-        given = phrases.given(kagune=kagune_type.value["name"], strength=strength)
+        given = phrases.given(kagune=KAGUNE_NAMES[kagune_type], strength=strength)
         await ctx.say(given)
     except GhoulNotFound:
         await ctx.say(Dialogs.admin.ghoul_not_found())
     except KaguneAlreadyOwned as e:
-        owned = Dialogs.admin.kagune_already_owned(kagune=e.kagune_type.value["name"])
+        owned = Dialogs.admin.kagune_already_owned(kagune=KAGUNE_NAMES[e.kagune_type])
         await ctx.say(owned)
 
 

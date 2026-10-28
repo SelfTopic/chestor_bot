@@ -1,6 +1,7 @@
 from typing import Any, Optional
 
 from src.bot.dialogs import Dialogs, Line
+from src.bot.dialogs.vocab import KAGUNE_NAMES
 from src.bot.exceptions import GhoulNotFound
 from src.bot.game_configs import EVOLUTION_CONFIG
 from src.bot.utils import format_amount
@@ -49,7 +50,7 @@ async def evolve_kagune(ctx: AppContext[Any], telegram_id: int) -> tuple[bool, L
     new_ghoul = await ctx.ghoul_service.grant_kagune_type(telegram_id, kagune_type)
     strength = ctx.ghoul_service.get_kagune_strength(new_ghoul, kagune_type)
     return True, EVOLUTION.kagune_done(
-        kagune=kagune_type.value["name"],
+        kagune=KAGUNE_NAMES[kagune_type],
         strength=strength,
         cheston=format_amount(price.new_kagune_cheston),
         rc=format_amount(price.new_kagune_rc),

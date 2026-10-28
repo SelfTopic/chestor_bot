@@ -67,7 +67,12 @@ class DialogService:
         phrase = self._phrase(line)
         # Корень читается при каждом вызове, как в media_paths: путь к ассетам настраивается.
         root = self._animation_root or Path(game_config.path_to_assets) / "animation"
-        folder = root / phrase.gifs.format_map(line.params)
+        # Папки гифок общие для всех языков и названы по-русски: upgrade_kagune/Укаку.
+        params = {
+            name: self.text(value) if isinstance(value, Line) else value
+            for name, value in line.params.items()
+        }
+        folder = root / phrase.gifs.format_map(params)
         # Значение подстановки могло бы увести путь из папки анимаций («..», «/»).
         if not folder.resolve().is_relative_to(root.resolve()):
             raise ValueError(f"{line.key}: папка гифок {folder} вне {root}")
