@@ -3,7 +3,7 @@ from typing import Any
 
 from selfrot import CommandArgs, Rest
 from selfrot.exceptions import TelegramAPIError
-from selfrot.filter import Command, HasReplyUser, HasUser
+from selfrot.filter import AnyCommand, Command, HasReplyUser, HasUser
 from selfrot.types import InlineKeyboardMarkup
 
 from src.bot.dialogs import Dialogs, Line, LineText
@@ -111,7 +111,10 @@ class DuelRepliedHandler(
     DuelInvite,
     RepliedTargetHandler[DuelRepliedArgs, AppContext[TextUserReplyMessage]],
 ):
-    cmd = Command("дуэль", DuelRepliedArgs, prefixes="", ignore_case=True)
+    cmd = AnyCommand(
+        Command("дуэль", DuelRepliedArgs, prefixes="", ignore_case=True),
+        Command("duel", DuelRepliedArgs, prefixes="", ignore_case=True),
+    )
     query = cmd & HasUser() & HasReplyUser()
 
 
@@ -120,7 +123,10 @@ class DuelArgs(TargetArgs):
 
 
 class DuelHandler(DuelInvite, ExplicitTargetHandler[DuelArgs, AppContext[TextUserMessage]]):
-    cmd = Command("дуэль", DuelArgs, prefixes="", ignore_case=True)
+    cmd = AnyCommand(
+        Command("дуэль", DuelArgs, prefixes="", ignore_case=True),
+        Command("duel", DuelArgs, prefixes="", ignore_case=True),
+    )
     query = cmd & HasUser() & ~HasReplyUser()
     usage = Dialogs.duel.usage()
     reply_errors = True

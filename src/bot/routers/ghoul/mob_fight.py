@@ -16,7 +16,9 @@ COOLDOWN_NAME = "MOB_FIGHT"
 
 
 class MobFightHandler(MessageHandler[AppContext[TextUserMessage]]):
-    query = Text("бить моба", ignore_case=True) & HasUser()
+    query = (
+        Text("бить моба", ignore_case=True) | Text("fight mob", ignore_case=True)
+    ) & HasUser()
 
     busy_text = Dialogs.mob.busy()
 

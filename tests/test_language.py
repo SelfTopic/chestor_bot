@@ -93,6 +93,8 @@ async def test_group_speaks_chat_language_not_sender_language(
         ("top snap", "ghoul.not_a_ghoul"),
         ("top cp", "ghoul.not_a_ghoul"),
         ("top kagune", "ghoul.not_a_ghoul"),
+        ("fight mob", "ghoul.not_a_ghoul"),
+        ("duel", "ghoul.not_a_ghoul"),
     ],
 )
 async def test_english_command_words(send, text, phrase):
