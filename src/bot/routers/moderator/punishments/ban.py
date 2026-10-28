@@ -62,7 +62,7 @@ class BanRepliedHandler(
     BanFlow,
     RepliedTargetHandler[BanRepliedArgs, AppContext[TextUserReplyMessage]],
 ):
-    cmd = command("ban", "бан", BanRepliedArgs)
+    cmd = command("ban", ("бан", "ban"), BanRepliedArgs)
     query = cmd & HasUser() & HasReplyUser() & FromChatAdmin()
 
     async def perform(self, telegram_id: int, args: BanRepliedArgs) -> None:
@@ -70,7 +70,7 @@ class BanRepliedHandler(
 
 
 class BanHandler(BanFlow, AnywhereTargetHandler[AppContext[TextUserMessage]]):
-    cmd = command("ban", "бан", TargetTextArgs)
+    cmd = command("ban", ("бан", "ban"), TargetTextArgs)
     query = cmd & HasUser() & ~HasReplyUser() & FromChatAdmin()
 
     async def perform(self, telegram_id: int, rest: str) -> None:
@@ -113,7 +113,7 @@ class UnbanRepliedHandler(
     UnbanFlow,
     RepliedTargetHandler[UnbanRepliedArgs, AppContext[TextUserReplyMessage]],
 ):
-    cmd = command("unban", "разбан", UnbanRepliedArgs)
+    cmd = command("unban", ("разбан", "unban"), UnbanRepliedArgs)
     query = cmd & HasUser() & HasReplyUser() & FromChatAdmin()
 
     async def perform(self, telegram_id: int, args: UnbanRepliedArgs) -> None:
@@ -121,7 +121,7 @@ class UnbanRepliedHandler(
 
 
 class UnbanHandler(UnbanFlow, AnywhereTargetHandler[AppContext[TextUserMessage]]):
-    cmd = command("unban", "разбан", TargetTextArgs)
+    cmd = command("unban", ("разбан", "unban"), TargetTextArgs)
     query = cmd & HasUser() & ~HasReplyUser() & FromChatAdmin()
 
     async def perform(self, telegram_id: int, rest: str) -> None:

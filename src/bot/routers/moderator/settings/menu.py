@@ -174,6 +174,7 @@ class ModerationMenuHandler(ModerationFlow, MessageHandler[AppContext[TextUserMe
     cmd = AnyCommand(
         Command("moderation", args_count=0, ignore_case=True),
         Command("настройки модерации", args_count=0, prefixes="", ignore_case=True),
+        Command("moderation settings", args_count=0, prefixes="", ignore_case=True),
     )
     query = cmd & HasUser() & FromChatAdmin()
 

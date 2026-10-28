@@ -173,10 +173,9 @@ class TestMute:
         (row,) = await journal(session_factory)
         assert (row.target_id, row.duration_seconds) == (TARGET, 3600)
 
-    async def test_forever(self, send, telegram, session_factory):
-        (reply,) = await send(
-            "мут навсегда", uid=ADMIN, chat=GROUP, reply_to_uid=TARGET
-        )
+    @pytest.mark.parametrize("text", ["мут навсегда", "mute forever"])
+    async def test_forever(self, send, telegram, session_factory, text):
+        (reply,) = await send(text, uid=ADMIN, chat=GROUP, reply_to_uid=TARGET)
 
         assert reply in phrase_texts(neutral.muted(name="Петя", term=term.forever()))
         (body,) = telegram.bodies("restrictChatMember")
@@ -363,13 +362,13 @@ class TestKick:
             "30м флуд",
         )
 
-    @pytest.mark.parametrize("status", ["left", "kicked"])
+    @pytest.mark.parametrize(("status", "word"), [("left", "кик"), ("kicked", "kick")])
     async def test_absent_member_is_not_kicked(
-        self, send, telegram, session_factory, status
+        self, send, telegram, session_factory, status, word
     ):
         telegram.results["getChatMember"] = member_dict(status, TARGET, "Петя")
 
-        (reply,) = await send("кик", uid=ADMIN, chat=GROUP, reply_to_uid=TARGET)
+        (reply,) = await send(word, uid=ADMIN, chat=GROUP, reply_to_uid=TARGET)
 
         assert reply in phrase_texts(neutral.target_absent(name="Петя"))
         assert telegram.bodies("banChatMember") == []

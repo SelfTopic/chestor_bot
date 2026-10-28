@@ -1,7 +1,7 @@
 from typing import Any
 
 from selfrot import CommandArgs, Rest
-from selfrot.filter import Command
+from selfrot.filter import AnyCommand, Command
 
 from src.bot.exceptions import ChatNotFoundInDatabase
 
@@ -13,12 +13,14 @@ class ChatTextArgs(CommandArgs):
     value: Rest = ""
 
 
-def chat_text_command(name: str) -> Command[ChatTextArgs]:
-    return Command(name, ChatTextArgs, prefixes="", ignore_case=True)
+def chat_text_command(*names: str) -> AnyCommand[ChatTextArgs]:
+    return AnyCommand(
+        *(Command(name, ChatTextArgs, prefixes="", ignore_case=True) for name in names)
+    )
 
 
 class SetChatTextHandler:
-    cmd: Command[ChatTextArgs]
+    cmd: AnyCommand[ChatTextArgs]
     ctx: AppContext[Any]
 
     async def apply(self, telegram_id: int, value: str) -> str:

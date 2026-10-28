@@ -109,10 +109,9 @@ NOT_FOR_PLAYERS = (ROUTERS / "creator", ROUTERS / "system")
 TRIGGERS = (
     re.compile(r'\bCommand\(\s*"([^"]+)"'),
     re.compile(r'\bText\(\s*"([^"]+)"'),
-    re.compile(r'\bchat_text_command\(\s*"([^"]+)"'),
 )
 # Хелперы, которым слова команды передаются списком: top_command("топ щелк", "top snap").
-WORD_LISTS = re.compile(r'\btop_command\(([^)]*)\)')
+WORD_LISTS = re.compile(r'\b(?:top_command|chat_text_command)\(([^)]*)\)')
 # Действия после «бот …» / «bot …»: bot_command(Args, "выбери", "pick") и список в цикле.
 BOT_ACTIONS = (re.compile(r"\bbot_command\(\s*\w+,([^)]*)\)"), re.compile(r"for action in \(([^)]*)\)"))
 SLASH_AND_TEXT = re.compile(r'\bcommand\(\s*"([a-z_]+)",\s*(\([^)]*\)|"[^"]*"|[A-Z_]+)')

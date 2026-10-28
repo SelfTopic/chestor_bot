@@ -8,7 +8,7 @@ from .set_chat_text import SetChatTextHandler, chat_text_command
 
 
 class SetWelcomeHandler(SetChatTextHandler, MessageHandler[AppContext[TextMessage]]):
-    cmd = chat_text_command("новое приветствие")
+    cmd = chat_text_command("новое приветствие", "new welcome")
     query = cmd
 
     async def apply(self, telegram_id: int, value: str) -> str:
