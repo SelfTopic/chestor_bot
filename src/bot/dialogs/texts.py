@@ -8,6 +8,10 @@ import yaml
 
 DIALOGS_DIR = Path(__file__).parent
 
+BASE_LANGUAGE = "ru"
+# Чего нет в переводе, бот говорит по-английски: иранцу или арабу он понятнее русского.
+FALLBACK_LANGUAGE = "en"
+
 # Разбор через libyaml на порядок быстрее; без неё — тот же разбор на Python.
 SafeLoader: type[yaml.SafeLoader] = getattr(yaml, "CSafeLoader", yaml.SafeLoader)
 
@@ -45,6 +49,14 @@ def load_texts(folder: Path = DIALOGS_DIR) -> Phrases:
         if any(other.startswith(f"{key}.") for other in phrases):
             raise DialogFileError(f"{key}: это и фраза, и раздел с другими фразами")
     return phrases
+
+
+def load_translations(folder: Path = DIALOGS_DIR) -> dict[str, Phrases]:
+    return {
+        path.name: load_texts(path)
+        for path in sorted(folder.iterdir())
+        if path.is_dir() and any(path.glob("*.yaml"))
+    }
 
 
 def _collect(
@@ -128,11 +140,15 @@ def _fields(key: str, template: str) -> set[str]:
     return names
 
 
-def placeholders(key: str, phrase: Phrase) -> frozenset[str]:
-    names = _fields(key, phrase.gifs)
+def _text_placeholders(key: str, phrase: Phrase) -> set[str]:
+    names: set[str] = set()
     for variant in phrase.variants:
         names |= _fields(key, variant)
-    return frozenset(names)
+    return names
+
+
+def placeholders(key: str, phrase: Phrase) -> frozenset[str]:
+    return frozenset(_fields(key, phrase.gifs) | _text_placeholders(key, phrase))
 
 
 def signatures(phrases: Phrases) -> dict[str, frozenset[str]]:
@@ -155,3 +171,22 @@ def check_against(phrases: Phrases, expected: Placeholders) -> None:
             )
     if problems:
         raise DialogFileError("Тексты не совпадают с кодом:\n" + "\n".join(problems))
+
+
+# Гифки у фразы общие для всех языков, поэтому сверяется только текст.
+def check_translation(language: str, translation: Phrases, base: Phrases) -> None:
+    problems = [
+        f"{language}/{key}: такой фразы нет в русских текстах"
+        for key in sorted(translation.keys() - base.keys())
+    ]
+    for key in sorted(translation.keys() & base.keys()):
+        found = _text_placeholders(key, translation[key])
+        expected = _text_placeholders(key, base[key])
+        if found != expected:
+            problems.append(
+                f"{language}/{key}: подстановки {sorted(found)}, а в русском {sorted(expected)}"
+            )
+    if problems:
+        raise DialogFileError(
+            f"Перевод {language} не совпадает с русским:\n" + "\n".join(problems)
+        )
