@@ -56,6 +56,11 @@ class ChatRepository(Base):
 
         return chat
 
+    async def language(self, telegram_id: int) -> Optional[str]:
+        return await self.session.scalar(
+            select(Chat.language).where(Chat.telegram_id == telegram_id)
+        )
+
     async def get_chat_by_id(self, chat_id: int) -> Optional[Chat]:
         stmt = select(Chat).where(Chat.id == chat_id)
 

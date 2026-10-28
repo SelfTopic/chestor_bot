@@ -10,7 +10,7 @@ from selfrot.exceptions import TelegramBadRequest
 from selfrot.types import ChatMember, InputFile, Message
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 
-from src.bot.dialogs import Line
+from src.bot.dialogs import BASE_LANGUAGE, Line
 from src.bot.exceptions import UserNotFound
 from src.bot.services import (
     MobService,
@@ -75,6 +75,8 @@ class AppContext(BaseContext[TEvent], SessionServices):
     video_cutter_service: VideoCutterService
     video_worker: VideoWorker
     analytics: AnalyticsRecorder
+    # Ставит SyncEntitiesMiddleware; у фоновой задачи апдейта нет, она говорит по-русски.
+    language: str = field(default=BASE_LANGUAGE, init=False)
     _administrators: list[ChatMember] | None = field(
         default=None, init=False, repr=False, compare=False
     )
@@ -84,7 +86,7 @@ class AppContext(BaseContext[TEvent], SessionServices):
         return SelfrotBotNotifier(self.bot)
 
     def text(self, line: Line) -> str:
-        return self.dialog_service.text(line)
+        return self.dialog_service.text(line, self.language)
 
     # Список админов нужен и фильтру, и хендлеру одного апдейта: запрос к Telegram один.
     async def chat_administrators(self) -> list[ChatMember]:
