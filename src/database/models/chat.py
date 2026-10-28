@@ -52,3 +52,8 @@ class Chat(Base):
         nullable=False,
         server_default=func.now()
     )
+
+    # NULL — бот не застал своё добавление в чат, язык ещё не выбран.
+    language: Mapped[Optional[str]] = mapped_column(
+        nullable=True
+    )
