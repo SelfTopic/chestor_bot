@@ -110,8 +110,9 @@ TRIGGERS = (
     re.compile(r'\bCommand\(\s*"([^"]+)"'),
     re.compile(r'\bText\(\s*"([^"]+)"'),
     re.compile(r'\bchat_text_command\(\s*"([^"]+)"'),
-    re.compile(r'\btop_command\(\s*"([^"]+)"'),
 )
+# Хелперы, которым слова команды передаются списком: top_command("топ щелк", "top snap").
+WORD_LISTS = re.compile(r'\btop_command\(([^)]*)\)')
 BOT_TRIGGERS = (re.compile(r'\bbot_command\(\s*"([^"]+)"'), re.compile(r'f"\{name\} ([^"{]+)"'))
 SLASH_AND_TEXT = re.compile(r'\bcommand\(\s*"([a-z_]+)",\s*(\([^)]*\)|"[^"]*"|[A-Z_]+)')
 WORD_TUPLES = re.compile(r"^([A-Z_]+_WORDS) = \(([^)]*)\)", re.MULTILINE)
@@ -129,6 +130,8 @@ def player_triggers() -> set[str]:
         tuples = {name: re.findall(r'"([^"]+)"', words) for name, words in WORD_TUPLES.findall(text)}
         for pattern in TRIGGERS:
             found.update(pattern.findall(text))
+        for words in WORD_LISTS.findall(text):
+            found.update(re.findall(r'"([^"]+)"', words))
         for pattern in BOT_TRIGGERS:
             found.update(f"бот {action}" for action in pattern.findall(text))
         for slash, words in SLASH_AND_TEXT.findall(text):

@@ -17,7 +17,7 @@ from ..utils import full_name
 
 
 class RegenStatusHandler(MessageHandler[AppContext[TextUserMessage]]):
-    query = Text("реген", ignore_case=True) & HasUser()
+    query = (Text("реген", ignore_case=True) | Text("regen", ignore_case=True)) & HasUser()
 
     async def handle(self) -> None:
         ctx = self.ctx
@@ -53,7 +53,7 @@ class RegenStatusHandler(MessageHandler[AppContext[TextUserMessage]]):
 
 
 class HungerStatusHandler(MessageHandler[AppContext[TextUserMessage]]):
-    query = Text("голод", ignore_case=True) & HasUser()
+    query = (Text("голод", ignore_case=True) | Text("hunger", ignore_case=True)) & HasUser()
 
     async def handle(self) -> None:
         ctx = self.ctx

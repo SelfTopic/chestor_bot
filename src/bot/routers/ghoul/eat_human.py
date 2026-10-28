@@ -14,7 +14,9 @@ COOLDOWN_NAME = "EAT_HUMAN"
 
 
 class EatHumanHandler(MessageHandler[AppContext[TextUserMessage]]):
-    query = Text("сожрать человека", ignore_case=True) & HasUser()
+    query = (
+        Text("сожрать человека", ignore_case=True) | Text("eat human", ignore_case=True)
+    ) & HasUser()
 
     async def survive_ambush(self) -> bool:
         ctx = self.ctx

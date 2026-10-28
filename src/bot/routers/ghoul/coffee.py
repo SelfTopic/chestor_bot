@@ -12,7 +12,9 @@ from ..types import TextUserMessage
 
 
 class CoffeeHandler(MessageHandler[AppContext[TextUserMessage]]):
-    query = Text("пить кофе", ignore_case=True) & HasUser()
+    query = (
+        Text("пить кофе", ignore_case=True) | Text("drink coffee", ignore_case=True)
+    ) & HasUser()
 
     async def handle(self) -> None:
         ctx = self.ctx

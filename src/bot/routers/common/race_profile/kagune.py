@@ -23,7 +23,11 @@ from ...rich import answer_rich_or_text, paragraph, table_cell
 
 
 class KaguneInfoHandler(MessageHandler[AppContext[TextMessage]]):
-    query = Text("кагуне", ignore_case=True) | Command("kagune")
+    query = (
+        Text("кагуне", ignore_case=True)
+        | Text("kagune", ignore_case=True)
+        | Command("kagune")
+    )
 
     stat_keys = ("strength", "dexterity", "speed", "health", "regeneration")
 

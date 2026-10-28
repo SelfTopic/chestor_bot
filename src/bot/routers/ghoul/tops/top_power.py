@@ -8,7 +8,7 @@ from .count import GhoulTopHandler, top_command, top_row, top_text
 
 
 class TopPowerHandler(GhoulTopHandler, MessageHandler[AppContext[TextMessage]]):
-    cmd = top_command("топ бм")
+    cmd = top_command("топ бм", "top cp")
     query = cmd
 
     async def show(self, count: int) -> None:

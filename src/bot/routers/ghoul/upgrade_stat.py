@@ -72,7 +72,7 @@ def build_shop(
 
 
 class UpgradeStatHandler(MessageHandler[AppContext[TextUserMessage]]):
-    query = Text("качаться", ignore_case=True) & HasUser()
+    query = (Text("качаться", ignore_case=True) | Text("train", ignore_case=True)) & HasUser()
 
     async def handle(self) -> None:
         ctx = self.ctx

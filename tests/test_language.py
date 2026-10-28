@@ -77,6 +77,22 @@ async def test_group_speaks_chat_language_not_sender_language(
         ("bet", "lottery.usage"),
         # цвет понят, раз дошло до проверки ставки
         ("bet red 1", "lottery.bet_out_of_range"),
+        ("grow kagune", "ghoul.new"),
+        ("snap", "ghoul.not_a_ghoul"),
+        ("drink coffee", "ghoul.not_a_ghoul"),
+        ("eat human", "ghoul.not_a_ghoul"),
+        ("hunger", "ghoul.not_a_ghoul"),
+        ("regen", "ghoul.not_a_ghoul"),
+        ("train", "ghoul.not_a_ghoul"),
+        ("cp", "ghoul.not_a_ghoul"),
+        ("combat power", "ghoul.not_a_ghoul"),
+        ("evolution", "ghoul.not_a_ghoul"),
+        ("mutation", "ghoul.not_a_ghoul"),
+        ("quiz", "ghoul.not_a_ghoul"),
+        ("promo x", "ghoul.not_a_ghoul"),
+        ("top snap", "ghoul.not_a_ghoul"),
+        ("top cp", "ghoul.not_a_ghoul"),
+        ("top kagune", "ghoul.not_a_ghoul"),
     ],
 )
 async def test_english_command_words(send, text, phrase):

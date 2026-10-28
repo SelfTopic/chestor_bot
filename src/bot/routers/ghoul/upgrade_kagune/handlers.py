@@ -16,7 +16,9 @@ from .callback_data import KaguneUpgradePress
 from .filters import NeedsRegistrationOrRebirth
 from .upgrade import build_choice_keyboard, do_upgrade
 
-_COMMAND = Text("растить кагуне", ignore_case=True) & HasUser()
+_COMMAND = (
+    Text("растить кагуне", ignore_case=True) | Text("grow kagune", ignore_case=True)
+) & HasUser()
 
 
 class RegisterOrRebirthHandler(MessageHandler[AppContext[TextUserMessage]]):

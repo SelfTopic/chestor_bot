@@ -10,7 +10,9 @@ from ..types import TextUserMessage
 
 class SnapHandler(MessageHandler[AppContext[TextUserMessage]]):
     query = (
-        Text("щелк", ignore_case=True) | Text("щёлк", ignore_case=True)
+        Text("щелк", ignore_case=True)
+        | Text("щёлк", ignore_case=True)
+        | Text("snap", ignore_case=True)
     ) & HasUser()
 
     async def handle(self) -> None:

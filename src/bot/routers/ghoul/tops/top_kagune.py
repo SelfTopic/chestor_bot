@@ -82,7 +82,7 @@ async def _render(
 
 
 class TopKaguneHandler(GhoulTopHandler, MessageHandler[AppContext[TextMessage]]):
-    cmd = top_command("топ кагуне")
+    cmd = top_command("топ кагуне", "top kagune")
     query = cmd
 
     async def show(self, count: int) -> None:
