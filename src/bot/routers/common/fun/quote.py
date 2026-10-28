@@ -1,11 +1,12 @@
 from selfrot import CommandArgs, MessageHandler, Rest
-from selfrot.filter import Command
+from selfrot.filter import AnyCommand, Command
 from selfrot.types import InputRichMessage
 
 from src.bot.dialogs import Dialogs
 from src.bot.services.quotes import Quote
 
 from ....context import AppContext
+from ...language import RUSSIAN_ONLY, NotInLanguageReply
 from ...types import TextMessage
 
 SOURCE_LABEL = {"anime": "Аниме", "comics": "Манга"}
@@ -23,9 +24,15 @@ class QuoteArgs(CommandArgs):
     who: Rest = ""
 
 
+QUOTE = AnyCommand(
+    Command("цитата", QuoteArgs, prefixes="", ignore_case=True),
+    Command("quote", QuoteArgs, prefixes="", ignore_case=True),
+)
+
+
 class QuoteHandler(MessageHandler[AppContext[TextMessage]]):
-    cmd = Command("цитата", QuoteArgs, prefixes="", ignore_case=True)
-    query = cmd
+    cmd = QUOTE
+    query = cmd & RUSSIAN_ONLY
 
     async def handle(self) -> None:
         who = self.cmd.parse(self.ctx).who.strip()
@@ -37,3 +44,8 @@ class QuoteHandler(MessageHandler[AppContext[TextMessage]]):
         await self.ctx.message.reply_rich_message(
             rich_message=InputRichMessage(markdown=quote_markdown(quote))
         )
+
+
+class QuoteNotInLanguageHandler(NotInLanguageReply, MessageHandler[AppContext[TextMessage]]):
+    query = QUOTE & ~RUSSIAN_ONLY
+    line = Dialogs.not_in_language.quote()

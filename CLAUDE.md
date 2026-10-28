@@ -164,7 +164,10 @@ selfrot ищет заголовок по всему MRO, так что `Definiti
 задачи) — на языке чата назначения: `text = await ctx.language_service.text_for(chat_id)`;
 текст через `dialog_service.text(line)` без языка — по-русски. Язык Telegram игрока хранится в
 `users.telegram_language`, чтобы фоновой задаче было откуда его взять. Тестовые пользователи
-(`user_dict`, `make_user`) — русские.
+(`user_dict`, `make_user`) — русские. Функция, у которой есть только русское содержимое (цитаты,
+серии, Wordle), стоит за фильтром `RUSSIAN_ONLY` (`routers/language.py`), а на её же триггер с
+`~RUSSIAN_ONLY` отвечает хендлер с `NotInLanguageReply` («на вашем языке пока нет»); огрызания и
+поиск вне русского просто молчат.
 
 **Огрызания — `ctx.roast_service`** (`services/roast/`). Процессный сервис, как квиз: одно
 соединение с Cloud.ru, состояние споров в памяти, свои сессии БД для журнала `roast_log`.

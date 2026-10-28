@@ -5,13 +5,14 @@ from src.bot.dialogs import Dialogs
 from src.bot.services.roast import Incoming
 
 from ...context import AppContext
+from ..language import RUSSIAN_ONLY
 from ..types import TextUserMessage
 
 GROUP_CHATS = ("group", "supergroup")
 
 
 class RoastHandler(MessageHandler[AppContext[TextUserMessage]]):
-    query = HasText() & HasUser()
+    query = HasText() & HasUser() & RUSSIAN_ONLY
     # Видит каждое сообщение группы: в статистике команд это было бы любое сообщение.
     counted = False
 

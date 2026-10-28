@@ -3678,6 +3678,17 @@ class _MusicDialogs:
         return Line("music.usage", {})
 
 
+class _NotInLanguageDialogs:
+    def anime(self) -> Line:
+        return Line("not_in_language.anime", {})
+
+    def quote(self) -> Line:
+        return Line("not_in_language.quote", {})
+
+    def wordle(self) -> Line:
+        return Line("not_in_language.wordle", {})
+
+
 class _NotifyDeathCauseDialogs:
     def admin(self) -> Line:
         return Line("notify.death_cause.admin", {})
@@ -4411,6 +4422,7 @@ class _Dialogs:
     mob = _MobDialogs()
     moderation = _ModerationDialogs()
     music = _MusicDialogs()
+    not_in_language = _NotInLanguageDialogs()
     notify = _NotifyDialogs()
     profile = _ProfileDialogs()
     promo = _PromoDialogs()
@@ -5411,6 +5423,9 @@ PLACEHOLDERS: dict[str, frozenset[str]] = {
     "music.shazam.too_big": frozenset(),
     "music.shazam.usage": frozenset(),
     "music.usage": frozenset(),
+    "not_in_language.anime": frozenset(),
+    "not_in_language.quote": frozenset(),
+    "not_in_language.wordle": frozenset(),
     "notify.death": frozenset({"cause", "level", "lifetime_rc_earned"}),
     "notify.death_cause.admin": frozenset(),
     "notify.death_cause.eaten": frozenset(),

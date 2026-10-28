@@ -7,7 +7,7 @@ from src.bot.dialogs import DIALOGS_DIR, Dialogs
 from src.bot.services.dialog import DialogService
 from src.database.models import Chat, User
 
-from .conftest import matches_phrase, message_update, owner_dict, phrase_texts
+from .conftest import matches_phrase, message_update, only_text, owner_dict, phrase_texts
 
 GROUP = -100123
 
@@ -21,14 +21,18 @@ def english(dispatcher, tmp_path):
     dispatcher.dialog_service = DialogService(tmp_path)
 
 
-async def start(feed, telegram_language: str | None, chat: int | None = None) -> str:
-    update = message_update("/start", uid=42, chat=chat)
+async def said(feed, text: str, telegram_language: str | None, chat: int | None = None) -> list[str]:
+    update = message_update(text, uid=42, chat=chat)
     sender = update["message"]["from"]
     if telegram_language is None:
         del sender["language_code"]
     else:
         sender["language_code"] = telegram_language
-    (reply,) = (await feed(update)).sent
+    return (await feed(update)).sent
+
+
+async def start(feed, telegram_language: str | None, chat: int | None = None) -> str:
+    (reply,) = await said(feed, "/start", telegram_language, chat)
     return reply
 
 
@@ -111,3 +115,21 @@ async def test_english_command_words(send, text, phrase):
 
     assert matches_phrase(reply, phrase)
 
+
+@pytest.mark.parametrize(
+    ("text", "line"),
+    [
+        ("quote kaneki", Dialogs.not_in_language.quote()),
+        ("цитата канеки", Dialogs.not_in_language.quote()),
+        ("/anime 1 1", Dialogs.not_in_language.anime()),
+        ("/wordle", Dialogs.not_in_language.wordle()),
+    ],
+)
+async def test_russian_only_features_say_so_in_other_languages(feed, dispatcher, text, line):
+    assert await said(feed, text, "en") == [dispatcher.dialog_service.text(line, "en")]
+
+
+async def test_search_is_silent_outside_russian(feed):
+    # без запроса поиск сразу отвечает подсказкой, а вне русского — молчит
+    assert await said(feed, "бот найди", "en") == []
+    assert await said(feed, "бот найди", "ru") == [only_text(Dialogs.fun.search.usage())]
