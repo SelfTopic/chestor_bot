@@ -95,9 +95,8 @@ async def test_removed_section_loses_its_post_and_its_contents_line(publish, tel
     assert "Голод" not in contents["rich_message"]["markdown"]
 
 
-def test_real_docs_have_valid_headers_and_contents_template() -> None:
-    folder = Path("docs/players")
-
+@pytest.mark.parametrize("folder", [Path("docs/players"), Path("docs/players/en")])
+def test_real_docs_have_valid_headers_and_contents_template(folder: Path) -> None:
     pages = load_pages(folder)
 
     assert pages and all(page.title and page.markdown for page in pages)
@@ -138,14 +137,24 @@ def player_triggers() -> set[str]:
     return found
 
 
-def test_every_player_command_has_its_own_help_topic() -> None:
-    words = {
-        word for page in load_pages(Path("docs/players")) for topic in topics(page) for word in topic.words
-    }
+CYRILLIC = re.compile(r"[а-яё]", re.IGNORECASE)
 
-    missing = sorted(trigger for trigger in player_triggers() if normalize(trigger) not in words)
 
-    assert missing == [], f"нет подраздела «### …» в docs/players для: {missing}"
+# Русские слова команд ищутся в русской справке, всё латиницей (английские слова и слэш-команды)
+# — в английской.
+@pytest.mark.parametrize(
+    ("folder", "is_russian"), [(Path("docs/players"), True), (Path("docs/players/en"), False)]
+)
+def test_every_player_command_has_its_own_help_topic(folder: Path, is_russian: bool) -> None:
+    words = {word for page in load_pages(folder) for topic in topics(page) for word in topic.words}
+
+    missing = sorted(
+        trigger
+        for trigger in player_triggers()
+        if bool(CYRILLIC.search(trigger)) == is_russian and normalize(trigger) not in words
+    )
+
+    assert missing == [], f"нет подраздела «### …» в {folder} для: {missing}"
 
 
 async def test_help_lists_sections_with_links_to_the_channel(
