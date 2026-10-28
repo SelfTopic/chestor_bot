@@ -95,6 +95,11 @@ async def test_group_speaks_chat_language_not_sender_language(
         ("top kagune", "ghoul.not_a_ghoul"),
         ("fight mob", "ghoul.not_a_ghoul"),
         ("duel", "ghoul.not_a_ghoul"),
+        ("marry @nobody", "marriage.user_not_found"),
+        ("family", "family.single"),
+        ("families", "family.list.empty"),
+        ("divorce", "divorce.not_married"),
+        ("family name", "family.rename.usage"),
     ],
 )
 async def test_english_command_words(send, text, phrase):

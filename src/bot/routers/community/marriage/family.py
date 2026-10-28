@@ -22,7 +22,7 @@ def age(text: LineText, since: datetime) -> str:
 
 
 class FamilyHandler(MessageHandler[AppContext[TextUserMessage]]):
-    query = Text("семья", ignore_case=True) & HasUser()
+    query = (Text("семья", ignore_case=True) | Text("family", ignore_case=True)) & HasUser()
 
     async def handle(self) -> None:
         ctx = self.ctx
@@ -56,7 +56,7 @@ LIST_LIMIT = 3500
 
 
 class FamiliesHandler(MessageHandler[AppContext[TextUserMessage]]):
-    query = Text("браки", ignore_case=True) & HasUser()
+    query = (Text("браки", ignore_case=True) | Text("families", ignore_case=True)) & HasUser()
 
     async def handle(self) -> None:
         ctx = self.ctx
@@ -92,7 +92,7 @@ class FamiliesHandler(MessageHandler[AppContext[TextUserMessage]]):
 
 
 class DivorceHandler(MessageHandler[AppContext[TextUserMessage]]):
-    query = Text("развод", ignore_case=True) & HasUser()
+    query = (Text("развод", ignore_case=True) | Text("divorce", ignore_case=True)) & HasUser()
 
     async def handle(self) -> None:
         ctx = self.ctx

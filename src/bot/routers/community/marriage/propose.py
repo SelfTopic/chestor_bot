@@ -20,7 +20,7 @@ from ...types import TextUserMessage, TextUserReplyMessage
 from .payloads import ProposalPayment
 from .render import PHRASES, mentions, proposal_view
 
-TRIGGERS = ("брак", "свадьба")
+TRIGGERS = ("брак", "свадьба", "marry", "wedding")
 
 
 def refusal_line(reason: MarriageRefusal) -> Line:
@@ -89,13 +89,15 @@ class ProposalArgs(TargetArgs):
 
 # Только с ником, id или кликабельным именем: иначе «брак — это скучно» в обычной
 # переписке стало бы предложением.
-EXPLICIT_TARGET = TextRegexp(r"(?i)(брак|свадьба)\s+(@\w+|-?\d+)\s*$")
+EXPLICIT_TARGET = TextRegexp(r"(?i)(брак|свадьба|marry|wedding)\s+(@\w+|-?\d+)\s*$")
 
 
 class ProposalHandler(Proposal, ExplicitTargetHandler[ProposalArgs, AppContext[TextUserMessage]]):
     cmd = AnyCommand(
         Command("брак", ProposalArgs, prefixes="", ignore_case=True),
         Command("свадьба", ProposalArgs, prefixes="", ignore_case=True),
+        Command("marry", ProposalArgs, prefixes="", ignore_case=True),
+        Command("wedding", ProposalArgs, prefixes="", ignore_case=True),
     )
     query = cmd & HasUser() & ~HasReplyUser() & (EXPLICIT_TARGET | HasMention())
     reply_errors = True

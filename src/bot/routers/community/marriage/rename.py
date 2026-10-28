@@ -1,7 +1,7 @@
 import logging
 
 from selfrot import CommandArgs, InlineKeyboard, MessageHandler, Rest, button
-from selfrot.filter import Command, HasUser
+from selfrot.filter import AnyCommand, Command, HasUser
 from selfrot.handlers import CallbackQueryHandler
 from selfrot.types import DataCallbackQuery, Message
 
@@ -34,7 +34,10 @@ class RenameArgs(CommandArgs):
 
 
 class RenameHandler(MessageHandler[AppContext[TextUserMessage]]):
-    cmd = Command("имя семьи", RenameArgs, prefixes="", ignore_case=True)
+    cmd = AnyCommand(
+        Command("имя семьи", RenameArgs, prefixes="", ignore_case=True),
+        Command("family name", RenameArgs, prefixes="", ignore_case=True),
+    )
     query = cmd & HasUser()
 
     async def handle(self) -> None:
