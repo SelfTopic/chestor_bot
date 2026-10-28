@@ -29,7 +29,14 @@ def media_file(message: Message) -> tuple[str, int] | None:
 
 
 class ShazamHandler(MessageHandler[AppContext[TextUserReplyToMessage]]):
-    query = Command("шазам", prefixes="", ignore_case=True, args_count=0) & HasReplyToMessage() & HasUser()
+    query = (
+        (
+            Command("шазам", prefixes="", ignore_case=True, args_count=0)
+            | Command("shazam", prefixes="", ignore_case=True, args_count=0)
+        )
+        & HasReplyToMessage()
+        & HasUser()
+    )
 
     # Скачивание и распознавание идут секундами: в handle держали бы сессию БД и слот.
     file_id = ""

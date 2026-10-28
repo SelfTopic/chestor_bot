@@ -6,12 +6,17 @@ from selfrot.filter import AnyCommand, Command
 TArgs = TypeVar("TArgs", bound=CommandArgs)
 
 
-def bot_command(action: str, args: type[TArgs]) -> AnyCommand[TArgs]:
+BOT_NAMES = ("бот", "честор", "bot", "chestor")
+
+
+# Действие называют на любом языке бота: «бот выбери» и «bot pick» — одна команда.
+def bot_command(args: type[TArgs], *actions: str) -> AnyCommand[TArgs]:
     return AnyCommand(
         *(
             Command(
                 f"{name} {action}", args, prefixes="", ignore_case=True, strict=True
             )
-            for name in ("бот", "честор")
+            for action in actions
+            for name in BOT_NAMES
         )
     )

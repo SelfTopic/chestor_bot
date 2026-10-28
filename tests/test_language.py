@@ -100,6 +100,10 @@ async def test_group_speaks_chat_language_not_sender_language(
         ("families", "family.list.empty"),
         ("divorce", "divorce.not_married"),
         ("family name", "family.rename.usage"),
+        ("bot", "bot"),
+        ("bot pick pizza or sushi", "fun.pick.result"),
+        ("bot number 1 3", "fun.number"),
+        ("rules", "errors.chat_not_found"),
     ],
 )
 async def test_english_command_words(send, text, phrase):

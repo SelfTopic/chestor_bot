@@ -16,7 +16,7 @@ class SearchArgs(CommandArgs):
 
 
 class SearchHandler(MessageHandler[AppContext[TextUserMessage]]):
-    cmd = bot_command("найди", SearchArgs)
+    cmd = bot_command(SearchArgs, "найди")
     query = cmd & HasUser()
     usage = SEARCH.usage()
 

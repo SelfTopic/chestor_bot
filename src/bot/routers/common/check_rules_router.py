@@ -9,7 +9,7 @@ from ..types import TextMessage
 
 
 class CheckRulesHandler(MessageHandler[AppContext[TextMessage]]):
-    query = Text("правила", ignore_case=True)
+    query = Text("правила", ignore_case=True) | Text("rules", ignore_case=True)
 
     async def handle(self) -> None:
         message = self.ctx.message

@@ -113,8 +113,10 @@ TRIGGERS = (
 )
 # Хелперы, которым слова команды передаются списком: top_command("топ щелк", "top snap").
 WORD_LISTS = re.compile(r'\btop_command\(([^)]*)\)')
-BOT_TRIGGERS = (re.compile(r'\bbot_command\(\s*"([^"]+)"'), re.compile(r'f"\{name\} ([^"{]+)"'))
+# Действия после «бот …» / «bot …»: bot_command(Args, "выбери", "pick") и список в цикле.
+BOT_ACTIONS = (re.compile(r"\bbot_command\(\s*\w+,([^)]*)\)"), re.compile(r"for action in \(([^)]*)\)"))
 SLASH_AND_TEXT = re.compile(r'\bcommand\(\s*"([a-z_]+)",\s*(\([^)]*\)|"[^"]*"|[A-Z_]+)')
+CYRILLIC = re.compile(r"[а-яё]", re.IGNORECASE)
 WORD_TUPLES = re.compile(r"^([A-Z_]+_WORDS) = \(([^)]*)\)", re.MULTILINE)
 
 
@@ -132,15 +134,18 @@ def player_triggers() -> set[str]:
             found.update(pattern.findall(text))
         for words in WORD_LISTS.findall(text):
             found.update(re.findall(r'"([^"]+)"', words))
-        for pattern in BOT_TRIGGERS:
-            found.update(f"бот {action}" for action in pattern.findall(text))
+        for pattern in BOT_ACTIONS:
+            for actions in pattern.findall(text):
+                found.update(
+                    f"{'бот' if CYRILLIC.search(action) else 'bot'} {action}"
+                    for action in re.findall(r'"([^"]+)"', actions)
+                )
         for slash, words in SLASH_AND_TEXT.findall(text):
             found.add(slash)
             found.update(tuples.get(words) or re.findall(r'"([^"]+)"', words))
     return found
 
 
-CYRILLIC = re.compile(r"[а-яё]", re.IGNORECASE)
 
 
 # Русские слова команд ищутся в русской справке, всё латиницей (английские слова и слэш-команды)
