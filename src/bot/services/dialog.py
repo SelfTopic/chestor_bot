@@ -3,6 +3,7 @@ import random
 import re
 from collections.abc import Callable
 from dataclasses import dataclass
+from functools import partial
 from pathlib import Path
 
 from src.bot.config import game_config
@@ -13,6 +14,7 @@ from src.bot.dialogs import (
     PLACEHOLDERS,
     DialogFileError,
     Line,
+    LineText,
     Phrase,
     Phrases,
     Placeholders,
@@ -57,6 +59,9 @@ class DialogService:
             for name, value in line.params.items()
         }
         return self._random.choice(variants).format_map(params)
+
+    def text_in(self, language: str) -> LineText:
+        return partial(self.text, language=language)
 
     def gifs(self, line: Line) -> Gifs:
         phrase = self._phrase(line)

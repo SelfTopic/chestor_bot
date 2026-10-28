@@ -1,15 +1,13 @@
 from selfrot import BaseMiddleware
 from selfrot.types import CallbackQuery, ChatMemberOwner, Message
-from sqlalchemy.ext.asyncio import AsyncSession
 
-from src.bot.dialogs import BASE_LANGUAGE
 from src.bot.repositories import (
     ChatParticipantRepository,
     ChatRepository,
     UserRepository,
 )
+from src.bot.services.language import LanguageService
 from src.bot.types.insert import ChatInsert
-from src.database.models import Chat, User
 
 from ..context import AppContext
 
@@ -23,10 +21,8 @@ class SyncEntitiesMiddleware(BaseMiddleware[AppContext]):
         event = self.ctx.event
 
         async with self.ctx.session_factory() as session:
-            user: User | None = None
-            chat: Chat | None = None
             if isinstance(event, (Message, CallbackQuery)) and event.user is not None:
-                user = await UserRepository(session).upsert(
+                await UserRepository(session).upsert(
                     telegram_id=event.user.id,
                     first_name=event.user.first_name,
                     last_name=event.user.last_name,
@@ -34,6 +30,7 @@ class SyncEntitiesMiddleware(BaseMiddleware[AppContext]):
                     has_private_chat=True
                     if isinstance(event, Message) and event.chat.type == "private"
                     else None,
+                    telegram_language=event.user.language_code,
                 )
 
             if isinstance(event, Message) and event.chat.type not in (
@@ -48,7 +45,7 @@ class SyncEntitiesMiddleware(BaseMiddleware[AppContext]):
                     administrators[0],
                 )
 
-                chat = await ChatRepository(session).upsert(
+                await ChatRepository(session).upsert(
                     ChatInsert(
                         telegram_id=event.chat.id,
                         title=event.chat.title,
@@ -61,30 +58,15 @@ class SyncEntitiesMiddleware(BaseMiddleware[AppContext]):
                         event.chat.id, event.user.id
                     )
 
-            self.ctx.language = await self.language(session, user, chat)
+            if self.ctx.chat is not None:
+                self.ctx.language = await LanguageService(
+                    UserRepository(session),
+                    ChatRepository(session),
+                    self.ctx.dialog_service,
+                ).of_chat(self.ctx.chat.id)
             await session.commit()
 
         return True
-
-    async def language(
-        self, session: AsyncSession, user: User | None, chat: Chat | None
-    ) -> str:
-        telegram_chat = self.ctx.chat
-        if telegram_chat is not None and telegram_chat.type != "private":
-            language = (
-                chat.language
-                if chat is not None
-                else await ChatRepository(session).language(telegram_chat.id)
-            )
-            # Чат, чьё добавление бот не застал, говорит по-русски, как все чаты до переводов.
-            return language or BASE_LANGUAGE
-
-        if user is not None and user.language:
-            return user.language
-        sender = self.ctx.user
-        return self.ctx.dialog_service.language_for(
-            sender.language_code if sender is not None else None
-        )
 
     async def post_handle(self, exc: BaseException | None = None) -> None:
         pass

@@ -14,6 +14,7 @@ from src.bot.repositories import (
 )
 from src.bot.services.dialog import DialogService
 from src.bot.services.ghoul import GhoulService
+from src.bot.services.language import LanguageService
 from src.bot.types import MediaDownloadType, NotificationType
 from src.bot.utils import utcnow_naive
 from src.database.models import DeathLog, ScheduledNotification
@@ -68,6 +69,9 @@ class NotificationTicker:
                 death_log_repository,
             )
 
+            languages = LanguageService(
+                UserRepository(session), ChatRepository(session), self._dialog_service
+            )
             for row in due:
                 await self._handle_due(
                     row,
@@ -75,6 +79,7 @@ class NotificationTicker:
                     notification_repository,
                     death_log_repository,
                     media_repository,
+                    languages,
                 )
 
             await session.commit()
@@ -86,6 +91,7 @@ class NotificationTicker:
         notification_repository: ScheduledNotificationRepository,
         death_log_repository: DeathLogRepository,
         media_repository: MediaRepository,
+        languages: LanguageService,
     ) -> None:
         # Запоминаем до ghoul_service.get(): он пересчитает и переставит расписание.
         notification_type = row.notification_type
@@ -108,7 +114,7 @@ class NotificationTicker:
 
         if notification_type == NotificationType.HEALTH_FULL:
             if ghoul.health >= ghoul.max_health:
-                await self._send(telegram_id, Dialogs.notify.health_full())
+                await self._send(telegram_id, Dialogs.notify.health_full(), languages)
             else:
                 logger.info(
                     f"NotificationTicker: health_full for {telegram_id} stale "
@@ -130,7 +136,9 @@ class NotificationTicker:
                     f"stale (hunger={ghoul.hunger}), skipping"
                 )
                 return
-            await self._send(telegram_id, Dialogs.notify.hunger(threshold=threshold))
+            await self._send(
+                telegram_id, Dialogs.notify.hunger(threshold=threshold), languages
+            )
             return
 
         if notification_type == NotificationType.DEATH:
@@ -154,16 +162,17 @@ class NotificationTicker:
                 f"NotificationTicker: sending obituary to {telegram_id} "
                 f"(cause={death.cause}, level={death.level})"
             )
-            await self._send_death(telegram_id, death, media_repository)
+            await self._send_death(telegram_id, death, media_repository, languages)
             return
 
         logger.warning(f"Unknown notification_type: {notification_type}")
 
-    async def _send(self, telegram_id: int, line: Line) -> None:
+    async def _send(
+        self, telegram_id: int, line: Line, languages: LanguageService
+    ) -> None:
+        text = await languages.text_for(telegram_id)
         try:
-            await self._notifier.send_message(
-                telegram_id, self._dialog_service.text(line)
-            )
+            await self._notifier.send_message(telegram_id, text(line))
             logger.info(f"NotificationTicker: sent '{line.key}' to {telegram_id}")
         except NotifyError:
             logger.warning(
@@ -171,15 +180,15 @@ class NotificationTicker:
                 exc_info=True,
             )
 
-    def _death_cause(self, cause: str) -> str:
-        line = _DEATH_CAUSES.get(cause)
-        return self._dialog_service.text(line) if line else cause
-
     async def _send_death(
-        self, telegram_id: int, death: DeathLog, media_repository: MediaRepository
+        self,
+        telegram_id: int,
+        death: DeathLog,
+        media_repository: MediaRepository,
+        languages: LanguageService,
     ) -> None:
         obituary = Dialogs.notify.death(
-            cause=self._death_cause(death.cause),
+            cause=_DEATH_CAUSES.get(death.cause, death.cause),
             level=death.level,
             lifetime_rc_earned=death.lifetime_rc_earned,
         )
@@ -198,10 +207,10 @@ class NotificationTicker:
         )
 
         if not media:
-            await self._send(telegram_id, obituary)
+            await self._send(telegram_id, obituary, languages)
             return
 
-        text = self._dialog_service.text(obituary)
+        text = (await languages.text_for(telegram_id))(obituary)
 
         try:
             try:

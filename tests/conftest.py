@@ -326,6 +326,7 @@ def make_user(user_repo: UserRepository) -> Callable[..., Awaitable[User]]:
             first_name=first_name,
             last_name=last_name,
             username=username,
+            telegram_language="ru",
         )
 
     return _make

@@ -12,6 +12,7 @@ from src.bot.repositories.user import UserRepository
 from src.bot.repositories.user_coldown import UserCooldownRepository
 from src.bot.repositories.wallet import WalletRepository
 from src.bot.services.dialog import DialogService
+from src.bot.services.language import LanguageService
 from src.bot.services.ghoul import GhoulService
 from src.bot.services.level_up import LevelUpService
 from src.bot.services.notify import NotifyError
@@ -59,7 +60,9 @@ def _make_level_up_service(session, bot, *, with_log: bool = False):
     return LevelUpService(
         user_service=user_service,
         ghoul_service=ghoul_service,
-        dialog_service=DialogService(),
+        language_service=LanguageService(
+            UserRepository(session), ChatRepository(session), DialogService()
+        ),
         notifier=bot,
         level_up_log_repository=LevelUpLogRepository(session) if with_log else None,
     )

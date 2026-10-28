@@ -3,14 +3,14 @@ import logging
 from selfrot import Bot
 from selfrot.exceptions import TelegramAPIError
 
-from src.bot.dialogs import Dialogs
-from src.bot.services.dialog import DialogService
+from src.bot.dialogs import Dialogs, LineText
 from src.database.models import DuelSession
 
 from ....repositories.fight import Score
 from ....services.battle import DuelOutcome
 from ...utils import quiet_edit
 from ..battle_text import BattleMessage
+from ..battle_text_generator import BattleTextGenerator
 from .keyboards import outcome_keyboard
 from .services import DuelServices
 
@@ -24,14 +24,19 @@ async def run_and_announce_fight(
     if fight is None:
         return None
 
-    message = BattleMessage(services.battle_text_generator, fight.report)
-    keyboard = (
-        outcome_keyboard(services.dialogs, duel.id, fight.winner_telegram_id)
-        if fight.winner_telegram_id
-        else None
-    )
-
+    # Бой уходит и в группу, и в лички участников: каждому чату — на его языке.
     async def announce(chat_id: int) -> int | None:
+        language = await services.languages.of_chat(chat_id)
+        message = BattleMessage(
+            BattleTextGenerator(services.dialogs, language), fight.report
+        )
+        keyboard = (
+            outcome_keyboard(
+                services.dialogs.text_in(language), duel.id, fight.winner_telegram_id
+            )
+            if fight.winner_telegram_id
+            else None
+        )
         sent = await message.send(bot, chat_id, keyboard)
         if sent is None:
             logger.warning("duel %s: failed to announce fight result to %s", duel.id, chat_id)
@@ -63,15 +68,15 @@ async def finalize_outcome(
     if not duel.is_private_origin:
         chat_ids.add(duel.chat_id)
 
-    text = outcome_text(services.dialogs, outcome)
     for chat_id in chat_ids:
+        text = outcome_text(await services.languages.text_for(chat_id), outcome)
         try:
             await bot.send_message(chat_id=chat_id, text=text)
         except TelegramAPIError:
             pass
 
 
-def outcome_text(dialogs: DialogService, outcome: DuelOutcome) -> str:
+def outcome_text(text: LineText, outcome: DuelOutcome) -> str:
     phrases = Dialogs.duel.outcome
     winner, loser = outcome.winner_name, outcome.loser_name
 
@@ -89,24 +94,24 @@ def outcome_text(dialogs: DialogService, outcome: DuelOutcome) -> str:
         )
     else:
         line = phrases.released(winner=winner, loser=loser)
-    text = dialogs.text(line)
+    result = text(line)
 
     if outcome.action == "outcome_eat" and outcome.hunger_restored is not None:
         restored = phrases.hunger(winner=winner, restored=outcome.hunger_restored)
-        text += "\n" + dialogs.text(restored)
+        result += "\n" + text(restored)
 
     if outcome.reward_level_progress is not None:
         progress = f"{outcome.reward_level_progress:.2f}"
         experience = phrases.experience(winner=winner, progress=progress)
-        text += "\n\n" + dialogs.text(experience)
+        result += "\n\n" + text(experience)
 
-    text += "\n\n" + _score_line(dialogs, winner, outcome.winner_score)
-    text += "\n" + _score_line(dialogs, loser, outcome.loser_score)
-    return text
+    result += "\n\n" + _score_line(text, winner, outcome.winner_score)
+    result += "\n" + _score_line(text, loser, outcome.loser_score)
+    return result
 
 
-def _score_line(dialogs: DialogService, name: str, score: Score) -> str:
-    return dialogs.text(
+def _score_line(text: LineText, name: str, score: Score) -> str:
+    return text(
         Dialogs.duel.outcome.score(
             name=name, total=score.total, wins=score.wins, losses=score.losses
         )

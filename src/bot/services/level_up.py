@@ -6,10 +6,11 @@ from src.bot.dialogs import Dialogs
 from src.bot.exceptions import GhoulNotFound
 from src.bot.game_configs import LEVEL_UP_CONFIG, STATS, stat_cap_for_level
 from src.bot.repositories import LevelUpLogRepository
-from src.bot.services import DialogService, GhoulService, UserService
+from src.bot.services import GhoulService, UserService
 from src.bot.utils import apply_level_progress
 from src.database.models import Ghoul
 
+from .language import LanguageService
 from .notify import NotifyError, Notifier
 
 logger = logging.getLogger(__name__)
@@ -36,13 +37,13 @@ class LevelUpService:
         self,
         user_service: UserService,
         ghoul_service: GhoulService,
-        dialog_service: DialogService,
+        language_service: LanguageService,
         notifier: Notifier,
         level_up_log_repository: Optional[LevelUpLogRepository] = None,
     ) -> None:
         self.user_service = user_service
         self.ghoul_service = ghoul_service
-        self.dialog_service = dialog_service
+        self.language_service = language_service
         self._notifier = notifier
         self.level_up_log_repository = level_up_log_repository
 
@@ -133,7 +134,7 @@ class LevelUpService:
             for label, key, emoji in STATS
         )
 
-        text = self.dialog_service.text(
+        text = (await self.language_service.text_for(telegram_id))(
             Dialogs.notify.level_up(
                 level=new_level,
                 cheston=cheston_reward,

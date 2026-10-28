@@ -42,7 +42,10 @@ async def seed(session_factory, telegram_id: int, first_name: str = "Вася", 
     async with session_factory() as session:
         repo = UserRepository(session)
         await repo.upsert(
-            telegram_id=telegram_id, first_name=first_name, username=username
+            telegram_id=telegram_id,
+            first_name=first_name,
+            username=username,
+            telegram_language="ru",
         )
         if data:
             await repo.change_data(telegram_id, **data)

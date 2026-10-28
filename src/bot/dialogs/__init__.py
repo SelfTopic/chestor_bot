@@ -1,4 +1,4 @@
-from .line import Line
+from .line import Line, LineText
 from .texts import (
     BASE_LANGUAGE,
     DIALOGS_DIR,
@@ -22,6 +22,7 @@ __all__ = [
     "DialogFileError",
     "Dialogs",
     "Line",
+    "LineText",
     "Phrase",
     "Phrases",
     "Placeholders",

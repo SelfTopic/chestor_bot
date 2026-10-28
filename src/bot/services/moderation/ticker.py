@@ -5,9 +5,15 @@ from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 
 from src.bot.dialogs import Dialogs, Line
 
-from ...repositories import DueExpiration, ModerationRepository
+from ...repositories import (
+    ChatRepository,
+    DueExpiration,
+    ModerationRepository,
+    UserRepository,
+)
 from ...types import ModerationActionType, ModerationVoice
 from ..dialog import DialogService
+from ..language import LanguageService
 from ..notify import NotifyError, Notifier, mention_html
 
 logger = logging.getLogger(__name__)
@@ -68,9 +74,11 @@ class ModerationTicker:
             await self._send(expiration.admin_chat_id, log)
 
     async def _send(self, chat_id: int, line: Line) -> None:
+        async with self._session_factory() as session:
+            text = await LanguageService(
+                UserRepository(session), ChatRepository(session), self._dialog_service
+            ).text_for(chat_id)
         try:
-            await self._notifier.send_message(
-                chat_id, self._dialog_service.text(line), parse_mode="HTML"
-            )
+            await self._notifier.send_message(chat_id, text(line), parse_mode="HTML")
         except NotifyError:
             logger.warning("Чат %s не получил объявление модерации", chat_id)

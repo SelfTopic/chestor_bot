@@ -35,7 +35,8 @@ def failure_line(state: ProposalState, who: dict[int, str]) -> Line:
 async def proposal_view(
     services: SessionServices, state: ProposalState, bot: Bot | None
 ) -> tuple[str, InlineKeyboardMarkup | None]:
-    text = services.dialog_service.text
+    # Сообщение живёт в группе, а правят его и из лички, и из фоновой задачи.
+    text = await services.language_service.text_for(state.proposal.chat_id)
     who = await mentions(services, state.required)
     proposer, target = state.required[:2]
 
@@ -84,8 +85,8 @@ async def proposal_view(
 async def rename_view(
     services: SessionServices, state: RenameState, bot: Bot | None
 ) -> tuple[str, InlineKeyboardMarkup | None]:
-    text = services.dialog_service.text
     rename = state.rename
+    text = await services.language_service.text_for(rename.chat_id)
     name = html.escape(rename.name)
     who = await mentions(services, (*state.members, rename.proposer_telegram_id))
 

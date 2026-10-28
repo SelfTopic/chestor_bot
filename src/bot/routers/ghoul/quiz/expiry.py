@@ -13,7 +13,8 @@ async def expire_overdue_streaks(services: SessionServices, bot: Bot) -> None:
     await services.session.commit()
 
     for streak in expired:
-        lost = services.dialog_service.text(Dialogs.quiz.streak_broken(streak=streak.streak))
+        text = await services.language_service.text_for(streak.chat_id)
+        lost = text(Dialogs.quiz.streak_broken(streak=streak.streak))
         result = InputRichMessage.model_validate_json(streak.rich)
         blocks = [*(result.blocks or []), InputRichBlockParagraph(text=lost)]
         with quiet_edit("quiz streak"):

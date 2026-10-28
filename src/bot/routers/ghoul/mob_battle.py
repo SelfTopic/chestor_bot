@@ -13,7 +13,7 @@ from .battle_text_generator import BattleTextGenerator
 async def answer_mob_battle(
     ctx: AppContext[Any], message: Message, fight: MobFight, *, what: str
 ) -> None:
-    generator = BattleTextGenerator(dialog_service=ctx.dialog_service)
+    generator = BattleTextGenerator(ctx.dialog_service, ctx.language)
     await BattleMessage(generator, fight.report).answer(message, what=what)
 
 

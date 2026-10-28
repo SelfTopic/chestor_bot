@@ -26,6 +26,7 @@ class UserRepository(Base):
         last_name: Optional[str] = None,
         username: Optional[str] = None,
         has_private_chat: Optional[bool] = None,
+        telegram_language: Optional[str] = None,
     ) -> User:
         logger.debug(
             f"Called method upsert. Params: telegram_id={telegram_id}, first_name={first_name}, last_name={last_name}, username={username}"
@@ -41,6 +42,7 @@ class UserRepository(Base):
                 has_private_chat=has_private_chat
                 if has_private_chat is not None
                 else False,
+                telegram_language=telegram_language,
             )
             .on_conflict_do_update(
                 index_elements=["telegram_id"],
@@ -51,6 +53,10 @@ class UserRepository(Base):
                     "has_private_chat": has_private_chat
                     if has_private_chat is not None
                     else User.has_private_chat,
+                    # Telegram присылает язык не в каждом апдейте: пустой не затирает прежний.
+                    "telegram_language": telegram_language
+                    if telegram_language is not None
+                    else User.telegram_language,
                 },
             )
             .returning(User)
@@ -65,6 +71,18 @@ class UserRepository(Base):
         await self.session.refresh(user)
         logger.debug(f"User record upserted successfully: ID {user.id}")
         return user
+
+    async def languages(
+        self, telegram_id: int
+    ) -> Optional[tuple[Optional[str], Optional[str]]]:
+        row = (
+            await self.session.execute(
+                select(User.language, User.telegram_language).where(
+                    User.telegram_id == telegram_id
+                )
+            )
+        ).one_or_none()
+        return None if row is None else (row.language, row.telegram_language)
 
     async def get(self, search_parameter: Union[str, int]) -> Optional[User]:
         logger.debug(f"Called method get. Search parameter: {search_parameter}")
