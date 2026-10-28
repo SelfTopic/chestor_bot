@@ -1,7 +1,7 @@
 import logging
 from typing import Optional
 
-from sqlalchemy import select, update
+from sqlalchemy import func, select, update
 from sqlalchemy.dialects.postgresql import insert
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -55,6 +55,32 @@ class ChatRepository(Base):
             raise ChatNotFoundInDatabase()
 
         return chat
+
+    # keep_chosen: язык, уже выбранный чату, не меняется (повторное добавление бота).
+    async def set_language(
+        self, telegram_id: int, title: Optional[str], language: str, *, keep_chosen: bool = False
+    ) -> str:
+        stmt = (
+            insert(Chat)
+            .values(telegram_id=telegram_id, title=title, language=language)
+            .on_conflict_do_update(
+                index_elements=["telegram_id"],
+                set_={
+                    "language": func.coalesce(Chat.language, language)
+                    if keep_chosen
+                    else language
+                },
+            )
+            .returning(Chat.language)
+        )
+        stored = await self.session.scalar(stmt)
+        assert stored is not None
+        return stored
+
+    async def language(self, telegram_id: int) -> Optional[str]:
+        return await self.session.scalar(
+            select(Chat.language).where(Chat.telegram_id == telegram_id)
+        )
 
     async def get_chat_by_id(self, chat_id: int) -> Optional[Chat]:
         stmt = select(Chat).where(Chat.id == chat_id)

@@ -65,7 +65,7 @@ class MuteRepliedHandler(
     MuteFlow,
     RepliedTargetHandler[MuteRepliedArgs, AppContext[TextUserReplyMessage]],
 ):
-    cmd = command("mute", "мут", MuteRepliedArgs)
+    cmd = command("mute", ("мут", "mute"), MuteRepliedArgs)
     query = cmd & HasUser() & HasReplyUser() & FromChatAdmin()
 
     async def perform(self, telegram_id: int, args: MuteRepliedArgs) -> None:
@@ -73,7 +73,7 @@ class MuteRepliedHandler(
 
 
 class MuteHandler(MuteFlow, AnywhereTargetHandler[AppContext[TextUserMessage]]):
-    cmd = command("mute", "мут", TargetTextArgs)
+    cmd = command("mute", ("мут", "mute"), TargetTextArgs)
     query = cmd & HasUser() & ~HasReplyUser() & FromChatAdmin()
 
     async def perform(self, telegram_id: int, rest: str) -> None:
@@ -116,7 +116,7 @@ class UnmuteRepliedHandler(
     UnmuteFlow,
     RepliedTargetHandler[UnmuteRepliedArgs, AppContext[TextUserReplyMessage]],
 ):
-    cmd = command("unmute", "размут", UnmuteRepliedArgs)
+    cmd = command("unmute", ("размут", "unmute"), UnmuteRepliedArgs)
     query = cmd & HasUser() & HasReplyUser() & FromChatAdmin()
 
     async def perform(self, telegram_id: int, args: UnmuteRepliedArgs) -> None:
@@ -124,7 +124,7 @@ class UnmuteRepliedHandler(
 
 
 class UnmuteHandler(UnmuteFlow, AnywhereTargetHandler[AppContext[TextUserMessage]]):
-    cmd = command("unmute", "размут", TargetTextArgs)
+    cmd = command("unmute", ("размут", "unmute"), TargetTextArgs)
     query = cmd & HasUser() & ~HasReplyUser() & FromChatAdmin()
 
     async def perform(self, telegram_id: int, rest: str) -> None:

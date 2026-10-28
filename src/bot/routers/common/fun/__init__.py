@@ -2,7 +2,7 @@ from selfrot import BaseRouter
 
 from ....context import AppContext
 from .handlers import AskBotHandler, CalculatorHandler
-from .quote import QuoteHandler
+from .quote import QuoteHandler, QuoteNotInLanguageHandler
 
 
 class FunRouter(BaseRouter[AppContext]):
@@ -10,4 +10,5 @@ class FunRouter(BaseRouter[AppContext]):
         AskBotHandler,
         CalculatorHandler,
         QuoteHandler,
+        QuoteNotInLanguageHandler,
     )

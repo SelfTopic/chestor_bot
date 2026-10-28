@@ -12,7 +12,7 @@ from selfrot.handlers import BaseHandler
 from selfrot.types import Message, Update
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 
-from src.bot.dialogs import Dialogs, Line
+from src.bot.dialogs import BASE_LANGUAGE, Dialogs, Line
 from src.bot.exceptions import (
     ChatNotFound,
     ChatTextLengthError,
@@ -120,7 +120,10 @@ class Dispatcher(BaseDispatcher[AppContext]):
         self.alerts: set[asyncio.Task[None]] = set()
         self.session_factory = session_factory
         self.analytics = AnalyticsRecorder(session_factory)
-        self.player_docs = PlayerDocsService(session_factory, Path(settings.DOCS_DIR))
+        self.player_docs = {
+            language: PlayerDocsService(session_factory, Path(folder))
+            for language, folder in settings.docs_dirs().items()
+        }
         # Живут весь процесс: кэши RP-команд, партии вордли, очередь нарезки видео.
         self.rp_commands_service = RpCommandsService(rp_commands_repository)
         self.wordle_service = WordleService()
@@ -141,7 +144,7 @@ class Dispatcher(BaseDispatcher[AppContext]):
             session_factory,
             self.llm,
             RoastPrompts(),
-            self.player_docs,
+            self.player_docs[BASE_LANGUAGE],
             enabled=settings.ROAST_ENABLED and bool(api_key),
             model=settings.ROAST_MODEL,
             daily_limit=settings.ROAST_DAILY_LIMIT,
@@ -225,7 +228,7 @@ class Dispatcher(BaseDispatcher[AppContext]):
             search_service=self.search_service,
             link_media_service=self.link_media_service,
             music_service=self.music_service,
-            player_docs_service=self.player_docs,
+            player_docs=self.player_docs,
             quote_service=self.quote_service,
             rp_commands_service=self.rp_commands_service,
             wordle_service=self.wordle_service,
@@ -243,9 +246,11 @@ class Dispatcher(BaseDispatcher[AppContext]):
         await self.api.delete_webhook(drop_pending_updates=True)
         await self.mark_service_admins()
         await self.video_worker.start()
-        if settings.DOCS_CHANNEL:
+        for language, channel in settings.docs_channels().items():
+            if not channel:
+                continue
             # Правка десятков постов упирается во флуд-контроль: запуск бота её не ждёт.
-            task = asyncio.create_task(self.publish_docs(settings.DOCS_CHANNEL))
+            task = asyncio.create_task(self.publish_docs(language, channel))
             self.alerts.add(task)
             task.add_done_callback(self.alerts.discard)
         # Every ждёт интервал до первого прогона, а сайты ломают yt-dlp чаще, чем выходит образ:
@@ -263,9 +268,10 @@ class Dispatcher(BaseDispatcher[AppContext]):
             await UserRepository(session).mark_services(list(settings.ADMIN_IDS))
             await session.commit()
 
-    async def publish_docs(self, channel: str) -> None:
+    async def publish_docs(self, language: str, channel: str) -> None:
+        docs = self.player_docs[language]
         try:
-            report = await self.player_docs.publish(TelegramDocsChannel(self.api, channel), channel)
+            report = await docs.publish(TelegramDocsChannel(self.api, channel), channel)
         except Exception:
             logger.exception("Документация в %s не опубликовалась", channel)
             return

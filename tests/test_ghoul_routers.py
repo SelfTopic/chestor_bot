@@ -27,13 +27,13 @@ from src.bot.dialogs import Dialogs
 from src.bot.exceptions import QuizModeDisabled
 from src.bot.game_configs import QUIZ_CONFIG, STAT_UPGRADE_CONFIG
 from src.bot.repositories import GhoulRepository, UserCooldownRepository
-from src.bot.routers.ghoul.upgrade_stat import STAT_LABELS
+from src.bot.dialogs.vocab import HUNGER_NAMES, KAGUNE_NAMES, stat_label, time_text
 from src.bot.tasks import QuizStreakExpiry
 from src.bot.types import KaguneType
 from src.bot.utils import (
     calculate_kagune,
     format_amount,
-    format_duration,
+    duration_parts,
     get_hunger_tier,
     health_regen_per_hour,
     hours_until_full_health,
@@ -264,7 +264,7 @@ class TestUpgradeKagune:
         ghoul = await get_ghoul(session_factory, UID)
         assert ghoul is not None and ghoul.kagune_type_bit is not None
         kagune_type = calculate_kagune(ghoul.kagune_type_bit)[0]
-        assert kagune_type.value["name"] in reply
+        assert only_text(KAGUNE_NAMES[kagune_type]) in reply
 
     async def test_rebirth_when_dead(self, send, session_factory):
         await seed(session_factory, UID, "Вася")
@@ -664,7 +664,7 @@ def group_callback_update(data: str, uid: int, chat: int = -100500) -> dict:
 class TestUpgradeStat:
     @staticmethod
     def row(current: int, x5: object, x10: object) -> str:
-        stat = STAT_LABELS["strength"]
+        stat = stat_label(only_text, "strength")
         return only_text(Dialogs.stats.shop.row(stat=stat, current=current, x5=x5, x10=x10))
 
     async def test_group_is_refused(self, send, telegram, session_factory):
@@ -729,7 +729,7 @@ class TestUpgradeStat:
         assert row in edited["text"].split("\n")
         (answer,) = telegram.bodies("answerCallbackQuery")
         assert answer["text"] == only_text(
-            Dialogs.stats.bought(stat=STAT_LABELS["strength"], count=5, price=price)
+            Dialogs.stats.bought(stat=stat_label(only_text, "strength"), count=5, price=price)
         )
 
         ghoul = await get_ghoul(session_factory, UID)
@@ -755,7 +755,7 @@ class TestUpgradeStat:
 
         (answer,) = telegram.bodies("answerCallbackQuery")
         assert answer["text"] == only_text(
-            Dialogs.stats.bought(stat=STAT_LABELS["strength"], count=2, price=price)
+            Dialogs.stats.bought(stat=stat_label(only_text, "strength"), count=2, price=price)
         )
 
     async def test_not_enough_money(self, feed, session_factory):
@@ -829,7 +829,9 @@ class TestRegenStatus:
         per_hour = health_regen_per_hour(3, 100, KaguneType.UKAKU.value["bit"], False)
         hours = hours_until_full_health(1, 500, per_hour)
         assert hours is not None
-        until = Dialogs.status.until_healthy(duration=format_duration(int(hours * 3600)))
+        until = Dialogs.status.until_healthy(
+            duration=time_text(only_text, duration_parts(int(hours * 3600)))
+        )
         assert reply == only_text(
             Dialogs.status.regen(
                 health=1,
@@ -864,7 +866,7 @@ class TestHungerStatus:
 
         tier = get_hunger_tier(80)
         assert matches_phrase(reply, "status.hunger")
-        assert tier.name in reply
+        assert only_text(HUNGER_NAMES[tier.key]) in reply
         assert str(tier.falling_multiplier) in reply and str(tier.rising_multiplier) in reply
 
     async def test_starved(self, send, session_factory):

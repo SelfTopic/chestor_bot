@@ -16,7 +16,7 @@ from selfrot.types import (
     RichTextBold,
 )
 
-from src.bot.dialogs import Dialogs, Line
+from src.bot.dialogs import BASE_LANGUAGE, Dialogs, Line
 from src.bot.services.battle_engine.core import (
     AttackAction,
     AttackType,
@@ -110,11 +110,14 @@ LOG = Dialogs.fight.log
 
 
 class BattleTextGenerator:
-    def __init__(self, dialog_service: DialogService) -> None:
+    def __init__(
+        self, dialog_service: DialogService, language: str = BASE_LANGUAGE
+    ) -> None:
         self._dialog_service = dialog_service
+        self._language = language
 
     def _text(self, line: Line) -> str:
-        return self._dialog_service.text(line)
+        return self._dialog_service.text(line, self._language)
 
     def _named(self, line: Line, name: str) -> RichLine:
         prefix, marker, suffix = self._text(line).partition(NAME)
@@ -251,7 +254,7 @@ class BattleTextGenerator:
         winner_line, loser_line = self._winner_lines(result, fighter_a, fighter_b)
         hp_line_a, hp_line_b = self._hp_lines(result, fighter_a, fighter_b)
 
-        return self._dialog_service.text(
+        return self._text(
             Dialogs.fight.summary(
                 rank_line_a=_flatten_to_plain_text(self._rank_line(fighter_a, rank_a)),
                 rank_line_b=_flatten_to_plain_text(self._rank_line(fighter_b, rank_b)),

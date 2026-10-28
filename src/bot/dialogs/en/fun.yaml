@@ -1,0 +1,40 @@
+fun:
+  nobody:
+    - 'Nobody to pick yet: no one in this chat has written to the bot.'
+    - 'Nobody to pick from: no one here has talked to the bot yet. Loneliness, damn.'
+  pick:
+    result:
+      - '🎲 The choice is: {choice}'
+      - '🎲 No contest: {choice}'
+      - '🎲 Obviously {choice}'
+      - '🎲 Rolled the dice and got: {choice}'
+    too_few:
+      - 'Give me at least 2 options: bot pick pizza or sushi or burger'
+      - 'Pick from one option? Genius. Example: bot pick pizza or sushi'
+    too_many: 'Too many options (max {max_items}). Make up your own damn mind.'
+    too_long: 'One of the options is way too long. Keep it short.'
+  who:
+    - 'By my calculations {mention} {question}'
+    - 'No need to think: {mention} {question}'
+    - '100% sure: {mention} {question}'
+    - 'Everybody knows {mention} {question}'
+  random_participant:
+    - '🎲 The choice falls on {mention}!'
+    - '🎲 Today''s scapegoat is {mention}.'
+    - '🎲 The wheel is spinning… {mention}!'
+  number: 🎲 {number}
+  calculator:
+    division_by_zero:
+      - 'Better divide yourself by zero.'
+      - 'You can''t divide by zero. Not even ghouls can.'
+      - 'Zero in the denominator, brain in the numerator. Oh wait, you don''t have one.'
+    too_big:
+      - 'That''s a fuckton, I''m not counting that shit.'
+      - 'Damn, this number won''t even fit in a message.'
+      - 'Not even your mom weighs that much.'
+  edits:
+    empty: 'No edits yet: the channels haven''t been parsed.'
+  quote:
+    not_found:
+      - 'Don''t know that character. Or there are no quotes from them yet.'
+      - 'No idea who that is. Maybe their quotes haven''t been shipped yet.'

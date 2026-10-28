@@ -113,7 +113,7 @@ class WarnFlow(PunishmentFlow):
                 return self.phrases.log_warn_penalty_kicked(**who)
 
 
-WARN_WORDS = ("варн", "пред")
+WARN_WORDS = ("варн", "пред", "warn")
 
 
 class WarnRepliedArgs(CommandArgs):
@@ -173,7 +173,7 @@ class UnwarnFlow(PunishmentFlow):
         await super().on_error(exc)
 
 
-UNWARN_WORDS = ("снять варн", "снять пред")
+UNWARN_WORDS = ("снять варн", "снять пред", "unwarn")
 
 
 class UnwarnRepliedArgs(CommandArgs):

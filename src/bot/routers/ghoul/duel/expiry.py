@@ -61,13 +61,13 @@ async def _expire_consent(
         except TelegramAPIError:
             pass
 
-    timeout_text = duels.dialogs.text(Dialogs.duel.consent.timeout())
     target_chat_ids = {updated.initiator_telegram_id, updated.target_telegram_id}
     if not updated.is_private_origin:
         target_chat_ids.add(updated.chat_id)
     for chat_id in target_chat_ids:
+        text = await duels.languages.text_for(chat_id)
         try:
-            await bot.send_message(chat_id=chat_id, text=timeout_text)
+            await bot.send_message(chat_id=chat_id, text=text(Dialogs.duel.consent.timeout()))
         except TelegramAPIError:
             pass
 

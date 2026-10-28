@@ -33,6 +33,7 @@ class Settings(BaseSettings):
     USERBOT_ID: int = Field(default=0)
     MUSIC_MAX_DURATION: int = Field(default=900)
     DOCS_CHANNEL: str = Field(default="")
+    DOCS_CHANNEL_EN: str = Field(default="")
     DOCS_DIR: str = Field(default="docs/players")
     SUBSCRIPTION_CHANNEL: str = Field(default="")
 
@@ -43,6 +44,13 @@ class Settings(BaseSettings):
     model_config = SettingsConfigDict(
         env_file=".env", env_file_encoding="utf8", extra="ignore"
     )
+
+    # Справка на каждом языке лежит в своей папке и публикуется в свой канал.
+    def docs_channels(self) -> dict[str, str]:
+        return {"ru": self.DOCS_CHANNEL, "en": self.DOCS_CHANNEL_EN}
+
+    def docs_dirs(self) -> dict[str, str]:
+        return {"ru": self.DOCS_DIR, "en": f"{self.DOCS_DIR}/en"}
 
 
 settings = Settings()

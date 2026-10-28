@@ -11,6 +11,7 @@ from src.bot.game_configs import WORDLE_CONFIG
 from src.bot.types.wordle import WordleGuessResult
 
 from ....context import AppContext
+from ...language import RUSSIAN_ONLY
 from ...types import TextUserMessage
 from .captions import guess_caption, lose_text, win_text
 from .filters import HasActiveWordleGame
@@ -19,7 +20,7 @@ logger = logging.getLogger(__name__)
 
 
 class WordleGameHandler(MessageHandler[AppContext[TextUserMessage]]):
-    query = TextRegexp(r"\s*\S{5}\s*", full=True) & HasActiveWordleGame()
+    query = TextRegexp(r"\s*\S{5}\s*", full=True) & HasActiveWordleGame() & RUSSIAN_ONLY
 
     async def delete_board(self, message_id: int) -> None:
         try:

@@ -3,13 +3,15 @@ from dataclasses import dataclass, field
 from typing import Optional
 
 from src.bot.dialogs import Dialogs
+from src.bot.dialogs.vocab import STAT_NAMES
 from src.bot.exceptions import GhoulNotFound
 from src.bot.game_configs import LEVEL_UP_CONFIG, STATS, stat_cap_for_level
 from src.bot.repositories import LevelUpLogRepository
-from src.bot.services import DialogService, GhoulService, UserService
+from src.bot.services import GhoulService, UserService
 from src.bot.utils import apply_level_progress
 from src.database.models import Ghoul
 
+from .language import LanguageService
 from .notify import NotifyError, Notifier
 
 logger = logging.getLogger(__name__)
@@ -36,13 +38,13 @@ class LevelUpService:
         self,
         user_service: UserService,
         ghoul_service: GhoulService,
-        dialog_service: DialogService,
+        language_service: LanguageService,
         notifier: Notifier,
         level_up_log_repository: Optional[LevelUpLogRepository] = None,
     ) -> None:
         self.user_service = user_service
         self.ghoul_service = ghoul_service
-        self.dialog_service = dialog_service
+        self.language_service = language_service
         self._notifier = notifier
         self.level_up_log_repository = level_up_log_repository
 
@@ -127,13 +129,14 @@ class LevelUpService:
         cheston_reward: int,
         rc_reward: int,
     ) -> bool:
+        text = await self.language_service.text_for(telegram_id)
         stat_lines = "\n".join(
-            f"{emoji} {label}: {stat_cap_for_level(old_level, key)} -> "
+            f"{emoji} {text(STAT_NAMES[key])}: {stat_cap_for_level(old_level, key)} -> "
             f"{stat_cap_for_level(new_level, key)}"
-            for label, key, emoji in STATS
+            for key, emoji in STATS
         )
 
-        text = self.dialog_service.text(
+        message = text(
             Dialogs.notify.level_up(
                 level=new_level,
                 cheston=cheston_reward,
@@ -143,7 +146,7 @@ class LevelUpService:
         )
 
         try:
-            await self._notifier.send_message(telegram_id, text)
+            await self._notifier.send_message(telegram_id, message)
             return True
         except NotifyError:
             logger.warning(

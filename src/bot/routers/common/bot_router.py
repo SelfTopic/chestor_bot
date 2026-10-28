@@ -8,7 +8,7 @@ from ..types import TextMessage
 
 
 class BotHandler(MessageHandler[AppContext[TextMessage]]):
-    query = Text("бот", ignore_case=True)
+    query = Text("бот", ignore_case=True) | Text("bot", ignore_case=True)
 
     async def handle(self) -> None:
         await self.ctx.say(Dialogs.bot())

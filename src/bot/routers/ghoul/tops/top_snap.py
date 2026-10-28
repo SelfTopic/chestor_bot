@@ -8,7 +8,7 @@ from .count import GhoulTopHandler, top_command, top_row, top_text
 
 
 class TopSnapHandler(GhoulTopHandler, MessageHandler[AppContext[TextMessage]]):
-    cmd = top_command("топ щелк")
+    cmd = top_command("топ щелк", "top snap")
     query = cmd
 
     async def show(self, count: int) -> None:

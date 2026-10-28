@@ -6,6 +6,7 @@ from src.bot.repositories import (
     ChatRepository,
     UserRepository,
 )
+from src.bot.services.language import LanguageService
 from src.bot.types.insert import ChatInsert
 
 from ..context import AppContext
@@ -29,6 +30,7 @@ class SyncEntitiesMiddleware(BaseMiddleware[AppContext]):
                     has_private_chat=True
                     if isinstance(event, Message) and event.chat.type == "private"
                     else None,
+                    telegram_language=event.user.language_code,
                 )
 
             if isinstance(event, Message) and event.chat.type not in (
@@ -56,6 +58,12 @@ class SyncEntitiesMiddleware(BaseMiddleware[AppContext]):
                         event.chat.id, event.user.id
                     )
 
+            if self.ctx.chat is not None:
+                self.ctx.language = await LanguageService(
+                    UserRepository(session),
+                    ChatRepository(session),
+                    self.ctx.dialog_service,
+                ).of_chat(self.ctx.chat.id)
             await session.commit()
 
         return True

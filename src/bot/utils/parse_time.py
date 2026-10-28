@@ -1,20 +1,24 @@
+from typing import Literal
+
 from src.bot.types import TimeComponents
 
+TimeUnit = Literal["months", "days", "hours", "minutes"]
+TimeParts = list[tuple[int, TimeUnit]]
 
-def format_duration(total_seconds: int) -> str:
+
+def duration_parts(total_seconds: int) -> TimeParts:
     if total_seconds <= 0:
-        return "0м"
+        return [(0, "minutes")]
 
     tc = parse_seconds(total_seconds)
 
-    parts = []
+    parts: TimeParts = []
     if tc.days:
-        parts.append(f"{tc.days}д")
+        parts.append((tc.days, "days"))
     if tc.days or tc.hours_remaining:
-        parts.append(f"{tc.hours_remaining}ч")
-    parts.append(f"{tc.minutes_remaining}м")
-
-    return " ".join(parts)
+        parts.append((tc.hours_remaining, "hours"))
+    parts.append((tc.minutes_remaining, "minutes"))
+    return parts
 
 
 DAY = 24 * 3600
@@ -22,16 +26,18 @@ MONTH = 30 * DAY
 
 
 # Две старшие единицы: «1мес 10д», «5д 4ч», «2ч 15м» — точнее для стажа не нужно.
-def format_age(total_seconds: int) -> str:
+def age_parts(total_seconds: int) -> TimeParts:
     seconds = max(0, total_seconds)
-    units = (
-        (seconds // MONTH, "мес"),
-        (seconds % MONTH // DAY, "д"),
-        (seconds % DAY // 3600, "ч"),
-        (seconds % 3600 // 60, "м"),
-    )
+    units: TimeParts = [
+        (seconds // MONTH, "months"),
+        (seconds % MONTH // DAY, "days"),
+        (seconds % DAY // 3600, "hours"),
+        (seconds % 3600 // 60, "minutes"),
+    ]
     first = next((i for i, (value, _) in enumerate(units) if value), len(units) - 1)
-    return " ".join(f"{value}{unit}" for value, unit in units[first : first + 2] if value) or "0м"
+    return [(value, unit) for value, unit in units[first : first + 2] if value] or [
+        (0, "minutes")
+    ]
 
 
 def parse_seconds(total_seconds: int) -> TimeComponents:

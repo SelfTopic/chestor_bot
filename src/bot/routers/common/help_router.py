@@ -11,9 +11,9 @@ from selfrot.filter import Command, HasMessageCallbackQuery
 from selfrot.handlers import CallbackQueryHandler
 from selfrot.types import InlineKeyboardMarkup, InputRichMessage, Message
 
-from src.bot.dialogs import Dialogs
+from src.bot.dialogs import BASE_LANGUAGE, FALLBACK_LANGUAGE, Dialogs
 from src.bot.services.notify import post_link
-from src.bot.services.player_docs import DocPage, DocTopic
+from src.bot.services.player_docs import DocPage, DocTopic, PlayerDocsService
 from src.config import settings
 
 from ...context import AppContext
@@ -27,11 +27,21 @@ class HelpTopicPress(CallbackPayload, prefix="help"):
     word: str
 
 
+# Пока своей справки у языка нет, иранцу или арабу понятнее английская, чем русская.
+def docs_for(ctx: AppContext[object]) -> tuple[PlayerDocsService, str]:
+    language = next(
+        candidate
+        for candidate in (ctx.language, FALLBACK_LANGUAGE, BASE_LANGUAGE)
+        if candidate in ctx.player_docs
+    )
+    return ctx.player_docs[language], settings.docs_channels().get(language, "")
+
+
 async def topic_reply(
     ctx: AppContext[object], found: DocTopic | DocPage
 ) -> tuple[InputRichMessage, InlineKeyboardMarkup | None]:
-    channel = settings.DOCS_CHANNEL
-    posts = await ctx.player_docs_service.published(channel) if channel else {}
+    docs, channel = docs_for(ctx)
+    posts = await docs.published(channel) if channel else {}
     page = found.page if isinstance(found, DocTopic) else found
     keyboard = None
     if page.slug in posts:
@@ -54,7 +64,7 @@ class HelpHandler(MessageHandler[AppContext[TextMessage]]):
             await self.sections()
             return
 
-        docs = self.ctx.player_docs_service
+        docs, _ = docs_for(self.ctx)
         found = docs.find(asked)
         if found is not None:
             rich, keyboard = await topic_reply(self.ctx, found)
@@ -75,8 +85,7 @@ class HelpHandler(MessageHandler[AppContext[TextMessage]]):
         )
 
     async def sections(self) -> None:
-        channel = settings.DOCS_CHANNEL
-        docs = self.ctx.player_docs_service
+        docs, channel = docs_for(self.ctx)
         posts = await docs.published(channel) if channel else {}
         rows = "\n".join(
             f"- [{page.title}]({post_link(channel, posts[page.slug])})"
@@ -94,7 +103,8 @@ class HelpTopicPressHandler(CallbackQueryHandler[AppContext[DataMessageCallbackQ
 
     async def handle(self) -> None:
         callback = self.ctx.callback_query
-        found = self.ctx.player_docs_service.find(self.press.parse(self.ctx).word)
+        docs, _ = docs_for(self.ctx)
+        found = docs.find(self.press.parse(self.ctx).word)
         message = callback.message
         if found is None or not isinstance(message, Message):
             await callback.answer(self.ctx.text(Dialogs.errors.cannot_process()))

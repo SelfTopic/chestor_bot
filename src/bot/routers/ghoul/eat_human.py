@@ -14,7 +14,9 @@ COOLDOWN_NAME = "EAT_HUMAN"
 
 
 class EatHumanHandler(MessageHandler[AppContext[TextUserMessage]]):
-    query = Text("сожрать человека", ignore_case=True) & HasUser()
+    query = (
+        Text("сожрать человека", ignore_case=True) | Text("eat human", ignore_case=True)
+    ) & HasUser()
 
     async def survive_ambush(self) -> bool:
         ctx = self.ctx
@@ -23,6 +25,7 @@ class EatHumanHandler(MessageHandler[AppContext[TextUserMessage]]):
         battle = await ctx.battle_service.fight_mob(
             await ctx.db_user(),
             await ctx.db_ghoul(),
+            mob_name=ctx.text(Dialogs.vocab.mob()),
             is_forced=True,
             reward_log="mob ambush during eat_human reward",
         )

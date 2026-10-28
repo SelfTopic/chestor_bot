@@ -1,0 +1,132 @@
+marriage:
+  usage: 'Invite someone to your family by replying to their message with "marry", or "marry @username" / "marry <id>".'
+  user_not_found: 'Couldn''t find them: {target}'
+  refusals:
+    self:
+      - 'Marry yourself? Bold, but no.'
+      - 'You already love yourself, you don''t need a family for that.'
+    bot:
+      - 'Marry a bot? I''m a piece of hardware, I don''t even have a passport.'
+      - 'Bots don''t marry. Find yourself a living human.'
+    not_a_person:
+      - 'That''s not a person but a Telegram service account: a channel or an anonymous admin. You can''t marry it.'
+      - 'There''s no person behind that message, just a channel or an anonymous admin. Nobody to marry.'
+    not_registered: 'This person has never written to the bot. Let them write anything first.'
+    same_family: 'You''re already in the same family.'
+    target_married:
+      - 'This person is already in another family. They have to divorce first.'
+      - 'Taken. They already have a family, you''ll have to steal them through a divorce.'
+    already_proposed: 'You''ve already invited this person, wait for an answer.'
+    not_enough_money: 'A proposal costs {price} CheSton and you don''t have that much. Go snap.'
+  ask: |-
+    💍 {proposer}, proposing to {target} costs {price} CheSton.
+    No refund if they say no or not everyone agrees within an hour. {target} pays another {price} when the marriage happens.
+  invite: |-
+    💍 {proposer} invites {target} to the family!
+    The marriage happens if everyone agrees within an hour:
+    {rows}
+  family_hint: '{proposer}''s family confirms in a private chat with the bot: button below.'
+  row_confirmed: '✅ {name}'
+  row_waiting: '⏳ {name}'
+  married:
+    - |-
+      💍 It's done! {target} is now in the family.
+      Family: {members}
+    - |-
+      💍 Kiss, kiss! {target} joins the family.
+      Family: {members}
+  failed:
+    target_taken: '💔 No wedding: {target} already joined another family.'
+    family_changed: '💔 No wedding: {proposer}''s family changed while we were waiting.'
+    target_broke: '💔 No wedding: {target} didn''t have {price} CheSton.'
+  declined:
+    - '💔 {name} says no. No wedding, {proposer}''s {price} CheSton are gone.'
+    - '💔 {name} said "no". {proposer} is left without a wedding and without {price} CheSton.'
+  expired:
+    - '⌛ The hour is up and not everyone agreed. No wedding, {proposer}''s {price} CheSton are gone.'
+    - '⌛ Waited too long. {proposer} is left without a wedding and without {price} CheSton.'
+  consent:
+    accepted: 'Got it, waiting for the others.'
+    married: 'Kiss, kiss! 💍'
+    declined: 'Refusal accepted.'
+    stale: 'This proposal is no longer valid.'
+    not_invited: 'Nobody''s asking you.'
+    already: 'You''ve already agreed.'
+    not_enough_money: 'To agree you need {price} CheSton in your account.'
+  not_your_button:
+    - 'That''s not your button.'
+    - 'Hands off, that''s not for you.'
+  family_vote: |-
+    💍 {proposer} invites {target} to your family.
+    The marriage happens only if everyone agrees, and a single "no" cancels it. Do you agree?
+  family_voted: '✅ Your consent is counted.'
+  family_declined: '❌ You''re against it: no wedding.'
+  link_stale: 'This proposal is no longer valid.'
+  link_not_family: 'This proposal is not for you: only family members confirm it.'
+  buttons:
+    pay: '💍 Propose ({price})'
+    proposer: '💍 I confirm (proposer)'
+    target: '💍 I agree'
+    family: '💍 Confirm in private chat'
+    family_vote: '💍 I agree'
+    decline: '❌ Decline'
+    family_decline: '❌ Against'
+family:
+  single:
+    - 'You''re not in a family. Invite someone: reply "marry" to their message.'
+    - 'No family. Being alone is a choice too, but replying "marry" fixes everything.'
+  title: Your family
+  title_named: 'The "{name}" family'
+  view: |-
+    👨‍👩‍👧 {title}
+    💵 Family account: {balance} CheSton
+
+    {rows}
+  row: '{name}: since {since}, {age} already'
+  top_name: 'family of {members}'
+  list:
+    empty:
+      - 'No families in this chat. Everyone''s single, how sad.'
+      - 'Not a single family in this chat. Invite someone: reply "marry".'
+    message: |-
+      💍 Families of this chat ({count}):
+
+      {rows}
+    row: '{place}. {members}: since {since}, {age} already'
+    named_row: '{place}. "{name}": {members}, since {since}, {age} already'
+    more: '…and {count} more'
+  rename:
+    usage: 'Write the name after the command: "family name Anteiku". Up to 32 characters, you can change it again later.'
+    refusals:
+      not_married: 'You''re not in a family, nothing to name.'
+      bad_name: 'A family name is from 1 to {limit} characters.'
+      already_pending: 'Your family is already voting on another name. Wait for the answer or an hour.'
+    ask: |-
+      ✏️ {proposer} proposes to name the family "{name}".
+      The name changes if everyone agrees within an hour:
+      {rows}
+    renamed:
+      - '✏️ Decided: the family is now called "{name}".'
+      - '✏️ Unanimous! From now on you are "{name}".'
+    declined: '✏️ {person} is against it: the name "{name}" is rejected.'
+    expired: '⌛ The hour is up and not everyone agreed: the name "{name}" is rejected.'
+    vote: '✏️ Your family is deciding whether to be called "{name}". The name changes only if everyone agrees. Are you in?'
+    voted: '✅ Your consent is counted.'
+    declined_private: '❌ You''re against it: the name won''t change.'
+    link_stale: 'This name proposal is no longer valid.'
+    link_not_family: 'This proposal is not for you: only members of this family decide the name.'
+    consent:
+      accepted: 'Got it, waiting for the others.'
+      renamed: 'Name accepted! ✏️'
+      declined: 'Refusal accepted.'
+    buttons:
+      agree: '✅ I agree'
+      decline: '❌ Against'
+      private: '✏️ Answer in private chat'
+divorce:
+  not_married: 'You''re not in a family, nobody to divorce.'
+  ask: '💔 Leave the family? You leave with nothing: all the money stays with the family.'
+  button: '💔 Divorce'
+  done: '💔 {name} leaves the family. The money stays with the family.'
+  dissolved: '💔 {name} leaves the family, and the family falls apart. {heir} keeps {amount} CheSton.'
+  stale: 'No longer valid.'

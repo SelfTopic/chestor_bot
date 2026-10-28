@@ -1,8 +1,9 @@
 from typing import Any
 
-from src.bot.dialogs import Dialogs, Line
+from src.bot.dialogs import Dialogs, Line, LineText
+from src.bot.dialogs.vocab import time_text
 from src.bot.services.promo import Granted, PromoStatus, promo_status
-from src.bot.utils import format_duration, utcnow_naive
+from src.bot.utils import duration_parts, utcnow_naive
 from src.database.models import PromoCode
 
 from ....context import AppContext
@@ -38,11 +39,11 @@ def activations_text(ctx: AppContext[Any], promo: PromoCode) -> str:
     return ctx.text(PHRASES.card.activations_value(used=used, limit=limit))
 
 
-def term_line(promo: PromoCode) -> Line:
+def term_line(text: LineText, promo: PromoCode) -> Line:
     if promo.expires_at is None:
         return PHRASES.forever()
     left = int((promo.expires_at - utcnow_naive()).total_seconds())
     date = moscow_time(promo.expires_at)
     if left <= 0:
         return PHRASES.card.expired_at(date=date)
-    return PHRASES.card.until(date=date, left=format_duration(left))
+    return PHRASES.card.until(date=date, left=time_text(text, duration_parts(left)))

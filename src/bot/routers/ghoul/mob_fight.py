@@ -16,7 +16,9 @@ COOLDOWN_NAME = "MOB_FIGHT"
 
 
 class MobFightHandler(MessageHandler[AppContext[TextUserMessage]]):
-    query = Text("бить моба", ignore_case=True) & HasUser()
+    query = (
+        Text("бить моба", ignore_case=True) | Text("fight mob", ignore_case=True)
+    ) & HasUser()
 
     busy_text = Dialogs.mob.busy()
 
@@ -62,7 +64,11 @@ class MobFightHandler(MessageHandler[AppContext[TextUserMessage]]):
             return
 
         battle = await ctx.battle_service.fight_mob(
-            user, ghoul, is_forced=False, reward_log="mob fight reward"
+            user,
+            ghoul,
+            mob_name=ctx.text(Dialogs.vocab.mob()),
+            is_forced=False,
+            reward_log="mob fight reward",
         )
         await ctx.cooldown_service.set_cooldown(telegram_id, COOLDOWN_NAME)
 

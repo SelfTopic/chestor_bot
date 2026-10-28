@@ -72,7 +72,7 @@ class DurationParser:
         alias: seconds for seconds, aliases in _UNIT_GROUPS.items() for alias in aliases
     }
 
-    FOREVER_KEYWORDS = {"навсегда", "пермамент", "пермач", "пожизненн"}
+    FOREVER_KEYWORDS = {"навсегда", "пермамент", "пермач", "пожизненн", "forever", "permanent"}
 
     TIME_UNITS_PATTERN = r"""
     (?P<value>\d+(?:[.,]\d+)?)

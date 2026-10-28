@@ -3,7 +3,7 @@ from typing import Any
 from pydantic import Field
 from selfrot import CommandArgs, Rest
 from selfrot.exceptions import CommandArgsError
-from selfrot.filter import Command
+from selfrot.filter import AnyCommand, Command
 
 from src.bot.dialogs import Dialogs
 
@@ -15,8 +15,10 @@ class GhoulTopArgs(CommandArgs):
     extra: Rest = ""
 
 
-def top_command(name: str) -> Command[GhoulTopArgs]:
-    return Command(name, GhoulTopArgs, prefixes="", ignore_case=True)
+def top_command(*names: str) -> AnyCommand[GhoulTopArgs]:
+    return AnyCommand(
+        *(Command(name, GhoulTopArgs, prefixes="", ignore_case=True) for name in names)
+    )
 
 
 def top_row(ctx: AppContext[Any], place: int, name: str | None, value: object) -> str:
@@ -30,7 +32,7 @@ def top_text(ctx: AppContext[Any], title: str, rows: list[str]) -> str:
 
 
 class GhoulTopHandler:
-    cmd: Command[GhoulTopArgs]
+    cmd: AnyCommand[GhoulTopArgs]
     ctx: AppContext[Any]
     not_a_number = Dialogs.tops.not_a_number()
     out_of_range = Dialogs.tops.out_of_range()

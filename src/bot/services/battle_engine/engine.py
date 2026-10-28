@@ -80,9 +80,9 @@ class BattleEngine:
         return Fighter(snapshot)
 
     def run_against_mob(
-        self, player: Fighter, rng: random.Random = _default_rng
+        self, player: Fighter, mob_name: str, rng: random.Random = _default_rng
     ) -> Tuple[BattleResult, Fighter]:
-        mob_snapshot = self._mob_service.generate_mob(player.snapshot, rng=rng)
+        mob_snapshot = self._mob_service.generate_mob(player.snapshot, mob_name, rng=rng)
         mob_fighter = Fighter(mob_snapshot)
         result = Battle(player, mob_fighter, compress_hp=True).run(rng=rng)
         return result, mob_fighter

@@ -14,7 +14,7 @@ from src.bot.services.player_docs import PlayerDocsService, load_pages
 from src.bot.services.player_docs.pages import load_contents_template, normalize, topics
 from src.config import settings
 
-from .conftest import button_data, callback_update, only_text
+from .conftest import button_data, callback_update, message_update, only_text
 
 CHANNEL = "@docs_test"
 
@@ -95,9 +95,8 @@ async def test_removed_section_loses_its_post_and_its_contents_line(publish, tel
     assert "Голод" not in contents["rich_message"]["markdown"]
 
 
-def test_real_docs_have_valid_headers_and_contents_template() -> None:
-    folder = Path("docs/players")
-
+@pytest.mark.parametrize("folder", [Path("docs/players"), Path("docs/players/en")])
+def test_real_docs_have_valid_headers_and_contents_template(folder: Path) -> None:
     pages = load_pages(folder)
 
     assert pages and all(page.title and page.markdown for page in pages)
@@ -110,11 +109,13 @@ NOT_FOR_PLAYERS = (ROUTERS / "creator", ROUTERS / "system")
 TRIGGERS = (
     re.compile(r'\bCommand\(\s*"([^"]+)"'),
     re.compile(r'\bText\(\s*"([^"]+)"'),
-    re.compile(r'\bchat_text_command\(\s*"([^"]+)"'),
-    re.compile(r'\btop_command\(\s*"([^"]+)"'),
 )
-BOT_TRIGGERS = (re.compile(r'\bbot_command\(\s*"([^"]+)"'), re.compile(r'f"\{name\} ([^"{]+)"'))
+# Хелперы, которым слова команды передаются списком: top_command("топ щелк", "top snap").
+WORD_LISTS = re.compile(r'\b(?:top_command|chat_text_command)\(([^)]*)\)')
+# Действия после «бот …» / «bot …»: bot_command(Args, "выбери", "pick") и список в цикле.
+BOT_ACTIONS = (re.compile(r"\bbot_command\(\s*\w+,([^)]*)\)"), re.compile(r"for action in \(([^)]*)\)"))
 SLASH_AND_TEXT = re.compile(r'\bcommand\(\s*"([a-z_]+)",\s*(\([^)]*\)|"[^"]*"|[A-Z_]+)')
+CYRILLIC = re.compile(r"[а-яё]", re.IGNORECASE)
 WORD_TUPLES = re.compile(r"^([A-Z_]+_WORDS) = \(([^)]*)\)", re.MULTILINE)
 
 
@@ -130,22 +131,37 @@ def player_triggers() -> set[str]:
         tuples = {name: re.findall(r'"([^"]+)"', words) for name, words in WORD_TUPLES.findall(text)}
         for pattern in TRIGGERS:
             found.update(pattern.findall(text))
-        for pattern in BOT_TRIGGERS:
-            found.update(f"бот {action}" for action in pattern.findall(text))
+        for words in WORD_LISTS.findall(text):
+            found.update(re.findall(r'"([^"]+)"', words))
+        for pattern in BOT_ACTIONS:
+            for actions in pattern.findall(text):
+                found.update(
+                    f"{'бот' if CYRILLIC.search(action) else 'bot'} {action}"
+                    for action in re.findall(r'"([^"]+)"', actions)
+                )
         for slash, words in SLASH_AND_TEXT.findall(text):
             found.add(slash)
             found.update(tuples.get(words) or re.findall(r'"([^"]+)"', words))
     return found
 
 
-def test_every_player_command_has_its_own_help_topic() -> None:
-    words = {
-        word for page in load_pages(Path("docs/players")) for topic in topics(page) for word in topic.words
-    }
 
-    missing = sorted(trigger for trigger in player_triggers() if normalize(trigger) not in words)
 
-    assert missing == [], f"нет подраздела «### …» в docs/players для: {missing}"
+# Русские слова команд ищутся в русской справке, всё латиницей (английские слова и слэш-команды)
+# — в английской.
+@pytest.mark.parametrize(
+    ("folder", "is_russian"), [(Path("docs/players"), True), (Path("docs/players/en"), False)]
+)
+def test_every_player_command_has_its_own_help_topic(folder: Path, is_russian: bool) -> None:
+    words = {word for page in load_pages(folder) for topic in topics(page) for word in topic.words}
+
+    missing = sorted(
+        trigger
+        for trigger in player_triggers()
+        if bool(CYRILLIC.search(trigger)) == is_russian and normalize(trigger) not in words
+    )
+
+    assert missing == [], f"нет подраздела «### …» в {folder} для: {missing}"
 
 
 async def test_help_lists_sections_with_links_to_the_channel(
@@ -207,3 +223,27 @@ async def test_typo_gets_suggestions_and_a_press_turns_into_the_topic(feed, send
     await feed(callback_update(button_data(body, "щелк")))
     (edit,) = telegram.bodies("editMessageText")
     assert edit["rich_message"]["markdown"] == snap.markdown
+
+
+async def test_english_help_comes_from_english_docs_and_channel(
+    feed, telegram, session_factory, monkeypatch
+):
+    monkeypatch.setattr(settings, "DOCS_CHANNEL_EN", "@chestor_docs_en")
+    async with session_factory() as session:
+        await DocsPostRepository(session).save("@chestor_docs_en", "04-hunger", PublishedPost(5, "x"))
+        await session.commit()
+    hunger = next(
+        topic
+        for page in load_pages(Path("docs/players/en"))
+        for topic in topics(page)
+        if "hunger" in topic.words
+    )
+    update = message_update("/help hunger")
+    update["message"]["from"]["language_code"] = "en"
+
+    await feed(update)
+
+    (body,) = telegram.bodies("sendRichMessage")
+    assert body["rich_message"]["markdown"] == hunger.markdown
+    (row,) = body["reply_markup"]["inline_keyboard"]
+    assert row[0]["url"] == "https://t.me/chestor_docs_en/5"

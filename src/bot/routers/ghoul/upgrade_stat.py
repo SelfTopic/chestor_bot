@@ -6,6 +6,7 @@ from selfrot.handlers import CallbackQueryHandler
 from selfrot.types import InlineKeyboardMarkup, Message
 
 from src.bot.dialogs import Dialogs
+from src.bot.dialogs.vocab import stat_label
 from src.bot.game_configs import STAT_UPGRADE_CONFIG, STATS, StatKey, stat_cap_for_level
 from src.bot.utils import format_amount
 from src.database.models import Ghoul
@@ -14,8 +15,6 @@ from ...context import AppContext
 from ..types import DataMessageCallbackQuery, TextUserMessage
 
 STAT_KEYS: tuple[StatKey, ...] = get_args(StatKey)
-
-STAT_LABELS = {key: f"{emoji}{label}" for label, key, emoji in STATS}
 
 
 class StatBuy(CallbackPayload, prefix="stat_buy"):
@@ -33,7 +32,7 @@ def build_shop(
     rows: list[str] = []
     keyboard = InlineKeyboard()
 
-    for label, key, emoji in STATS:
+    for key, emoji in STATS:
         assert key in STAT_KEYS
         current: int = getattr(ghoul, key)
         remaining = max(0, stat_cap_for_level(ghoul.level, key) - current)
@@ -59,7 +58,10 @@ def build_shop(
         rows.append(
             ctx.text(
                 Dialogs.stats.shop.row(
-                    stat=f"{emoji}{label}", current=current, x5=prices[1], x10=prices[2]
+                    stat=stat_label(ctx.text, key),
+                    current=current,
+                    x5=prices[1],
+                    x10=prices[2],
                 )
             )
         )
@@ -70,7 +72,7 @@ def build_shop(
 
 
 class UpgradeStatHandler(MessageHandler[AppContext[TextUserMessage]]):
-    query = Text("качаться", ignore_case=True) & HasUser()
+    query = (Text("качаться", ignore_case=True) | Text("train", ignore_case=True)) & HasUser()
 
     async def handle(self) -> None:
         ctx = self.ctx
@@ -142,7 +144,7 @@ class StatBuyHandler(CallbackQueryHandler[AppContext[DataMessageCallbackQuery]])
         await callback.answer(
             ctx.text(
                 Dialogs.stats.bought(
-                    stat=STAT_LABELS[payload.stat], count=bought, price=price
+                    stat=stat_label(ctx.text, payload.stat), count=bought, price=price
                 )
             )
         )

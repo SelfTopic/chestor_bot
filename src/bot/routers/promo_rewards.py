@@ -1,7 +1,7 @@
 from typing import Any
 
-from src.bot.dialogs import Dialogs, Line
-from src.bot.game_configs import STATS
+from src.bot.dialogs import Dialogs, Line, LineText
+from src.bot.dialogs.vocab import stat_label
 from src.bot.services.promo import (
     ChestonReward,
     CooldownResetReward,
@@ -15,10 +15,7 @@ from src.bot.services.promo import (
 
 from ..context import AppContext
 
-STAT_LABELS = {key: f"{emoji}{label}" for label, key, emoji in STATS}
-
-
-def reward_line(granted: Granted) -> Line:
+def reward_line(text: LineText, granted: Granted) -> Line:
     match granted.reward:
         case ChestonReward(amount=amount):
             return Dialogs.promo.reward.cheston(amount=amount)
@@ -36,11 +33,11 @@ def reward_line(granted: Granted) -> Line:
             return Dialogs.promo.reward.cooldown_reset()
         case StatReward(stat=stat, amount=amount):
             if granted.capped_to is None:
-                return Dialogs.promo.reward.stat(stat=STAT_LABELS[stat], amount=amount)
+                return Dialogs.promo.reward.stat(stat=stat_label(text, stat), amount=amount)
             return Dialogs.promo.reward.stat_capped(
-                stat=STAT_LABELS[stat], amount=granted.capped_to
+                stat=stat_label(text, stat), amount=granted.capped_to
             )
 
 
 def reward_lines(ctx: AppContext[Any], granted: list[Granted]) -> str:
-    return "\n".join(ctx.text(reward_line(one)) for one in granted)
+    return "\n".join(ctx.text(reward_line(ctx.text, one)) for one in granted)

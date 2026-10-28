@@ -1,0 +1,40 @@
+vocab:
+  kagune:
+    ukaku: Ukaku
+    koukaku: Koukaku
+    rinkaku: Rinkaku
+    bikaku: Bikaku
+  race:
+    human: Human
+    ghoul: Ghoul
+    ccg: Human. CCG agent
+  stat:
+    strength: Strength
+    dexterity: Dexterity
+    speed: Speed
+    max_health: Max health
+    health: Health
+    regeneration: Regeneration
+  hunger:
+    full: not hungry
+    light: slightly hungry
+    strong: very hungry
+    deadly: starving to death
+  time:
+    months: '{count}mo'
+    days: '{count}d'
+    hours: '{count}h'
+    minutes: '{count}m'
+  mob:
+    - Feral ghoul
+    - Hungry drifter ghoul
+    - Mad ghoul
+    - Scavenger ghoul
+    - Wounded outcast ghoul
+    - Nameless ghoul
+  color:
+    red: red
+    blue: blue
+    green: green
+    white: white
+    yellow: yellow

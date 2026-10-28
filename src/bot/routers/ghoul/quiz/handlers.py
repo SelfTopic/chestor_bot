@@ -36,7 +36,10 @@ def callback_message(ctx: AppContext[DataCallbackQuery]) -> Message:
 
 class QuizHandler(MessageHandler[AppContext[TextUserMessage]]):
     query = (
-        Command("quiz") | Text("квиз", ignore_case=True) | Text("викторина", ignore_case=True)
+        Command("quiz")
+        | Text("квиз", ignore_case=True)
+        | Text("викторина", ignore_case=True)
+        | Text("quiz", ignore_case=True)
     ) & HasUser()
 
     async def handle(self) -> None:

@@ -7,6 +7,7 @@ from .check_rules_router import CheckRulesRouter
 from .edits_router import EditsRouter
 from .fun import FunRouter
 from .help_router import HelpRouter
+from .language_router import LanguageRouter
 from .profile_router import ProfileRouter
 from .race_profile import RaceProfileRouter
 from .rich_router import RichRouter
@@ -21,6 +22,7 @@ class CommonRouter(BaseRouter[AppContext]):
         BotRouter,
         BalanceRouter,
         HelpRouter,
+        LanguageRouter,
         RichRouter,
         ProfileRouter,
         RaceProfileRouter,

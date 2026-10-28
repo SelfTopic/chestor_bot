@@ -9,6 +9,7 @@ from selfrot.types import (
 from typing import Any
 
 from src.bot.dialogs import Dialogs
+from src.bot.dialogs.vocab import STAT_NAMES
 from src.bot.services import BattleEngine, GhoulService
 from src.bot.services.battle_engine.core import StatBreakdown, compute_stat_breakdown
 from src.bot.utils import get_hunger_tier
@@ -17,13 +18,7 @@ from src.database.models import Ghoul, User
 from ....context import AppContext
 from ...rich import paragraph, table_cell
 
-_STAT_LABELS: list[tuple[str, str]] = [
-    ("strength", "Сила"),
-    ("dexterity", "Ловкость"),
-    ("speed", "Скорость"),
-    ("health", "Здоровье"),
-    ("regeneration", "Регенерация"),
-]
+_STAT_KEYS = ("strength", "dexterity", "speed", "health", "regeneration")
 
 
 def _fmt(value: float) -> str:
@@ -46,6 +41,12 @@ def combat_power_rich(
     combat_base_power = engine.power_of(fighter.snapshot)
     effective_power = engine.effective_power_of(fighter.stats)
 
+    phrases = Dialogs.combat_power.rich
+    stat_header = ctx.text(phrases.column_stat())
+    value_header = ctx.text(phrases.column_value())
+    kagune_label = ctx.text(phrases.kagune_row())
+    total_label = ctx.text(phrases.total_row())
+
     vacuum_values = {
         "strength": ghoul.strength,
         "dexterity": ghoul.dexterity,
@@ -54,15 +55,15 @@ def combat_power_rich(
         "regeneration": ghoul.regeneration,
     }
     vacuum_rows = [
-        [table_cell(label), table_cell(str(vacuum_values[key]))]
-        for key, label in _STAT_LABELS
+        [table_cell(ctx.text(STAT_NAMES[key])), table_cell(str(vacuum_values[key]))]
+        for key in _STAT_KEYS
     ]
-    vacuum_rows.append([table_cell("Кагуне"), table_cell(str(vacuum_kagune))])
-    vacuum_rows.append([table_cell("Итого"), table_cell(str(vacuum_power))])
+    vacuum_rows.append([table_cell(kagune_label), table_cell(str(vacuum_kagune))])
+    vacuum_rows.append([table_cell(total_label), table_cell(str(vacuum_power))])
 
     vacuum_table = InputRichBlockTable(
         cells=[
-            [table_cell("Стат", header=True), table_cell("Значение", header=True)],
+            [table_cell(stat_header, header=True), table_cell(value_header, header=True)],
             *vacuum_rows,
         ],
         is_bordered=True,
@@ -71,19 +72,19 @@ def combat_power_rich(
 
     combat_rows = [
         [
-            table_cell(label),
+            table_cell(ctx.text(STAT_NAMES[key])),
             table_cell(_fmt(breakdown[key].base)),
             table_cell(_fmt(breakdown[key].after_hunger)),
             table_cell(_fmt(breakdown[key].after_kagune)),
         ]
-        for key, label in _STAT_LABELS
+        for key in _STAT_KEYS
     ]
 
     tier = get_hunger_tier(ghoul.hunger)
     kagune_after_hunger = vacuum_kagune * tier.rising_multiplier
     combat_rows.append(
         [
-            table_cell("Кагуне"),
+            table_cell(kagune_label),
             table_cell(str(vacuum_kagune)),
             table_cell(_fmt(kagune_after_hunger)),
             table_cell(_fmt(fighter.stats.kagune_strength)),
@@ -91,12 +92,12 @@ def combat_power_rich(
     )
 
     combat_total_after_hunger = (
-        sum(breakdown[key].after_hunger for key, _ in _STAT_LABELS)
+        sum(breakdown[key].after_hunger for key in _STAT_KEYS)
         + kagune_after_hunger
     )
     combat_rows.append(
         [
-            table_cell("Итого"),
+            table_cell(total_label),
             table_cell(str(round(combat_base_power))),
             table_cell(_fmt(combat_total_after_hunger)),
             table_cell(_fmt(effective_power)),
@@ -106,10 +107,10 @@ def combat_power_rich(
     combat_table = InputRichBlockTable(
         cells=[
             [
-                table_cell("Стат", header=True),
-                table_cell("Значение", header=True),
-                table_cell("Влияние голода", header=True),
-                table_cell("Влияние кагуне", header=True),
+                table_cell(stat_header, header=True),
+                table_cell(value_header, header=True),
+                table_cell(ctx.text(phrases.column_hunger()), header=True),
+                table_cell(ctx.text(phrases.column_kagune()), header=True),
             ],
             *combat_rows,
         ],
@@ -117,7 +118,6 @@ def combat_power_rich(
         is_striped=True,
     )
 
-    phrases = Dialogs.combat_power.rich
     blocks: list[InputRichBlock] = [
         InputRichBlockSectionHeading(
             text=ctx.text(phrases.title(danger_rank=danger_rank, name=user.full_name)),

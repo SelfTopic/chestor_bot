@@ -326,6 +326,7 @@ def make_user(user_repo: UserRepository) -> Callable[..., Awaitable[User]]:
             first_name=first_name,
             last_name=last_name,
             username=username,
+            telegram_language="ru",
         )
 
     return _make
@@ -417,7 +418,8 @@ def chat_dict(chat_id: int) -> dict[str, Any]:
 
 
 def user_dict(uid: int, first_name: str) -> dict[str, Any]:
-    return {"id": uid, "is_bot": False, "first_name": first_name}
+    # Без языка Telegram бот отвечает по-английски, а тесты сверяют русские фразы.
+    return {"id": uid, "is_bot": False, "first_name": first_name, "language_code": "ru"}
 
 
 def message_update(

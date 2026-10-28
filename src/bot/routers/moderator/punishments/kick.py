@@ -52,7 +52,7 @@ class KickRepliedHandler(
     KickFlow,
     RepliedTargetHandler[KickRepliedArgs, AppContext[TextUserReplyMessage]],
 ):
-    cmd = command("kick", "кик", KickRepliedArgs)
+    cmd = command("kick", ("кик", "kick"), KickRepliedArgs)
     query = cmd & HasUser() & HasReplyUser() & FromChatAdmin()
 
     async def perform(self, telegram_id: int, args: KickRepliedArgs) -> None:
@@ -60,7 +60,7 @@ class KickRepliedHandler(
 
 
 class KickHandler(KickFlow, AnywhereTargetHandler[AppContext[TextUserMessage]]):
-    cmd = command("kick", "кик", TargetTextArgs)
+    cmd = command("kick", ("кик", "kick"), TargetTextArgs)
     query = cmd & HasUser() & ~HasReplyUser() & FromChatAdmin()
 
     async def perform(self, telegram_id: int, rest: str) -> None:

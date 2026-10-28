@@ -6,9 +6,10 @@ from selfrot.filter import HasUser, Text
 from selfrot.handlers import CallbackQueryHandler
 from selfrot.types import DataCallbackQuery, Message
 
-from src.bot.dialogs import Dialogs
+from src.bot.dialogs import Dialogs, LineText
 from src.bot.services.family import NotMarried
-from src.bot.utils import format_age, format_amount, utcnow_naive
+from src.bot.dialogs.vocab import time_text
+from src.bot.utils import age_parts, format_amount, utcnow_naive
 
 from ....context import AppContext
 from ...types import TextUserMessage
@@ -16,12 +17,12 @@ from .payloads import DivorcePress
 from .render import mentions
 
 
-def age(since: datetime) -> str:
-    return format_age(int((utcnow_naive() - since).total_seconds()))
+def age(text: LineText, since: datetime) -> str:
+    return time_text(text, age_parts(int((utcnow_naive() - since).total_seconds())))
 
 
 class FamilyHandler(MessageHandler[AppContext[TextUserMessage]]):
-    query = Text("семья", ignore_case=True) & HasUser()
+    query = (Text("семья", ignore_case=True) | Text("family", ignore_case=True)) & HasUser()
 
     async def handle(self) -> None:
         ctx = self.ctx
@@ -36,7 +37,7 @@ class FamilyHandler(MessageHandler[AppContext[TextUserMessage]]):
                 Dialogs.family.row(
                     name=who[member.telegram_id],
                     since=member.joined_at.strftime("%d.%m.%Y"),
-                    age=age(member.joined_at),
+                    age=age(ctx.text, member.joined_at),
                 )
             )
             for member in family.members
@@ -55,7 +56,7 @@ LIST_LIMIT = 3500
 
 
 class FamiliesHandler(MessageHandler[AppContext[TextUserMessage]]):
-    query = Text("браки", ignore_case=True) & HasUser()
+    query = (Text("браки", ignore_case=True) | Text("families", ignore_case=True)) & HasUser()
 
     async def handle(self) -> None:
         ctx = self.ctx
@@ -74,11 +75,11 @@ class FamiliesHandler(MessageHandler[AppContext[TextUserMessage]]):
                     name=family.name,
                     members=members,
                     since=since,
-                    age=age(family.created_at),
+                    age=age(ctx.text, family.created_at),
                 )
                 if family.name
                 else Dialogs.family.list.row(
-                    place=place, members=members, since=since, age=age(family.created_at)
+                    place=place, members=members, since=since, age=age(ctx.text, family.created_at)
                 )
             )
             row = ctx.text(line)
@@ -91,7 +92,7 @@ class FamiliesHandler(MessageHandler[AppContext[TextUserMessage]]):
 
 
 class DivorceHandler(MessageHandler[AppContext[TextUserMessage]]):
-    query = Text("развод", ignore_case=True) & HasUser()
+    query = (Text("развод", ignore_case=True) | Text("divorce", ignore_case=True)) & HasUser()
 
     async def handle(self) -> None:
         ctx = self.ctx

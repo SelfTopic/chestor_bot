@@ -13,6 +13,7 @@ from src.bot.services import VideoCutterService
 from src.bot.types import VideoCutJob
 
 from ....context import AppContext
+from ...language import RUSSIAN_ONLY, NotInLanguageReply
 from ...types import TextMessage
 from .delivery import deliver_cut
 from .guard import cut_guard
@@ -38,7 +39,7 @@ class AnimeArgs(CommandArgs):
 
 class AnimeHandler(MessageHandler[AppContext[TextMessage]]):
     cmd = Command("anime", AnimeArgs)
-    query = cmd
+    query = cmd & RUSSIAN_ONLY
     end_error = Dialogs.anime.bad_end()
     start_error = Dialogs.anime.bad_start()
     format_error = Dialogs.anime.bad_format()
@@ -176,3 +177,8 @@ class AnimeHandler(MessageHandler[AppContext[TextMessage]]):
         field = exc.problems[0].field if exc.problems else ""
         line = {"start": self.start_error, "end": self.end_error}.get(field, self.usage)
         await self.ctx.say(line)
+
+
+class AnimeNotInLanguageHandler(NotInLanguageReply, MessageHandler[AppContext[TextMessage]]):
+    query = Command("anime") & ~RUSSIAN_ONLY
+    line = Dialogs.not_in_language.anime()

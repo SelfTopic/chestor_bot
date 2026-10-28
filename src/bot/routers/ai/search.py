@@ -5,6 +5,7 @@ from src.bot.dialogs import Dialogs
 from src.bot.exceptions import SearchCooldown, SearchLimitReached, SearchUnavailable
 
 from ...context import AppContext
+from ..language import RUSSIAN_ONLY
 from ..types import TextUserMessage
 from ..bot_command import bot_command
 
@@ -16,8 +17,8 @@ class SearchArgs(CommandArgs):
 
 
 class SearchHandler(MessageHandler[AppContext[TextUserMessage]]):
-    cmd = bot_command("найди", SearchArgs)
-    query = cmd & HasUser()
+    cmd = bot_command(SearchArgs, "найди")
+    query = cmd & HasUser() & RUSSIAN_ONLY
     usage = SEARCH.usage()
 
     # Поиск с ответом модели идёт секундами: в handle он держал бы сессию БД и слот диспетчера.

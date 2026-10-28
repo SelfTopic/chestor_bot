@@ -8,7 +8,7 @@ from .set_chat_text import SetChatTextHandler, chat_text_command
 
 
 class SetRulesHandler(SetChatTextHandler, MessageHandler[AppContext[TextMessage]]):
-    cmd = chat_text_command("новые правила")
+    cmd = chat_text_command("новые правила", "new rules")
     query = cmd
 
     async def apply(self, telegram_id: int, value: str) -> str:

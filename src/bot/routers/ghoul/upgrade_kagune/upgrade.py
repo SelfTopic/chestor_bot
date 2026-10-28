@@ -5,6 +5,7 @@ from selfrot import InlineKeyboard
 from selfrot.types import InlineKeyboardMarkup
 
 from src.bot.dialogs import Dialogs, Line
+from src.bot.dialogs.vocab import KAGUNE_NAMES
 from src.bot.types import KaguneType
 from src.bot.utils import parse_seconds
 from src.database.models import Ghoul
@@ -72,7 +73,7 @@ def build_choice_keyboard(
     for kagune_type in owned:
         strength = ghoul_service.get_kagune_strength(ghoul, kagune_type)
         price = ghoul_service.calculate_price_upgrade_kagune(strength or 0)
-        name = kagune_type.value["name"]
+        name = KAGUNE_NAMES[kagune_type]
         rows.append(ctx.text(choice.row(kagune=name, strength=strength, price=price)))
         keyboard.button(
             ctx.text(choice.button(kagune=name, price=price)),

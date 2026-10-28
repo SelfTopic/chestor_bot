@@ -44,6 +44,12 @@ class User(Base):
     # NULL — активность до включения трекинга не известна, а не «не был активен».
     last_active_at: Mapped[Optional[datetime]] = mapped_column(nullable=True)
 
+    # NULL — язык не выбран через /lang, бот берёт язык Telegram игрока.
+    language: Mapped[Optional[str]] = mapped_column(nullable=True)
+
+    # Фоновой рассылке язык Telegram взять неоткуда, кроме базы.
+    telegram_language: Mapped[Optional[str]] = mapped_column(nullable=True)
+
     @property
     def full_name(self) -> str:
         return self.first_name + " " + (self.last_name or "")

@@ -11,7 +11,9 @@ from .tables import combat_power_rich
 
 
 class CombatPowerHandler(MessageHandler[AppContext[TextUserMessage]]):
-    query = Text("боевая мощь", ignore_case=True) & HasUser()
+    query = (
+        Text("боевая мощь", ignore_case=True) | Text("combat power", ignore_case=True)
+    ) & HasUser()
 
     def plain_text(self, user: User, ghoul: Ghoul, danger_rank: str) -> str:
         ctx = self.ctx
@@ -66,7 +68,7 @@ class CombatPowerHandler(MessageHandler[AppContext[TextUserMessage]]):
 
 
 class CombatPowerShortHandler(MessageHandler[AppContext[TextUserMessage]]):
-    query = Text("бм", ignore_case=True) & HasUser()
+    query = (Text("бм", ignore_case=True) | Text("cp", ignore_case=True)) & HasUser()
 
     async def handle(self) -> None:
         ctx = self.ctx

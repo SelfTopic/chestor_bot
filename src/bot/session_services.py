@@ -53,6 +53,7 @@ from .services.battle import BattleService
 from .services.broadcast import BroadcastService
 from .services.dialog import DialogService
 from .services.family import FamilyService
+from .services.language import LanguageService
 from .services.ghoul_game import CoffeeService, LotteryService
 from .services.level_up import LevelUpService
 from .services.moderation import ModerationService
@@ -110,6 +111,12 @@ class SessionServices:
     @cached_property
     def chat_repository(self) -> ChatRepository:
         return ChatRepository(self.session)
+
+    @cached_property
+    def language_service(self) -> LanguageService:
+        return LanguageService(
+            self.user_repository, self.chat_repository, self.dialog_service
+        )
 
     @cached_property
     def chat_participant_repository(self) -> ChatParticipantRepository:
@@ -324,7 +331,7 @@ class SessionServices:
         return LevelUpService(
             self.user_service,
             self.ghoul_service,
-            self.dialog_service,
+            self.language_service,
             self.notifier,
             level_up_log_repository=self.level_up_log_repository,
         )

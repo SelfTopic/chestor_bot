@@ -61,8 +61,9 @@ def audio_message(file_id: str) -> dict[str, Any]:
     return {"message_id": 100, "date": 5, "chat": {"id": 7, "type": "private"}, "audio": audio}
 
 
-async def test_song_without_a_name_gets_usage(send, source):
-    (reply,) = await send("песня")
+@pytest.mark.parametrize("word", ["песня", "song"])
+async def test_song_without_a_name_gets_usage(send, source, word):
+    (reply,) = await send(word)
 
     assert reply == only_text(MUSIC.usage())
 

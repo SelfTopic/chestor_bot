@@ -554,8 +554,7 @@ class TestTicker:
         ]
         sent = telegram.bodies("sendMessage")
         assert sorted(b["chat_id"] for b in sent) == sorted([A, B, GROUP])
-        (text,) = {b["text"] for b in sent}
-        assert matches_phrase(text, "duel.consent.timeout")
+        assert all(matches_phrase(b["text"], "duel.consent.timeout") for b in sent)
         duel = await get_duel(session_factory, duel_id)
         assert duel.stage == "done"
         assert not await is_busy(session_factory, A)

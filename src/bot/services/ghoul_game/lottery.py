@@ -16,6 +16,16 @@ from ...types.dep import DepColor, DepResult
 
 logger = logging.getLogger(__name__)
 
+# Цвет можно назвать на любом языке бота: «депнуть красный» и «bet red» — одна ставка.
+COLOR_WORDS = {
+    **{color.value: color for color in DepColor},
+    "red": DepColor.RED,
+    "blue": DepColor.BLUE,
+    "green": DepColor.GREEN,
+    "white": DepColor.WHITE,
+    "yellow": DepColor.YELLOW,
+}
+
 COLOR_TO_FOLDER = {
     "красный": "red",
     "синий": "blue",
@@ -102,8 +112,8 @@ class LotteryService:
     def parse_color(self, color_str: str) -> DepColor:
         color_str = color_str.lower().strip()
 
-        for color in DepColor:
-            if color.value in color_str:
+        for word, color in COLOR_WORDS.items():
+            if word in color_str:
                 return color
 
         raise UnknownLotteryColor(color_str)

@@ -2,10 +2,11 @@ import logging
 
 from selfrot import BaseRouter, CommandArgs, MessageHandler
 from selfrot.exceptions import CommandArgsError, TelegramBadRequest
-from selfrot.filter import Command, HasUser
+from selfrot.filter import AnyCommand, Command, HasUser
 from selfrot.types import InputFile
 
 from src.bot.dialogs import Dialogs, Line
+from src.bot.dialogs.vocab import DEP_COLOR_NAMES
 from src.bot.exceptions import (
     BetOutOfRange,
     LotteryPlayerMissing,
@@ -30,7 +31,10 @@ class DepArgs(CommandArgs):
 
 
 class DepnutHandler(MessageHandler[AppContext[TextUserMessage]]):
-    cmd = Command("депнуть", DepArgs, prefixes="", ignore_case=True)
+    cmd = AnyCommand(
+        Command("депнуть", DepArgs, prefixes="", ignore_case=True),
+        Command("bet", DepArgs, prefixes="", ignore_case=True),
+    )
     query = cmd & HasUser()
     usage = Dialogs.lottery.usage()
     failed = Dialogs.lottery.failed()
@@ -39,8 +43,8 @@ class DepnutHandler(MessageHandler[AppContext[TextUserMessage]]):
         if dep_result.is_won:
             multiplier = LOTTERY_CONFIG.get_multiplier(dep_result.winning_color.value)
             return Dialogs.lottery.win(
-                chosen_color=dep_result.chosen_color.value,
-                winning_color=dep_result.winning_color.value,
+                chosen_color=DEP_COLOR_NAMES[dep_result.chosen_color],
+                winning_color=DEP_COLOR_NAMES[dep_result.winning_color],
                 bet=dep_result.bet_amount,
                 earned=dep_result.earned,
                 balance=format_amount(dep_result.balance),
@@ -48,8 +52,8 @@ class DepnutHandler(MessageHandler[AppContext[TextUserMessage]]):
             )
 
         return Dialogs.lottery.lose(
-            chosen_color=dep_result.chosen_color.value,
-            winning_color=dep_result.winning_color.value,
+            chosen_color=DEP_COLOR_NAMES[dep_result.chosen_color],
+            winning_color=DEP_COLOR_NAMES[dep_result.winning_color],
             bet=dep_result.bet_amount,
             balance=format_amount(dep_result.balance),
         )
@@ -134,7 +138,7 @@ class DepnutHandler(MessageHandler[AppContext[TextUserMessage]]):
             case LotteryPlayerMissing():
                 return Dialogs.lottery.player_missing()
             case UnknownLotteryColor(color=color):
-                colors = ", ".join(c.value for c in DepColor)
+                colors = ", ".join(self.ctx.text(DEP_COLOR_NAMES[c]) for c in DepColor)
                 return Dialogs.lottery.unknown_color(color=color, colors=colors)
             case _:
                 logger.error(f"Ошибка при обработке депнуть: {exc}")

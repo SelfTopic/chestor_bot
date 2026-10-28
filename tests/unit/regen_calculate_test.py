@@ -18,14 +18,14 @@ from src.bot.utils.time_now import utcnow_naive
 
 
 def test_hunger_tier_boundaries():
-    assert get_hunger_tier(100).name == "не голоден"
-    assert get_hunger_tier(75).name == "не голоден"
-    assert get_hunger_tier(74).name == "лёгкий голод"
-    assert get_hunger_tier(50).name == "лёгкий голод"
-    assert get_hunger_tier(49).name == "сильный голод"
-    assert get_hunger_tier(25).name == "сильный голод"
-    assert get_hunger_tier(24).name == "смертельный голод"
-    assert get_hunger_tier(0).name == "смертельный голод"
+    assert get_hunger_tier(100).key == "full"
+    assert get_hunger_tier(75).key == "full"
+    assert get_hunger_tier(74).key == "light"
+    assert get_hunger_tier(50).key == "light"
+    assert get_hunger_tier(49).key == "strong"
+    assert get_hunger_tier(25).key == "strong"
+    assert get_hunger_tier(24).key == "deadly"
+    assert get_hunger_tier(0).key == "deadly"
 
 
 def test_compute_hunger_no_change_before_a_full_point():

@@ -18,7 +18,12 @@ logger = logging.getLogger(__name__)
 
 
 class EvolutionMenuHandler(MessageHandler[AppContext[TextUserMessage]]):
-    query = (Text("эволюция", ignore_case=True) | Text("мутация", ignore_case=True)) & HasUser()
+    query = (
+        Text("эволюция", ignore_case=True)
+        | Text("мутация", ignore_case=True)
+        | Text("evolution", ignore_case=True)
+        | Text("mutation", ignore_case=True)
+    ) & HasUser()
 
     async def handle(self) -> None:
         ctx = self.ctx

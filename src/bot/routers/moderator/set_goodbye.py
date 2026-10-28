@@ -8,7 +8,7 @@ from .set_chat_text import SetChatTextHandler, chat_text_command
 
 
 class SetGoodbyeHandler(SetChatTextHandler, MessageHandler[AppContext[TextMessage]]):
-    cmd = chat_text_command("новое прощание")
+    cmd = chat_text_command("новое прощание", "new goodbye")
     query = cmd
 
     async def apply(self, telegram_id: int, value: str) -> str:

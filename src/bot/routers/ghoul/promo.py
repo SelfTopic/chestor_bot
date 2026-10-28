@@ -1,6 +1,6 @@
 from selfrot import BaseRouter, CommandArgs, MessageHandler
 from selfrot.exceptions import CommandArgsError
-from selfrot.filter import Command, HasUser
+from selfrot.filter import AnyCommand, Command, HasUser
 
 from src.bot.dialogs import Dialogs, Line
 from src.bot.exceptions import (
@@ -20,7 +20,10 @@ class PromoArgs(CommandArgs):
 
 
 class PromoHandler(MessageHandler[AppContext[TextUserMessage]]):
-    cmd = Command("промо", PromoArgs, prefixes="", ignore_case=True)
+    cmd = AnyCommand(
+        Command("промо", PromoArgs, prefixes="", ignore_case=True),
+        Command("promo", PromoArgs, prefixes="", ignore_case=True),
+    )
     query = cmd & HasUser()
     usage = Dialogs.promo.usage()
 

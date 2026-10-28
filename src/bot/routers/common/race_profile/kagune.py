@@ -10,6 +10,7 @@ from selfrot.types import (
 )
 
 from src.bot.dialogs import Dialogs, Line
+from src.bot.dialogs.vocab import KAGUNE_NAMES, STAT_NAMES
 from src.bot.services.battle_engine.core import (
     KAGUNE_TYPE_MULTIPLIERS,
     KAGUNE_TYPE_PRIORITY_STAT,
@@ -22,29 +23,27 @@ from ...rich import answer_rich_or_text, paragraph, table_cell
 
 
 class KaguneInfoHandler(MessageHandler[AppContext[TextMessage]]):
-    query = Text("кагуне", ignore_case=True) | Command("kagune")
+    query = (
+        Text("кагуне", ignore_case=True)
+        | Text("kagune", ignore_case=True)
+        | Command("kagune")
+    )
 
-    stat_labels: list[tuple[str, str]] = [
-        ("strength", "Сила"),
-        ("dexterity", "Ловкость"),
-        ("speed", "Скорость"),
-        ("health", "Здоровье"),
-        ("regeneration", "Регенерация"),
-    ]
+    stat_keys = ("strength", "dexterity", "speed", "health", "regeneration")
 
     def paragraphs(self, line: Line) -> list[Any]:
         return [paragraph(text) for text in self.ctx.text(line).split("\n\n")]
 
     def build_message(self) -> InputRichMessage:
-        header_row = [table_cell("Тип", header=True)] + [
-            table_cell(label, header=True) for _, label in self.stat_labels
+        header_row = [table_cell(self.ctx.text(Dialogs.kagune.guide.column_type()), header=True)] + [
+            table_cell(self.ctx.text(STAT_NAMES[key]), header=True) for key in self.stat_keys
         ]
 
         rows = [header_row]
         for kagune_type in KaguneType:
             multipliers = KAGUNE_TYPE_MULTIPLIERS.get(kagune_type, {})
-            row = [table_cell(str(kagune_type.value["name"]))]
-            for stat_key, _ in self.stat_labels:
+            row = [table_cell(self.ctx.text(KAGUNE_NAMES[kagune_type]))]
+            for stat_key in self.stat_keys:
                 if stat_key not in multipliers:
                     row.append(table_cell("—"))
                     continue

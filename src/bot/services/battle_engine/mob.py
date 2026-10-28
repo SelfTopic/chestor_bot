@@ -14,7 +14,7 @@ _MIN_POSITIVE_STAT = 1
 
 class MobService:
     def generate_mob(
-        self, player_snapshot: FighterSnapshot, rng: random.Random = _default_rng
+        self, player_snapshot: FighterSnapshot, name: str, rng: random.Random = _default_rng
     ) -> FighterSnapshot:
         multiplier = rng.uniform(MOB_CONFIG.stat_multiplier_min, MOB_CONFIG.stat_multiplier_max)
         vacuum_health = (
@@ -25,7 +25,7 @@ class MobService:
 
         return FighterSnapshot(
             id=-1,
-            name=rng.choice(MOB_CONFIG.names),
+            name=name,
             strength=max(0, round(player_snapshot.strength * multiplier)),
             dexterity=max(_MIN_POSITIVE_STAT, round(player_snapshot.dexterity * multiplier)),
             regeneration=max(0, round(player_snapshot.regeneration * multiplier)),

@@ -1,6 +1,6 @@
 from dataclasses import dataclass
 from datetime import datetime, timedelta
-from typing import Optional
+from typing import Literal, Optional
 
 from ..game_configs import PASSIVE_STATS_CONFIG
 from ..types import KaguneType
@@ -10,9 +10,12 @@ _REGEN_BOOSTING_KAGUNE_BITS = (
 )
 
 
+HungerKey = Literal["full", "light", "strong", "deadly"]
+
+
 @dataclass(frozen=True)
 class HungerTier:
-    name: str
+    key: HungerKey
     min_hunger: int
     max_hunger: int
     falling_multiplier: float
@@ -20,10 +23,10 @@ class HungerTier:
 
 
 HUNGER_TIERS: tuple[HungerTier, ...] = (
-    HungerTier("не голоден", 75, 100, 1.0, 1.0),
-    HungerTier("лёгкий голод", 50, 74, 0.9, 1.1),
-    HungerTier("сильный голод", 25, 49, 0.6, 1.6),
-    HungerTier("смертельный голод", 0, 24, 0.1, 0.5),
+    HungerTier("full", 75, 100, 1.0, 1.0),
+    HungerTier("light", 50, 74, 0.9, 1.1),
+    HungerTier("strong", 25, 49, 0.6, 1.6),
+    HungerTier("deadly", 0, 24, 0.1, 0.5),
 )
 
 

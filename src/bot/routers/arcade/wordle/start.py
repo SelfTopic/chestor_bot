@@ -5,15 +5,17 @@ from selfrot.types import InputFile
 from src.bot.dialogs import Dialogs
 
 from ....context import AppContext
+from ...language import RUSSIAN_ONLY, NotInLanguageReply
 from ...types import UserMessage
 
 
+WORDLE = (
+    Text("вордли", ignore_case=True) | Text("вротли", ignore_case=True) | Command("wordle")
+) & HasUser()
+
+
 class WordleStartHandler(MessageHandler[AppContext[UserMessage]]):
-    query = (
-        Text("вордли", ignore_case=True)
-        | Text("вротли", ignore_case=True)
-        | Command("wordle")
-    ) & HasUser()
+    query = WORDLE & RUSSIAN_ONLY
 
     async def handle(self) -> None:
         message = self.ctx.message
@@ -36,3 +38,8 @@ class WordleStartHandler(MessageHandler[AppContext[UserMessage]]):
             parse_mode="HTML",
         )
         wordle_service.set_board_message_id(user_id, sent.message_id)
+
+
+class WordleNotInLanguageHandler(NotInLanguageReply, MessageHandler[AppContext[UserMessage]]):
+    query = WORDLE & ~RUSSIAN_ONLY
+    line = Dialogs.not_in_language.wordle()

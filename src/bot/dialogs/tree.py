@@ -701,11 +701,26 @@ class _CoffeeDialogs:
 
 
 class _CombatPowerRichDialogs:
+    def column_hunger(self) -> Line:
+        return Line("combat_power.rich.column_hunger", {})
+
+    def column_kagune(self) -> Line:
+        return Line("combat_power.rich.column_kagune", {})
+
+    def column_stat(self) -> Line:
+        return Line("combat_power.rich.column_stat", {})
+
+    def column_value(self) -> Line:
+        return Line("combat_power.rich.column_value", {})
+
     def combat_note(self) -> Line:
         return Line("combat_power.rich.combat_note", {})
 
     def hints(self) -> Line:
         return Line("combat_power.rich.hints", {})
+
+    def kagune_row(self) -> Line:
+        return Line("combat_power.rich.kagune_row", {})
 
     def title(self, *, danger_rank: object, name: object) -> Line:
         return Line(
@@ -715,6 +730,9 @@ class _CombatPowerRichDialogs:
                 "name": name,
             },
         )
+
+    def total_row(self) -> Line:
+        return Line("combat_power.rich.total_row", {})
 
 
 class _CombatPowerDialogs:
@@ -1389,8 +1407,85 @@ class _FunDialogs:
 
 
 class _GhoulRichProfileDialogs:
+    def coffee(self, *, count: object) -> Line:
+        return Line("ghoul.rich_profile.coffee", {"count": count})
+
+    def deaths(self, *, count: object) -> Line:
+        return Line("ghoul.rich_profile.deaths", {"count": count})
+
+    def fights(self, *, losses: object, total: object, wins: object) -> Line:
+        return Line(
+            "ghoul.rich_profile.fights",
+            {
+                "losses": losses,
+                "total": total,
+                "wins": wins,
+            },
+        )
+
+    def ghouls(self, *, count: object) -> Line:
+        return Line("ghoul.rich_profile.ghouls", {"count": count})
+
+    def health(self, *, health: object, max_health: object) -> Line:
+        return Line(
+            "ghoul.rich_profile.health",
+            {
+                "health": health,
+                "max_health": max_health,
+            },
+        )
+
+    def humans(self, *, count: object) -> Line:
+        return Line("ghoul.rich_profile.humans", {"count": count})
+
+    def hunger(self, *, hunger: object, tier: object) -> Line:
+        return Line("ghoul.rich_profile.hunger", {"hunger": hunger, "tier": tier})
+
+    def kagune_row(self, *, kagune: object, strength: object) -> Line:
+        return Line(
+            "ghoul.rich_profile.kagune_row",
+            {
+                "kagune": kagune,
+                "strength": strength,
+            },
+        )
+
     def kagune_types(self) -> Line:
         return Line("ghoul.rich_profile.kagune_types", {})
+
+    def kakuja(self, *, status: object) -> Line:
+        return Line("ghoul.rich_profile.kakuja", {"status": status})
+
+    def kakuja_no(self) -> Line:
+        return Line("ghoul.rich_profile.kakuja_no", {})
+
+    def kakuja_yes(self) -> Line:
+        return Line("ghoul.rich_profile.kakuja_yes", {})
+
+    def level(self, *, level: object) -> Line:
+        return Line("ghoul.rich_profile.level", {"level": level})
+
+    def mob_fights(self, *, losses: object, total: object, wins: object) -> Line:
+        return Line(
+            "ghoul.rich_profile.mob_fights",
+            {
+                "losses": losses,
+                "total": total,
+                "wins": wins,
+            },
+        )
+
+    def power(self, *, power: object) -> Line:
+        return Line("ghoul.rich_profile.power", {"power": power})
+
+    def rc(self, *, rc: object) -> Line:
+        return Line("ghoul.rich_profile.rc", {"rc": rc})
+
+    def snaps(self, *, count: object) -> Line:
+        return Line("ghoul.rich_profile.snaps", {"count": count})
+
+    def stat_row(self, *, stat: object, value: object) -> Line:
+        return Line("ghoul.rich_profile.stat_row", {"stat": stat, "value": value})
 
     def stats(self) -> Line:
         return Line("ghoul.rich_profile.stats", {})
@@ -1572,6 +1667,9 @@ class _KaguneEvolutionDialogs:
 
 
 class _KaguneGuideDialogs:
+    def column_type(self) -> Line:
+        return Line("kagune.guide.column_type", {})
+
     def general(self) -> Line:
         return Line("kagune.guide.general", {})
 
@@ -1639,6 +1737,33 @@ class _KaguneDialogs:
 
     def info(self) -> Line:
         return Line("kagune.info", {})
+
+
+class _LanguageNameDialogs:
+    def en(self) -> Line:
+        return Line("language.name.en", {})
+
+    def ru(self) -> Line:
+        return Line("language.name.ru", {})
+
+
+class _LanguageDialogs:
+    name = _LanguageNameDialogs()
+
+    def admins_only(self) -> Line:
+        return Line("language.admins_only", {})
+
+    def chat_set(self, *, language: object) -> Line:
+        return Line("language.chat_set", {"language": language})
+
+    def choose(self) -> Line:
+        return Line("language.choose", {})
+
+    def hint(self) -> Line:
+        return Line("language.hint", {})
+
+    def private_set(self, *, language: object) -> Line:
+        return Line("language.private_set", {"language": language})
 
 
 class _LinkMediaDialogs:
@@ -3580,6 +3705,17 @@ class _MusicDialogs:
         return Line("music.usage", {})
 
 
+class _NotInLanguageDialogs:
+    def anime(self) -> Line:
+        return Line("not_in_language.anime", {})
+
+    def quote(self) -> Line:
+        return Line("not_in_language.quote", {})
+
+    def wordle(self) -> Line:
+        return Line("not_in_language.wordle", {})
+
+
 class _NotifyDeathCauseDialogs:
     def admin(self) -> Line:
         return Line("notify.death_cause.admin", {})
@@ -4101,6 +4237,108 @@ class _TransferDialogs:
         return Line("transfer.usage", {})
 
 
+class _VocabColorDialogs:
+    def blue(self) -> Line:
+        return Line("vocab.color.blue", {})
+
+    def green(self) -> Line:
+        return Line("vocab.color.green", {})
+
+    def red(self) -> Line:
+        return Line("vocab.color.red", {})
+
+    def white(self) -> Line:
+        return Line("vocab.color.white", {})
+
+    def yellow(self) -> Line:
+        return Line("vocab.color.yellow", {})
+
+
+class _VocabHungerDialogs:
+    def deadly(self) -> Line:
+        return Line("vocab.hunger.deadly", {})
+
+    def full(self) -> Line:
+        return Line("vocab.hunger.full", {})
+
+    def light(self) -> Line:
+        return Line("vocab.hunger.light", {})
+
+    def strong(self) -> Line:
+        return Line("vocab.hunger.strong", {})
+
+
+class _VocabKaguneDialogs:
+    def bikaku(self) -> Line:
+        return Line("vocab.kagune.bikaku", {})
+
+    def koukaku(self) -> Line:
+        return Line("vocab.kagune.koukaku", {})
+
+    def rinkaku(self) -> Line:
+        return Line("vocab.kagune.rinkaku", {})
+
+    def ukaku(self) -> Line:
+        return Line("vocab.kagune.ukaku", {})
+
+
+class _VocabRaceDialogs:
+    def ccg(self) -> Line:
+        return Line("vocab.race.ccg", {})
+
+    def ghoul(self) -> Line:
+        return Line("vocab.race.ghoul", {})
+
+    def human(self) -> Line:
+        return Line("vocab.race.human", {})
+
+
+class _VocabStatDialogs:
+    def dexterity(self) -> Line:
+        return Line("vocab.stat.dexterity", {})
+
+    def health(self) -> Line:
+        return Line("vocab.stat.health", {})
+
+    def max_health(self) -> Line:
+        return Line("vocab.stat.max_health", {})
+
+    def regeneration(self) -> Line:
+        return Line("vocab.stat.regeneration", {})
+
+    def speed(self) -> Line:
+        return Line("vocab.stat.speed", {})
+
+    def strength(self) -> Line:
+        return Line("vocab.stat.strength", {})
+
+
+class _VocabTimeDialogs:
+    def days(self, *, count: object) -> Line:
+        return Line("vocab.time.days", {"count": count})
+
+    def hours(self, *, count: object) -> Line:
+        return Line("vocab.time.hours", {"count": count})
+
+    def minutes(self, *, count: object) -> Line:
+        return Line("vocab.time.minutes", {"count": count})
+
+    def months(self, *, count: object) -> Line:
+        return Line("vocab.time.months", {"count": count})
+
+
+class _VocabDialogs:
+    color = _VocabColorDialogs()
+    hunger = _VocabHungerDialogs()
+    kagune = _VocabKaguneDialogs()
+    race = _VocabRaceDialogs()
+    stat = _VocabStatDialogs()
+    time = _VocabTimeDialogs()
+
+    def mob(self) -> Line:
+        return Line("vocab.mob", {})
+
+
 class _WordleErrorsDialogs:
     def not_russian(self) -> Line:
         return Line("wordle.errors.not_russian", {})
@@ -4205,12 +4443,14 @@ class _Dialogs:
     ghoul = _GhoulDialogs()
     help = _HelpDialogs()
     kagune = _KaguneDialogs()
+    language = _LanguageDialogs()
     link_media = _LinkMediaDialogs()
     lottery = _LotteryDialogs()
     marriage = _MarriageDialogs()
     mob = _MobDialogs()
     moderation = _ModerationDialogs()
     music = _MusicDialogs()
+    not_in_language = _NotInLanguageDialogs()
     notify = _NotifyDialogs()
     profile = _ProfileDialogs()
     promo = _PromoDialogs()
@@ -4225,6 +4465,7 @@ class _Dialogs:
     subscription = _SubscriptionDialogs()
     tops = _TopsDialogs()
     transfer = _TransferDialogs()
+    vocab = _VocabDialogs()
     wordle = _WordleDialogs()
 
     def balance(self, *, balance: object, name: object) -> Line:
@@ -4432,9 +4673,15 @@ PLACEHOLDERS: dict[str, frozenset[str]] = {
             "vacuum_strength",
         }
     ),
+    "combat_power.rich.column_hunger": frozenset(),
+    "combat_power.rich.column_kagune": frozenset(),
+    "combat_power.rich.column_stat": frozenset(),
+    "combat_power.rich.column_value": frozenset(),
     "combat_power.rich.combat_note": frozenset(),
     "combat_power.rich.hints": frozenset(),
+    "combat_power.rich.kagune_row": frozenset(),
     "combat_power.rich.title": frozenset({"danger_rank", "name"}),
+    "combat_power.rich.total_row": frozenset(),
     "combat_power.short": frozenset({"effective_power", "vacuum_power"}),
     "divorce.ask": frozenset(),
     "divorce.button": frozenset(),
@@ -4622,7 +4869,24 @@ PLACEHOLDERS: dict[str, frozenset[str]] = {
         }
     ),
     "ghoul.reborn": frozenset({"kagune_type"}),
+    "ghoul.rich_profile.coffee": frozenset({"count"}),
+    "ghoul.rich_profile.deaths": frozenset({"count"}),
+    "ghoul.rich_profile.fights": frozenset({"losses", "total", "wins"}),
+    "ghoul.rich_profile.ghouls": frozenset({"count"}),
+    "ghoul.rich_profile.health": frozenset({"health", "max_health"}),
+    "ghoul.rich_profile.humans": frozenset({"count"}),
+    "ghoul.rich_profile.hunger": frozenset({"hunger", "tier"}),
+    "ghoul.rich_profile.kagune_row": frozenset({"kagune", "strength"}),
     "ghoul.rich_profile.kagune_types": frozenset(),
+    "ghoul.rich_profile.kakuja": frozenset({"status"}),
+    "ghoul.rich_profile.kakuja_no": frozenset(),
+    "ghoul.rich_profile.kakuja_yes": frozenset(),
+    "ghoul.rich_profile.level": frozenset({"level"}),
+    "ghoul.rich_profile.mob_fights": frozenset({"losses", "total", "wins"}),
+    "ghoul.rich_profile.power": frozenset({"power"}),
+    "ghoul.rich_profile.rc": frozenset({"rc"}),
+    "ghoul.rich_profile.snaps": frozenset({"count"}),
+    "ghoul.rich_profile.stat_row": frozenset({"stat", "value"}),
     "ghoul.rich_profile.stats": frozenset(),
     "ghoul.rich_profile.title": frozenset({"danger_rank", "name"}),
     "help.did_you_mean": frozenset({"query"}),
@@ -4644,6 +4908,7 @@ PLACEHOLDERS: dict[str, frozenset[str]] = {
     "kagune.evolution.owned": frozenset({"strength"}),
     "kagune.evolution.title": frozenset(),
     "kagune.evolution.warning": frozenset(),
+    "kagune.guide.column_type": frozenset(),
     "kagune.guide.general": frozenset(),
     "kagune.guide.general_title": frozenset(),
     "kagune.guide.table_notes": frozenset(),
@@ -4658,6 +4923,13 @@ PLACEHOLDERS: dict[str, frozenset[str]] = {
     "kagune.upgrade.no_user": frozenset(),
     "kagune.upgrade.not_owned": frozenset(),
     "kagune.upgrade.unknown_type": frozenset(),
+    "language.admins_only": frozenset(),
+    "language.chat_set": frozenset({"language"}),
+    "language.choose": frozenset(),
+    "language.hint": frozenset(),
+    "language.name.en": frozenset(),
+    "language.name.ru": frozenset(),
+    "language.private_set": frozenset({"language"}),
     "link_media.too_large": frozenset(),
     "lottery.bet_out_of_range": frozenset({"max_bet", "min_bet"}),
     "lottery.failed": frozenset(),
@@ -5186,6 +5458,9 @@ PLACEHOLDERS: dict[str, frozenset[str]] = {
     "music.shazam.too_big": frozenset(),
     "music.shazam.usage": frozenset(),
     "music.usage": frozenset(),
+    "not_in_language.anime": frozenset(),
+    "not_in_language.quote": frozenset(),
+    "not_in_language.wordle": frozenset(),
     "notify.death": frozenset({"cause", "level", "lifetime_rc_earned"}),
     "notify.death_cause.admin": frozenset(),
     "notify.death_cause.eaten": frozenset(),
@@ -5316,6 +5591,33 @@ PLACEHOLDERS: dict[str, frozenset[str]] = {
     "transfer.errors.spouse": frozenset(),
     "transfer.reply_usage": frozenset(),
     "transfer.usage": frozenset(),
+    "vocab.color.blue": frozenset(),
+    "vocab.color.green": frozenset(),
+    "vocab.color.red": frozenset(),
+    "vocab.color.white": frozenset(),
+    "vocab.color.yellow": frozenset(),
+    "vocab.hunger.deadly": frozenset(),
+    "vocab.hunger.full": frozenset(),
+    "vocab.hunger.light": frozenset(),
+    "vocab.hunger.strong": frozenset(),
+    "vocab.kagune.bikaku": frozenset(),
+    "vocab.kagune.koukaku": frozenset(),
+    "vocab.kagune.rinkaku": frozenset(),
+    "vocab.kagune.ukaku": frozenset(),
+    "vocab.mob": frozenset(),
+    "vocab.race.ccg": frozenset(),
+    "vocab.race.ghoul": frozenset(),
+    "vocab.race.human": frozenset(),
+    "vocab.stat.dexterity": frozenset(),
+    "vocab.stat.health": frozenset(),
+    "vocab.stat.max_health": frozenset(),
+    "vocab.stat.regeneration": frozenset(),
+    "vocab.stat.speed": frozenset(),
+    "vocab.stat.strength": frozenset(),
+    "vocab.time.days": frozenset({"count"}),
+    "vocab.time.hours": frozenset({"count"}),
+    "vocab.time.minutes": frozenset({"count"}),
+    "vocab.time.months": frozenset({"count"}),
     "wordle.errors.not_russian": frozenset(),
     "wordle.errors.wrong_length": frozenset({"length"}),
     "wordle.guess.lost": frozenset({"word"}),

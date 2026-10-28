@@ -1,6 +1,6 @@
 from dataclasses import dataclass, field
 from random import randint, uniform
-from typing import Dict, List, Literal, Optional
+from typing import Dict, Literal, Optional
 
 from src.bot.types import KaguneType
 
@@ -154,12 +154,12 @@ STAT_UPGRADE_CONFIG = StatUpgradeConfig()
 
 StatKey = Literal["strength", "dexterity", "speed", "max_health", "regeneration"]
 
-STATS = [
-    ("Сила", "strength", "💪"),
-    ("Ловкость", "dexterity", "🤸‍♂️"),
-    ("Скорость", "speed", "🏃"),
-    ("Макс. здоровье", "max_health", "❤️"),
-    ("Регенерация", "regeneration", "❣️"),
+STATS: list[tuple[StatKey, str]] = [
+    ("strength", "💪"),
+    ("dexterity", "🤸‍♂️"),
+    ("speed", "🏃"),
+    ("max_health", "❤️"),
+    ("regeneration", "❣️"),
 ]
 
 
@@ -276,17 +276,6 @@ BATTLE_CONFIG = BattleConfig()
 class MobConfig:
     stat_multiplier_min: float = 0.5
     stat_multiplier_max: float = 2.0
-
-    names: List[str] = field(
-        default_factory=lambda: [
-            "Одичавший гуль",
-            "Голодный гуль-бродяга",
-            "Безумный гуль",
-            "Гуль-падальщик",
-            "Раненый гуль-изгой",
-            "Гуль без имени",
-        ]
-    )
 
     level_progress_divisor: float = 1.0
 

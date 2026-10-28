@@ -17,6 +17,7 @@ EXPECTED = {"coffee.cooldown": frozenset({"minutes"}), "bot": frozenset()}
 
 
 def write(folder, text: str, mtime: int) -> None:
+    folder.mkdir(exist_ok=True)
     path = folder / "texts.yaml"
     path.write_text(text, "utf-8")
     os.utime(path, (mtime, mtime))
@@ -60,3 +61,42 @@ def test_broken_edit_keeps_previous_texts_until_fixed(tmp_path):
     # вариант может взять не все подстановки фразы
     write(tmp_path, "coffee:\n  cooldown:\n  - Жди {minutes}\n  - Жди\nbot: Чо\n", mtime=3)
     assert {dialogs.text(cooldown) for _ in range(50)} == {"Жди 5", "Жди"}
+
+
+def test_translation_falls_back_to_english_then_russian(tmp_path):
+    write(tmp_path, "coffee:\n  cooldown: Жди {minutes} мин\nbot: Чо\n", mtime=1)
+    write(tmp_path / "en", "coffee:\n  cooldown: Wait {minutes} min\n", mtime=1)
+    write(tmp_path / "fa", "bot: چی\n", mtime=1)
+    dialogs = DialogService(tmp_path, EXPECTED)
+    cooldown = Line("coffee.cooldown", {"minutes": 5})
+
+    assert dialogs.text(Line("bot"), "fa") == "چی"
+    assert dialogs.text(cooldown, "fa") == "Wait 5 min"
+    assert dialogs.text(Line("bot"), "en") == "Чо"
+    assert dialogs.text(cooldown, "ru") == "Жди 5 мин"
+    assert dialogs.text(cooldown) == "Жди 5 мин"
+
+
+@pytest.mark.parametrize(
+    ("translation", "problem"),
+    [
+        ("start: Hi\n", "en/start: такой фразы нет"),
+        ("coffee:\n  cooldown: Wait {seconds}\n", "en/coffee.cooldown: подстановки"),
+        ("bot: Hey {name}\n", "en/bot: подстановки"),
+    ],
+)
+def test_translation_must_match_russian_phrases(tmp_path, translation, problem):
+    write(tmp_path, "coffee:\n  cooldown: Жди {minutes}\nbot: Чо\n", mtime=1)
+    write(tmp_path / "en", translation, mtime=1)
+
+    with pytest.raises(DialogFileError, match=problem):
+        DialogService(tmp_path, EXPECTED)
+
+
+def test_translation_added_on_the_fly(tmp_path):
+    write(tmp_path, "coffee:\n  cooldown: Жди {minutes}\nbot: Чо\n", mtime=1)
+    dialogs = DialogService(tmp_path, EXPECTED)
+    assert dialogs.text(Line("bot"), "en") == "Чо"
+
+    write(tmp_path / "en", "bot: Wut\n", mtime=2)
+    assert dialogs.text(Line("bot"), "en") == "Wut"

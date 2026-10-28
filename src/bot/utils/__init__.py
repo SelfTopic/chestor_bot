@@ -1,7 +1,7 @@
 from .format_amount import format_amount
 from .kagune_calculate import calculate_kagune
 from .level_progress_calculate import apply_level_progress, level_progress_bar
-from .parse_time import format_age, format_duration, parse_seconds
+from .parse_time import TimeParts, age_parts, duration_parts, parse_seconds
 from .regen_calculate import (
     apply_hunger_restore,
     compute_health,
@@ -23,8 +23,9 @@ __all__ = [
     "apply_level_progress",
     "level_progress_bar",
     "parse_seconds",
-    "format_duration",
-    "format_age",
+    "TimeParts",
+    "duration_parts",
+    "age_parts",
     "apply_hunger_restore",
     "compute_health",
     "compute_hunger",

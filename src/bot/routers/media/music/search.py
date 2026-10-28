@@ -1,7 +1,7 @@
 import logging
 
 from selfrot import CommandArgs, MessageHandler, Rest
-from selfrot.filter import Command
+from selfrot.filter import AnyCommand, Command
 
 from src.bot.exceptions import MediaToolError
 
@@ -17,7 +17,10 @@ class SongArgs(CommandArgs):
 
 
 class SongSearchHandler(MessageHandler[AppContext[TextMessage]]):
-    cmd = Command("песня", SongArgs, prefixes="", ignore_case=True)
+    cmd = AnyCommand(
+        Command("песня", SongArgs, prefixes="", ignore_case=True),
+        Command("song", SongArgs, prefixes="", ignore_case=True),
+    )
     query = cmd
 
     # Поиск через yt-dlp идёт секундами: в handle он держал бы сессию БД и слот диспетчера.

@@ -1,0 +1,658 @@
+ghoul:
+  not_a_ghoul:
+    - 'You''re not a ghoul, you''re a piece of meat. Write "grow kagune" to become a ghoul.'
+    - 'This command is for ghouls, puny human. Want to join us? "grow kagune".'
+    - 'You''re still human, walking food. Write "grow kagune" and welcome to hell.'
+  rich_profile:
+    title: 👤 Profile of {danger_rank}-rank ghoul {name}
+    kagune_types: 👁‍🗨 Kagune types - strength
+    stats: Stats
+    kagune_row: '{kagune} - {strength}'
+    stat_row: '{stat}: {value}'
+    level: '📈 Level: {level}'
+    hunger: '🍖 Hunger: {hunger}% ({tier})'
+    rc: '♦️ RC cells: {rc}'
+    snaps: '👌 Fingers snapped: {count}'
+    coffee: '☕️ Coffee drunk: {count}'
+    humans: '🥩 Humans eaten: {count}'
+    health: '❤️ Health: {health}/{max_health}'
+    power: '⚡ Combat power: {power}'
+    ghouls: '🥩 Ghouls eaten: {count}'
+    fights: '⚔️ Total fights: {total} ({wins} wins / {losses} losses)'
+    mob_fights: '👹 Mob fights: {total} ({wins} wins / {losses} losses)'
+    kakuja: '🧬 Kakuja: {status}'
+    kakuja_yes: 'Yes'
+    kakuja_no: 'No'
+    deaths: '☠️ Deaths: {count}'
+  new:
+    - |-
+      🐣 The birth of a ghoul is joy for some and grief for others. Yours will bring nothing but grief, it seems.
+
+      {name}, from now on you're a ghoul. Your kagune: {kagune_type}.
+    - '🩸 {name}, congrats: now you eat people. Your kagune: {kagune_type}. Coffee at Anteiku, people wherever you catch them.'
+    - '🐣 Welcome to the food chain, {name}. You''re not human anymore, you''re a ghoul. Kagune: {kagune_type}.'
+  reborn:
+    - |-
+      🐣 Wow, you're a ghoul now… Again. New kagune: {kagune_type}.
+
+      Everything else starts from scratch.
+    - '🐣 Risen from the dead like a fucking phoenix. New kagune: {kagune_type}. Fuck your past life.'
+  profile: |-
+    👤 Profile of {danger_rank}-rank ghoul {name}
+
+    📈 Level: {level}
+    👁‍🗨 Kagune types:
+      🔸 {kagune_type}
+
+    💪 Kagune strength: {strength_kagune}
+    👌 Fingers snapped: {snap_count}
+    ♦️ RC cells: {rc_count}
+
+    🤟 Strength: {strength}
+    🏃‍♀️ Speed: {speed}
+    🤾‍♀️ Dexterity: {dexterity}
+    ❤️ Current/Max HP: {health}/{max_health}
+    ❣️ Regeneration: {regeneration}
+    ⚡ Combat power: {power}
+    ☕️ Coffee drunk: {coffee_count}
+    🥩 Humans eaten: {eat_humans}
+    🥩 Ghouls eaten: {eat_ghouls}
+    ⚔️ Total fights: {total_battles} ({wins} wins / {losses} losses)
+    👹 Mob fights: {mob_battles} ({mob_wins} wins / {mob_losses} losses)
+    🧬 Kakuja: {is_kakuja}
+  dead_profile: |-
+    💀 {name} is dead.
+
+    Level: dead
+    Hunger: dead
+    RC cells: dead
+    Kagune: dead
+    Stats: dead
+
+    To start over, write "grow kagune".
+  dead:
+    - '💀 You''re dead, what exactly are you trying to use?'
+    - '💀 The dead don''t drink coffee, snap or fight. Want back in? "grow kagune".'
+    - '💀 You''re a corpse, buddy. You can come back: "grow kagune".'
+    - '💀 Rest in peace, dickhead. Or be reborn: "grow kagune".'
+kagune:
+  guide:
+    general_title: 📖 Kagune basics
+    general: |-
+      The kakuhou is an organ in a ghoul's body that controls RC cells: regeneration, body enhancement and kagune outside the body. Its location defines each type's fighting style.
+
+      🔸 Ukaku (shoulders): RC flows to the brain and arms - high speed, frequent light hits. Downside - low stamina, the monotony is easy to wait out.
+
+      🔸 Koukaku (shoulder blades): RC strengthens the back and arm muscles - a powerful physical hit. Downside - low speed, an agile enemy dodges and counterattacks.
+
+      🔸 Rinkaku (lower back): RC spreads evenly through the body - high stamina and regeneration. Almost no obvious weaknesses.
+
+      🔸 Bikaku (tailbone): RC concentrates in the torso and legs - a bit of every boost at once, an all-rounder without a clear downside.
+
+      How it affects damage: every hit is a coin flip "physical / kagune" - the first hit of a fight is always physical, then the chance of a physical hit drops by 10 p.p. for every physical hit dealt (the fight gradually slides into kagune hits). Kagune damage is usually higher - it's based on strength AND kagune strength together, physical only on strength.
+
+      Defense: a raised kagune blocks 45-75% of a physical attack, and against an enemy kagune hit 10-20% (if your kagune strength is not lower than theirs) or 0%. Without a raised kagune, the bare body blocks 10-20% of physical hits (if your health is not lower than the attacker's) and doesn't block kagune hits at all. The chance to raise your kagune in time for a given hit depends on dexterity and speed - 50/50 with equal stats.
+    table_title: ♦️ How kagune types affect stats
+    column_type: Type
+    table_notes: |-
+      ★ - the type's priority stat: if several unlocked types touch the same stat, the "owner" (★) wins, otherwise the smallest multiplier applies (the stacking rule, see BATTLE_DESIGN.md).
+
+      Kagune strength (the sum of all unlocked types' strength) is NOT multiplied by the kagune type itself - only by hunger (a rising stat) and kakuja.
+  info: |-
+    📖 The kakuhou is the organ that controls RC cells (regeneration, body enhancement, kagune). Ukaku (shoulders) - speed, weak stamina. Koukaku (shoulder blades) - hitting power, low speed. Rinkaku (lower back) - stamina and regeneration. Bikaku (tailbone) - a bit of everything.
+
+    Every hit is a coin flip "physical/kagune": the first hit of a fight is always physical, then the chance of a physical hit drops by 10 p.p. for every physical hit dealt. Kagune damage is usually higher than physical.
+
+    A kagune defense blocks 45-75% of a physical attack and 10-20% of an enemy kagune attack (if your kagune strength is not lower). Without a raised kagune - 10-20% of physical (if your health is not lower), 0% of kagune.
+
+    ♦️ How kagune types affect stats (multiplier to the matching stat):
+
+    🔸 Ukaku: speed ×1.8
+    🔸 Koukaku: strength ×1.6, speed ×1.3
+    🔸 Rinkaku: dexterity ×1.3, regeneration ×1.8, speed ×1.5, health ×1.5
+    🔸 Bikaku: strength ×1.5, dexterity ×1.4, regeneration ×1.4, speed ×1.4, health ×1.4
+
+    If several unlocked types touch the same stat, the stat's "owner" wins, otherwise the smallest multiplier applies.
+
+    Kagune strength (the sum of all unlocked types' strength) is NOT multiplied by the kagune type itself - only by hunger and kakuja.
+  upgrade:
+    no_ghoul: Ghoul not found.
+    no_user: User not found.
+    not_owned: You haven't unlocked this kagune type.
+    unknown_type: Wrong kagune type
+    choice:
+      message: |-
+        Which kagune to upgrade?
+        {rows}
+      row: '{kagune} (strength {strength}) - {price} CheSton'
+      button: '{kagune} - {price} CheSton'
+    done:
+      - |-
+        ✅ You upgraded your kagune.
+
+        💪 Kagune strength: {kagune_strength}
+        💸 CheSton: -{money}
+
+        🕰 Next try in 10 minutes.
+      - |-
+        ✅ Your kagune got thicker. I mean stronger.
+
+        💪 Kagune strength: {kagune_strength}
+        💸 CheSton: -{money}
+
+        🕰 Next try in 10 minutes.
+      - |-
+        ✅ RC cells poured in, kagune leveled up.
+
+        💪 Kagune strength: {kagune_strength}
+        💸 CheSton: -{money}
+
+        🕰 Next try in 10 minutes.
+    cooldown:
+      - Get the fuck out of here, dumbass. And don't come back for ⏳ {minutes} min {seconds} s
+      - Your kagune hasn't grown back since last time. ⏳ {minutes} min {seconds} s
+      - RC cells aren't infinite, moron. ⏳ {minutes} min {seconds} s
+      - Want your kagune to fall the fuck off? Wait. ⏳ {minutes} min {seconds} s
+  evolution:
+    title: 🧬 Evolution
+    column_type: Type
+    column_status: Status
+    owned: 'strength {strength}'
+    not_owned: locked
+    kakuja_row: Kakuja
+    kakuja_yes: 'yes'
+    kakuja_no: 'no'
+    warning: |-
+      Evolution is forever while the ghoul lives, but death burns it all: a new kagune and kakuja don't survive rebirth.
+    buy_kagune_button: 'Unlock {kagune} - {cheston} CheSton + {rc} RC'
+    all_kagune_done: All 4 kagune types are already unlocked.
+    buy_kakuja_button: 'Become a kakuja - {cheston} CheSton + {rc} RC'
+    already_kakuja: You're already a kakuja, there's no way back.
+    kagune_done: |-
+      🧬 New kagune type: {kagune}!
+      💪 Strength: {strength}
+      💸 -{cheston} CheSton, 🧫 -{rc} RC
+    kakuja_done: |-
+      🧬 Mutation complete. You're a kakuja now.
+      Stats and kagune strength ×3, hunger drains ×4. There's no way back.
+      💸 -{cheston} CheSton, 🧫 -{rc} RC
+snap:
+  done:
+    - |-
+      🫰 Crack! One more finger waiting to heal.
+
+      🦴 Fingers broken: {count}
+      💸 CheSton: +{money}
+
+      🕰 Next crunch in 10 minutes.
+    - |-
+      🫰 A thousand minus seven? Fuck counting, just break it.
+
+      🦴 Fingers broken: {count}
+      💸 CheSton: +{money}
+
+      🕰 Next crunch in 10 minutes.
+    - |-
+      🫰 Snap, and the finger's fucked. Hurts? Who gives a shit.
+
+      🦴 Fingers broken: {count}
+      💸 CheSton: +{money}
+
+      🕰 Next crunch in 10 minutes.
+    - |-
+      🫰 Jason would be proud of you, asshole. Minus one finger.
+
+      🦴 Fingers broken: {count}
+      💸 CheSton: +{money}
+
+      🕰 Next crunch in 10 minutes.
+  cooldown:
+    - No fucking snap for you. Your fingers haven't healed yet. ⏳ {minutes} min {seconds} s
+    - What are you gonna break, they're still dangling, dumbass. ⏳ {minutes} min {seconds} s
+    - Nothing left to break, it's all broken already. Regenerate, moron. ⏳ {minutes} min {seconds} s
+    - Even Jason took breaks. ⏳ {minutes} min {seconds} s
+    - Your fingers are recharging, and you can go fuck yourself. ⏳ {minutes} min {seconds} s
+coffee:
+  done:
+    - |-
+      ☕️ You drank a cup of coffee.
+
+      💸 CheSton: +{money}
+      ☕️ Total cups: {count}
+
+      🕰 Next cup in 30 minutes at the earliest.
+    - |-
+      ☕️ The only thing a ghoul can swallow without puking. Enjoy.
+
+      💸 CheSton: +{money}
+      ☕️ Total cups: {count}
+
+      🕰 Next cup in 30 minutes at the earliest.
+    - |-
+      ☕️ Anteiku pours, you drink. Black as your future.
+
+      💸 CheSton: +{money}
+      ☕️ Total cups: {count}
+
+      🕰 Next cup in 30 minutes at the earliest.
+    - |-
+      ☕️ One sip and you're almost human. Almost.
+
+      💸 CheSton: +{money}
+      ☕️ Total cups: {count}
+
+      🕰 Next cup in 30 minutes at the earliest.
+  cooldown:
+    - You dumb son of a bitch, you overdosed on coffee. ⏳ {hours} h {minutes} min {seconds} s
+    - Coffee is already leaking out of your ears, dumbass. ⏳ {hours} h {minutes} min {seconds} s
+    - Anteiku is closed for you. Fuck off for ⏳ {hours} h {minutes} min {seconds} s
+    - Your heart is already pounding like crazy, coffee junkie. ⏳ {hours} h {minutes} min {seconds} s
+  snap_limit:
+    - No free coffee for losers. You don't have a hundred broken fingers yet.
+    - Coffee is for those who broke a hundred fingers. You're still biting your nails.
+    - A hundred broken fingers first, then coffee. Go snap, loser.
+eat_human:
+  ambush:
+    started:
+      - '🐺 While you were sneaking up on your prey, another ghoul jumped out of the dark. It''s hungry too. Time to fight!'
+      - '🐺 This human already has an owner: another ghoul. Take it by force!'
+      - '🐺 Bad luck: another ghoul is already drooling over your human. Kill it!'
+    won:
+      - |-
+        {rewards}
+
+        🍽 The rival is down, the human is yours.
+      - |-
+        {rewards}
+
+        🍽 Fuck the competition, human in the mouth.
+    lost:
+      - '💀 The ghoul was stronger and got the human. You get jack shit.'
+      - '💀 You got beaten up and they ate your lunch. Shameful.'
+    draw:
+      - '🤝 A draw: while you two were fighting, the human ran the fuck away.'
+      - '🤝 A draw. The prey escaped in the chaos, no meal for you.'
+  done:
+    - |-
+      🍽 You devoured a human.
+
+      🍖 Hunger: +{restored}%, now {hunger}%
+      🥩 Humans eaten: {count}
+    - |-
+      🍽 Crunch, crunch. There was a human, now there isn't.
+
+      🍖 Hunger: +{restored}%, now {hunger}%
+      🥩 Humans eaten: {count}
+    - |-
+      🍽 Devoured. Even gnawed the bones, you pig.
+
+      🍖 Hunger: +{restored}%, now {hunger}%
+      🥩 Humans eaten: {count}
+    - |-
+      🍽 Fresh meat, tasty screams.
+
+      🍖 Hunger: +{restored}%, now {hunger}%
+      🥩 Humans eaten: {count}
+  cooldown:
+    - Aren't you eating a bit too fucking much? ⏳ {hours} h {minutes} min {seconds} s
+    - You just ate a human, you fat bastard. Digest it. ⏳ {hours} h {minutes} min {seconds} s
+    - People aren't infinite, glutton. ⏳ {hours} h {minutes} min {seconds} s
+status:
+  healthy: 'Already fully healthy. Go fight.'
+  no_regen: At the current regeneration rate, your health won't recover by itself.
+  until_healthy: 'Until full health: {duration}'
+  starved: 'Hunger is already at zero. Eat, now.'
+  until_starved: 'Until starvation: {duration}'
+  regen: |-
+    ❤️ Health: {health}/{max_health}
+    ⚡ Regeneration rate now: {hp_per_hour} HP/h
+    🕰 {time_left}
+  hunger: |-
+    🍖 Hunger: {hunger}% ({tier})
+    🕰 {time_left}
+
+    📉 Falling stats (dexterity/speed/regeneration/health) now: ×{falling_multiplier}
+    📈 Rising stats (strength/kagune) now: ×{rising_multiplier}
+
+    ⚡ Effective stats right now:
+    🤟 Strength: {effective_strength}
+    🤾‍♀️ Dexterity: {effective_dexterity}
+    🏃 Speed: {effective_speed}
+    ❤️ Health: {effective_health}
+    ❣️ Regeneration: {effective_regeneration}
+    ♦️ Kagune: {effective_kagune_strength}
+combat_power:
+  rich:
+    title: ⚡ Combat power of {danger_rank}-rank ghoul {name}
+    combat_note: The rightmost value in the table below is the one actually used in a fight.
+    column_stat: Stat
+    column_value: Value
+    column_hunger: Hunger effect
+    column_kagune: Kagune effect
+    kagune_row: Kagune
+    total_row: Total
+    hints: |-
+      To see how hunger affects your stats, write "hunger".
+
+      To see how kagune affects your stats, use /kagune.
+  full: |-
+    ⚡ Combat power of {danger_rank}-rank ghoul {name}
+
+    🤟 Strength: {vacuum_strength} → {effective_strength}
+    🤾‍♀️ Dexterity: {vacuum_dexterity} → {effective_dexterity}
+    🏃 Speed: {vacuum_speed} → {effective_speed}
+    ❤️ Health: {vacuum_health} → {effective_health}
+    ❣️ Regeneration: {vacuum_regeneration} → {effective_regeneration}
+    ♦️ Kagune: {vacuum_kagune} → {effective_kagune}
+
+    📊 Total: {vacuum_power} → {effective_power}
+
+    The rightmost value is the one actually used in a fight.
+    To see how hunger affects your stats, write "hunger".
+    To see how kagune affects your stats, use /kagune.
+  short: |-
+    Your combat power outside a fight: {vacuum_power}
+    Your combat power in a fight: {effective_power}
+fight:
+  title: ⚔️ Fight
+  versus: VS
+  rank: '{rank}-rank ghoul {name}'
+  rounds_title: 📜 Fight log ({count} round(s))
+  draw: 🤝 Draw.
+  winner: '🏆 Winner: {name}'
+  defeated: '{name}: defeated.'
+  lost_on_rounds: '{name}: lost on rounds.'
+  final_hp: '❤️ {name}: {hp} HP'
+  log:
+    round: ──── Round {number} ────
+    miss: '{icon} {name} misses'
+    fast_miss: '{icon} {name} doesn''t manage another hit'
+    blocked: '{icon} {name} can''t break the defense'
+    hit: '{icon} {name} hits for {damage} damage'
+    fast_hit: '{icon} {name} lands another hit for {damage} damage'
+    regen: 💊 {name} regenerates +{healed} HP
+    regen_nothing: 💊 {name} regenerates, but barely recovers any HP
+    hp: '❤️ {name}: {chain}'
+    hp_defeated: '💀 {name}: {chain}, defeated'
+    hp_unchanged: '{hp} HP (no change)'
+    hp_damage: '{hp} (-{damage} damage)'
+    hp_blocked: '{hp} (blocked)'
+    hp_regen: '{hp} (+{healed} regeneration)'
+    hp_weak_regen: '{hp} (barely helped)'
+  not_ready:
+    - '🩸 You''re barely alive: {health} HP, and a fight needs at least {threshold}. Rest up.'
+    - '🩸 With {health} HP you only belong in a coffin. A fight needs {threshold}: regenerate.'
+    - '🩸 The wind will blow you away: {health} HP out of the {threshold} needed. Go eat and heal, weakling.'
+  summary: |-
+    ⚔️ Fight
+
+    {rank_line_a}
+    VS
+    {rank_line_b}
+
+    {winner_line}
+    {loser_line}
+    {hp_line_a}
+    {hp_line_b}
+    📜 Rounds: {rounds}
+notify:
+  death_cause:
+    starvation: died of hunger
+    eaten: got eaten by another ghoul
+    admin: got killed by the creator's hand (/kill_ghoul)
+  level_up: |-
+    🎉 New level: {level}!
+
+    💰 CheSton received: {cheston}
+    ♦️ RC cells received: {rc}
+
+    📈 Stat upgrade limits raised:
+    {stat_changes}
+  health_full:
+    - '❤️ Your health is fully restored! Go back to fighting everyone.'
+    - '❤️ Health at max. Go beat the shit out of somebody.'
+  hunger:
+    - '🍖 Hunger dropped to {threshold}%. Don''t forget to eat or you''ll die.'
+    - '🍖 Hunger {threshold}%. Your guts are growling, go eat a human.'
+  death: |-
+    💀 Congrats, you {cause}.
+
+    📈 Level at death: {level}
+    ♦️ RC cells earned in this life: {lifetime_rc_earned}
+
+    Watch your hunger and don't pick fights with everyone - better luck next time.
+
+    To start over, write "grow kagune".
+mob:
+  busy:
+    - 'You''re already in a fight, dumbass. Finish one first.'
+    - 'Two fights at once? You''re not Kaneki. Finish the current one.'
+    - 'You''re busy with another fight, where are you going.'
+  cooldown:
+    - Too soon, you just fought a mob. ⏳ {minutes} min {seconds} s
+    - Cool down, you fucking berserker. ⏳ {minutes} min {seconds} s
+    - The corpses from the last fight haven't been cleaned up yet. ⏳ {minutes} min {seconds} s
+    - The mobs ran away at the sight of you. Wait till they come back. ⏳ {minutes} min {seconds} s
+  rewards: |-
+    📈 XP: +{progress}%
+    💸 CheSton: +{cheston}
+  rc_found:
+    - '♦️ Found {rc} more RC cells in the mob''s guts.'
+    - '♦️ Searched the corpse: +{rc} RC cells.'
+    - '♦️ Dug out {rc} RC cells as a bonus.'
+  lost:
+    - '💀 The mob beat the shit out of you. Shameful.'
+    - '💀 Lost to a mob. A fucking mob.'
+    - '💀 You got taken apart for scrap. Go regenerate, asshole.'
+    - '💀 The mob was stronger. And you were weaker. Makes sense.'
+  draw:
+    - '🤝 A draw: you went your separate ways like two roosters after a fight.'
+    - '🤝 A draw. Nobody ate anybody, boring.'
+    - '🤝 A draw: you''re about equally strong. Equally shit.'
+  summary: |-
+    {outcome}
+    📊 Mob fights: {total} ({wins} wins / {losses} losses)
+quiz:
+  result: |-
+    Answer: {answer}.
+    Your choice: {choice}
+    {status}
+  correct:
+    - |-
+      Status: correct
+
+      💸 CheSton: +{award}
+      🔥 Streak: {streak} (×{multiplier}). Keep going within {minutes} min or it burns out.
+    - |-
+      Status: correct, smartass
+
+      💸 CheSton: +{award}
+      🔥 Streak: {streak} (×{multiplier}). Keep going within {minutes} min or it burns out.
+  wrong:
+    - 'Status: wrong'
+    - 'Status: wrong, go rewatch the anime'
+  wrong_streak:
+    - |-
+      Status: wrong
+
+      💔 Your streak of {streak} is over.
+    - |-
+      Status: wrong, go rewatch the anime
+
+      💔 Your streak of {streak} is over.
+  streak_broken: '⌛ Your streak of {streak} is broken: you didn''t continue within 5 minutes.'
+  streak_expired: '⌛ Your streak of {streak} burned out: you didn''t continue in time.'
+  play_again: 'Another question'
+  whois_title: '🖼 Who is this?'
+  true_false_title: 'True or false?'
+  true_button: 'True'
+  false_button: 'False'
+  not_active: 'This quiz is already over.'
+  not_yours: 'This isn''t your quiz. Start your own: /quiz'
+stats:
+  shop:
+    message: |-
+      Balance: {balance}
+
+      {rows}
+    row: '{stat}: {current}  x5: {x5} x10: {x10}'
+  private_only: This command only works in a private chat with the bot.
+  private_only_action: This action is only available in a private chat.
+  limit: 'This stat is maxed out. Level up.'
+  no_money:
+    - 'Insufficient funds'
+    - 'No money, hobo'
+  bought: 'Upgraded {stat} +{count}. Spent: {price}'
+tops:
+  not_a_number:
+    - '🔢 Put a number after "top", genius.'
+    - '🔢 A number, for fuck''s sake. A number.'
+  out_of_range:
+    - '🔢 From 1 to 50. No more, no less.'
+    - '🔢 A top goes from 1 to 50, smartass.'
+  empty:
+    - 'There''s no fucking top, imagine that.'
+    - 'The top is empty. Be the first, loser.'
+    - 'It''s empty here, just like your head.'
+  unknown_name: Unknown
+  list: |-
+    {title}
+
+    {rows}
+  row: '{place}. {name} - {value}'
+  snap_title: '🏆 Top {count} most broken fingers'
+  power_title: '🏆 Top {count} by combat power'
+  power_value: '{power} ({rank})'
+  kagune:
+    sum_title: '🏆 Top {count} strongest kagune in total'
+    type_title: '🏆 Top {count} strongest kagune: {kagune}'
+    sum_button: Total
+    bad_button: Bad button data
+duel:
+  usage: Challenge someone by replying to their message, or "duel @username" / "duel <id>".
+  user_not_found: 'User not found: {target}'
+  invite:
+    - |-
+      ⚔️ {initiator} challenges {target} to a duel!
+      The fight starts when BOTH confirm.
+    - |-
+      ⚔️ {initiator} throws the gauntlet in {target}'s fucking face!
+      The fight starts when BOTH confirm.
+    - |-
+      ⚔️ {initiator} wants to beat the shit out of {target}.
+      The fight starts when BOTH confirm.
+  stale: No longer valid.
+  accepted: Accepted!
+  not_your_button:
+    - 'That''s not your button.'
+    - 'Hands off, that''s not your button.'
+    - 'Back off, that''s not for you.'
+  refusals:
+    self_duel:
+      - 'You can''t challenge yourself to a duel.'
+      - 'Fight yourself? Go see a psychiatrist.'
+      - 'Fight yourself in the bathroom.'
+    spouses:
+      - '💍 You''re in the same family. Spouses don''t fight, at least not in duels.'
+      - '💍 That''s your spouse. Settle family drama without kagune.'
+    not_registered: One of the fighters isn't registered.
+    initiator_no_private_chat: You need to write to the bot in private once (/start will do), or some fight messages can't be delivered.
+    target_no_private_chat: Your opponent needs to write to the bot in private once (/start will do), or some fight messages can't be delivered.
+    initiator_no_ghoul: 'You don''t have a ghoul yet. "grow kagune" first, meat.'
+    target_no_ghoul: 'Your opponent is still human. Humans get eaten, not challenged to duels.'
+    dead: '💀 One of the fighters is dead. You don''t fight corpses.'
+    not_combat_ready: 'One of the fighters can''t fight: {health} HP (needs at least {threshold}).'
+    busy:
+      - 'One of the fighters is already busy with another fight.'
+      - 'One of you is already swinging in another fight. Wait.'
+    pair_limit: The daily limit of fights with this opponent is reached ({per_pair}/day).
+    initiator_day_limit: Your daily fight limit is reached ({per_day}/day).
+    target_day_limit: Your opponent's daily fight limit is reached.
+    claim_failed: Couldn't start the duel - one of the fighters is already busy.
+  buttons:
+    consent_initiator: ✅ I confirm the challenge (initiator)
+    consent_target: ⚔️ I accept the fight
+    serious: ⚔️ For real
+    handicap: 🤝 Give a handicap
+    rob: 💰 Rob
+    release: 🕊️ Let go
+    eat: 🍖 Eat
+  consent:
+    stale: The invitation is no longer valid.
+    accepted: Accepted, waiting for the other fighter.
+    one_confirmed: ✅ One fighter confirmed, waiting for the other.
+    both_confirmed: Both confirmed!
+    waiting_favored: ⚔️ Both agreed! Waiting for the stronger side to decide.
+    timeout:
+      - '⌛ Time to agree is up: the duel is cancelled.'
+      - '⌛ Somebody chickened out. The duel is cancelled.'
+  fora:
+    question:
+      - 'You''re much stronger than your opponent. Fight for real or give a handicap?'
+      - 'You''re way stronger. Crush them for real or give this weakling a handicap?'
+    starting: Decision made, the fight begins.
+  outcome:
+    robbed:
+      - '💰 {winner} robbed {loser} and took {amount} CheSton!'
+      - '💰 {winner} shook {amount} CheSton out of {loser}. Pockets turned inside out.'
+    robbed_nothing:
+      - '💰 {winner} tried to rob {loser}, but they turned out to be a fucking bum: nothing to take.'
+      - '💰 {winner} searched {loser}: empty. This brokie couldn''t even afford to get robbed.'
+    eaten:
+      - '🍖 {winner} mercilessly finished off and devoured {loser}, gaining {rc} RC cells.'
+      - '🍖 {winner} ate {loser} alive. +{rc} RC cells.'
+    eaten_nothing:
+      - '🍖 {winner} mercilessly finished off and devoured {loser}, but there were no usable RC cells in them.'
+      - '🍖 {winner} ate {loser}: a dud, not a single usable RC cell.'
+    hunger: 🍖 {winner}'s hunger restored by {restored}%.
+    released:
+      - '🕊️ {winner} decided to let {loser} go.'
+      - '🕊️ {winner} spared {loser}. Go live, you nobody.'
+      - '🕊️ {winner} let {loser} go. Let them live with the shame.'
+    experience: 📈 {winner} got {progress}% XP for the win.
+    score: '📊 {name}: {total} fights ({wins}W/{losses}L)'
+subscription:
+  required:
+    - 'Only {channel} subscribers can play. Subscribe, meat, and come back.'
+    - 'Subscribe to {channel} first, kagune later. It''s free, stop whining.'
+    - 'Ghouls without a {channel} subscription don''t hunt here. Subscribe and press "I subscribed".'
+  required_alert: 'Subscribe to {channel} first, then press the buttons.'
+  subscribe_button: 📢 Subscribe
+  check_button: ✅ I subscribed
+  confirmed:
+    - Subscription found. Welcome to Tokyo, go eat people.
+    - I see your subscription. That's it, play.
+  not_yet:
+    - I don't see a subscription. Subscribe first, then press.
+    - Don't lie, you're not subscribed.
+promo:
+  usage: Write "promo <name>". Codes are posted in the bot's channel, keep an eye on it.
+  activated:
+    - |-
+      🎁 Promo code {name} is yours. Here:
+      {rewards}
+    - |-
+      🎁 Just in time, meat. Promo code {name}:
+      {rewards}
+  not_found:
+    - There's no promo code "{name}". Made it up yourself?
+    - No such promo code, you made "{name}" up.
+  expired:
+    - Promo code "{name}" has expired. Watch the channel more closely.
+    - Too late, "{name}" doesn't work anymore.
+  exhausted:
+    - Promo code "{name}" was used up before you. Gotta be faster.
+    - All "{name}" activations are gone. Too slow.
+  already:
+    - You've already activated "{name}". It won't work twice.
+    - Greed never ends well. You've already had "{name}".
+  reward:
+    cheston: +{amount} CheSton
+    rc: +{amount} RC cells
+    progress: +{percent}% level progress
+    hunger: +{percent}% satiety
+    full_hunger: fully fed
+    heal: full health
+    cooldown_reset: all cooldowns reset
+    stat: +{amount} {stat}
+    stat_capped: +{amount} {stat}, level cap reached

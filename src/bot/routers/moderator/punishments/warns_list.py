@@ -14,7 +14,7 @@ from ..filters import FromChatAdmin, InGroup
 from .targets import AnywhereTargetHandler, TargetTextArgs
 from ..flow import ModerationFlow, command
 
-LIST_WORDS = ("варны", "преды")
+LIST_WORDS = ("варны", "преды", "warns")
 
 
 class WarnsListFlow(ModerationFlow):

@@ -2,8 +2,8 @@ from selfrot import BaseRouter
 
 from ....context import AppContext
 from .game import WordleGameHandler
-from .start import WordleStartHandler
+from .start import WordleNotInLanguageHandler, WordleStartHandler
 
 
 class WordleRouter(BaseRouter[AppContext]):
-    handlers = (WordleStartHandler, WordleGameHandler)
+    handlers = (WordleStartHandler, WordleNotInLanguageHandler, WordleGameHandler)

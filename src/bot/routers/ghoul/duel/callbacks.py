@@ -59,7 +59,7 @@ class DuelPressHandler(CallbackQueryHandler[AppContext[DataCallbackQuery]]):
                         message_id=updated.consent_message_id,
                         text=self.ctx.text(Dialogs.duel.consent.one_confirmed()),
                         reply_markup=consent_keyboard(
-                            services.dialogs,
+                            self.ctx.text,
                             duel_id,
                             updated.initiator_telegram_id,
                             updated.target_telegram_id,
@@ -108,11 +108,12 @@ class DuelPressHandler(CallbackQueryHandler[AppContext[DataCallbackQuery]]):
             except TelegramAPIError:
                 pass
 
+        text = await services.languages.text_for(favored_id)
         try:
             await bot.send_message(
                 chat_id=favored_id,
-                text=self.ctx.text(Dialogs.duel.fora.question()),
-                reply_markup=fora_keyboard(services.dialogs, duel_id, favored_id),
+                text=text(Dialogs.duel.fora.question()),
+                reply_markup=fora_keyboard(text, duel_id, favored_id),
             )
         except TelegramAPIError:
             logger.warning("duel %s: failed to DM fora choice", duel_id)

@@ -27,7 +27,7 @@ class FakeMobService:
     def __init__(self, kind: str) -> None:
         self.kind = kind
 
-    def generate_mob(self, player: FighterSnapshot, rng=None) -> FighterSnapshot:
+    def generate_mob(self, player: FighterSnapshot, name: str, rng=None) -> FighterSnapshot:
         stats = {
             "weak": dict(strength=0, dexterity=1, regeneration=0, speed=1, health=1),
             "strong": dict(
@@ -43,7 +43,7 @@ class FakeMobService:
         }[self.kind]
         return FighterSnapshot(
             id=-1,
-            name="Безумный гуль",
+            name=name,
             hunger=100,
             is_kakuja=False,
             kagune_strength={},
@@ -116,7 +116,8 @@ class TestMobFight:
         (rich,) = telegram.bodies("sendRichMessage")
         texts = rich_texts(rich)
         assert only_text(Dialogs.fight.title()) in texts
-        assert any("Безумный гуль" in text for text in texts)
+        mob_names = phrase_texts(Dialogs.vocab.mob())
+        assert any(name in text for text in texts for name in mob_names)
 
         cheston = await balance_of(session_factory, UID)
         ghoul = await get_ghoul(session_factory, UID)

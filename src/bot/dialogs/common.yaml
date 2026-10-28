@@ -278,7 +278,20 @@ moderation:
     Прощальное сообщение обновлено:
 
     {text}
+not_in_language:
+  quote: 'На вашем языке цитат пока нет, скоро завезут.'
+  anime: 'На вашем языке серий пока нет, скоро будут.'
+  wordle: 'На вашем языке Wordle пока нет, скоро будет.'
 link_media:
   too_large:
     - 'Видео слишком большое: Telegram не даёт боту отправлять файлы больше 50 МБ.'
     - 'Этот ролик в 50 МБ не влезает даже в плохом качестве, Telegram не пропустит.'
+language:
+  hint: 'Choose language: /lang'
+  choose: 'Выбери язык бота:'
+  chat_set: 'Язык чата: {language}'
+  private_set: 'Твой язык: {language}'
+  admins_only: 'Язык чата меняют только админы.'
+  name:
+    ru: 🇷🇺 Русский
+    en: 🇬🇧 English

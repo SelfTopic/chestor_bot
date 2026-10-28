@@ -3,9 +3,10 @@ from typing import Any
 
 from selfrot import CommandArgs, Rest
 from selfrot.exceptions import TelegramAPIError
-from selfrot.filter import Command, HasReplyUser, HasUser
+from selfrot.filter import AnyCommand, Command, HasReplyUser, HasUser
+from selfrot.types import InlineKeyboardMarkup
 
-from src.bot.dialogs import Dialogs, Line
+from src.bot.dialogs import Dialogs, Line, LineText
 from src.bot.game_configs import DUEL_CONFIG
 
 from ....context import AppContext
@@ -72,27 +73,29 @@ class DuelInvite:
             return
 
         session = duel.session
-        text = ctx.text(
-            Dialogs.duel.invite(initiator=duel.initiator_name, target=duel.target_name)
-        )
-        keyboard = consent_keyboard(
-            ctx.dialog_service,
-            session.id,
-            session.initiator_telegram_id,
-            session.target_telegram_id,
+        invite = Dialogs.duel.invite(
+            initiator=duel.initiator_name, target=duel.target_name
         )
 
+        def keyboard(text: LineText) -> InlineKeyboardMarkup:
+            return consent_keyboard(
+                text, session.id, session.initiator_telegram_id, session.target_telegram_id
+            )
+
         if not private:
-            sent = await message.answer(text, reply_markup=keyboard)
+            sent = await message.answer(
+                ctx.text(invite), reply_markup=keyboard(ctx.text)
+            )
             await ctx.duel_service.atomic_update(
                 session.id, "awaiting_consent", consent_message_id=sent.message_id
             )
             return
 
         for chat_id in (session.initiator_telegram_id, session.target_telegram_id):
+            text = await ctx.language_service.text_for(chat_id)
             try:
                 await ctx.bot.send_message(
-                    chat_id=chat_id, text=text, reply_markup=keyboard
+                    chat_id=chat_id, text=text(invite), reply_markup=keyboard(text)
                 )
             except TelegramAPIError:
                 logger.warning(
@@ -108,7 +111,10 @@ class DuelRepliedHandler(
     DuelInvite,
     RepliedTargetHandler[DuelRepliedArgs, AppContext[TextUserReplyMessage]],
 ):
-    cmd = Command("дуэль", DuelRepliedArgs, prefixes="", ignore_case=True)
+    cmd = AnyCommand(
+        Command("дуэль", DuelRepliedArgs, prefixes="", ignore_case=True),
+        Command("duel", DuelRepliedArgs, prefixes="", ignore_case=True),
+    )
     query = cmd & HasUser() & HasReplyUser()
 
 
@@ -117,7 +123,10 @@ class DuelArgs(TargetArgs):
 
 
 class DuelHandler(DuelInvite, ExplicitTargetHandler[DuelArgs, AppContext[TextUserMessage]]):
-    cmd = Command("дуэль", DuelArgs, prefixes="", ignore_case=True)
+    cmd = AnyCommand(
+        Command("дуэль", DuelArgs, prefixes="", ignore_case=True),
+        Command("duel", DuelArgs, prefixes="", ignore_case=True),
+    )
     query = cmd & HasUser() & ~HasReplyUser()
     usage = Dialogs.duel.usage()
     reply_errors = True

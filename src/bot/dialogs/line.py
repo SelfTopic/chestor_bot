@@ -1,3 +1,4 @@
+from collections.abc import Callable
 from dataclasses import dataclass, field
 
 
@@ -5,3 +6,6 @@ from dataclasses import dataclass, field
 class Line:
     key: str
     params: dict[str, object] = field(default_factory=dict)
+
+
+LineText = Callable[[Line], str]

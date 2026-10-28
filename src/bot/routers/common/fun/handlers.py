@@ -12,10 +12,10 @@ from src.bot.dialogs import Dialogs
 from ....context import AppContext
 from ...types import TextMessage
 from .calculator import DivisionByZero, ResultTooBig
-from ...bot_command import bot_command
+from ...bot_command import BOT_NAMES, bot_command
 from .filters import Arithmetic
 
-ITEM_SEPARATOR = re.compile(r"\s*(?:,|\bили\b)\s*", re.IGNORECASE)
+ITEM_SEPARATOR = re.compile(r"\s*(?:,|\bили\b|\bor\b)\s*", re.IGNORECASE)
 MAX_PICK_ITEMS = 50
 MAX_ITEM_LENGTH = 200
 NOBODY = Dialogs.fun.nobody()
@@ -38,20 +38,16 @@ class NumberArgs(CommandArgs):
 
 
 class AskBotHandler(MessageHandler[AppContext[TextMessage]]):
-    pick_cmd = bot_command("выбери", PickArgs)
-    who_cmd = bot_command("кто", WhoArgs)
+    pick_cmd = bot_command(PickArgs, "выбери", "pick")
+    who_cmd = bot_command(WhoArgs, "кто", "who")
     participant_cmd = AnyCommand(
         *(
-            Command(
-                f"{name} случайный участник",
-                prefixes="",
-                ignore_case=True,
-                args_count=0,
-            )
-            for name in ("бот", "честор")
+            Command(f"{name} {action}", prefixes="", ignore_case=True, args_count=0)
+            for action in ("случайный участник", "random member")
+            for name in BOT_NAMES
         )
     )
-    number_cmd = bot_command("число", NumberArgs)
+    number_cmd = bot_command(NumberArgs, "число", "number")
 
     too_few = Dialogs.fun.pick.too_few()
     too_many = Dialogs.fun.pick.too_many(max_items=MAX_PICK_ITEMS)
