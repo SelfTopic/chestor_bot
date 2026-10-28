@@ -23,8 +23,11 @@ def english(dispatcher, tmp_path):
 
 async def start(feed, telegram_language: str | None, chat: int | None = None) -> str:
     update = message_update("/start", uid=42, chat=chat)
-    if telegram_language is not None:
-        update["message"]["from"]["language_code"] = telegram_language
+    sender = update["message"]["from"]
+    if telegram_language is None:
+        del sender["language_code"]
+    else:
+        sender["language_code"] = telegram_language
     (reply,) = (await feed(update)).sent
     return reply
 

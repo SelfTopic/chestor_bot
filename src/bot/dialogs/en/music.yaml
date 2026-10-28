@@ -1,0 +1,18 @@
+music:
+  usage: 'What song should I find? Write it after "song": song unravel'
+  results: 'Found for "{query}", pick one:'
+  button: '{title} — {author} · {duration}'
+  not_found:
+    - 'Found nothing for "{query}".'
+    - 'Nothing like "{query}" out there.'
+  downloading: Downloading…
+  failed:
+    - 'Couldn''t download it, try later.'
+    - 'The song didn''t download. Try again a bit later.'
+  shazam:
+    usage: 'Reply "shazam" to a voice message, video note, video or audio and I''ll tell you the song.'
+    too_big: 'The file is over 20 MB: Telegram won''t let the bot download it.'
+    not_recognized:
+      - 'Didn''t recognize the song. Try a longer, cleaner piece.'
+      - 'Shazam recognized nothing here.'
+    recognized: '🎵 {title} — {artist}'

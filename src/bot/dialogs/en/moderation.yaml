@@ -1,0 +1,325 @@
+moderation:
+  term:
+    forever: forever
+    limited: 'for {duration}'
+    days: '{count} d'
+    hours: '{count} h'
+    minutes: '{count} min'
+    seconds: '{count} s'
+    after: 'in {duration}'
+    never: never
+  penalty:
+    mute: mute
+    ban: ban
+    kick: kick
+    timed: '{penalty} {term}'
+  feature:
+    mute: mute
+    ban: ban
+    kick: kick
+    warns: warns
+    notices: term end notices
+  right:
+    restrict_members: '"Ban users"'
+    change_info: '"Change group info"'
+  menu:
+    title: '⚙️ Moderation of "{chat}"'
+    column_setting: Setting
+    column_value: Value
+    'on': 'on'
+    'off': 'off'
+    mute: Mute
+    ban: Ban
+    kick: Kick
+    warns: Warns
+    notices: Term end notices
+    mute_default: Mute with no term
+    ban_default: Ban with no term
+    warn_limit: Warn limit
+    warn_penalty: Penalty at the limit
+    warn_expiry: Warns expire
+    voice: Voice
+    admin_chat: Admin chat
+    voice_neutral: neutral
+    voice_rough: rough
+    admin_chat_none: not linked
+    hint: 'An admin with the "Change group info" right can change these with the buttons. The owner links the admin chat: /set_admin_chat'
+    button_on: '✅ {name}'
+    button_off: '❌ {name}'
+    button_value: '{name}: {value}'
+    button_prev: ◀
+    button_next: ▶
+    button_minus: −
+    button_plus: +
+    use_arrows: 'Change the value with the side buttons.'
+    no_right: 'You need the {right} right for this.'
+    not_admin: Only chat admins can change moderation settings.
+  neutral:
+    muted: '🔇 {name} is muted {term}.'
+    muted_for: '🔇 {name} is muted {term}. Reason: {reason}'
+    unmuted: '🔊 {name} can write again.'
+    not_muted: '{name} isn''t muted anyway.'
+    banned: '🚫 {name} is banned {term}.'
+    banned_for: '🚫 {name} is banned {term}. Reason: {reason}'
+    unbanned: '✅ Ban lifted: {name} can come back via the link.'
+    not_banned: '{name} isn''t banned anyway.'
+    kicked: '👢 {name} is removed from the chat. They can come back via the link.'
+    kicked_for: '👢 {name} is removed from the chat. Reason: {reason}'
+    target_absent: '{name} isn''t in the chat.'
+    mute_usage: |-
+      Mute by replying to a message or by @username/id, term and reason are optional:
+      /mute 30m flood
+      /mute @username 1h spam
+      No term means the default term, "forever" means no end.
+    unmute_usage: 'Unmute by replying to a message or by @username/id: /unmute @username'
+    ban_usage: |-
+      Ban by replying to a message or by @username/id, term and reason are optional:
+      /ban 1d ads
+      /ban @username forever spam
+      No term means the default term.
+    unban_usage: 'Unban by replying to a message or by @username/id: /unban @username'
+    kick_usage: |-
+      Kick by replying to a message or by @username/id, reason is optional:
+      /kick flood
+      /kick @username
+    mute_default_set: '⚙️ A mute with no term now lasts {term}.'
+    mute_default_current: |-
+      ⚙️ A mute with no term lasts {term}.
+      To change: /mute_default 1h, "forever" means no end.
+    ban_default_set: '⚙️ A ban with no term now lasts {term}.'
+    ban_default_current: |-
+      ⚙️ A ban with no term lasts {term}.
+      To change: /ban_default 1d, "forever" means no end.
+    voice_set: ⚙️ The moderation voice is now neutral.
+    voice_current: |-
+      ⚙️ The moderation voice is neutral.
+      To change: /moderation_voice rough
+    admin_chat_none: |-
+      No admin chat linked.
+      To link: /set_admin_chat @admin_chat (or its id), then confirm in that chat.
+    admin_chat_current: |-
+      The admin chat is "{chat}".
+      To unlink: /set_admin_chat off
+    admin_chat_requested: |-
+      Request: make "{chat}" the admin chat of this chat.
+      To confirm, the owner of this chat writes in "{chat}":
+      {command}
+    admin_chat_linked: 'Done: moderation actions and settings changes of "{chat}" will come here.'
+    admin_chat_unlinked: Admin chat "{chat}" unlinked.
+    admin_chat_not_linked: No admin chat is linked anyway.
+    admin_chat_not_found: 'Couldn''t find the group {query}. Give the @username or id of a group the bot is in.'
+    admin_chat_self: A chat can't be its own admin chat.
+    admin_chat_taken: This chat is already the admin chat of another chat.
+    owner_only: Only the chat owner can link and unlink the admin chat.
+    log_muted: '🔇 "{chat}" · mute {term}: {name} (id {id}). Moderator: {moderator}'
+    log_muted_for: '🔇 "{chat}" · mute {term}: {name} (id {id}). Moderator: {moderator}. Reason: {reason}'
+    log_unmuted: '🔊 "{chat}" · unmute: {name} (id {id}). Moderator: {moderator}'
+    log_banned: '🚫 "{chat}" · ban {term}: {name} (id {id}). Moderator: {moderator}'
+    log_banned_for: '🚫 "{chat}" · ban {term}: {name} (id {id}). Moderator: {moderator}. Reason: {reason}'
+    log_unbanned: '✅ "{chat}" · unban: {name} (id {id}). Moderator: {moderator}'
+    log_kicked: '👢 "{chat}" · kick: {name} (id {id}). Moderator: {moderator}'
+    log_kicked_for: '👢 "{chat}" · kick: {name} (id {id}). Moderator: {moderator}. Reason: {reason}'
+    log_mute_default: '⚙️ "{chat}" · a mute with no term is now {term}. Moderator: {moderator}'
+    log_ban_default: '⚙️ "{chat}" · a ban with no term is now {term}. Moderator: {moderator}'
+    log_voice: '⚙️ "{chat}" · moderation voice: neutral. Moderator: {moderator}'
+    log_unlinked: '⚙️ Chat "{chat}" unlinked from this admin chat. Moderator: {moderator}'
+    user_not_found: 'Couldn''t find {query}. Reply to that person''s message or give their id.'
+    anonymous: 'Moderation through the bot isn''t available to an anonymous admin: the bot can''t see who''s writing.'
+    moderator_lacks_right: 'You need the {right} right for this.'
+    bot_lacks_right: 'The bot lacks the {right} right. Grant it in the admin settings.'
+    target_is_admin: '{name} is an admin and can''t be punished.'
+    term_out_of_range: 'The term is from {min} to {max} or "forever".'
+    feature_disabled: 'This is turned off in the chat moderation settings: {feature}. To turn it on: /moderation.'
+    log_feature: '⚙️ "{chat}" · {feature}: {state}. Moderator: {moderator}'
+    warned: '⚠️ {name} gets a warn: {count} of {limit}.'
+    warned_for: '⚠️ {name} gets a warn: {count} of {limit}. Reason: {reason}'
+    warn_penalty_muted: '🔇 {name} reaches {limit} of {limit} warns and is muted {term}.'
+    warn_penalty_banned: '🚫 {name} reaches {limit} of {limit} warns and is banned {term}.'
+    warn_penalty_kicked: '👢 {name} reaches {limit} of {limit} warns and is removed from the chat.'
+    unwarned: '✅ {name}: warn removed, {count} of {limit} left.'
+    no_warnings: '{name}: no warns, nothing to remove.'
+    warns_none: '{name}: no active warns.'
+    warns_list: |-
+      ⚠️ {name}: {count} of {limit} warns.
+      {items}
+    warns_item: '• {reason}, expires {left}'
+    warns_item_forever: '• {reason}, never expires'
+    no_reason: no reason
+    warn_usage: |-
+      Warn by replying to a message or by @username/id, reason is optional:
+      /warn flood
+      /warn @username spam
+    unwarn_usage: 'Remove a warn by replying to a message or by @username/id: /unwarn @username'
+    warns_usage: 'Warns: your own with /warns; someone else''s (admins only) by reply or by @username/id: /warns @username'
+    warn_limit_set: '⚙️ The penalty now comes at warn number {limit}.'
+    warn_limit_current: |-
+      ⚙️ The penalty comes at warn number {limit}.
+      To change: /warn_limit 5 (from {min} to {max}).
+    warn_limit_out_of_range: 'The warn limit is from {min} to {max}.'
+    warn_penalty_set: '⚙️ At the warn limit it''s now {penalty}.'
+    warn_penalty_current: |-
+      ⚙️ At the warn limit it's {penalty}.
+      To change: /warn_action ban 1d (mute, ban or kick; no term keeps the previous term).
+    warn_expiry_set: '⚙️ Warns now expire {term}.'
+    warn_expiry_current: |-
+      ⚙️ Warns expire {term}.
+      To change: /warn_expiry 3d, "forever" means they never expire.
+    log_warned: '⚠️ "{chat}" · warn {count}/{limit}: {name} (id {id}). Moderator: {moderator}'
+    log_warned_for: '⚠️ "{chat}" · warn {count}/{limit}: {name} (id {id}). Moderator: {moderator}. Reason: {reason}'
+    log_unwarned: '✅ "{chat}" · warn removed, {count}/{limit} left: {name} (id {id}). Moderator: {moderator}'
+    log_warn_penalty_muted: '🔇 "{chat}" · {limit}/{limit} warns, mute {term}: {name} (id {id}). Moderator: {moderator}'
+    log_warn_penalty_banned: '🚫 "{chat}" · {limit}/{limit} warns, ban {term}: {name} (id {id}). Moderator: {moderator}'
+    log_warn_penalty_kicked: '👢 "{chat}" · {limit}/{limit} warns, kick: {name} (id {id}). Moderator: {moderator}'
+    log_warn_limit: '⚙️ "{chat}" · the penalty now comes at warn number {limit}. Moderator: {moderator}'
+    log_warn_penalty: '⚙️ "{chat}" · at the warn limit it''s now {penalty}. Moderator: {moderator}'
+    log_warn_expiry: '⚙️ "{chat}" · warns expire {term}. Moderator: {moderator}'
+    mute_expired: '🔊 {name}, your mute is over: you can write again.'
+    warn_expired: '🕊 {name}, a warn expired. {count} of {limit} left.'
+    log_mute_expired: '🔊 "{chat}" · mute expired: {name} (id {id})'
+    log_ban_expired: '✅ "{chat}" · ban expired: {name} (id {id}) can come back via the link'
+    log_warn_expired: '🕊 "{chat}" · warn expired, {count}/{limit} left: {name} (id {id})'
+  rough:
+    muted:
+      - '⛓ The CCG is packing: {name} goes to Cochlea {term}. Sit there and think.'
+      - '⛓ {name} is sent to Cochlea {term}. Mouth shut.'
+    muted_for:
+      - '⛓ The CCG is packing: {name} goes to Cochlea {term}. Charge: {reason}'
+      - '⛓ {name} is sent to Cochlea {term}. What for: {reason}'
+    unmuted:
+      - '🔓 {name} walks out of Cochlea. Keep quiet.'
+      - '🔓 {name} is free. Don''t celebrate, the CCG is watching.'
+    not_muted: '{name} is already free, who am I supposed to release?'
+    banned:
+      - '🚷 {name} is thrown out of the 20th ward {term}. Forget the way back.'
+      - '🚷 CCG mark: {name} doesn''t set foot here {term}.'
+    banned_for:
+      - '🚷 {name} is thrown out of the 20th ward {term}. Charge: {reason}'
+      - '🚷 CCG mark: {name} doesn''t set foot here {term}. What for: {reason}'
+    unbanned: '🚪 The CCG mark is removed: {name} can come back via the link.'
+    not_banned: '{name} isn''t banned anyway, who am I supposed to forgive?'
+    kicked:
+      - '🥾 {name} flies out the door. If they want, they can come back via the link.'
+      - '🥾 A kick in the ass: {name} is out the door.'
+    kicked_for:
+      - '🥾 {name} flies out the door. Charge: {reason}'
+      - '🥾 A kick in the ass: {name} is out the door. What for: {reason}'
+    target_absent: '{name} isn''t here, nobody to kick.'
+    mute_usage: |-
+      Who are we packing? Reply to a message or give a @username/id, a term and a charge:
+      /mute 30m flood
+      /mute @username 1h spam
+      No term means the default term, "forever" means for good.
+    unmute_usage: 'Who are we releasing? Reply /unmute to a message or give a @username/id: /unmute @username'
+    ban_usage: |-
+      Who are we kicking out? Reply to a message or give a @username/id, a term and a charge:
+      /ban 1d ads
+      /ban @username forever spam
+      No term means the default term.
+    unban_usage: 'Who are we forgiving? Reply /unban to a message or give a @username/id: /unban @username'
+    kick_usage: |-
+      Who are we kicking? Reply to a message or give a @username/id, the charge is optional:
+      /kick flood
+      /kick @username
+    mute_default_set: '⚙️ Got it. Anyone with no term sits in Cochlea {term}.'
+    mute_default_current: |-
+      ⚙️ With no term I pack them into Cochlea {term}.
+      To change: /mute_default 1h, "forever" means for good.
+    ban_default_set: '⚙️ Got it. Anyone with no term is thrown out {term}.'
+    ban_default_current: |-
+      ⚙️ With no term I throw them out {term}.
+      To change: /ban_default 1d, "forever" means for good.
+    voice_set:
+      - ⚙️ That's it, the CCG starts its shift. Rough from now on.
+      - ⚙️ Politeness is over. Rough from here on.
+    voice_current: |-
+      ⚙️ I'm rough right now. And don't ask me nicely.
+      To soften: /moderation_voice neutral
+    admin_chat_none: |-
+      You have no HQ, nowhere to report.
+      To set one up: /set_admin_chat @admin_chat (or its id), then confirm in that chat.
+    admin_chat_current: |-
+      CCG reports go to "{chat}".
+      To disband the HQ: /set_admin_chat off
+    admin_chat_requested: |-
+      Want an HQ in "{chat}"? Let the owner of this chat confirm there:
+      {command}
+    admin_chat_linked: 'HQ deployed. CCG reports and every change in "{chat}" will come here.'
+    admin_chat_unlinked: The HQ in "{chat}" is disbanded, no more reports.
+    admin_chat_not_linked: There's no HQ anyway, nothing to disband.
+    admin_chat_not_found: 'Group {query}? Never heard of it. Give me a @username or id, and I have to be in it.'
+    admin_chat_self: An HQ inside itself? Not happening.
+    admin_chat_taken: This chat is already the HQ of another chat. Find your own.
+    owner_only: Only the chat owner sets up and disbands the HQ.
+    log_muted: '⛓ CCG report, "{chat}": {name} (id {id}) in Cochlea {term}. Packed by: {moderator}'
+    log_muted_for: '⛓ CCG report, "{chat}": {name} (id {id}) in Cochlea {term}. Packed by: {moderator}. Charge: {reason}'
+    log_unmuted: '🔓 CCG report, "{chat}": {name} (id {id}) walks out of Cochlea. Released by: {moderator}'
+    log_banned: '🚷 CCG report, "{chat}": {name} (id {id}) thrown out {term}. Exiled by: {moderator}'
+    log_banned_for: '🚷 CCG report, "{chat}": {name} (id {id}) thrown out {term}. Exiled by: {moderator}. Charge: {reason}'
+    log_unbanned: '🚪 CCG report, "{chat}": {name} (id {id}) can come in again. Forgiven by: {moderator}'
+    log_kicked: '🥾 CCG report, "{chat}": {name} (id {id}) is out the door. Kicked by: {moderator}'
+    log_kicked_for: '🥾 CCG report, "{chat}": {name} (id {id}) is out the door. Kicked by: {moderator}. Charge: {reason}'
+    log_mute_default: '⚙️ CCG report, "{chat}": with no term we now pack {term}. Ordered by: {moderator}'
+    log_ban_default: '⚙️ CCG report, "{chat}": with no term we now throw out {term}. Ordered by: {moderator}'
+    log_voice: '⚙️ CCG report, "{chat}": politeness is over, rough moderation. Ordered by: {moderator}'
+    log_unlinked: '⚙️ CCG report: the "{chat}" HQ here is disbanded. Ordered by: {moderator}'
+    user_not_found: 'Who the hell is {query}? The CCG has never heard of them. Reply to their message or give an id.'
+    anonymous: Take off the mask, anonymous. Nobody gets packed from around the corner here.
+    moderator_lacks_right: 'Your arms are too short. You need the {right} right.'
+    bot_lacks_right: 'I wasn''t given the {right} right. Without it I can''t pack anyone here.'
+    target_is_admin: '{name} is an admin. The CCG doesn''t touch its own.'
+    term_out_of_range: 'Cochlea doesn''t work like that: from {min} to {max} or "forever".'
+    feature_disabled: 'The CCG doesn''t do that here: {feature} is turned off in /moderation.'
+    log_feature: '⚙️ CCG report, "{chat}": {feature}: {state}. Ordered by: {moderator}'
+    warned:
+      - '⚠️ The CCG puts {name} on its list: {count} of {limit}.'
+      - '⚠️ {name}, this is a warning. {count} of {limit}, then Cochlea.'
+    warned_for:
+      - '⚠️ The CCG puts {name} on its list: {count} of {limit}. Charge: {reason}'
+      - '⚠️ {name}, this is a warning. {count} of {limit}. What for: {reason}'
+    warn_penalty_muted: '⛓ {name} collected {limit} of {limit}. The CCG packs them into Cochlea {term}.'
+    warn_penalty_banned: '🚷 {name} collected {limit} of {limit} and is thrown out of the 20th ward {term}.'
+    warn_penalty_kicked: '🥾 {name} collected {limit} of {limit}. A kick in the ass, out the door.'
+    unwarned: '🧽 One CCG mark wiped off {name}, {count} of {limit} left.'
+    no_warnings: '{name} is clean with the CCG, nothing to wipe.'
+    warns_none: '{name} is clean with the CCG.'
+    warns_list: |-
+      📋 CCG file on {name}: {count} of {limit}.
+      {items}
+    warns_item: '• {reason}, expires {left}'
+    warns_item_forever: '• {reason}, in the file forever'
+    no_reason: no charge
+    warn_usage: |-
+      Who goes on the list? Reply to a message or give a @username/id, the charge is optional:
+      /warn flood
+      /warn @username spam
+    unwarn_usage: 'Whose mark are we wiping? Reply /unwarn to a message or give a @username/id: /unwarn @username'
+    warns_usage: 'Files: your own with /warns; someone else''s (admins only) by reply or by @username/id: /warns @username'
+    warn_limit_set: '⚙️ Got it. I pack at mark number {limit}.'
+    warn_limit_current: |-
+      ⚙️ I pack at mark number {limit}.
+      To change: /warn_limit 5 (from {min} to {max}).
+    warn_limit_out_of_range: 'Marks go from {min} to {max}, the CCG isn''t made of rubber.'
+    warn_penalty_set: '⚙️ Got it. Whoever collects all the marks gets {penalty}.'
+    warn_penalty_current: |-
+      ⚙️ Whoever collects all the marks gets {penalty}.
+      To change: /warn_action ban 1d (mute, ban or kick; no term keeps the previous term).
+    warn_expiry_set: '⚙️ Got it. Marks expire {term}.'
+    warn_expiry_current: |-
+      ⚙️ Marks expire {term}.
+      To change: /warn_expiry 3d, "forever" means in the file forever.
+    log_warned: '⚠️ CCG report, "{chat}": mark {count}/{limit} on {name} (id {id}). Given by: {moderator}'
+    log_warned_for: '⚠️ CCG report, "{chat}": mark {count}/{limit} on {name} (id {id}). Given by: {moderator}. Charge: {reason}'
+    log_unwarned: '🧽 CCG report, "{chat}": a mark wiped off {name} (id {id}), {count}/{limit} left. Wiped by: {moderator}'
+    log_warn_penalty_muted: '⛓ CCG report, "{chat}": {name} (id {id}) collected {limit}/{limit}, Cochlea {term}. Given by: {moderator}'
+    log_warn_penalty_banned: '🚷 CCG report, "{chat}": {name} (id {id}) collected {limit}/{limit}, thrown out {term}. Given by: {moderator}'
+    log_warn_penalty_kicked: '🥾 CCG report, "{chat}": {name} (id {id}) collected {limit}/{limit}, out the door. Given by: {moderator}'
+    log_warn_limit: '⚙️ CCG report, "{chat}": we pack at mark number {limit}. Ordered by: {moderator}'
+    log_warn_penalty: '⚙️ CCG report, "{chat}": all the marks now get {penalty}. Ordered by: {moderator}'
+    log_warn_expiry: '⚙️ CCG report, "{chat}": marks expire {term}. Ordered by: {moderator}'
+    mute_expired:
+      - '🔓 {name}, your time in Cochlea is up. You''re free, but the CCG remembers.'
+      - '🔓 {name} served their time. You can open your mouth again.'
+    warn_expired: '🧽 {name}, one CCG mark faded. {count} of {limit} left.'
+    log_mute_expired: '🔓 CCG report, "{chat}": {name} (id {id}) served their time in Cochlea'
+    log_ban_expired: '🚪 CCG report, "{chat}": {name} (id {id})''s exile is over, they can come back via the link'
+    log_warn_expired: '🧽 CCG report, "{chat}": a mark on {name} (id {id}) faded, {count}/{limit} left'

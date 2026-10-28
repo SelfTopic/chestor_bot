@@ -1,0 +1,273 @@
+start:
+  - 'Hey {name}! I''m a Tokyo Ghoul bot: people get eaten, fingers get snapped, kagune fight. Commands: /help'
+  - 'Oh, fresh meat. Welcome, {name}. I''m a Tokyo Ghoul bot. What you can do here: /help'
+  - '{name}, welcome to Tokyo, where people get eaten. Command list: /help. Don''t thank me.'
+help:
+  sections: |-
+    # 📖 CheStor help
+
+    {rows}
+
+    Details on any command: `/help <command>`, e.g. `/help snap`, `/help duel`, `/help coffee`.
+  not_found: 'Nothing in the help about "{query}". Section list: /help with no words.'
+  did_you_mean: 'Nothing about "{query}". Maybe you meant:'
+  more: 📖 Whole section
+rich:
+  usage: 'Reply /rich to an .md file and I''ll build a rich message from it: headings, lists, tables, quotes, code, <details> spoilers.'
+  too_long: 'Too long: a rich message fits up to {limit} characters.'
+  not_utf8: 'Can''t read it: the file must be UTF-8.'
+  empty: 'The file is empty, nothing to build.'
+  download_failed: 'Couldn''t download the file, try again.'
+  rejected: 'Telegram rejected the markup: {error}'
+banned:
+  notice: '🚫 You are banned ({term}). Reason: {reason}'
+  until: until {date} UTC
+  forever: forever
+  no_reason: no reason given
+rules:
+  missing:
+    - '📜 No rules, this is anarchy. An admin can set them with "new rules".'
+    - '📜 This chat has no rules, do whatever you want. To set them: "new rules".'
+balance:
+  - '💵 {name}, you have {balance} CheSton.'
+  - '💵 {name}, your balance: {balance} CheSton. Spend it wisely, degenerate.'
+  - '💵 {name}, {balance} CheSton in your pocket. Count it if you don''t believe me.'
+profile:
+  unknown_race: Uhhh.. No idea what that is yet.
+  card: |-
+    ❕ Your profile:
+
+    👤 Name: {name}
+    ❓ Race: {race}
+    💵 Balance: {balance}
+
+    Race profile: /race_profile
+errors:
+  unexpected: 'Error: {error}'
+  cannot_process: Can't process the request
+  user_not_found: '❌ User not found: {query}'
+  username_not_found: 'Error: no user with username {username}'
+  chat_not_found: 'Error: chat not found in the database'
+  ghoul_not_found: 'Error: ghoul not found'
+  media_not_found: 'Error: media not found in the database'
+  quiz:
+    email_missing: 'Error: quiz: GHOUL_QUIZ_EMAIL is not set'
+    session_missing: 'Error: quiz: no saved session for {email}, log in with ghoul-quiz-register'
+    busy:
+    - ⏳ The quiz overheated from your big-brain questions. Try again in {seconds} s.
+    - ⏳ Too many geniuses for one quiz. Wait {seconds} s.
+  chat_text_length:
+    rules: 'Error: the rules must be from 1 to 4000 characters.'
+    welcome: 'Error: the welcome message must be from 1 to 4000 characters.'
+    goodbye: 'Error: the goodbye message must be from 1 to 4000 characters.'
+  not_enough_money:
+    - '💸 Calm the fuck down, you broke-ass bum. You''re {money} CheSton short.'
+    - '💸 You''re {money} CheSton short, hobo. Go snap some fingers.'
+    - '💸 No money, but hang in there. You''re {money} CheSton short.'
+    - '💸 Brokie, you''re {money} CheSton short.'
+  not_enough_rc:
+    - '🧫 Not enough RC cells: you need {rc} more. Go eat some ghouls.'
+    - '🧫 You''re {rc} RC short. Raw stats won''t cut it, you need cells.'
+tops:
+  balance:
+    message: |-
+      🏆 Top {count} richest ghouls:
+
+      {rows}
+    row: '{place}. {name} - {balance} CheSton'
+    bad_count:
+      - '🔢 The top is a number from 1 to 50, genius.'
+      - '🔢 A number, for fuck''s sake. From 1 to 50.'
+rp:
+  created: '✅ Done: "{command}" now means "{action}".'
+  deleted: '🗑 RP command "{command}" deleted.'
+  empty: 'This chat has no RP commands. Add one: /set_rp'
+  list: |-
+    📜 This chat's RP commands:
+
+    {rows}
+  row: '{place}. {command} - {action}'
+  media_usage: |-
+    Usage:
+    /set_rp
+    <command>
+    <action>
+  set_usage: |-
+    Error: use it like /set_rp
+    <command>
+    <action>
+    for example:
+    /set_rp
+    pat
+    patted on the head
+  delete_usage: 'Error: nothing to delete. Use /del_rp <command>'
+  not_found: 'Error: no such RP command'
+  limit_reached: 'Error: RP command limit reached ({limit})'
+transfer:
+  ask: |-
+    Send {amount} CheSton to {receiver}?
+
+    Press exactly "{confirm}": every other button cancels the transfer.
+  ask_again: |-
+    Last confirmation: send {amount} CheSton? This can't be undone.
+
+    Press exactly "{confirm}": every other button cancels the transfer.
+  done:
+    - '✅ Sent {amount} CheSton.'
+    - '✅ {amount} CheSton gone. Hope it''s not for drugs.'
+    - '✅ Sent {amount} CheSton. Generous bastard.'
+  cancelled:
+    - 'Transfer cancelled.'
+    - 'Changed your mind? Good, greed is good.'
+    - 'Called off, you keep your money.'
+  reply_usage: 'Say how much to send. Example: /transfer 500'
+  usage: |-
+    Usage:
+    /transfer <amount>, as a reply to the receiver's message
+    /transfer <id or @username> <amount>
+
+    Example: /transfer @username 500
+  buttons:
+    confirm: confirm
+    decline: don't confirm
+    surely_decline: definitely don't confirm
+    confirm_decline: confirm that I don't confirm
+  errors:
+    failed: ❌ Transfer failed
+    amount_out_of_range: '❌ You can send from {min_amount} to {max_amount} CheSton.'
+    self_transfer:
+      - '❌ Send money to yourself? Clever, but no.'
+      - '❌ You can''t send money to yourself, psycho.'
+    bot:
+      - '❌ The bot doesn''t need money, it runs on electricity.'
+      - '❌ Send it to a bot? The money would just burn.'
+    not_a_person:
+      - '❌ That''s a Telegram service account (a channel or an anonymous admin): the money would be lost.'
+      - '❌ There''s no person behind that message. Who are you paying, a channel?'
+    spouse:
+      - '❌ You share a family account: the money is already shared.'
+      - '❌ Paying your spouse? The money is already in the family account.'
+    sender_missing: ❌ Sender not found
+    sender_too_new: '❌ Transfers are only for accounts older than {days} days. Grow up, kid.'
+    insufficient_balance:
+      - '❌ No money for that transfer, hobo.'
+      - '❌ Insufficient funds. You''re broke yourself.'
+    receiver_missing: ❌ Receiver not found
+    receiver_vanished: ❌ Receiver not found, transfer cancelled
+    receiver_limit: '❌ This account already got enough transfers today. Stop sponsoring them.'
+lottery:
+  usage: '🎰 Write it like this: dep <color> <bet>. For example: dep red 500'
+  failed: '❌ The bet broke. Try again.'
+  bet_out_of_range:
+    - '🎰 Bets go from {min_bet} to {max_bet} CheSton. No more, no less.'
+    - '🎰 Bet from {min_bet} to {max_bet}, smartass.'
+  not_enough_money:
+    - '💸 You don''t have the money for that bet, hobo.'
+    - '💸 Betting more than you have? That''s not how casinos work.'
+    - '💸 Earn it first, then dep, degenerate.'
+  player_missing: User not found
+  unknown_color:
+    - '🎰 What the fuck is "{color}"? Colors: {colors}.'
+    - '🎰 There''s no "{color}". Pick one: {colors}.'
+  win:
+    - |-
+      🎰 You bet on {chosen_color}!
+
+      🎯 You won! It's {winning_color}!
+      💸 Winnings: +{earned} CheSton (bet {bet} × {multiplier})
+      💵 Balance: {balance} CheSton
+    - |-
+      🎰 You bet on {chosen_color}!
+
+      🎯 Lucky bastard! It's {winning_color}!
+      💸 Winnings: +{earned} CheSton (bet {bet} × {multiplier})
+      💵 Balance: {balance} CheSton
+    - |-
+      🎰 You bet on {chosen_color}!
+
+      🎯 The casino's down, you're up. It's {winning_color}!
+      💸 Winnings: +{earned} CheSton (bet {bet} × {multiplier})
+      💵 Balance: {balance} CheSton
+  lose:
+    - |-
+      🎰 You bet on {chosen_color}!
+
+      ❌ You lost! It's {winning_color}.
+      💸 Lost: {bet} CheSton
+      💵 Balance: {balance} CheSton
+    - |-
+      🎰 You bet on {chosen_color}!
+
+      ❌ The house always wins. It's {winning_color}.
+      💸 Lost: {bet} CheSton
+      💵 Balance: {balance} CheSton
+    - |-
+      🎰 You bet on {chosen_color}!
+
+      ❌ Gambling addict, it's {winning_color}. Minus money, plus experience.
+      💸 Lost: {bet} CheSton
+      💵 Balance: {balance} CheSton
+bot:
+- You want something?
+- What?
+- Yeah, me
+- Huh?
+- I'm here
+- What do you want?
+- Eh?
+- What is it?
+- Well?
+- What now?
+- Whaddya want?
+- What are you staring at?
+- Spit it out.
+- Who?
+- What the fuck?
+- What the fuck do you want?
+- Me?
+- What do you want, dickhead?
+- Fuck off
+- You're a pain in the ass
+- What is it this time?
+- The hell you want?
+- What do you want, scumbag?
+- Piss off
+- You again?
+- Why the fuck are you here?
+- You deaf or something?
+- Stop yelling
+- Hell no
+- Stop bugging me
+- What are you staring at, dumbass?
+- Talk faster
+- What are you babbling about?
+- Got a problem?
+- Stop talking shit
+- Oh, it's you again
+- Go fuck yourself
+- Get lost
+- Why won't you leave me alone?
+- You're the bot
+- What do you want, shit-eater?
+- Stop calling me, damn it
+- Umm, fuck off
+moderation:
+  bot_added:
+    - 'Great fucking job adding me. I''m a dumbass retarded bot.'
+    - 'Oh, a new chat. Who''s on the menu? Commands: /help'
+  rules_updated: |-
+    Chat rules updated:
+
+    {rules}
+  welcome_updated: |-
+    Welcome message updated:
+
+    {text}
+  goodbye_updated: |-
+    Goodbye message updated:
+
+    {text}
+link_media:
+  too_large:
+    - 'The video is too big: Telegram won''t let bots send files over 50 MB.'
+    - 'This clip won''t fit in 50 MB even in bad quality, Telegram won''t let it through.'
