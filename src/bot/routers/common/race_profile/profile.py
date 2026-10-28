@@ -10,7 +10,11 @@ from ...types import UserMessage
 
 
 class RaceProfileHandler(MessageHandler[AppContext[UserMessage]]):
-    query = (Text("распрофиль", ignore_case=True) | Command("race_profile")) & HasUser()
+    query = (
+        Text("распрофиль", ignore_case=True)
+        | Text("race profile", ignore_case=True)
+        | Command("race_profile")
+    ) & HasUser()
 
     async def handle(self) -> None:
         user = await self.ctx.db_user()

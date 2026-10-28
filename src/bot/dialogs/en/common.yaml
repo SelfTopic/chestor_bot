@@ -41,7 +41,7 @@ profile:
     ❓ Race: {race}
     💵 Balance: {balance}
 
-    Race profile: /race_profile
+    Race profile: race profile or /race_profile
 errors:
   unexpected: 'Error: {error}'
   cannot_process: Can't process the request
@@ -120,13 +120,14 @@ transfer:
     - 'Transfer cancelled.'
     - 'Changed your mind? Good, greed is good.'
     - 'Called off, you keep your money.'
-  reply_usage: 'Say how much to send. Example: /transfer 500'
+  reply_usage: 'Say how much to send. Example: send 500 (or pay 500, /transfer 500)'
   usage: |-
     Usage:
-    /transfer <amount>, as a reply to the receiver's message
-    /transfer <id or @username> <amount>
+    send <amount>, as a reply to the receiver's message
+    send <id or @username> <amount>
 
-    Example: /transfer @username 500
+    You can also write pay or /transfer instead of send.
+    Example: send @username 500
   buttons:
     confirm: confirm
     decline: don't confirm
@@ -156,7 +157,7 @@ transfer:
     receiver_vanished: ❌ Receiver not found, transfer cancelled
     receiver_limit: '❌ This account already got enough transfers today. Stop sponsoring them.'
 lottery:
-  usage: '🎰 Write it like this: dep <color> <bet>. For example: dep red 500'
+  usage: '🎰 Write it like this: bet <color> <amount>. For example: bet red 500'
   failed: '❌ The bet broke. Try again.'
   bet_out_of_range:
     - '🎰 Bets go from {min_bet} to {max_bet} CheSton. No more, no less.'
@@ -164,7 +165,7 @@ lottery:
   not_enough_money:
     - '💸 You don''t have the money for that bet, hobo.'
     - '💸 Betting more than you have? That''s not how casinos work.'
-    - '💸 Earn it first, then dep, degenerate.'
+    - '💸 Earn it first, then bet, degenerate.'
   player_missing: User not found
   unknown_color:
     - '🎰 What the fuck is "{color}"? Colors: {colors}.'

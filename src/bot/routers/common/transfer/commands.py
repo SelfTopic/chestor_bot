@@ -12,4 +12,6 @@ def transfer_command(args: type[TArgs]) -> AnyCommand[TArgs]:
         Command("перевести", args, prefixes="", ignore_case=True),
         Command("подать", args, prefixes="", ignore_case=True),
         Command("кинуть", args, prefixes="", ignore_case=True),
+        Command("send", args, prefixes="", ignore_case=True),
+        Command("pay", args, prefixes="", ignore_case=True),
     )

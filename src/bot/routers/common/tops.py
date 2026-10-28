@@ -1,7 +1,7 @@
 from pydantic import Field
 from selfrot import BaseRouter, CommandArgs, MessageHandler, Rest
 from selfrot.exceptions import CommandArgsError
-from selfrot.filter import Command
+from selfrot.filter import AnyCommand, Command
 
 from src.bot.dialogs import Dialogs
 from src.bot.utils import format_amount
@@ -17,7 +17,10 @@ class TopArgs(CommandArgs):
 
 
 class TopBalanceHandler(MessageHandler[AppContext[TextMessage]]):
-    cmd = Command("топ бал", TopArgs, prefixes="", ignore_case=True)
+    cmd = AnyCommand(
+        Command("топ бал", TopArgs, prefixes="", ignore_case=True),
+        Command("top bal", TopArgs, prefixes="", ignore_case=True),
+    )
     query = cmd
     range_error = Dialogs.tops.balance.bad_count()
 

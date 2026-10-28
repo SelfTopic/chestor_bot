@@ -1,5 +1,6 @@
 from src.bot.game_configs import STATS, StatKey
 from src.bot.types import KaguneType, Race
+from src.bot.types.dep import DepColor
 from src.bot.utils import TimeParts
 
 from .line import Line, LineText
@@ -32,6 +33,14 @@ HUNGER_NAMES: dict[str, Line] = {
     "light": Dialogs.vocab.hunger.light(),
     "strong": Dialogs.vocab.hunger.strong(),
     "deadly": Dialogs.vocab.hunger.deadly(),
+}
+
+DEP_COLOR_NAMES: dict[DepColor, Line] = {
+    DepColor.RED: Dialogs.vocab.color.red(),
+    DepColor.BLUE: Dialogs.vocab.color.blue(),
+    DepColor.GREEN: Dialogs.vocab.color.green(),
+    DepColor.WHITE: Dialogs.vocab.color.white(),
+    DepColor.YELLOW: Dialogs.vocab.color.yellow(),
 }
 
 STAT_EMOJI = dict(STATS)

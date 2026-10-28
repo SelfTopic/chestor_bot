@@ -17,7 +17,11 @@ logger = logging.getLogger(__name__)
 
 class GhoulProfileHandler(MessageHandler[AppContext[UserMessage]]):
     query = (
-        (Text("распрофиль", ignore_case=True) | Command("race_profile"))
+        (
+            Text("распрофиль", ignore_case=True)
+            | Text("race profile", ignore_case=True)
+            | Command("race_profile")
+        )
         & HasUser()
         & GhoulRace()
     )

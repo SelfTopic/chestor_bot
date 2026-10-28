@@ -10,7 +10,11 @@ from ..types import UserMessage
 
 
 class ProfileHandler(MessageHandler[AppContext[UserMessage]]):
-    query = (Text("профиль", ignore_case=True) | Command("profile")) & HasUser()
+    query = (
+        Text("профиль", ignore_case=True)
+        | Text("profile", ignore_case=True)
+        | Command("profile")
+    ) & HasUser()
 
     async def handle(self) -> None:
         user = await self.ctx.db_user()

@@ -32,3 +32,9 @@ vocab:
     - Scavenger ghoul
     - Wounded outcast ghoul
     - Nameless ghoul
+  color:
+    red: red
+    blue: blue
+    green: green
+    white: white
+    yellow: yellow

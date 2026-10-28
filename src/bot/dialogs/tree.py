@@ -4199,6 +4199,23 @@ class _TransferDialogs:
         return Line("transfer.usage", {})
 
 
+class _VocabColorDialogs:
+    def blue(self) -> Line:
+        return Line("vocab.color.blue", {})
+
+    def green(self) -> Line:
+        return Line("vocab.color.green", {})
+
+    def red(self) -> Line:
+        return Line("vocab.color.red", {})
+
+    def white(self) -> Line:
+        return Line("vocab.color.white", {})
+
+    def yellow(self) -> Line:
+        return Line("vocab.color.yellow", {})
+
+
 class _VocabHungerDialogs:
     def deadly(self) -> Line:
         return Line("vocab.hunger.deadly", {})
@@ -4273,6 +4290,7 @@ class _VocabTimeDialogs:
 
 
 class _VocabDialogs:
+    color = _VocabColorDialogs()
     hunger = _VocabHungerDialogs()
     kagune = _VocabKaguneDialogs()
     race = _VocabRaceDialogs()
@@ -5523,6 +5541,11 @@ PLACEHOLDERS: dict[str, frozenset[str]] = {
     "transfer.errors.spouse": frozenset(),
     "transfer.reply_usage": frozenset(),
     "transfer.usage": frozenset(),
+    "vocab.color.blue": frozenset(),
+    "vocab.color.green": frozenset(),
+    "vocab.color.red": frozenset(),
+    "vocab.color.white": frozenset(),
+    "vocab.color.yellow": frozenset(),
     "vocab.hunger.deadly": frozenset(),
     "vocab.hunger.full": frozenset(),
     "vocab.hunger.light": frozenset(),

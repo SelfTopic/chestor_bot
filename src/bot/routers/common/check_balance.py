@@ -9,7 +9,7 @@ from ..types import UserMessage
 
 
 class BalanceHandler(MessageHandler[AppContext[UserMessage]]):
-    query = Text("бал", ignore_case=True) & HasUser()
+    query = (Text("бал", ignore_case=True) | Text("bal", ignore_case=True)) & HasUser()
 
     async def handle(self) -> None:
         user = await self.ctx.db_user()

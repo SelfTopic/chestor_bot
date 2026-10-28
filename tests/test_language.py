@@ -7,7 +7,7 @@ from src.bot.dialogs import DIALOGS_DIR, Dialogs
 from src.bot.services.dialog import DialogService
 from src.database.models import Chat, User
 
-from .conftest import message_update, owner_dict, phrase_texts
+from .conftest import matches_phrase, message_update, owner_dict, phrase_texts
 
 GROUP = -100123
 
@@ -65,3 +65,22 @@ async def test_group_speaks_chat_language_not_sender_language(
         await session.commit()
 
     assert await start(feed, "ru", chat=GROUP) == "Hi Вася"
+
+
+@pytest.mark.parametrize(
+    ("text", "phrase"),
+    [
+        ("profile", "profile.card"),
+        ("race profile", "profile.card"),
+        ("bal", "balance"),
+        ("send", "transfer.usage"),
+        ("bet", "lottery.usage"),
+        # цвет понят, раз дошло до проверки ставки
+        ("bet red 1", "lottery.bet_out_of_range"),
+    ],
+)
+async def test_english_command_words(send, text, phrase):
+    (reply,) = await send(text, uid=42)
+
+    assert matches_phrase(reply, phrase)
+
