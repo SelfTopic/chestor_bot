@@ -13,7 +13,8 @@ class StartHandler(MessageHandler[AppContext[UserMessage]]):
     async def handle(self) -> None:
         user = await self.ctx.db_user()
 
-        await self.ctx.say(Dialogs.start(name=user.first_name))
+        # Подсказка всегда по-английски: её поймут, даже если язык выбран неверно.
+        await self.ctx.say(Dialogs.start(name=user.first_name, hint=Dialogs.language.hint()))
 
 
 class StartRouter(BaseRouter[AppContext]):

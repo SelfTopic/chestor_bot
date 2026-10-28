@@ -4474,8 +4474,8 @@ class _Dialogs:
     def bot(self) -> Line:
         return Line("bot", {})
 
-    def start(self, *, name: object) -> Line:
-        return Line("start", {"name": name})
+    def start(self, *, hint: object, name: object) -> Line:
+        return Line("start", {"hint": hint, "name": name})
 
 
 Dialogs = _Dialogs()
@@ -5518,7 +5518,7 @@ PLACEHOLDERS: dict[str, frozenset[str]] = {
     "rules.missing": frozenset(),
     "snap.cooldown": frozenset({"minutes", "seconds"}),
     "snap.done": frozenset({"count", "money"}),
-    "start": frozenset({"name"}),
+    "start": frozenset({"hint", "name"}),
     "stats.bought": frozenset({"count", "price", "stat"}),
     "stats.limit": frozenset(),
     "stats.no_money": frozenset(),

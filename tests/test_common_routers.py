@@ -57,7 +57,7 @@ class TestStartAndHelp:
     async def test_start_greets_by_name(self, send, text):
         (reply,) = await send(text, uid=42, first_name="Вася")
 
-        assert reply in phrase_texts(Dialogs.start(name="Вася"))
+        assert reply in phrase_texts(Dialogs.start(name="Вася", hint=Dialogs.language.hint()))
 
     @pytest.mark.parametrize("text", ["старт", "/starts", "/helper"])
     async def test_ignores_other_text(self, send, text):

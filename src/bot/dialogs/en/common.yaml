@@ -1,7 +1,16 @@
 start:
-  - 'Hey {name}! I''m a Tokyo Ghoul bot: people get eaten, fingers get snapped, kagune fight. Commands: /help'
-  - 'Oh, fresh meat. Welcome, {name}. I''m a Tokyo Ghoul bot. What you can do here: /help'
-  - '{name}, welcome to Tokyo, where people get eaten. Command list: /help. Don''t thank me.'
+  - |-
+    Hey {name}! I'm a Tokyo Ghoul bot: people get eaten, fingers get snapped, kagune fight. Commands: /help
+
+    {hint}
+  - |-
+    Oh, fresh meat. Welcome, {name}. I'm a Tokyo Ghoul bot. What you can do here: /help
+
+    {hint}
+  - |-
+    {name}, welcome to Tokyo, where people get eaten. Command list: /help. Don't thank me.
+
+    {hint}
 help:
   sections: |-
     # 📖 CheStor help
