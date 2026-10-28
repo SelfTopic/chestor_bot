@@ -65,7 +65,7 @@ class AppContext(BaseContext[TEvent], SessionServices):
     search_service: SearchService
     link_media_service: LinkMediaService
     music_service: MusicService
-    player_docs_service: PlayerDocsService
+    player_docs: dict[str, PlayerDocsService]
     quote_service: QuoteService
     rp_commands_service: RpCommandsService
     wordle_service: WordleService

@@ -14,7 +14,7 @@ from src.bot.services.player_docs import PlayerDocsService, load_pages
 from src.bot.services.player_docs.pages import load_contents_template, normalize, topics
 from src.config import settings
 
-from .conftest import button_data, callback_update, only_text
+from .conftest import button_data, callback_update, message_update, only_text
 
 CHANNEL = "@docs_test"
 
@@ -223,3 +223,27 @@ async def test_typo_gets_suggestions_and_a_press_turns_into_the_topic(feed, send
     await feed(callback_update(button_data(body, "щелк")))
     (edit,) = telegram.bodies("editMessageText")
     assert edit["rich_message"]["markdown"] == snap.markdown
+
+
+async def test_english_help_comes_from_english_docs_and_channel(
+    feed, telegram, session_factory, monkeypatch
+):
+    monkeypatch.setattr(settings, "DOCS_CHANNEL_EN", "@chestor_docs_en")
+    async with session_factory() as session:
+        await DocsPostRepository(session).save("@chestor_docs_en", "04-hunger", PublishedPost(5, "x"))
+        await session.commit()
+    hunger = next(
+        topic
+        for page in load_pages(Path("docs/players/en"))
+        for topic in topics(page)
+        if "hunger" in topic.words
+    )
+    update = message_update("/help hunger")
+    update["message"]["from"]["language_code"] = "en"
+
+    await feed(update)
+
+    (body,) = telegram.bodies("sendRichMessage")
+    assert body["rich_message"]["markdown"] == hunger.markdown
+    (row,) = body["reply_markup"]["inline_keyboard"]
+    assert row[0]["url"] == "https://t.me/chestor_docs_en/5"
