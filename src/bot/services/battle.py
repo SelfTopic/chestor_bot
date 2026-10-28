@@ -404,11 +404,11 @@ class BattleService:
     # Лок берёт вызывающий: у засады «занят» значит «засады не было», а у «бить моба» это
     # отказ.
     async def fight_mob(
-        self, user: User, ghoul: Ghoul, *, is_forced: bool, reward_log: str
+        self, user: User, ghoul: Ghoul, *, mob_name: str, is_forced: bool, reward_log: str
     ) -> MobFight:
         player = Combatant(user, ghoul)
         fighter = self._fighter(player)
-        result, mob = self.engine.run_against_mob(fighter)
+        result, mob = self.engine.run_against_mob(fighter, mob_name)
         await self._save_health(player, result.stats_a.health, result.final_hp_a)
 
         reward_level_progress = reward_rc = reward_cheston = None

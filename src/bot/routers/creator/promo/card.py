@@ -82,7 +82,7 @@ class PromoCard(View):
             (card.status(), status_text(ctx, promo)),
             (card.rewards(), rewards_text(ctx, promo)),
             (card.activations(), activations_text(ctx, promo)),
-            (card.term(), ctx.text(term_line(promo))),
+            (card.term(), ctx.text(term_line(ctx.text, promo))),
             (card.created(), when_who(promo.created_at, promo.created_by)),
         ]
         if promo.deleted_at is not None and promo.deleted_by is not None:

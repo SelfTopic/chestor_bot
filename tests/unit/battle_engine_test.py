@@ -258,8 +258,8 @@ def test_run_against_mob_is_deterministic_with_the_same_seed():
     player1 = service.ghoul_to_fighter(ghoul, "chestor", FakeGhoulService())
     player2 = service.ghoul_to_fighter(ghoul, "chestor", FakeGhoulService())
 
-    result1, mob1 = service.run_against_mob(player1, rng=random.Random(1))
-    result2, mob2 = service.run_against_mob(player2, rng=random.Random(1))
+    result1, mob1 = service.run_against_mob(player1, "Моб", rng=random.Random(1))
+    result2, mob2 = service.run_against_mob(player2, "Моб", rng=random.Random(1))
 
     assert result1.winner == result2.winner
     assert mob1.snapshot.strength == mob2.snapshot.strength
@@ -275,7 +275,7 @@ def test_run_against_mob_always_compresses_hp_no_choice():
     service = make_service()
     player = service.ghoul_to_fighter(ghoul, "chestor", FakeGhoulService())
 
-    result, mob = service.run_against_mob(player, rng=random.Random(3))
+    result, mob = service.run_against_mob(player, "Моб", rng=random.Random(3))
 
     assert result.winner in ("a", "b", None)
     assert mob.name  # моб реально сгенерирован (не заглушка)

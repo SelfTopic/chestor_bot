@@ -39,7 +39,7 @@ def test_generate_mob_scales_all_stats_by_the_same_common_multiplier():
     # Общий множитель на ВСЕ статы разом, а не по отдельности - иначе моб
     # рассыпался бы на набор несвязанных случайных чисел (см. чат).
     player = make_player_snapshot()
-    mob = MobService().generate_mob(player, rng=random.Random(0))
+    mob = MobService().generate_mob(player, "Моб", rng=random.Random(0))
 
     ratios = [
         mob.strength / player.strength,
@@ -58,7 +58,7 @@ def test_generate_mob_multiplier_stays_within_configured_range():
     player = make_player_snapshot()
     rng = random.Random(1)
     for _ in range(500):
-        mob = MobService().generate_mob(player, rng=rng)
+        mob = MobService().generate_mob(player, "Моб", rng=rng)
         ratio = mob.strength / player.strength
         assert MOB_CONFIG.stat_multiplier_min - 0.01 <= ratio <= MOB_CONFIG.stat_multiplier_max + 0.01
 
@@ -73,8 +73,8 @@ def test_generate_mob_uses_vacuum_stats_not_effective():
     # тот же диапазон исходов независимо от hunger.
     full = make_player_snapshot(hunger=100)
     hungry = make_player_snapshot(hunger=0)  # тот же вакуумный strength=1000
-    mob_full = MobService().generate_mob(full, rng=random.Random(7))
-    mob_hungry = MobService().generate_mob(hungry, rng=random.Random(7))
+    mob_full = MobService().generate_mob(full, "Моб", rng=random.Random(7))
+    mob_hungry = MobService().generate_mob(hungry, "Моб", rng=random.Random(7))
     assert mob_full.strength == mob_hungry.strength
 
 
@@ -83,23 +83,23 @@ def test_generate_mob_is_a_clean_snapshot_with_no_modifier_chain_bonuses():
     # превращается в тождество (compute_effective_stats), поэтому итоговые
     # боевые статы моба честно равны тому, что сюда положили.
     player = make_player_snapshot()
-    mob = MobService().generate_mob(player, rng=random.Random(0))
+    mob = MobService().generate_mob(player, "Моб", rng=random.Random(0))
 
     assert mob.hunger == 100
     assert mob.is_kakuja is False
     assert mob.kagune_strength == {}
 
 
-def test_generate_mob_name_comes_from_the_configured_pool():
+def test_generate_mob_takes_the_given_name():
     player = make_player_snapshot()
-    mob = MobService().generate_mob(player, rng=random.Random(0))
-    assert mob.name in MOB_CONFIG.names
+    mob = MobService().generate_mob(player, "Моб", rng=random.Random(0))
+    assert mob.name == "Моб"
 
 
 def test_generate_mob_is_deterministic_with_the_same_seed():
     player = make_player_snapshot()
-    mob1 = MobService().generate_mob(player, rng=random.Random(42))
-    mob2 = MobService().generate_mob(player, rng=random.Random(42))
+    mob1 = MobService().generate_mob(player, "Моб", rng=random.Random(42))
+    mob2 = MobService().generate_mob(player, "Моб", rng=random.Random(42))
     assert mob1 == mob2
 
 
@@ -110,13 +110,13 @@ def test_generate_mob_never_produces_an_invalid_snapshot_for_a_low_stat_player()
     weak_player = make_player_snapshot(strength=1, dexterity=1, regeneration=1, speed=1, health=1)
     rng = random.Random(2)
     for _ in range(200):
-        mob = MobService().generate_mob(weak_player, rng=rng)
+        mob = MobService().generate_mob(weak_player, "Моб", rng=rng)
         validate_snapshot(mob)  # не должно бросать InvalidBattleStatsError
 
 
 def test_generate_mob_id_is_not_a_real_player_id():
     player = make_player_snapshot(id=12345)
-    mob = MobService().generate_mob(player, rng=random.Random(0))
+    mob = MobService().generate_mob(player, "Моб", rng=random.Random(0))
     assert mob.id != player.id
 
 
@@ -131,7 +131,7 @@ def test_generate_mob_health_scales_from_max_health_not_current_health():
     player = make_player_snapshot(health=100, max_health=5)
     rng = random.Random(3)
     for _ in range(200):
-        mob = MobService().generate_mob(player, rng=rng)
+        mob = MobService().generate_mob(player, "Моб", rng=rng)
         # health=100 с множителем 0.5-2.0 дал бы 50-200, max_health=5 - 2-10
         # (округление + пол в 1) - диапазоны не пересекаются, поэтому
         # достаточно и одного прогона, но гоняем несколько для надёжности.

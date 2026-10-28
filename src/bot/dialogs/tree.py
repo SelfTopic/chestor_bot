@@ -4258,11 +4258,29 @@ class _VocabStatDialogs:
         return Line("vocab.stat.strength", {})
 
 
+class _VocabTimeDialogs:
+    def days(self, *, count: object) -> Line:
+        return Line("vocab.time.days", {"count": count})
+
+    def hours(self, *, count: object) -> Line:
+        return Line("vocab.time.hours", {"count": count})
+
+    def minutes(self, *, count: object) -> Line:
+        return Line("vocab.time.minutes", {"count": count})
+
+    def months(self, *, count: object) -> Line:
+        return Line("vocab.time.months", {"count": count})
+
+
 class _VocabDialogs:
     hunger = _VocabHungerDialogs()
     kagune = _VocabKaguneDialogs()
     race = _VocabRaceDialogs()
     stat = _VocabStatDialogs()
+    time = _VocabTimeDialogs()
+
+    def mob(self) -> Line:
+        return Line("vocab.mob", {})
 
 
 class _WordleErrorsDialogs:
@@ -5513,6 +5531,7 @@ PLACEHOLDERS: dict[str, frozenset[str]] = {
     "vocab.kagune.koukaku": frozenset(),
     "vocab.kagune.rinkaku": frozenset(),
     "vocab.kagune.ukaku": frozenset(),
+    "vocab.mob": frozenset(),
     "vocab.race.ccg": frozenset(),
     "vocab.race.ghoul": frozenset(),
     "vocab.race.human": frozenset(),
@@ -5522,6 +5541,10 @@ PLACEHOLDERS: dict[str, frozenset[str]] = {
     "vocab.stat.regeneration": frozenset(),
     "vocab.stat.speed": frozenset(),
     "vocab.stat.strength": frozenset(),
+    "vocab.time.days": frozenset({"count"}),
+    "vocab.time.hours": frozenset({"count"}),
+    "vocab.time.minutes": frozenset({"count"}),
+    "vocab.time.months": frozenset({"count"}),
     "wordle.errors.not_russian": frozenset(),
     "wordle.errors.wrong_length": frozenset({"length"}),
     "wordle.guess.lost": frozenset({"word"}),

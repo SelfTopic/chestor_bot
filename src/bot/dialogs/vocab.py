@@ -1,5 +1,6 @@
 from src.bot.game_configs import STATS, StatKey
 from src.bot.types import KaguneType, Race
+from src.bot.utils import TimeParts
 
 from .line import Line, LineText
 from .tree import Dialogs
@@ -38,3 +39,14 @@ STAT_EMOJI = dict(STATS)
 
 def stat_label(text: LineText, key: StatKey) -> str:
     return f"{STAT_EMOJI[key]}{text(STAT_NAMES[key])}"
+
+TIME_UNITS = {
+    "months": Dialogs.vocab.time.months,
+    "days": Dialogs.vocab.time.days,
+    "hours": Dialogs.vocab.time.hours,
+    "minutes": Dialogs.vocab.time.minutes,
+}
+
+
+def time_text(text: LineText, parts: TimeParts) -> str:
+    return " ".join(text(TIME_UNITS[unit](count=count)) for count, unit in parts)

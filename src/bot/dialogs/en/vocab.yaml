@@ -20,3 +20,15 @@ vocab:
     light: slightly hungry
     strong: very hungry
     deadly: starving to death
+  time:
+    months: '{count}mo'
+    days: '{count}d'
+    hours: '{count}h'
+    minutes: '{count}m'
+  mob:
+    - Feral ghoul
+    - Hungry drifter ghoul
+    - Mad ghoul
+    - Scavenger ghoul
+    - Wounded outcast ghoul
+    - Nameless ghoul

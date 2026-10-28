@@ -27,13 +27,13 @@ from src.bot.dialogs import Dialogs
 from src.bot.exceptions import QuizModeDisabled
 from src.bot.game_configs import QUIZ_CONFIG, STAT_UPGRADE_CONFIG
 from src.bot.repositories import GhoulRepository, UserCooldownRepository
-from src.bot.dialogs.vocab import HUNGER_NAMES, KAGUNE_NAMES, stat_label
+from src.bot.dialogs.vocab import HUNGER_NAMES, KAGUNE_NAMES, stat_label, time_text
 from src.bot.tasks import QuizStreakExpiry
 from src.bot.types import KaguneType
 from src.bot.utils import (
     calculate_kagune,
     format_amount,
-    format_duration,
+    duration_parts,
     get_hunger_tier,
     health_regen_per_hour,
     hours_until_full_health,
@@ -829,7 +829,9 @@ class TestRegenStatus:
         per_hour = health_regen_per_hour(3, 100, KaguneType.UKAKU.value["bit"], False)
         hours = hours_until_full_health(1, 500, per_hour)
         assert hours is not None
-        until = Dialogs.status.until_healthy(duration=format_duration(int(hours * 3600)))
+        until = Dialogs.status.until_healthy(
+            duration=time_text(only_text, duration_parts(int(hours * 3600)))
+        )
         assert reply == only_text(
             Dialogs.status.regen(
                 health=1,
