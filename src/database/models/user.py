@@ -50,6 +50,12 @@ class User(Base):
     # Фоновой рассылке язык Telegram взять неоткуда, кроме базы.
     telegram_language: Mapped[Optional[str]] = mapped_column(nullable=True)
 
+    # NULL — за хештег культа ещё не платили.
+    cult_rewarded_at: Mapped[Optional[datetime]] = mapped_column(nullable=True)
+    cult_notifications: Mapped[bool] = mapped_column(
+        nullable=False, default=True, server_default="true"
+    )
+
     @property
     def full_name(self) -> str:
         return self.first_name + " " + (self.last_name or "")

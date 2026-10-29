@@ -331,3 +331,15 @@ class MarriageConfig:
 
 
 MARRIAGE_CONFIG = MarriageConfig()
+
+
+@dataclass
+class CultConfig:
+    hashtags: tuple[str, ...] = ("#рабчестора", "#честормойпапа")
+    reward: int = 10_000
+    interval_seconds: int = 3600
+    # Ник бот узнаёт только из апдейтов: давно молчащему мог бы платить за снятый хештег.
+    active_within_seconds: int = 24 * 3600
+
+
+CULT_CONFIG = CultConfig()

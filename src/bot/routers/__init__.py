@@ -4,7 +4,7 @@ from ..context import AppContext
 from .ai import AIRouter
 from .arcade import ArcadeRouter
 from .chat_member_update import ChatMemberUpdateRouter
-from .common import CommonRouter
+from .common import CommonRouter, reward_cult_hashtags
 from .community import CommunityRouter, expire_overdue_votes
 from .creator import CreatorRouter
 from .ghoul import GhoulRouter, expire_overdue_duels, expire_overdue_streaks
@@ -43,4 +43,5 @@ __all__ = [
     "expire_overdue_duels",
     "expire_overdue_streaks",
     "expire_overdue_votes",
+    "reward_cult_hashtags",
 ]

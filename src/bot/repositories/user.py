@@ -2,7 +2,7 @@ import logging
 from datetime import datetime
 from typing import Any, Optional, Union
 
-from sqlalchemy import bindparam, exists, select, update
+from sqlalchemy import bindparam, exists, func, or_, select, update
 from sqlalchemy.dialects.postgresql import insert
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -71,6 +71,33 @@ class UserRepository(Base):
         await self.session.refresh(user)
         logger.debug(f"User record upserted successfully: ID {user.id}")
         return user
+
+    # Отметка выплаты ставится тем же UPDATE, что и выбор: два тика не заплатят дважды.
+    async def claim_cult_rewards(
+        self, hashtags: tuple[str, ...], active_since: datetime, due_before: datetime, now: datetime
+    ) -> list[tuple[int, bool]]:
+        name = func.replace(
+            func.lower(
+                func.coalesce(User.first_name, "") + " " + func.coalesce(User.last_name, "")
+            ),
+            "ё",
+            "е",
+        )
+        stmt = (
+            update(User)
+            .where(
+                or_(*(name.contains(tag.replace("ё", "е")) for tag in hashtags)),
+                User.last_active_at >= active_since,
+                or_(User.cult_rewarded_at.is_(None), User.cult_rewarded_at <= due_before),
+                User.is_banned.is_(False),
+                User.is_service.is_(False),
+            )
+            .values(cult_rewarded_at=now)
+            .returning(
+                User.telegram_id, User.cult_notifications & User.has_private_chat
+            )
+        )
+        return [(row[0], bool(row[1])) for row in (await self.session.execute(stmt)).all()]
 
     async def languages(
         self, telegram_id: int

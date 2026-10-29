@@ -790,6 +790,17 @@ class _CombatPowerDialogs:
         )
 
 
+class _CultDialogs:
+    def mute_button(self) -> Line:
+        return Line("cult.mute_button", {})
+
+    def muted(self) -> Line:
+        return Line("cult.muted", {})
+
+    def reward(self, *, amount: object) -> Line:
+        return Line("cult.reward", {"amount": amount})
+
+
 class _DivorceDialogs:
     def ask(self) -> Line:
         return Line("divorce.ask", {})
@@ -4433,6 +4444,7 @@ class _Dialogs:
     banned = _BannedDialogs()
     coffee = _CoffeeDialogs()
     combat_power = _CombatPowerDialogs()
+    cult = _CultDialogs()
     divorce = _DivorceDialogs()
     duel = _DuelDialogs()
     eat_human = _EatHumanDialogs()
@@ -4683,6 +4695,9 @@ PLACEHOLDERS: dict[str, frozenset[str]] = {
     "combat_power.rich.title": frozenset({"danger_rank", "name"}),
     "combat_power.rich.total_row": frozenset(),
     "combat_power.short": frozenset({"effective_power", "vacuum_power"}),
+    "cult.mute_button": frozenset(),
+    "cult.muted": frozenset(),
+    "cult.reward": frozenset({"amount"}),
     "divorce.ask": frozenset(),
     "divorce.button": frozenset(),
     "divorce.dissolved": frozenset({"amount", "heir", "name"}),
