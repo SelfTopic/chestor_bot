@@ -285,6 +285,13 @@ link_media:
   too_large:
     - 'The video is too big: Telegram won''t let bots send files over 50 MB.'
     - 'This clip won''t fit in 50 MB even in bad quality, Telegram won''t let it through.'
+cult:
+  reward:
+    - '🙏 The Chestor cult sees the hashtag in your name: +{amount} CheSton.'
+    - '🙏 A loyal slave of Chestor. Here, {amount} CheSton.'
+    - '🙏 Daddy likes your name. +{amount} CheSton.'
+  mute_button: Turn off these notifications
+  muted: 'Notifications off. The CheSton keep coming.'
 language:
   choose: 'Choose the bot language:'
   chat_set: 'Chat language: {language}'

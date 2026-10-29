@@ -52,6 +52,7 @@ from .services import (
 from .services.battle import BattleService
 from .services.broadcast import BroadcastService
 from .services.dialog import DialogService
+from .services.cult import CultService
 from .services.family import FamilyService
 from .services.language import LanguageService
 from .services.ghoul_game import CoffeeService, LotteryService
@@ -111,6 +112,10 @@ class SessionServices:
     @cached_property
     def chat_repository(self) -> ChatRepository:
         return ChatRepository(self.session)
+
+    @cached_property
+    def cult_service(self) -> CultService:
+        return CultService(self.user_repository, self.user_service)
 
     @cached_property
     def language_service(self) -> LanguageService:

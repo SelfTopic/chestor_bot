@@ -6,7 +6,12 @@ from selfrot import BaseTask, Every
 from src.config import settings
 
 from ..context import AppContext
-from ..routers import expire_overdue_duels, expire_overdue_streaks, expire_overdue_votes
+from ..routers import (
+    expire_overdue_duels,
+    expire_overdue_streaks,
+    expire_overdue_votes,
+    reward_cult_hashtags,
+)
 from ..services.analytics import FLUSH_INTERVAL
 from ..services.media_tools import TOOLS_UPDATE_INTERVAL, MediaToolsUpdater
 from ..services.moderation import ModerationTicker
@@ -26,6 +31,11 @@ class FamilyVoteExpiry(BaseTask[AppContext[Any]]):
 class QuizStreakExpiry(BaseTask[AppContext[Any]]):
     async def run(self) -> None:
         await expire_overdue_streaks(self.ctx, self.ctx.bot)
+
+
+class CultReward(BaseTask[AppContext[Any]]):
+    async def run(self) -> None:
+        await reward_cult_hashtags(self.ctx, self.ctx.bot)
 
 
 class Notifications(BaseTask[AppContext[Any]]):
@@ -56,6 +66,8 @@ TASKS = (
     Every(30, FamilyVoteExpiry),
     Every(10, QuizStreakExpiry),
     Every(30, Notifications),
+    # Сам час отсчитывает отметка выплаты в БД: перезапуск бота его не сбивает.
+    Every(300, CultReward),
     Every(10, ModerationExpiry),
     Every(FLUSH_INTERVAL, AnalyticsFlush),
     Every(TOOLS_UPDATE_INTERVAL, MediaToolsUpdate),
@@ -64,6 +76,7 @@ TASKS = (
 __all__ = [
     "TASKS",
     "AnalyticsFlush",
+    "CultReward",
     "QuizStreakExpiry",
     "DuelExpiry",
     "FamilyVoteExpiry",

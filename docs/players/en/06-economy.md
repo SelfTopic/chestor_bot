@@ -12,6 +12,13 @@ help: money, cheston, earn, earning, economy
 | **fight mob** | depends on level | once every 10 minutes |
 | new level | more the higher the level | — |
 
+### cult hashtags
+
+Wear `#рабчестора` or `#честормойпапа` in your Telegram name and get **10,000 CheSton** every
+hour, as long as you've used the bot at least once in the last day. The bot tells you in a
+private chat; the button under the message turns the notifications off, and the CheSton keep
+coming.
+
 ### bal
 
 Your CheSton balance. If you're in a family, it's the shared family account: family members

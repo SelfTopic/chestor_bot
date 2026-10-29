@@ -4,6 +4,7 @@ from ...context import AppContext
 from .bot_router import BotRouter
 from .check_balance import BalanceRouter
 from .check_rules_router import CheckRulesRouter
+from .cult import CultRouter, reward_cult_hashtags
 from .edits_router import EditsRouter
 from .fun import FunRouter
 from .help_router import HelpRouter
@@ -28,8 +29,12 @@ class CommonRouter(BaseRouter[AppContext]):
         RaceProfileRouter,
         CheckRulesRouter,
         CommonTopsRouter,
+        CultRouter,
         TransferRouter,
         # Раньше FunRouter: иначе «1000-7» посчитал бы калькулятор.
         EditsRouter,
         FunRouter,
     )
+
+
+__all__ = ["CommonRouter", "reward_cult_hashtags"]
