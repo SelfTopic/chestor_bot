@@ -4215,11 +4215,18 @@ class _TopsBalanceDialogs:
     def bad_count(self) -> Line:
         return Line("tops.balance.bad_count", {})
 
-    def chat_message(self, *, count: object, rows: object) -> Line:
-        return Line("tops.balance.chat_message", {"count": count, "rows": rows})
+    def chat_message(self, *, count: object, rows: object, you: object) -> Line:
+        return Line(
+            "tops.balance.chat_message",
+            {
+                "count": count,
+                "rows": rows,
+                "you": you,
+            },
+        )
 
-    def message(self, *, count: object, rows: object) -> Line:
-        return Line("tops.balance.message", {"count": count, "rows": rows})
+    def message(self, *, count: object, rows: object, you: object) -> Line:
+        return Line("tops.balance.message", {"count": count, "rows": rows, "you": you})
 
     def row(self, *, balance: object, name: object, place: object) -> Line:
         return Line(
@@ -4250,8 +4257,23 @@ class _TopsMessagesDialogs:
     def empty(self) -> Line:
         return Line("tops.messages.empty", {})
 
-    def message(self, *, rows: object, title: object) -> Line:
-        return Line("tops.messages.message", {"rows": rows, "title": title})
+    def message(
+        self,
+        *,
+        rows: object,
+        title: object,
+        total: object,
+        you: object,
+    ) -> Line:
+        return Line(
+            "tops.messages.message",
+            {
+                "rows": rows,
+                "title": title,
+                "total": total,
+                "you": you,
+            },
+        )
 
     def only_group(self) -> Line:
         return Line("tops.messages.only_group", {})
@@ -4278,6 +4300,18 @@ class _TopsMessagesDialogs:
     def title_week(self) -> Line:
         return Line("tops.messages.title_week", {})
 
+    def total_all(self, *, count: object) -> Line:
+        return Line("tops.messages.total_all", {"count": count})
+
+    def total_day(self, *, count: object) -> Line:
+        return Line("tops.messages.total_day", {"count": count})
+
+    def total_month(self, *, count: object) -> Line:
+        return Line("tops.messages.total_month", {"count": count})
+
+    def total_week(self, *, count: object) -> Line:
+        return Line("tops.messages.total_week", {"count": count})
+
 
 class _TopsDialogs:
     balance = _TopsBalanceDialogs()
@@ -4293,8 +4327,8 @@ class _TopsDialogs:
     def in_chat(self, *, title: object) -> Line:
         return Line("tops.in_chat", {"title": title})
 
-    def list(self, *, rows: object, title: object) -> Line:
-        return Line("tops.list", {"rows": rows, "title": title})
+    def list(self, *, rows: object, title: object, you: object) -> Line:
+        return Line("tops.list", {"rows": rows, "title": title, "you": you})
 
     def not_a_number(self) -> Line:
         return Line("tops.not_a_number", {})
@@ -4316,6 +4350,12 @@ class _TopsDialogs:
 
     def unknown_name(self) -> Line:
         return Line("tops.unknown_name", {})
+
+    def you(self, *, place: object, value: object) -> Line:
+        return Line("tops.you", {"place": place, "value": value})
+
+    def you_absent(self) -> Line:
+        return Line("tops.you_absent", {})
 
 
 class _TransferButtonsDialogs:
@@ -5759,8 +5799,8 @@ PLACEHOLDERS: dict[str, frozenset[str]] = {
     "subscription.required_alert": frozenset({"channel"}),
     "subscription.subscribe_button": frozenset(),
     "tops.balance.bad_count": frozenset(),
-    "tops.balance.chat_message": frozenset({"count", "rows"}),
-    "tops.balance.message": frozenset({"count", "rows"}),
+    "tops.balance.chat_message": frozenset({"count", "rows", "you"}),
+    "tops.balance.message": frozenset({"count", "rows", "you"}),
     "tops.balance.row": frozenset({"balance", "name", "place"}),
     "tops.chat_only_group": frozenset(),
     "tops.empty": frozenset(),
@@ -5769,15 +5809,19 @@ PLACEHOLDERS: dict[str, frozenset[str]] = {
     "tops.kagune.sum_button": frozenset(),
     "tops.kagune.sum_title": frozenset({"count"}),
     "tops.kagune.type_title": frozenset({"count", "kagune"}),
-    "tops.list": frozenset({"rows", "title"}),
+    "tops.list": frozenset({"rows", "title", "you"}),
     "tops.messages.empty": frozenset(),
-    "tops.messages.message": frozenset({"rows", "title"}),
+    "tops.messages.message": frozenset({"rows", "title", "total", "you"}),
     "tops.messages.only_group": frozenset(),
     "tops.messages.row": frozenset({"messages", "name", "place"}),
     "tops.messages.title_all": frozenset(),
     "tops.messages.title_day": frozenset(),
     "tops.messages.title_month": frozenset(),
     "tops.messages.title_week": frozenset(),
+    "tops.messages.total_all": frozenset({"count"}),
+    "tops.messages.total_day": frozenset({"count"}),
+    "tops.messages.total_month": frozenset({"count"}),
+    "tops.messages.total_week": frozenset({"count"}),
     "tops.not_a_number": frozenset(),
     "tops.out_of_range": frozenset(),
     "tops.power_title": frozenset({"count"}),
@@ -5785,6 +5829,8 @@ PLACEHOLDERS: dict[str, frozenset[str]] = {
     "tops.row": frozenset({"name", "place", "value"}),
     "tops.snap_title": frozenset({"count"}),
     "tops.unknown_name": frozenset(),
+    "tops.you": frozenset({"place", "value"}),
+    "tops.you_absent": frozenset(),
     "transfer.ask": frozenset({"amount", "confirm", "receiver"}),
     "transfer.ask_again": frozenset({"amount", "confirm"}),
     "transfer.buttons.confirm": frozenset(),

@@ -82,7 +82,8 @@ class TestTops:
                 start=1,
             )
         )
-        assert reply == only_text(Dialogs.tops.balance.message(count=20, rows=rows))
+        you = only_text(Dialogs.tops.you(place=4, value="0"))
+        assert reply == only_text(Dialogs.tops.balance.message(count=20, rows=rows, you=you))
 
     async def test_count_limits_the_top(self, send):
         (reply,) = await send("Топ Бал 2", uid=50)

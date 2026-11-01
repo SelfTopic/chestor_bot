@@ -330,7 +330,8 @@ async def test_family_shares_one_account_and_one_line_in_the_top(send, session_f
         )
         for place, (name, amount) in enumerate([(family, 1000), ("Коля", 700)], start=1)
     )
-    assert top == only_text(Dialogs.tops.balance.message(count=2, rows=rows))
+    you = only_text(Dialogs.tops.you(place=2, value=format_amount(700)))
+    assert top == only_text(Dialogs.tops.balance.message(count=2, rows=rows, you=you))
 
 
 async def test_spouses_neither_duel_nor_transfer_to_each_other(send, session_factory):
@@ -386,7 +387,8 @@ async def test_family_is_named_only_when_everyone_agrees_and_the_top_shows_the_n
     row = only_text(
         Dialogs.tops.balance.row(place=1, name="Антейку навсегда", balance=format_amount(1000))
     )
-    assert top == only_text(Dialogs.tops.balance.message(count=1, rows=row))
+    you = only_text(Dialogs.tops.you(place=2, value=format_amount(0)))
+    assert top == only_text(Dialogs.tops.balance.message(count=1, rows=row, you=you))
 
 
 async def test_family_view_shows_the_name_the_account_and_the_members(send, session_factory):

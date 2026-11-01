@@ -8,7 +8,7 @@ from selfrot.filter import AnyCommand
 from src.bot.dialogs import Dialogs, Line
 
 from ....context import AppContext
-from ...chat_scope import chat_scoped, is_group, wants_chat
+from ...tops import chat_scoped, is_group, wants_chat
 
 
 class GhoulTopArgs(CommandArgs):
@@ -30,9 +30,9 @@ def top_title(ctx: AppContext[Any], title: Line, chat_id: int | None) -> str:
     return text if chat_id is None else ctx.text(Dialogs.tops.in_chat(title=text))
 
 
-def top_text(ctx: AppContext[Any], title: str, rows: list[str]) -> str:
+def top_text(ctx: AppContext[Any], title: str, rows: list[str], you: str) -> str:
     body = "\n".join(rows) if rows else ctx.text(Dialogs.tops.empty())
-    return ctx.text(Dialogs.tops.list(title=title, rows=body))
+    return ctx.text(Dialogs.tops.list(title=title, rows=body, you=you))
 
 
 class GhoulTopHandler:

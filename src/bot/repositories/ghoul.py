@@ -1,5 +1,5 @@
 import logging
-from typing import Any, List, Optional
+from typing import Any, List, Literal, Optional
 
 from sqlalchemy import desc, exists, func, select, update
 from sqlalchemy.dialects.postgresql import insert
@@ -12,6 +12,8 @@ from .base import Base
 from .chat_participant import in_chat
 
 logger = logging.getLogger(__name__)
+
+TopKind = Literal["snap", "power", "kagune"]
 
 
 def _total_kagune_strength() -> Any:
@@ -132,42 +134,57 @@ class GhoulRepository(Base):
 
         return cleaned_bit
 
-    def _top(self, chat_id: Optional[int]) -> Any:
+    # Список топа и место игрока в нём считаются одним порядком: место совпадает с номером
+    # строки, поэтому у равных значений есть последний ключ — id гуля.
+    def _ranking(
+        self, kind: TopKind, chat_id: Optional[int], kagune_type: Optional[KaguneType]
+    ) -> tuple[Any, list[Any]]:
         stmt = select(Ghoul).where(Ghoul.is_dead.is_(False))
         if chat_id is not None:
             stmt = stmt.where(in_chat(chat_id, Ghoul.telegram_id))
-        return stmt
-
-    async def get_top_snap(self, count: int, chat_id: Optional[int] = None) -> List[Ghoul]:
-        stmt = self._top(chat_id).order_by(desc(Ghoul.snap_count)).limit(count)
-        return list(await self.session.scalars(stmt))
-
-    async def get_top_power(self, count: int, chat_id: Optional[int] = None) -> List[Ghoul]:
-        power = (
-            Ghoul.strength
-            + Ghoul.dexterity
-            + Ghoul.speed
-            + Ghoul.max_health
-            + Ghoul.regeneration
-            + _total_kagune_strength()
-        )
-        stmt = self._top(chat_id).order_by(desc(power), Ghoul.id).limit(count)
-        return list(await self.session.scalars(stmt))
-
-    async def get_top_kagune(
-        self,
-        count: int,
-        kagune_type: Optional[KaguneType] = None,
-        chat_id: Optional[int] = None,
-    ) -> List[Ghoul]:
-        stmt = self._top(chat_id)
-        if kagune_type is None:
-            stmt = stmt.order_by(desc(_total_kagune_strength()))
+        if kind == "snap":
+            value = Ghoul.snap_count
+        elif kind == "power":
+            value = (
+                Ghoul.strength
+                + Ghoul.dexterity
+                + Ghoul.speed
+                + Ghoul.max_health
+                + Ghoul.regeneration
+                + _total_kagune_strength()
+            )
+        elif kagune_type is None:
+            value = _total_kagune_strength()
         else:
             # В топ по типу попадают только те, у кого тип открыт (NULL не считается нулём).
-            column = getattr(Ghoul, kagune_type.value["strength_column"])
-            stmt = stmt.where(column.isnot(None)).order_by(desc(column))
-        return list(await self.session.scalars(stmt.limit(count)))
+            value = getattr(Ghoul, kagune_type.value["strength_column"])
+            stmt = stmt.where(value.isnot(None))
+        return stmt, [desc(value), Ghoul.id]
+
+    async def top(
+        self,
+        kind: TopKind,
+        count: int,
+        chat_id: Optional[int] = None,
+        kagune_type: Optional[KaguneType] = None,
+    ) -> List[Ghoul]:
+        stmt, order = self._ranking(kind, chat_id, kagune_type)
+        return list(await self.session.scalars(stmt.order_by(*order).limit(count)))
+
+    async def place(
+        self,
+        kind: TopKind,
+        telegram_id: int,
+        chat_id: Optional[int] = None,
+        kagune_type: Optional[KaguneType] = None,
+    ) -> Optional[int]:
+        stmt, order = self._ranking(kind, chat_id, kagune_type)
+        ranked = stmt.with_only_columns(
+            Ghoul.telegram_id, func.row_number().over(order_by=order).label("place")
+        ).subquery()
+        return await self.session.scalar(
+            select(ranked.c.place).where(ranked.c.telegram_id == telegram_id)
+        )
 
     def _calculate_kagune(self, bit: int) -> List[KaguneType]:
         result = []

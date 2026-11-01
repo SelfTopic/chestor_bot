@@ -9,9 +9,11 @@ from selfrot.types import DataCallbackQuery, InlineKeyboardMarkup, Message, Text
 from src.bot.dialogs import Dialogs
 from src.bot.dialogs.vocab import KAGUNE_NAMES
 from src.bot.types import KaguneType
+from src.database.models import Ghoul
 
 from ....context import AppContext
 from .callback_data import TopKaguneChatView, TopKaguneView, ViewName
+from ...tops import you_line
 from .count import GhoulTopHandler, top_command, top_row, top_text, top_title
 
 _VIEWS: tuple[ViewName, ...] = get_args(ViewName)
@@ -76,19 +78,20 @@ async def _render(
         )
     )
 
+    def strength(ghoul: Ghoul) -> object:
+        if kagune_type is None:
+            return ghoul_service.total_kagune_strength(ghoul)
+        return ghoul_service.get_kagune_strength(ghoul, kagune_type)
+
     names = await ctx.first_names([ghoul.telegram_id for ghoul in top])
     rows = [
-        top_row(
-            ctx,
-            place,
-            names.get(ghoul.telegram_id),
-            ghoul_service.total_kagune_strength(ghoul)
-            if kagune_type is None
-            else ghoul_service.get_kagune_strength(ghoul, kagune_type),
-        )
+        top_row(ctx, place, names.get(ghoul.telegram_id), strength(ghoul))
         for place, ghoul in enumerate(top, start=1)
     ]
-    text = top_text(ctx, top_title(ctx, heading, chat_id), rows)
+    me = await ctx.db_ghoul()
+    place = await ghoul_service.top_place("kagune", me.telegram_id, chat_id, kagune_type)
+    you = you_line(ctx, place, strength(me))
+    text = top_text(ctx, top_title(ctx, heading, chat_id), rows, you)
     keyboard = _build_keyboard(
         ctx, current=current, previous=previous, count=count, in_chat=chat_id is not None
     )

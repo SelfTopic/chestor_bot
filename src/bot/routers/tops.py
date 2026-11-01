@@ -3,6 +3,10 @@ from typing import Any, TypeVar
 from selfrot import BaseContext, CommandArgs
 from selfrot.filter import AnyCommand, Command
 
+from src.bot.dialogs import Dialogs
+
+from ..context import AppContext
+
 CHAT_WORDS = ("чат", "chat")
 
 TArgs = TypeVar("TArgs", bound=CommandArgs)
@@ -25,3 +29,9 @@ def wants_chat(cmd: AnyCommand[Any], ctx: BaseContext[Any]) -> bool:
 
 def is_group(chat_type: str) -> bool:
     return chat_type in ("group", "supergroup")
+
+
+def you_line(ctx: AppContext[Any], place: int | None, value: object) -> str:
+    if place is None:
+        return ctx.text(Dialogs.tops.you_absent())
+    return ctx.text(Dialogs.tops.you(place=place, value=value))

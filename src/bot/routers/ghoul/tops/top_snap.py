@@ -4,6 +4,7 @@ from selfrot.types import TextMessage
 from src.bot.dialogs import Dialogs
 
 from ....context import AppContext
+from ...tops import you_line
 from .count import GhoulTopHandler, top_command, top_row, top_text, top_title
 
 
@@ -24,7 +25,10 @@ class TopSnapHandler(GhoulTopHandler, MessageHandler[AppContext[TextMessage]]):
             for place, ghoul in enumerate(top, start=1)
         ]
         title = top_title(ctx, Dialogs.tops.snap_title(count=count), chat_id)
-        await ctx.message.answer(top_text(ctx, title, rows))
+        me = await ctx.db_ghoul()
+        place = await ctx.ghoul_service.top_place("snap", me.telegram_id, chat_id)
+        you = you_line(ctx, place, me.snap_count)
+        await ctx.message.answer(top_text(ctx, title, rows, you))
 
 
 class TopSnapRouter(BaseRouter[AppContext]):

@@ -10,6 +10,7 @@ from src.database.models import Family, FamilyMember
 
 from .conftest import (
     button_data,
+    matches_phrase,
     message_update,
     only_text,
     owner_dict,
@@ -45,7 +46,8 @@ async def test_snap_top_of_the_chat_skips_players_outside_it(send, members):
         only_text(Dialogs.tops.row(place=1, name="Петя", value=10)),
         only_text(Dialogs.tops.row(place=2, name="Вася", value=5)),
     ]
-    assert reply == only_text(Dialogs.tops.list(title=title, rows="\n".join(rows)))
+    you = only_text(Dialogs.tops.you(place=2, value=5))
+    assert reply == only_text(Dialogs.tops.list(title=title, rows="\n".join(rows), you=you))
 
 
 async def test_count_follows_the_chat_word(send, members):
@@ -53,7 +55,8 @@ async def test_count_follows_the_chat_word(send, members):
 
     power_title = only_text(Dialogs.tops.power_title(count=1))
     assert reply.startswith(only_text(Dialogs.tops.in_chat(title=power_title)))
-    assert "Чужой" not in reply and len(reply.splitlines()) == 3
+    assert "Чужой" not in reply and len(reply.splitlines()) == 5
+    assert matches_phrase(reply.splitlines()[-1], "tops.you")
 
 
 async def test_family_counts_in_the_chat_if_one_of_its_members_is_there(
@@ -79,7 +82,9 @@ async def test_family_counts_in_the_chat_if_one_of_its_members_is_there(
         only_text(Dialogs.tops.balance.row(place=1, name=family, balance="500")),
         only_text(Dialogs.tops.balance.row(place=2, name="Вася", balance="50")),
     ]
-    assert reply in phrase_texts(Dialogs.tops.balance.chat_message(count=20, rows="\n".join(rows)))
+    you = only_text(Dialogs.tops.you(place=2, value="50"))
+    line = Dialogs.tops.balance.chat_message(count=20, rows="\n".join(rows), you=you)
+    assert reply in phrase_texts(line)
 
 
 async def test_kagune_buttons_keep_the_chat_scope(feed, members, session_factory):

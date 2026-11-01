@@ -83,26 +83,39 @@ tops:
       🏆 Top {count} richest ghouls:
 
       {rows}
+
+      {you}
     chat_message: |-
       🏆 Top {count} richest ghouls of this chat:
 
       {rows}
+
+      {you}
     row: '{place}. {name} - {balance} CheSton'
     bad_count:
       - '🔢 The top is a number from 1 to 50, genius.'
       - '🔢 A number, for fuck''s sake. From 1 to 50.'
   chat_only_group: 'A chat top only works in groups.'
+  you: 'You are now in place {place} - {value}'
+  you_absent: 'You are not in this top.'
   in_chat: '{title} — in this chat'
   messages:
     message: |-
       💬 {title}
 
       {rows}
+
+      {total}
+      {you}
     row: '{place}. {name} — {messages}'
     title_all: Biggest chatterboxes of all time
     title_day: Biggest chatterboxes of the last 24 hours
     title_week: Biggest chatterboxes of the week
     title_month: Biggest chatterboxes of the month
+    total_all: 'Total messages of all time: {count}'
+    total_day: 'Total messages in the last 24 hours: {count}'
+    total_week: 'Total messages this week: {count}'
+    total_month: 'Total messages this month: {count}'
     empty:
       - 'Nobody has written anything here. The chat is dead.'
       - 'Empty. Do you people even talk here?'

@@ -89,6 +89,9 @@ class UserService(Base):
     ) -> list[TopWallet]:
         return await self.wallet_repository.top(limit, chat_id)
 
+    async def balance_place(self, telegram_id: int, chat_id: Optional[int] = None) -> Optional[int]:
+        return await self.wallet_repository.place(telegram_id, chat_id)
+
     def race(self, bit: int) -> Optional[Race]:
         for race in Race:
             if race.value["bit"] == bit:

@@ -83,26 +83,39 @@ tops:
       🏆 Топ {count} самых богатых гулей:
 
       {rows}
+
+      {you}
     chat_message: |-
       🏆 Топ {count} самых богатых гулей этого чата:
 
       {rows}
+
+      {you}
     row: '{place}. {name} - {balance} CheSton'
     bad_count:
       - '🔢 Топ — это число от 1 до 50, гений.'
       - '🔢 Цифрой, блять. От 1 до 50.'
   chat_only_group: 'Топ по чату бывает только в группе.'
+  you: 'Ты сейчас на {place} месте - {value}'
+  you_absent: 'Тебя в этом топе нет.'
   in_chat: '{title} — в этом чате'
   messages:
     message: |-
       💬 {title}
 
       {rows}
+
+      {total}
+      {you}
     row: '{place}. {name} — {messages}'
     title_all: Самые болтливые в чате за всё время
     title_day: Самые болтливые за последние 24 часа
     title_week: Самые болтливые за неделю
     title_month: Самые болтливые за месяц
+    total_all: 'Всего сообщений за всё время: {count}'
+    total_day: 'Всего сообщений за последние 24 часа: {count}'
+    total_week: 'Всего сообщений за неделю: {count}'
+    total_month: 'Всего сообщений за месяц: {count}'
     empty:
       - 'Тут никто ничего не писал. Чат мёртв.'
       - 'Пусто. Вы тут вообще разговариваете?'
