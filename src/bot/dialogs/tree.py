@@ -2062,6 +2062,120 @@ class _ModerationFeatureDialogs:
         return Line("moderation.feature.warns", {})
 
 
+class _ModerationListsDialogs:
+    def ban_empty(self) -> Line:
+        return Line("moderation.lists.ban_empty", {})
+
+    def ban_title(self, *, count: object) -> Line:
+        return Line("moderation.lists.ban_title", {"count": count})
+
+    def item(
+        self,
+        *,
+        moderator: object,
+        name: object,
+        place: object,
+        term: object,
+    ) -> Line:
+        return Line(
+            "moderation.lists.item",
+            {
+                "moderator": moderator,
+                "name": name,
+                "place": place,
+                "term": term,
+            },
+        )
+
+    def item_for(
+        self,
+        *,
+        moderator: object,
+        name: object,
+        place: object,
+        reason: object,
+        term: object,
+    ) -> Line:
+        return Line(
+            "moderation.lists.item_for",
+            {
+                "moderator": moderator,
+                "name": name,
+                "place": place,
+                "reason": reason,
+                "term": term,
+            },
+        )
+
+    def kick_empty(self) -> Line:
+        return Line("moderation.lists.kick_empty", {})
+
+    def kick_item(
+        self,
+        *,
+        ago: object,
+        moderator: object,
+        name: object,
+        place: object,
+    ) -> Line:
+        return Line(
+            "moderation.lists.kick_item",
+            {
+                "ago": ago,
+                "moderator": moderator,
+                "name": name,
+                "place": place,
+            },
+        )
+
+    def kick_item_for(
+        self,
+        *,
+        ago: object,
+        moderator: object,
+        name: object,
+        place: object,
+        reason: object,
+    ) -> Line:
+        return Line(
+            "moderation.lists.kick_item_for",
+            {
+                "ago": ago,
+                "moderator": moderator,
+                "name": name,
+                "place": place,
+                "reason": reason,
+            },
+        )
+
+    def kick_title(self, *, count: object) -> Line:
+        return Line("moderation.lists.kick_title", {"count": count})
+
+    def left(self, *, duration: object) -> Line:
+        return Line("moderation.lists.left", {"duration": duration})
+
+    def mute_empty(self) -> Line:
+        return Line("moderation.lists.mute_empty", {})
+
+    def mute_title(self, *, count: object) -> Line:
+        return Line("moderation.lists.mute_title", {"count": count})
+
+    def only_moderators(self) -> Line:
+        return Line("moderation.lists.only_moderators", {})
+
+    def page(self, *, items: object, title: object) -> Line:
+        return Line("moderation.lists.page", {"items": items, "title": title})
+
+    def unknown(self) -> Line:
+        return Line("moderation.lists.unknown", {})
+
+    def warn_empty(self) -> Line:
+        return Line("moderation.lists.warn_empty", {})
+
+    def warn_title(self, *, count: object) -> Line:
+        return Line("moderation.lists.warn_title", {"count": count})
+
+
 class _ModerationMenuDialogs:
     def admin_chat(self) -> Line:
         return Line("moderation.menu.admin_chat", {})
@@ -3653,6 +3767,7 @@ class _ModerationTermDialogs:
 
 class _ModerationDialogs:
     feature = _ModerationFeatureDialogs()
+    lists = _ModerationListsDialogs()
     menu = _ModerationMenuDialogs()
     neutral = _ModerationNeutralDialogs()
     penalty = _ModerationPenaltyDialogs()
@@ -5061,6 +5176,38 @@ PLACEHOLDERS: dict[str, frozenset[str]] = {
     "moderation.feature.notices": frozenset(),
     "moderation.feature.warns": frozenset(),
     "moderation.goodbye_updated": frozenset({"text"}),
+    "moderation.lists.ban_empty": frozenset(),
+    "moderation.lists.ban_title": frozenset({"count"}),
+    "moderation.lists.item": frozenset({"moderator", "name", "place", "term"}),
+    "moderation.lists.item_for": frozenset(
+        {
+            "moderator",
+            "name",
+            "place",
+            "reason",
+            "term",
+        }
+    ),
+    "moderation.lists.kick_empty": frozenset(),
+    "moderation.lists.kick_item": frozenset({"ago", "moderator", "name", "place"}),
+    "moderation.lists.kick_item_for": frozenset(
+        {
+            "ago",
+            "moderator",
+            "name",
+            "place",
+            "reason",
+        }
+    ),
+    "moderation.lists.kick_title": frozenset({"count"}),
+    "moderation.lists.left": frozenset({"duration"}),
+    "moderation.lists.mute_empty": frozenset(),
+    "moderation.lists.mute_title": frozenset({"count"}),
+    "moderation.lists.only_moderators": frozenset(),
+    "moderation.lists.page": frozenset({"items", "title"}),
+    "moderation.lists.unknown": frozenset(),
+    "moderation.lists.warn_empty": frozenset(),
+    "moderation.lists.warn_title": frozenset({"count"}),
     "moderation.menu.admin_chat": frozenset(),
     "moderation.menu.admin_chat_none": frozenset(),
     "moderation.menu.ban": frozenset(),

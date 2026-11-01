@@ -8,6 +8,26 @@ moderation:
     seconds: '{count} s'
     after: 'in {duration}'
     never: never
+  lists:
+    page: |-
+      {title}
+
+      {items}
+    mute_title: '🔇 Mutes in the chat: {count}'
+    ban_title: '🚫 Bans in the chat: {count}'
+    warn_title: '⚠️ Warns in the chat: {count}'
+    kick_title: '👢 Kicks in the chat: {count}'
+    mute_empty: 'Nobody in the chat is muted.'
+    ban_empty: 'Nobody in the chat is banned.'
+    warn_empty: 'Nobody in the chat has warns.'
+    kick_empty: 'No kicked people who haven''t come back.'
+    item: '{place}. {name} — {term}, by {moderator}'
+    item_for: '{place}. {name} — {term}, by {moderator}: {reason}'
+    left: '{duration} left'
+    kick_item: '{place}. {name} — {ago} ago, kicked by {moderator}'
+    kick_item_for: '{place}. {name} — {ago} ago, kicked by {moderator}: {reason}'
+    unknown: '?'
+    only_moderators: 'Only moderators with the ban right can page through the list.'
   penalty:
     mute: mute
     ban: ban

@@ -16,7 +16,7 @@ from .level_up_log import LevelUpLogRepository
 from .link_media import LinkMediaRepository
 from .lottery import LotteryRepository
 from .media import MediaRepository
-from .moderation import DueExpiration, ModerationRepository
+from .moderation import DueExpiration, ListedPunishment, ModerationRepository
 from .music_track import MusicTrackRepository
 from .quiz_streak import ExpiredStreak, HeldStreak, QuizStreakRepository
 from .scheduled_notification import ScheduledNotificationRepository
@@ -55,6 +55,7 @@ __all__ = [
     "MusicTrackRepository",
     "LinkMediaRepository",
     "DueExpiration",
+    "ListedPunishment",
     "ModerationRepository",
     "LotteryRepository",
     "RpCommandsRepository",

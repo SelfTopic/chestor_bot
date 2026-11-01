@@ -11,7 +11,7 @@ from ...exceptions import (
     TermOutOfRange,
     WarnLimitOutOfRange,
 )
-from ...repositories import ModerationRepository
+from ...repositories import ListedPunishment, ModerationRepository
 from ...types import (
     ChatModeration,
     Duration,
@@ -137,6 +137,16 @@ class ModerationService:
 
     async def warnings(self, chat_id: int, target_id: int) -> list[ModerationWarning]:
         return await self.moderation_repository.active_warnings(chat_id, target_id)
+
+    async def count_listed(self, chat_id: int, kind: ModerationActionType) -> int:
+        return await self.moderation_repository.count_listed(chat_id, kind)
+
+    async def listed_page(
+        self, chat_id: int, kind: ModerationActionType, page: int, per_page: int
+    ) -> list[ListedPunishment]:
+        return await self.moderation_repository.listed_page(
+            chat_id, kind, page * per_page, per_page
+        )
 
     async def admin_chat_requested(self, chat_id: int, admin_chat_id: int) -> bool:
         settings = await self.moderation_repository.find_settings(chat_id)

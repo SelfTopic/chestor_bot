@@ -8,6 +8,26 @@ moderation:
     seconds: '{count} с'
     after: 'через {duration}'
     never: никогда
+  lists:
+    page: |-
+      {title}
+
+      {items}
+    mute_title: '🔇 Муты в чате: {count}'
+    ban_title: '🚫 Баны в чате: {count}'
+    warn_title: '⚠️ Варны в чате: {count}'
+    kick_title: '👢 Кики в чате: {count}'
+    mute_empty: 'В чате никто не в муте.'
+    ban_empty: 'В чате никто не забанен.'
+    warn_empty: 'В чате ни у кого нет варнов.'
+    kick_empty: 'Кикнутых, которые не вернулись, нет.'
+    item: '{place}. {name} — {term}, выдал {moderator}'
+    item_for: '{place}. {name} — {term}, выдал {moderator}: {reason}'
+    left: 'ещё {duration}'
+    kick_item: '{place}. {name} — {ago} назад, кикнул {moderator}'
+    kick_item_for: '{place}. {name} — {ago} назад, кикнул {moderator}: {reason}'
+    unknown: '?'
+    only_moderators: 'Листать список могут только модераторы с правом блокировки.'
   penalty:
     mute: мут
     ban: бан
