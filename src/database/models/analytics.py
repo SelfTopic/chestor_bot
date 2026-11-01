@@ -33,3 +33,15 @@ class ChatActivity(Base):
     user_id: Mapped[int] = mapped_column(BigInteger, primary_key=True)
     chat_type: Mapped[str] = mapped_column(String(16), nullable=False)
     messages: Mapped[int] = mapped_column(nullable=False, default=0)
+
+
+# Сообщения в группах по часам: скользящие окна топа сообщений («день» — последние 24 часа).
+# Строки старше месяца удаляет фоновая задача.
+class ChatMessageHour(Base):
+    __tablename__ = "chat_message_hours"
+    __table_args__ = (Index("ix_chat_message_hours_chat_hour", "chat_id", "hour"),)
+
+    hour: Mapped[datetime] = mapped_column(primary_key=True)
+    chat_id: Mapped[int] = mapped_column(BigInteger, primary_key=True)
+    user_id: Mapped[int] = mapped_column(BigInteger, primary_key=True)
+    messages: Mapped[int] = mapped_column(nullable=False, default=0)

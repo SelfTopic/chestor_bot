@@ -16,7 +16,7 @@ from .scheduled_notification import ScheduledNotification
 from .transfer import Transfer
 from .user import User
 from .user_cooldowns import UserCooldown
-from .analytics import BotEvent, ChatActivity
+from .analytics import BotEvent, ChatActivity, ChatMessageHour
 from .anime_episode import AnimeEpisode
 from .docs_post import DocsPost
 from .ghoul_edit import GhoulEdit
@@ -33,6 +33,7 @@ __all__ = [
     "AnimeEpisode",
     "BotEvent",
     "ChatActivity",
+    "ChatMessageHour",
     "DocsPost",
     "Base",
     "GhoulEdit",

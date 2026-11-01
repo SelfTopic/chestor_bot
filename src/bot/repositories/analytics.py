@@ -2,11 +2,12 @@ from collections.abc import Sequence
 from dataclasses import dataclass
 from datetime import date, datetime
 
+from sqlalchemy import delete
 from sqlalchemy import insert as sa_insert
 from sqlalchemy.dialects.postgresql import insert
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from ...database.models import BotEvent, ChatActivity
+from ...database.models import BotEvent, ChatActivity, ChatMessageHour
 from .base import Base
 
 
@@ -27,6 +28,13 @@ class ActivityKey:
     chat_id: int
     user_id: int
     chat_type: str
+
+
+@dataclass(frozen=True)
+class MessageHourKey:
+    hour: datetime
+    chat_id: int
+    user_id: int
 
 
 class AnalyticsRepository(Base):
@@ -73,3 +81,26 @@ class AnalyticsRepository(Base):
                 set_={"messages": ChatActivity.messages + stmt.excluded.messages},
             )
         )
+
+    async def add_message_hours(self, counts: dict[MessageHourKey, int]) -> None:
+        if not counts:
+            return
+        stmt = insert(ChatMessageHour).values(
+            [
+                dict(hour=key.hour, chat_id=key.chat_id, user_id=key.user_id, messages=messages)
+                for key, messages in counts.items()
+            ]
+        )
+        await self.session.execute(
+            stmt.on_conflict_do_update(
+                index_elements=[
+                    ChatMessageHour.hour,
+                    ChatMessageHour.chat_id,
+                    ChatMessageHour.user_id,
+                ],
+                set_={"messages": ChatMessageHour.messages + stmt.excluded.messages},
+            )
+        )
+
+    async def delete_message_hours_before(self, moment: datetime) -> None:
+        await self.session.execute(delete(ChatMessageHour).where(ChatMessageHour.hour < moment))

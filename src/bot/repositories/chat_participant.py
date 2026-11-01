@@ -1,3 +1,4 @@
+from dataclasses import dataclass
 from datetime import datetime
 from typing import Optional
 
@@ -5,7 +6,14 @@ from sqlalchemy import case, delete, func, select
 from sqlalchemy.dialects.postgresql import insert
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from ...database.models import ChatParticipant, User
+from ...database.models import ChatMessageHour, ChatParticipant, User
+
+
+@dataclass(frozen=True)
+class MessageTopRow:
+    telegram_id: int
+    first_name: str
+    messages: int
 
 
 class ChatParticipantRepository:
@@ -84,3 +92,32 @@ class ChatParticipantRepository:
             .limit(1)
         )
         return await self.session.scalar(stmt)
+
+    # В топ попадают только те, кто сейчас в чате: строку вышедшего участника удаляет remove().
+    async def top_messages(
+        self, chat_id: int, since: Optional[datetime], limit: int
+    ) -> list[MessageTopRow]:
+        if since is None:
+            messages = ChatParticipant.messages_total
+            stmt = select(ChatParticipant.telegram_id, User.first_name, messages).where(
+                messages > 0
+            )
+        else:
+            messages = func.sum(ChatMessageHour.messages)
+            stmt = (
+                select(ChatParticipant.telegram_id, User.first_name, messages)
+                .join(
+                    ChatMessageHour,
+                    (ChatMessageHour.chat_id == ChatParticipant.chat_id)
+                    & (ChatMessageHour.user_id == ChatParticipant.telegram_id),
+                )
+                .where(ChatMessageHour.hour >= since)
+                .group_by(ChatParticipant.telegram_id, User.first_name)
+            )
+        stmt = (
+            stmt.join(User, User.telegram_id == ChatParticipant.telegram_id)
+            .where(ChatParticipant.chat_id == chat_id)
+            .order_by(messages.desc(), ChatParticipant.telegram_id)
+            .limit(limit)
+        )
+        return [MessageTopRow(*row) for row in await self.session.execute(stmt)]

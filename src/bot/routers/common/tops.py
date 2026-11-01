@@ -1,9 +1,12 @@
-from pydantic import Field
+from datetime import timedelta
+from typing import Annotated, Literal
+
+from pydantic import BeforeValidator, Field
 from selfrot import BaseRouter, CommandArgs, MessageHandler, Rest
 from selfrot.exceptions import CommandArgsError
 from selfrot.filter import AnyCommand, Command
 
-from src.bot.dialogs import Dialogs
+from src.bot.dialogs import Dialogs, Line
 from src.bot.utils import format_amount
 
 from ...context import AppContext
@@ -56,5 +59,71 @@ class TopBalanceHandler(MessageHandler[AppContext[TextMessage]]):
         raise exc
 
 
+MESSAGE_TOP_SIZE = 20
+Period = Literal["day", "week", "month"]
+PERIOD_WORDS: dict[str, Period] = {
+    "день": "day",
+    "неделя": "week",
+    "месяц": "month",
+    "day": "day",
+    "week": "week",
+    "month": "month",
+}
+WINDOWS: dict[Period, timedelta] = {
+    "day": timedelta(days=1),
+    "week": timedelta(days=7),
+    "month": timedelta(days=30),
+}
+MESSAGE_TITLES: dict[Period | None, Line] = {
+    None: Dialogs.tops.messages.title_all(),
+    "day": Dialogs.tops.messages.title_day(),
+    "week": Dialogs.tops.messages.title_week(),
+    "month": Dialogs.tops.messages.title_month(),
+}
+
+
+def period_of(word: object) -> object:
+    return PERIOD_WORDS.get(word.lower(), word) if isinstance(word, str) else word
+
+
+class MessageTopArgs(CommandArgs):
+    period: Annotated[Period | None, BeforeValidator(period_of)] = None
+
+
+class MessageTopHandler(MessageHandler[AppContext[TextMessage]]):
+    # strict: «топ бал» и прочие топы с чужим словом после «топ» не про сообщения.
+    cmd = AnyCommand(
+        *(
+            Command(word, MessageTopArgs, prefixes="", ignore_case=True, strict=True)
+            for word in ("топ", "стата", "top", "stats")
+        )
+    )
+    query = cmd
+    only_group = Dialogs.tops.messages.only_group()
+    empty = Dialogs.tops.messages.empty()
+
+    async def handle(self) -> None:
+        chat = self.ctx.message.chat
+        if chat.type not in ("group", "supergroup"):
+            await self.ctx.say(self.only_group, reply=True)
+            return
+
+        period = self.cmd.parse(self.ctx).period
+        window = WINDOWS[period] if period is not None else None
+        top = await self.ctx.chat_service.top_messages(chat.id, window, MESSAGE_TOP_SIZE)
+        if not top:
+            await self.ctx.say(self.empty)
+            return
+
+        rows = "\n".join(
+            self.ctx.text(
+                Dialogs.tops.messages.row(place=place, name=row.first_name, messages=row.messages)
+            )
+            for place, row in enumerate(top, start=1)
+        )
+        title = self.ctx.text(MESSAGE_TITLES[period])
+        await self.ctx.say(Dialogs.tops.messages.message(title=title, rows=rows))
+
+
 class CommonTopsRouter(BaseRouter[AppContext]):
-    handlers = (TopBalanceHandler,)
+    handlers = (TopBalanceHandler, MessageTopHandler)

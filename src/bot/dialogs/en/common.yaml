@@ -87,6 +87,20 @@ tops:
     bad_count:
       - '🔢 The top is a number from 1 to 50, genius.'
       - '🔢 A number, for fuck''s sake. From 1 to 50.'
+  messages:
+    message: |-
+      💬 {title}
+
+      {rows}
+    row: '{place}. {name} — {messages}'
+    title_all: Biggest chatterboxes of all time
+    title_day: Biggest chatterboxes of the last 24 hours
+    title_week: Biggest chatterboxes of the week
+    title_month: Biggest chatterboxes of the month
+    empty:
+      - 'Nobody has written anything here. The chat is dead.'
+      - 'Empty. Do you people even talk here?'
+    only_group: 'The message top only works in groups.'
 rp:
   created: '✅ Done: "{command}" now means "{action}".'
   deleted: '🗑 RP command "{command}" deleted.'

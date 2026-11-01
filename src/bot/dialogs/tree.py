@@ -4128,9 +4128,43 @@ class _TopsKaguneDialogs:
         return Line("tops.kagune.type_title", {"count": count, "kagune": kagune})
 
 
+class _TopsMessagesDialogs:
+    def empty(self) -> Line:
+        return Line("tops.messages.empty", {})
+
+    def message(self, *, rows: object, title: object) -> Line:
+        return Line("tops.messages.message", {"rows": rows, "title": title})
+
+    def only_group(self) -> Line:
+        return Line("tops.messages.only_group", {})
+
+    def row(self, *, messages: object, name: object, place: object) -> Line:
+        return Line(
+            "tops.messages.row",
+            {
+                "messages": messages,
+                "name": name,
+                "place": place,
+            },
+        )
+
+    def title_all(self) -> Line:
+        return Line("tops.messages.title_all", {})
+
+    def title_day(self) -> Line:
+        return Line("tops.messages.title_day", {})
+
+    def title_month(self) -> Line:
+        return Line("tops.messages.title_month", {})
+
+    def title_week(self) -> Line:
+        return Line("tops.messages.title_week", {})
+
+
 class _TopsDialogs:
     balance = _TopsBalanceDialogs()
     kagune = _TopsKaguneDialogs()
+    messages = _TopsMessagesDialogs()
 
     def empty(self) -> Line:
         return Line("tops.empty", {})
@@ -5577,6 +5611,14 @@ PLACEHOLDERS: dict[str, frozenset[str]] = {
     "tops.kagune.sum_title": frozenset({"count"}),
     "tops.kagune.type_title": frozenset({"count", "kagune"}),
     "tops.list": frozenset({"rows", "title"}),
+    "tops.messages.empty": frozenset(),
+    "tops.messages.message": frozenset({"rows", "title"}),
+    "tops.messages.only_group": frozenset(),
+    "tops.messages.row": frozenset({"messages", "name", "place"}),
+    "tops.messages.title_all": frozenset(),
+    "tops.messages.title_day": frozenset(),
+    "tops.messages.title_month": frozenset(),
+    "tops.messages.title_week": frozenset(),
     "tops.not_a_number": frozenset(),
     "tops.out_of_range": frozenset(),
     "tops.power_title": frozenset({"count"}),

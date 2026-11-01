@@ -55,6 +55,11 @@ class AnalyticsFlush(BaseTask[AppContext[Any]]):
         await self.ctx.analytics.flush()
 
 
+class MessageHoursCleanup(BaseTask[AppContext[Any]]):
+    async def run(self) -> None:
+        await self.ctx.analytics.forget_old_message_hours()
+
+
 class MediaToolsUpdate(BaseTask[AppContext[Any]]):
     async def run(self) -> None:
         if self.ctx.link_media_service.enabled:
@@ -70,6 +75,7 @@ TASKS = (
     Every(300, CultReward),
     Every(10, ModerationExpiry),
     Every(FLUSH_INTERVAL, AnalyticsFlush),
+    Every(3600, MessageHoursCleanup),
     Every(TOOLS_UPDATE_INTERVAL, MediaToolsUpdate),
 )
 
@@ -77,6 +83,7 @@ __all__ = [
     "TASKS",
     "AnalyticsFlush",
     "CultReward",
+    "MessageHoursCleanup",
     "QuizStreakExpiry",
     "DuelExpiry",
     "FamilyVoteExpiry",
