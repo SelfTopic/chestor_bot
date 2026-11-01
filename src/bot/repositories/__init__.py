@@ -10,7 +10,7 @@ from .chat_participant import ChatParticipantRepository, MessageTopRow
 from .death_log import DeathLogRepository
 from .duel_session import DuelSessionRepository
 from .family import ChatFamily, FamilyRepository, Member
-from .ghoul import GhoulRepository
+from .ghoul import GhoulRepository, TopKind
 from .ghoul_edit import GhoulEditRepository
 from .level_up_log import LevelUpLogRepository
 from .link_media import LinkMediaRepository
@@ -46,6 +46,7 @@ __all__ = [
     "TopWallet",
     "WalletRepository",
     "GhoulRepository",
+    "TopKind",
     "GhoulEditRepository",
     "UserCooldownRepository",
     "ChatRepository",

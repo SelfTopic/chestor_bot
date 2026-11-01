@@ -101,19 +101,44 @@ class ChatParticipantRepository:
         )
         return await self.session.scalar(stmt)
 
-    # В топ попадают только те, кто сейчас в чате: строку вышедшего участника удаляет remove().
     async def top_messages(
         self, chat_id: int, since: Optional[datetime], limit: int
     ) -> list[MessageTopRow]:
+        stmt, order = self._message_ranking(chat_id, since)
+        rows = await self.session.execute(stmt.order_by(*order).limit(limit))
+        return [MessageTopRow(*row) for row in rows]
+
+    async def message_place(
+        self, chat_id: int, since: Optional[datetime], telegram_id: int
+    ) -> Optional[tuple[int, int]]:
+        stmt, order = self._message_ranking(chat_id, since)
+        ranked = stmt.add_columns(func.row_number().over(order_by=order).label("place")).subquery()
+        row = (
+            await self.session.execute(
+                select(ranked.c.place, ranked.c.messages).where(
+                    ranked.c.telegram_id == telegram_id
+                )
+            )
+        ).first()
+        return None if row is None else (row.place, row.messages)
+
+    async def total_messages(self, chat_id: int, since: Optional[datetime]) -> int:
+        stmt, _ = self._message_ranking(chat_id, since)
+        ranked = stmt.subquery()
+        return await self.session.scalar(select(func.coalesce(func.sum(ranked.c.messages), 0))) or 0
+
+    # В топ попадают только те, кто сейчас в чате: строку вышедшего участника удаляет remove().
+    # Место считается тем же порядком, что и список.
+    def _message_ranking(self, chat_id: int, since: Optional[datetime]) -> tuple[Any, list[Any]]:
         if since is None:
             messages = ChatParticipant.messages_total
-            stmt = select(ChatParticipant.telegram_id, User.first_name, messages).where(
-                messages > 0
-            )
+            stmt = select(
+                ChatParticipant.telegram_id, User.first_name, messages.label("messages")
+            ).where(messages > 0)
         else:
             messages = func.sum(ChatMessageHour.messages)
             stmt = (
-                select(ChatParticipant.telegram_id, User.first_name, messages)
+                select(ChatParticipant.telegram_id, User.first_name, messages.label("messages"))
                 .join(
                     ChatMessageHour,
                     (ChatMessageHour.chat_id == ChatParticipant.chat_id)
@@ -122,10 +147,7 @@ class ChatParticipantRepository:
                 .where(ChatMessageHour.hour >= since)
                 .group_by(ChatParticipant.telegram_id, User.first_name)
             )
-        stmt = (
-            stmt.join(User, User.telegram_id == ChatParticipant.telegram_id)
-            .where(ChatParticipant.chat_id == chat_id)
-            .order_by(messages.desc(), ChatParticipant.telegram_id)
-            .limit(limit)
+        stmt = stmt.join(User, User.telegram_id == ChatParticipant.telegram_id).where(
+            ChatParticipant.chat_id == chat_id
         )
-        return [MessageTopRow(*row) for row in await self.session.execute(stmt)]
+        return stmt, [messages.desc(), ChatParticipant.telegram_id]

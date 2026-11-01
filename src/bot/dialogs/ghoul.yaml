@@ -530,6 +530,8 @@ tops:
     {title}
 
     {rows}
+
+    {you}
   row: '{place}. {name} - {value}'
   snap_title: '🏆 Топ {count} самых сломанных пальцев'
   power_title: '🏆 Топ {count} по боевой мощи'

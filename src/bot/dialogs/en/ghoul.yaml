@@ -519,6 +519,8 @@ tops:
     {title}
 
     {rows}
+
+    {you}
   row: '{place}. {name} - {value}'
   snap_title: '🏆 Top {count} most broken fingers'
   power_title: '🏆 Top {count} by combat power'

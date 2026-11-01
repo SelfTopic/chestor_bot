@@ -32,6 +32,8 @@ line with its shared account.
 `top bal chat` (and `top bal chat 50`) shows only current members of this group. A family
 makes the group top if at least one of its members is in the group.
 
+At the bottom: your own place; for a family member it's the place of the family account.
+
 ### snap
 
 Break your fingers like Kaneki and get CheSton.

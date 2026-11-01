@@ -14,7 +14,7 @@ from ..exceptions import (
     LastKaguneType,
 )
 from ..game_configs import EAT_HUMAN_CONFIG, KAGUNE_CONFIG
-from ..repositories import DeathLogRepository, ScheduledNotificationRepository
+from ..repositories import DeathLogRepository, ScheduledNotificationRepository, TopKind
 from ..types import KaguneType, NotificationType, Race, RegisterGhoulType
 from ..utils import (
     apply_hunger_restore,
@@ -462,7 +462,7 @@ class GhoulService(Base):
             f"Called method get_top_kagune. Params: count={count}, "
             f"kagune_type={kagune_type}"
         )
-        top_kagune = await self.ghoul_repository.get_top_kagune(count, kagune_type, chat_id)
+        top_kagune = await self.ghoul_repository.top("kagune", count, chat_id, kagune_type)
         logger.debug(f"Retrieved top kagune list with {len(top_kagune)} entries")
         return top_kagune
 
@@ -502,10 +502,19 @@ class GhoulService(Base):
         return RegisterGhoulType(ok=True, is_found=True, ghoul=ghoul)
 
     async def get_top_snap(self, count=20, chat_id: Optional[int] = None) -> List[Ghoul]:
-        return await self.ghoul_repository.get_top_snap(count, chat_id)
+        return await self.ghoul_repository.top("snap", count, chat_id)
 
     async def get_top_power(self, count: int = 20, chat_id: Optional[int] = None) -> List[Ghoul]:
-        return await self.ghoul_repository.get_top_power(count, chat_id)
+        return await self.ghoul_repository.top("power", count, chat_id)
+
+    async def top_place(
+        self,
+        kind: TopKind,
+        telegram_id: int,
+        chat_id: Optional[int] = None,
+        kagune_type: Optional[KaguneType] = None,
+    ) -> Optional[int]:
+        return await self.ghoul_repository.place(kind, telegram_id, chat_id, kagune_type)
 
     def _first_kagune(self) -> KaguneType:
         logger.debug("Called method _first_kagune")

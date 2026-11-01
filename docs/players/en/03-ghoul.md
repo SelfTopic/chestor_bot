@@ -90,6 +90,8 @@ from 1 to 50. Dead ghouls don't make the top.
 `top snap chat` (and `top snap chat 30`) is the same, but only among current members of this
 group. `top cp chat` and `top kagune chat` work the same way.
 
+At the bottom of any top: your own place, even if you didn't make the shown lines.
+
 ### top cp
 
 The top by combat power: `top cp` shows the first 20, `top cp 30` as many as you say, from 1

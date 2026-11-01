@@ -63,4 +63,5 @@ The chattiest members of the group: top 20 by number of messages.
 - `top` — all time;
 - `top day` — the last 24 hours, `top week` — 7 days, `top month` — 30 days.
 
-Only current members count. Works in groups only.
+At the bottom: the total number of messages for the period and your own place. Only current
+members count. Works in groups only.

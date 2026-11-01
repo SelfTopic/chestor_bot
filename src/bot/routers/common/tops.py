@@ -4,15 +4,15 @@ from typing import Annotated, Literal
 from pydantic import BeforeValidator, Field
 from selfrot import BaseRouter, CommandArgs, MessageHandler, Rest
 from selfrot.exceptions import CommandArgsError
-from selfrot.filter import AnyCommand, Command
+from selfrot.filter import AnyCommand, Command, HasUser
 
 from src.bot.dialogs import Dialogs, Line
 from src.bot.utils import format_amount
 
 from ...context import AppContext
 from ...repositories import TopWallet
-from ..chat_scope import chat_scoped, is_group, wants_chat
-from ..types import TextMessage
+from ..tops import chat_scoped, is_group, wants_chat, you_line
+from ..types import TextUserMessage
 
 
 class TopArgs(CommandArgs):
@@ -20,9 +20,9 @@ class TopArgs(CommandArgs):
     extra: Rest = ""
 
 
-class TopBalanceHandler(MessageHandler[AppContext[TextMessage]]):
+class TopBalanceHandler(MessageHandler[AppContext[TextUserMessage]]):
     cmd = chat_scoped(("топ бал", "top bal"), TopArgs)
-    query = cmd
+    query = cmd & HasUser()
     range_error = Dialogs.tops.balance.bad_count()
     chat_only_group = Dialogs.tops.chat_only_group()
 
@@ -34,7 +34,8 @@ class TopBalanceHandler(MessageHandler[AppContext[TextMessage]]):
             await self.ctx.say(self.chat_only_group, reply=True)
             return
 
-        top = await self.ctx.user_service.get_top_balance(count, chat.id if local else None)
+        chat_id = chat.id if local else None
+        top = await self.ctx.user_service.get_top_balance(count, chat_id)
 
         rows = "\n".join(
             self.ctx.text(
@@ -46,8 +47,12 @@ class TopBalanceHandler(MessageHandler[AppContext[TextMessage]]):
             )
             for place, wallet in enumerate(top, start=1)
         )
+        me = self.ctx.message.user.id
+        place = await self.ctx.user_service.balance_place(me, chat_id)
+        balance = await self.ctx.user_service.balance(me)
+        you = you_line(self.ctx, place, format_amount(balance or 0))
         message = Dialogs.tops.balance.chat_message if local else Dialogs.tops.balance.message
-        await self.ctx.say(message(count=count, rows=rows))
+        await self.ctx.say(message(count=count, rows=rows, you=you))
 
     def wallet_name(self, wallet: TopWallet) -> str:
         if not wallet.is_family:
@@ -79,6 +84,12 @@ WINDOWS: dict[Period, timedelta] = {
     "week": timedelta(days=7),
     "month": timedelta(days=30),
 }
+MESSAGE_TOTALS = {
+    None: Dialogs.tops.messages.total_all,
+    "day": Dialogs.tops.messages.total_day,
+    "week": Dialogs.tops.messages.total_week,
+    "month": Dialogs.tops.messages.total_month,
+}
 MESSAGE_TITLES: dict[Period | None, Line] = {
     None: Dialogs.tops.messages.title_all(),
     "day": Dialogs.tops.messages.title_day(),
@@ -95,7 +106,7 @@ class MessageTopArgs(CommandArgs):
     period: Annotated[Period | None, BeforeValidator(period_of)] = None
 
 
-class MessageTopHandler(MessageHandler[AppContext[TextMessage]]):
+class MessageTopHandler(MessageHandler[AppContext[TextUserMessage]]):
     # strict: «топ бал» и прочие топы с чужим словом после «топ» не про сообщения.
     cmd = AnyCommand(
         *(
@@ -103,7 +114,7 @@ class MessageTopHandler(MessageHandler[AppContext[TextMessage]]):
             for word in ("топ", "стата", "top", "stats")
         )
     )
-    query = cmd
+    query = cmd & HasUser()
     only_group = Dialogs.tops.messages.only_group()
     empty = Dialogs.tops.messages.empty()
 
@@ -127,7 +138,16 @@ class MessageTopHandler(MessageHandler[AppContext[TextMessage]]):
             for place, row in enumerate(top, start=1)
         )
         title = self.ctx.text(MESSAGE_TITLES[period])
-        await self.ctx.say(Dialogs.tops.messages.message(title=title, rows=rows))
+        total = await self.ctx.chat_service.total_messages(chat.id, window)
+        mine = await self.ctx.chat_service.message_place(chat.id, window, self.ctx.message.user.id)
+        place, messages = mine if mine is not None else (None, 0)
+        line = Dialogs.tops.messages.message(
+            title=title,
+            rows=rows,
+            total=self.ctx.text(MESSAGE_TOTALS[period](count=total)),
+            you=you_line(self.ctx, place, messages),
+        )
+        await self.ctx.say(line)
 
 
 class CommonTopsRouter(BaseRouter[AppContext]):
