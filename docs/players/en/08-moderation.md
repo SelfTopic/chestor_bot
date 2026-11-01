@@ -64,6 +64,13 @@ Remove the last warning. The bot says how many are left.
 The list of warnings with reasons and expiry. Anyone can see **their own**, an admin can see
 **anyone's** (by reply or with a @username).
 
+### mutelist, banlist, warnlist, kicklist (/mutelist, /banlist, /warnlist, /kicklist)
+
+All active mutes, bans, warns or kicks of the chat: who, by whom, why and how long is left, 10
+per page, paged with buttons. Expired and lifted ones aren't shown; a kick leaves the list once
+the person is back in the chat. A moderator with the ban right can view and page. The lists
+only have punishments given through the bot.
+
 ### /warn_limit
 
 How many warns before a penalty: `/warn_limit 5`. From 1 to 20. Without a number it shows the

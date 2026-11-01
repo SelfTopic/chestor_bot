@@ -84,8 +84,10 @@ class UserService(Base):
             log=log,
         )
 
-    async def get_top_balance(self, limit: int = 20) -> list[TopWallet]:
-        return await self.wallet_repository.top(limit)
+    async def get_top_balance(
+        self, limit: int = 20, chat_id: Optional[int] = None
+    ) -> list[TopWallet]:
+        return await self.wallet_repository.top(limit, chat_id)
 
     def race(self, bit: int) -> Optional[Race]:
         for race in Race:

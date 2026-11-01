@@ -1,5 +1,5 @@
 import logging
-from datetime import datetime
+from datetime import datetime, timedelta, timezone
 from typing import Optional
 
 from ...database.models import Chat, User
@@ -8,6 +8,7 @@ from ..repositories import (
     ChatParticipantRepository,
     ChatRepository,
     GhoulRepository,
+    MessageTopRow,
     UserCooldownRepository,
     UserRepository,
 )
@@ -36,6 +37,16 @@ class ChatService(Base):
 
     async def random_participant(self, chat_id: int) -> Optional[User]:
         return await self.chat_participant_repository.random_participant(chat_id)
+
+    # Счётчики лежат по часам, поэтому окно отсчитывается от начала часа.
+    async def top_messages(
+        self, chat_id: int, window: Optional[timedelta], limit: int
+    ) -> list[MessageTopRow]:
+        since = None
+        if window is not None:
+            moment = datetime.now(timezone.utc).replace(tzinfo=None) - window
+            since = moment.replace(minute=0, second=0, microsecond=0)
+        return await self.chat_participant_repository.top_messages(chat_id, since, limit)
 
     async def record_participant_join(
         self,

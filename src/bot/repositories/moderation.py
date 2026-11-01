@@ -1,5 +1,5 @@
 from dataclasses import dataclass
-from datetime import timedelta
+from datetime import datetime, timedelta
 from typing import Any, Optional
 
 from sqlalchemy import and_, exists, func, or_, select, update
@@ -7,7 +7,14 @@ from sqlalchemy.orm import aliased
 from sqlalchemy.dialects.postgresql import insert
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from ...database.models import Chat, ModerationAction, ModerationSettings, ModerationWarning, User
+from ...database.models import (
+    Chat,
+    ChatParticipant,
+    ModerationAction,
+    ModerationSettings,
+    ModerationWarning,
+    User,
+)
 from ..types import ModerationActionType, ModerationVoice
 from .base import Base
 
@@ -27,6 +34,45 @@ class DueExpiration:
     admin_chat_id: Optional[int]
     warns_left: int = 0
     warn_limit: int = 0
+
+
+@dataclass(frozen=True)
+class ListedPunishment:
+    target_id: int
+    target_name: Optional[str]
+    moderator_name: Optional[str]
+    reason: Optional[str]
+    created_at: datetime
+    expires_at: Optional[datetime]
+
+
+# Размут, новый мут, разбан или кик после наказания делают его неактуальным.
+def _superseded(action: Any, later: Any) -> Any:
+    return exists().where(
+        later.chat_id == action.chat_id,
+        later.target_id == action.target_id,
+        later.id > action.id,
+        or_(
+            and_(
+                action.action == ModerationActionType.MUTE,
+                later.action.in_([ModerationActionType.MUTE, ModerationActionType.UNMUTE]),
+            ),
+            and_(
+                action.action == ModerationActionType.BAN,
+                later.action.in_(
+                    [
+                        ModerationActionType.BAN,
+                        ModerationActionType.UNBAN,
+                        ModerationActionType.KICK,
+                    ]
+                ),
+            ),
+            and_(
+                action.action == ModerationActionType.KICK,
+                later.action == ModerationActionType.KICK,
+            ),
+        ),
+    )
 
 
 class ModerationRepository(Base):
@@ -176,29 +222,7 @@ class ModerationRepository(Base):
 
     async def _due_punishments(self) -> list[DueExpiration]:
         action = ModerationAction
-        later = aliased(ModerationAction)
-        # Размут, новый мут, разбан или кик после наказания делают его срок неважным.
-        superseded = exists().where(
-            later.chat_id == action.chat_id,
-            later.target_id == action.target_id,
-            later.id > action.id,
-            or_(
-                and_(
-                    action.action == ModerationActionType.MUTE,
-                    later.action.in_([ModerationActionType.MUTE, ModerationActionType.UNMUTE]),
-                ),
-                and_(
-                    action.action == ModerationActionType.BAN,
-                    later.action.in_(
-                        [
-                            ModerationActionType.BAN,
-                            ModerationActionType.UNBAN,
-                            ModerationActionType.KICK,
-                        ]
-                    ),
-                ),
-            ),
-        )
+        superseded = _superseded(action, aliased(ModerationAction))
         stmt = (
             select(
                 action.action,
@@ -293,3 +317,57 @@ class ModerationRepository(Base):
             )
             for chat_id, target_id, warns_left, first_name, title, voice, admin_chat_id, warn_limit in rows
         ]
+
+    async def count_listed(self, chat_id: int, kind: ModerationActionType) -> int:
+        stmt = self._listed(chat_id, kind)
+        return await self.session.scalar(select(func.count()).select_from(stmt.subquery())) or 0
+
+    async def listed_page(
+        self, chat_id: int, kind: ModerationActionType, offset: int, limit: int
+    ) -> list[ListedPunishment]:
+        rows = await self.session.execute(self._listed(chat_id, kind).offset(offset).limit(limit))
+        return [ListedPunishment(*row) for row in rows]
+
+    # Действующие наказания чата, новые первыми. Кик действует, пока человек не вернулся
+    # в чат: вход или сообщение после кика.
+    def _listed(self, chat_id: int, kind: ModerationActionType) -> Any:
+        record: Any = ModerationWarning if kind is ModerationActionType.WARN else ModerationAction
+        target = aliased(User)
+        moderator = aliased(User)
+        not_expired = or_(record.expires_at.is_(None), record.expires_at > func.now())
+        if kind is ModerationActionType.WARN:
+            active = and_(record.revoked_at.is_(None), not_expired)
+        elif kind is ModerationActionType.KICK:
+            returned = exists().where(
+                ChatParticipant.chat_id == record.chat_id,
+                ChatParticipant.telegram_id == record.target_id,
+                or_(
+                    ChatParticipant.joined_at > record.created_at,
+                    ChatParticipant.last_seen_at > record.created_at,
+                ),
+            )
+            active = and_(
+                record.action == kind,
+                ~_superseded(record, aliased(ModerationAction)),
+                ~returned,
+            )
+        else:
+            active = and_(
+                record.action == kind,
+                ~_superseded(record, aliased(ModerationAction)),
+                not_expired,
+            )
+        return (
+            select(
+                record.target_id,
+                target.first_name,
+                moderator.first_name,
+                record.reason,
+                record.created_at,
+                record.expires_at,
+            )
+            .outerjoin(target, target.telegram_id == record.target_id)
+            .outerjoin(moderator, moderator.telegram_id == record.moderator_id)
+            .where(record.chat_id == chat_id, active)
+            .order_by(record.created_at.desc(), record.id.desc())
+        )

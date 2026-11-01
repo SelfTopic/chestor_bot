@@ -3,6 +3,16 @@ from selfrot import BaseRouter
 from ....context import AppContext
 from .ban import BanHandler, BanRepliedHandler, UnbanHandler, UnbanRepliedHandler
 from .kick import KickHandler, KickRepliedHandler
+from .lists import (
+    BanListHandler,
+    BanListPressHandler,
+    KickListHandler,
+    KickListPressHandler,
+    MuteListHandler,
+    MuteListPressHandler,
+    WarnListHandler,
+    WarnListPressHandler,
+)
 from .mute import MuteHandler, MuteRepliedHandler, UnmuteHandler, UnmuteRepliedHandler
 from .warn import UnwarnHandler, UnwarnRepliedHandler, WarnHandler, WarnRepliedHandler
 from .warns_list import OwnWarnsHandler, WarnsHandler, WarnsRepliedHandler
@@ -28,4 +38,12 @@ class PunishmentRouter(BaseRouter[AppContext]):
         OwnWarnsHandler,
         WarnsRepliedHandler,
         WarnsHandler,
+        MuteListHandler,
+        BanListHandler,
+        WarnListHandler,
+        KickListHandler,
+        MuteListPressHandler,
+        BanListPressHandler,
+        WarnListPressHandler,
+        KickListPressHandler,
     )

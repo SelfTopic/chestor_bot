@@ -3,9 +3,11 @@ from dataclasses import dataclass
 from sqlalchemy import String, desc, exists, func, literal, select, union_all, update
 from sqlalchemy.dialects.postgresql import aggregate_order_by, array
 from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.orm import aliased
 
 from ...database.models import Family, FamilyMember, User
 from .base import Base
+from .chat_participant import in_chat
 
 
 @dataclass(frozen=True)
@@ -60,7 +62,8 @@ class WalletRepository(Base):
             stmt.values(balance=Family.balance + delta).returning(Family.balance)
         )
 
-    async def top(self, limit: int) -> list[TopWallet]:
+    # Семья попадает в топ чата, если в чате есть хоть один её член.
+    async def top(self, limit: int, chat_id: int | None = None) -> list[TopWallet]:
         member = exists().where(FamilyMember.telegram_id == User.telegram_id)
         singles = select(
             User.balance.label("balance"),
@@ -68,6 +71,8 @@ class WalletRepository(Base):
             literal(None, String).label("family_name"),
             literal(False).label("is_family"),
         ).where(~member)
+        if chat_id is not None:
+            singles = singles.where(in_chat(chat_id, User.telegram_id))
         families = (
             select(
                 Family.balance.label("balance"),
@@ -81,6 +86,13 @@ class WalletRepository(Base):
             .join(User, User.telegram_id == FamilyMember.telegram_id)
             .group_by(Family.id)
         )
+        if chat_id is not None:
+            present = aliased(FamilyMember)
+            families = families.where(
+                Family.id.in_(
+                    select(present.family_id).where(in_chat(chat_id, present.telegram_id))
+                )
+            )
         wallets = union_all(singles, families).subquery()
         rows = await self.session.execute(
             select(wallets).order_by(desc(wallets.c.balance)).limit(limit)

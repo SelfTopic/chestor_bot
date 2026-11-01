@@ -453,13 +453,16 @@ class GhoulService(Base):
         return await self.set_fields(telegram_id, kagune_type_bit=new_bit, **{column: None})
 
     async def get_top_kagune(
-        self, count=20, kagune_type: Optional[KaguneType] = None
+        self,
+        count=20,
+        kagune_type: Optional[KaguneType] = None,
+        chat_id: Optional[int] = None,
     ) -> List[Ghoul]:
         logger.debug(
             f"Called method get_top_kagune. Params: count={count}, "
             f"kagune_type={kagune_type}"
         )
-        top_kagune = await self.ghoul_repository.get_top_kagune(count, kagune_type)
+        top_kagune = await self.ghoul_repository.get_top_kagune(count, kagune_type, chat_id)
         logger.debug(f"Retrieved top kagune list with {len(top_kagune)} entries")
         return top_kagune
 
@@ -498,11 +501,11 @@ class GhoulService(Base):
         logger.info(f"Successfully registered new ghoul: ID {ghoul.id}")
         return RegisterGhoulType(ok=True, is_found=True, ghoul=ghoul)
 
-    async def get_top_snap(self, count=20) -> List[Ghoul]:
-        return await self.ghoul_repository.get_top_snap(count)
+    async def get_top_snap(self, count=20, chat_id: Optional[int] = None) -> List[Ghoul]:
+        return await self.ghoul_repository.get_top_snap(count, chat_id)
 
-    async def get_top_power(self, count: int = 20) -> List[Ghoul]:
-        return await self.ghoul_repository.get_top_power(count)
+    async def get_top_power(self, count: int = 20, chat_id: Optional[int] = None) -> List[Ghoul]:
+        return await self.ghoul_repository.get_top_power(count, chat_id)
 
     def _first_kagune(self) -> KaguneType:
         logger.debug("Called method _first_kagune")

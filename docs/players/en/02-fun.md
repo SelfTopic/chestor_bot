@@ -55,3 +55,12 @@ is a power). It won't divide by zero and refuses to count huge numbers.
 
 A random Tokyo Ghoul character quote. The quotes are in Russian only, so the command isn't
 available in your language yet. It will come later.
+
+### top / stats
+
+The chattiest members of the group: top 20 by number of messages.
+
+- `top` — all time;
+- `top day` — the last 24 hours, `top week` — 7 days, `top month` — 30 days.
+
+Only current members count. Works in groups only.
