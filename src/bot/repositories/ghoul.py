@@ -9,6 +9,7 @@ from src.bot.types import KaguneType
 from src.database.models import Ghoul
 
 from .base import Base
+from .chat_participant import in_chat
 
 logger = logging.getLogger(__name__)
 
@@ -131,19 +132,17 @@ class GhoulRepository(Base):
 
         return cleaned_bit
 
-    async def get_top_snap(self, count: int) -> List[Ghoul]:
-        stmt = (
-            select(Ghoul)
-            .where(Ghoul.is_dead.is_(False))
-            .order_by(desc(Ghoul.snap_count))
-            .limit(count)
-        )
+    def _top(self, chat_id: Optional[int]) -> Any:
+        stmt = select(Ghoul).where(Ghoul.is_dead.is_(False))
+        if chat_id is not None:
+            stmt = stmt.where(in_chat(chat_id, Ghoul.telegram_id))
+        return stmt
 
-        execute = await self.session.scalars(stmt)
+    async def get_top_snap(self, count: int, chat_id: Optional[int] = None) -> List[Ghoul]:
+        stmt = self._top(chat_id).order_by(desc(Ghoul.snap_count)).limit(count)
+        return list(await self.session.scalars(stmt))
 
-        return list(execute)
-
-    async def get_top_power(self, count: int) -> List[Ghoul]:
+    async def get_top_power(self, count: int, chat_id: Optional[int] = None) -> List[Ghoul]:
         power = (
             Ghoul.strength
             + Ghoul.dexterity
@@ -152,38 +151,23 @@ class GhoulRepository(Base):
             + Ghoul.regeneration
             + _total_kagune_strength()
         )
-        stmt = (
-            select(Ghoul)
-            .where(Ghoul.is_dead.is_(False))
-            .order_by(desc(power), Ghoul.id)
-            .limit(count)
-        )
+        stmt = self._top(chat_id).order_by(desc(power), Ghoul.id).limit(count)
         return list(await self.session.scalars(stmt))
 
     async def get_top_kagune(
-        self, count: int, kagune_type: Optional[KaguneType] = None
+        self,
+        count: int,
+        kagune_type: Optional[KaguneType] = None,
+        chat_id: Optional[int] = None,
     ) -> List[Ghoul]:
+        stmt = self._top(chat_id)
         if kagune_type is None:
-            stmt = (
-                select(Ghoul)
-                .where(Ghoul.is_dead.is_(False))
-                .order_by(desc(_total_kagune_strength()))
-                .limit(count)
-            )
+            stmt = stmt.order_by(desc(_total_kagune_strength()))
         else:
-            # В топ по типу попадают только те, у кого тип открыт (NULL не считается нулём),
-            # мёртвые не попадают.
+            # В топ по типу попадают только те, у кого тип открыт (NULL не считается нулём).
             column = getattr(Ghoul, kagune_type.value["strength_column"])
-            stmt = (
-                select(Ghoul)
-                .where(column.isnot(None), Ghoul.is_dead.is_(False))
-                .order_by(desc(column))
-                .limit(count)
-            )
-
-        execute = await self.session.scalars(stmt)
-
-        return list(execute)
+            stmt = stmt.where(column.isnot(None)).order_by(desc(column))
+        return list(await self.session.scalars(stmt.limit(count)))
 
     def _calculate_kagune(self, bit: int) -> List[KaguneType]:
         result = []

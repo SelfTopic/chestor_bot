@@ -87,6 +87,9 @@ Unlocks a new kagune type or kakuja, for CheSton and RC cells at the same time.
 The top by broken fingers: `top snap` shows the first 20, `top snap 30` as many as you say,
 from 1 to 50. Dead ghouls don't make the top.
 
+`top snap chat` (and `top snap chat 30`) is the same, but only among current members of this
+group. `top cp chat` and `top kagune chat` work the same way.
+
 ### top cp
 
 The top by combat power: `top cp` shows the first 20, `top cp 30` as many as you say, from 1

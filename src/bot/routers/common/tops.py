@@ -11,6 +11,7 @@ from src.bot.utils import format_amount
 
 from ...context import AppContext
 from ...repositories import TopWallet
+from ..chat_scope import chat_scoped, is_group, wants_chat
 from ..types import TextMessage
 
 
@@ -20,17 +21,20 @@ class TopArgs(CommandArgs):
 
 
 class TopBalanceHandler(MessageHandler[AppContext[TextMessage]]):
-    cmd = AnyCommand(
-        Command("топ бал", TopArgs, prefixes="", ignore_case=True),
-        Command("top bal", TopArgs, prefixes="", ignore_case=True),
-    )
+    cmd = chat_scoped(("топ бал", "top bal"), TopArgs)
     query = cmd
     range_error = Dialogs.tops.balance.bad_count()
+    chat_only_group = Dialogs.tops.chat_only_group()
 
     async def handle(self) -> None:
         count = self.cmd.parse(self.ctx).count
+        chat = self.ctx.message.chat
+        local = wants_chat(self.cmd, self.ctx)
+        if local and not is_group(chat.type):
+            await self.ctx.say(self.chat_only_group, reply=True)
+            return
 
-        top = await self.ctx.user_service.get_top_balance(count)
+        top = await self.ctx.user_service.get_top_balance(count, chat.id if local else None)
 
         rows = "\n".join(
             self.ctx.text(
@@ -42,7 +46,8 @@ class TopBalanceHandler(MessageHandler[AppContext[TextMessage]]):
             )
             for place, wallet in enumerate(top, start=1)
         )
-        await self.ctx.say(Dialogs.tops.balance.message(count=count, rows=rows))
+        message = Dialogs.tops.balance.chat_message if local else Dialogs.tops.balance.message
+        await self.ctx.say(message(count=count, rows=rows))
 
     def wallet_name(self, wallet: TopWallet) -> str:
         if not wallet.is_family:
@@ -104,7 +109,7 @@ class MessageTopHandler(MessageHandler[AppContext[TextMessage]]):
 
     async def handle(self) -> None:
         chat = self.ctx.message.chat
-        if chat.type not in ("group", "supergroup"):
+        if not is_group(chat.type):
             await self.ctx.say(self.only_group, reply=True)
             return
 

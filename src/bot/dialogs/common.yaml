@@ -83,10 +83,16 @@ tops:
       🏆 Топ {count} самых богатых гулей:
 
       {rows}
+    chat_message: |-
+      🏆 Топ {count} самых богатых гулей этого чата:
+
+      {rows}
     row: '{place}. {name} - {balance} CheSton'
     bad_count:
       - '🔢 Топ — это число от 1 до 50, гений.'
       - '🔢 Цифрой, блять. От 1 до 50.'
+  chat_only_group: 'Топ по чату бывает только в группе.'
+  in_chat: '{title} — в этом чате'
   messages:
     message: |-
       💬 {title}

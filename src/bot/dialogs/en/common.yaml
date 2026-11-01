@@ -83,10 +83,16 @@ tops:
       🏆 Top {count} richest ghouls:
 
       {rows}
+    chat_message: |-
+      🏆 Top {count} richest ghouls of this chat:
+
+      {rows}
     row: '{place}. {name} - {balance} CheSton'
     bad_count:
       - '🔢 The top is a number from 1 to 50, genius.'
       - '🔢 A number, for fuck''s sake. From 1 to 50.'
+  chat_only_group: 'A chat top only works in groups.'
+  in_chat: '{title} — in this chat'
   messages:
     message: |-
       💬 {title}

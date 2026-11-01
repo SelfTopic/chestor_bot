@@ -11,8 +11,8 @@ from src.bot.dialogs.vocab import KAGUNE_NAMES
 from src.bot.types import KaguneType
 
 from ....context import AppContext
-from .callback_data import TopKaguneView, ViewName
-from .count import GhoulTopHandler, top_command, top_row, top_text
+from .callback_data import TopKaguneChatView, TopKaguneView, ViewName
+from .count import GhoulTopHandler, top_command, top_row, top_text, top_title
 
 _VIEWS: tuple[ViewName, ...] = get_args(ViewName)
 _KAGUNE_BY_VIEW: dict[ViewName, KaguneType] = {
@@ -33,8 +33,13 @@ def _kagune_type_for_view(view: ViewName) -> KaguneType | None:
 
 
 def _build_keyboard(
-    ctx: AppContext[Any], current: ViewName, previous: ViewName | None, count: int
+    ctx: AppContext[Any],
+    current: ViewName,
+    previous: ViewName | None,
+    count: int,
+    in_chat: bool,
 ) -> InlineKeyboardMarkup:
+    payload = TopKaguneChatView if in_chat else TopKaguneView
     buttons = []
     for view in _VIEWS:
         if view == current:
@@ -43,18 +48,25 @@ def _build_keyboard(
         if view == previous:
             label = f"⬅️ {label}"
         buttons.append(
-            button(label, TopKaguneView(count=count, from_view=current, to_view=view))
+            button(
+                label,
+                payload(count=count, from_view=current, to_view=view),
+            )
         )
 
     return InlineKeyboard().row(*buttons).markup()
 
 
 async def _render(
-    ctx: AppContext[Any], current: ViewName, previous: ViewName | None, count: int
+    ctx: AppContext[Any],
+    current: ViewName,
+    previous: ViewName | None,
+    count: int,
+    chat_id: int | None,
 ) -> tuple[str, InlineKeyboardMarkup]:
     ghoul_service = ctx.ghoul_service
     kagune_type = _kagune_type_for_view(current)
-    top = await ghoul_service.get_top_kagune(count, kagune_type)
+    top = await ghoul_service.get_top_kagune(count, kagune_type, chat_id)
 
     heading = (
         Dialogs.tops.kagune.sum_title(count=count)
@@ -76,18 +88,20 @@ async def _render(
         )
         for place, ghoul in enumerate(top, start=1)
     ]
-    text = top_text(ctx, ctx.text(heading), rows)
-
-    return text, _build_keyboard(ctx, current=current, previous=previous, count=count)
+    text = top_text(ctx, top_title(ctx, heading, chat_id), rows)
+    keyboard = _build_keyboard(
+        ctx, current=current, previous=previous, count=count, in_chat=chat_id is not None
+    )
+    return text, keyboard
 
 
 class TopKaguneHandler(GhoulTopHandler, MessageHandler[AppContext[TextMessage]]):
     cmd = top_command("топ кагуне", "top kagune")
     query = cmd
 
-    async def show(self, count: int) -> None:
+    async def show(self, count: int, chat_id: int | None) -> None:
         body, keyboard = await _render(
-            self.ctx, current="sum", previous=None, count=count
+            self.ctx, current="sum", previous=None, count=count, chat_id=chat_id
         )
         await self.ctx.message.answer(body, reply_markup=keyboard)
 
@@ -95,6 +109,7 @@ class TopKaguneHandler(GhoulTopHandler, MessageHandler[AppContext[TextMessage]])
 class TopKaguneViewHandler(CallbackQueryHandler[AppContext[DataCallbackQuery]]):
     press = TopKaguneView.filter()
     query = press
+    in_chat = False
 
     async def handle(self) -> None:
         ctx = self.ctx
@@ -111,9 +126,16 @@ class TopKaguneViewHandler(CallbackQueryHandler[AppContext[DataCallbackQuery]]):
             current=payload.to_view,
             previous=payload.from_view,
             count=payload.count,
+            chat_id=message.chat.id if self.in_chat else None,
         )
         await message.edit_text(text=body, reply_markup=keyboard)
         await ctx.callback_query.answer()
+
+
+class TopKaguneChatViewHandler(TopKaguneViewHandler):
+    press = TopKaguneChatView.filter()
+    query = press
+    in_chat = True
 
 
 class TopKaguneBadDataHandler(CallbackQueryHandler[AppContext[DataCallbackQuery]]):
@@ -126,4 +148,9 @@ class TopKaguneBadDataHandler(CallbackQueryHandler[AppContext[DataCallbackQuery]
 
 
 class TopKaguneRouter(BaseRouter[AppContext]):
-    handlers = (TopKaguneHandler, TopKaguneViewHandler, TopKaguneBadDataHandler)
+    handlers = (
+        TopKaguneHandler,
+        TopKaguneViewHandler,
+        TopKaguneChatViewHandler,
+        TopKaguneBadDataHandler,
+    )

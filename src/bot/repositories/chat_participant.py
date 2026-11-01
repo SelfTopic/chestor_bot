@@ -2,11 +2,19 @@ from dataclasses import dataclass
 from datetime import datetime
 from typing import Optional
 
-from sqlalchemy import case, delete, func, select
+from typing import Any
+
+from sqlalchemy import ColumnElement, case, delete, exists, func, select
 from sqlalchemy.dialects.postgresql import insert
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from ...database.models import ChatMessageHour, ChatParticipant, User
+
+
+def in_chat(chat_id: int, telegram_id: Any) -> ColumnElement[bool]:
+    return exists().where(
+        ChatParticipant.chat_id == chat_id, ChatParticipant.telegram_id == telegram_id
+    )
 
 
 @dataclass(frozen=True)

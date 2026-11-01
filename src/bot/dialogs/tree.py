@@ -4100,6 +4100,9 @@ class _TopsBalanceDialogs:
     def bad_count(self) -> Line:
         return Line("tops.balance.bad_count", {})
 
+    def chat_message(self, *, count: object, rows: object) -> Line:
+        return Line("tops.balance.chat_message", {"count": count, "rows": rows})
+
     def message(self, *, count: object, rows: object) -> Line:
         return Line("tops.balance.message", {"count": count, "rows": rows})
 
@@ -4166,8 +4169,14 @@ class _TopsDialogs:
     kagune = _TopsKaguneDialogs()
     messages = _TopsMessagesDialogs()
 
+    def chat_only_group(self) -> Line:
+        return Line("tops.chat_only_group", {})
+
     def empty(self) -> Line:
         return Line("tops.empty", {})
+
+    def in_chat(self, *, title: object) -> Line:
+        return Line("tops.in_chat", {"title": title})
 
     def list(self, *, rows: object, title: object) -> Line:
         return Line("tops.list", {"rows": rows, "title": title})
@@ -5603,9 +5612,12 @@ PLACEHOLDERS: dict[str, frozenset[str]] = {
     "subscription.required_alert": frozenset({"channel"}),
     "subscription.subscribe_button": frozenset(),
     "tops.balance.bad_count": frozenset(),
+    "tops.balance.chat_message": frozenset({"count", "rows"}),
     "tops.balance.message": frozenset({"count", "rows"}),
     "tops.balance.row": frozenset({"balance", "name", "place"}),
+    "tops.chat_only_group": frozenset(),
     "tops.empty": frozenset(),
+    "tops.in_chat": frozenset({"title"}),
     "tops.kagune.bad_button": frozenset(),
     "tops.kagune.sum_button": frozenset(),
     "tops.kagune.sum_title": frozenset({"count"}),

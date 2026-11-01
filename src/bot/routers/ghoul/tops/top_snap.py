@@ -4,16 +4,16 @@ from selfrot.types import TextMessage
 from src.bot.dialogs import Dialogs
 
 from ....context import AppContext
-from .count import GhoulTopHandler, top_command, top_row, top_text
+from .count import GhoulTopHandler, top_command, top_row, top_text, top_title
 
 
 class TopSnapHandler(GhoulTopHandler, MessageHandler[AppContext[TextMessage]]):
     cmd = top_command("топ щелк", "top snap")
     query = cmd
 
-    async def show(self, count: int) -> None:
+    async def show(self, count: int, chat_id: int | None) -> None:
         ctx = self.ctx
-        top = await ctx.ghoul_service.get_top_snap(count)
+        top = await ctx.ghoul_service.get_top_snap(count, chat_id)
         if not top:
             await ctx.say(Dialogs.tops.empty())
             return
@@ -23,7 +23,7 @@ class TopSnapHandler(GhoulTopHandler, MessageHandler[AppContext[TextMessage]]):
             top_row(ctx, place, names.get(ghoul.telegram_id), ghoul.snap_count)
             for place, ghoul in enumerate(top, start=1)
         ]
-        title = ctx.text(Dialogs.tops.snap_title(count=count))
+        title = top_title(ctx, Dialogs.tops.snap_title(count=count), chat_id)
         await ctx.message.answer(top_text(ctx, title, rows))
 
 
