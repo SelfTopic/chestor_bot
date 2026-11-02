@@ -101,7 +101,9 @@ class ModerationMenu(View):
     ) -> LogLine | None:
         service = ctx.moderation_service
         chat_id = settings.chat_id
-        who = dict(chat=cls.chat_title(ctx), moderator=ctx.callback_query.user.first_name)
+        user = ctx.callback_query.user
+        moderator = await ctx.moderated_name(user.id, user.first_name)
+        who = dict(chat=cls.chat_title(ctx), moderator=moderator)
 
         match payload.action:
             case "toggle":

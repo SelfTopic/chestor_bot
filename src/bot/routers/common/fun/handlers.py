@@ -107,7 +107,7 @@ class AskBotHandler(MessageHandler[AppContext[TextMessage]]):
         user = await self.ctx.chat_service.random_participant(self.ctx.message.chat.id)
         if user is None:
             return None
-        return mention_html(user.telegram_id, user.full_name)
+        return mention_html(user.telegram_id, await self.ctx.name(user.telegram_id, user.full_name))
 
 
 class CalculatorHandler(MessageHandler[AppContext[TextMessage]]):

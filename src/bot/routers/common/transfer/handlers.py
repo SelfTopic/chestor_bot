@@ -26,7 +26,8 @@ class TransferToRepliedHandler(MessageHandler[AppContext[TextUserReplyMessage]])
 
         receiver = self.ctx.message.reply_to_message.user
 
-        await ask_confirmation(self.ctx, receiver.id, full_name(receiver), args.amount)
+        name = await self.ctx.name(receiver.id, full_name(receiver))
+        await ask_confirmation(self.ctx, receiver.id, name, args.amount)
 
     async def on_error(self, exc: Exception) -> None:
         if isinstance(exc, CommandArgsError):
@@ -56,12 +57,10 @@ class TransferToUserHandler(MessageHandler[AppContext[TextUserMessage]]):
             await self.ctx.say(Dialogs.errors.user_not_found(query=query), reply=True)
             return
 
-        await ask_confirmation(
-            self.ctx,
-            receiver.telegram_id,
-            receiver.username or receiver.first_name,
-            args.amount,
+        name = await self.ctx.name(
+            receiver.telegram_id, receiver.username or receiver.first_name
         )
+        await ask_confirmation(self.ctx, receiver.telegram_id, name, args.amount)
 
     async def on_error(self, exc: Exception) -> None:
         if isinstance(exc, CommandArgsError):

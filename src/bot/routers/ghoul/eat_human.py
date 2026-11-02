@@ -22,9 +22,11 @@ class EatHumanHandler(MessageHandler[AppContext[TextUserMessage]]):
         ctx = self.ctx
         message = ctx.message
 
+        user = await ctx.db_user()
         battle = await ctx.battle_service.fight_mob(
-            await ctx.db_user(),
+            user,
             await ctx.db_ghoul(),
+            name=await ctx.name(user.telegram_id, user.full_name),
             mob_name=ctx.text(Dialogs.vocab.mob()),
             is_forced=True,
             reward_log="mob ambush during eat_human reward",

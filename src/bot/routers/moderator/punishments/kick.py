@@ -22,7 +22,7 @@ class KickFlow(PunishmentFlow):
         self.require(ModerationFeature.KICK)
         moderator_id = await self.check_rights()
         member = await self.punishable(telegram_id)
-        name = member.user.first_name
+        name = await self.shown_name(member.user)
         # Разбан после бана вернул бы забаненному вход, поэтому отсутствующих не трогаем.
         if is_absent(member):
             raise TargetAbsent(name)

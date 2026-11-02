@@ -73,7 +73,7 @@ class PromoCard(View):
     @classmethod
     async def rich(cls, ctx: AppContext[Any], promo: PromoCode, confirming: bool) -> InputRichMessage:
         card = PHRASES.card
-        names = await ctx.first_names([promo.created_by, *filter(None, [promo.deleted_by])])
+        names = await ctx.names([promo.created_by, *filter(None, [promo.deleted_by])])
 
         def when_who(at: Any, who: int) -> str:
             return ctx.text(card.who_when(date=moscow_time(at), who=names.get(who, str(who))))

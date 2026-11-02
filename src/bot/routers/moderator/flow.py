@@ -4,7 +4,7 @@ from typing import Any, TypeVar
 from selfrot import CommandArgs
 from selfrot.exceptions import CommandArgsError, TelegramAPIError, TelegramNetworkError
 from selfrot.filter import AnyCommand, Command
-from selfrot.types import ChatMember, ChatMemberAdministrator, ChatMemberOwner
+from selfrot.types import ChatMember, ChatMemberAdministrator, ChatMemberOwner, User
 
 from src.bot.dialogs import Dialogs, Line
 from src.bot.exceptions import (
@@ -103,6 +103,7 @@ class ModerationFlow:
     voice = ModerationVoice.NEUTRAL
     reply_errors = True
     reports: list[tuple[int, Line]]
+    moderator_name: str
 
     @property
     def phrases(self):
@@ -119,15 +120,15 @@ class ModerationFlow:
         self.voice = settings.voice
         self.admin_chat_id = settings.admin_chat_id
         self.reports = []
+        self.moderator_name = await self.shown_name(self.ctx.message.user)
 
     @property
     def chat_title(self) -> str:
         chat = self.ctx.message.chat
         return chat.title or str(chat.id)
 
-    @property
-    def moderator_name(self) -> str:
-        return self.ctx.message.user.first_name
+    async def shown_name(self, user: User) -> str:
+        return await self.ctx.moderated_name(user.id, user.first_name)
 
     def require(self, feature: ModerationFeature) -> None:
         if not self.settings.enabled(feature):

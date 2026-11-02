@@ -31,7 +31,8 @@ class FamilyHandler(MessageHandler[AppContext[TextUserMessage]]):
             await ctx.say(Dialogs.family.single(), reply=True)
             return
 
-        who = await mentions(ctx, tuple(member.telegram_id for member in family.members))
+        members = tuple(member.telegram_id for member in family.members)
+        who = await mentions(ctx, members, ctx.nickname_chat)
         rows = "\n".join(
             ctx.text(
                 Dialogs.family.row(
@@ -122,7 +123,8 @@ class DivorcePressHandler(CallbackQueryHandler[AppContext[DataCallbackQuery]]):
             return
 
         heir = divorce.heir
-        who = await mentions(ctx, (user_id,) if heir is None else (user_id, heir))
+        people = (user_id,) if heir is None else (user_id, heir)
+        who = await mentions(ctx, people, ctx.nickname_chat)
         line = (
             Dialogs.divorce.done(name=who[user_id])
             if heir is None

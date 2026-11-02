@@ -15,9 +15,8 @@ class BalanceHandler(MessageHandler[AppContext[UserMessage]]):
         user = await self.ctx.db_user()
         balance = await self.ctx.user_service.balance(user.telegram_id)
 
-        await self.ctx.say(
-            Dialogs.balance(balance=format_amount(balance), name=user.first_name)
-        )
+        name = await self.ctx.name(user.telegram_id, user.first_name)
+        await self.ctx.say(Dialogs.balance(balance=format_amount(balance), name=name))
 
 
 class BalanceRouter(BaseRouter[AppContext]):

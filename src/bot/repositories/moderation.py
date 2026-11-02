@@ -9,6 +9,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from ...database.models import (
     Chat,
+    ChatNickname,
     ChatParticipant,
     ModerationAction,
     ModerationSettings,
@@ -29,6 +30,7 @@ class DueExpiration:
     chat_id: int
     target_id: int
     first_name: Optional[str]
+    nickname: Optional[str]
     chat_title: Optional[str]
     voice: ModerationVoice
     admin_chat_id: Optional[int]
@@ -40,7 +42,9 @@ class DueExpiration:
 class ListedPunishment:
     target_id: int
     target_name: Optional[str]
+    target_nickname: Optional[str]
     moderator_name: Optional[str]
+    moderator_nickname: Optional[str]
     reason: Optional[str]
     created_at: datetime
     expires_at: Optional[datetime]
@@ -229,11 +233,17 @@ class ModerationRepository(Base):
                 action.chat_id,
                 action.target_id,
                 User.first_name,
+                ChatNickname.nickname,
                 Chat.title,
                 ModerationSettings.voice,
                 ModerationSettings.admin_chat_id,
             )
             .outerjoin(User, User.telegram_id == action.target_id)
+            .outerjoin(
+                ChatNickname,
+                (ChatNickname.chat_id == action.chat_id)
+                & (ChatNickname.telegram_id == action.target_id),
+            )
             .outerjoin(Chat, Chat.telegram_id == action.chat_id)
             .outerjoin(ModerationSettings, ModerationSettings.chat_id == action.chat_id)
             .where(
@@ -251,11 +261,12 @@ class ModerationRepository(Base):
                 chat_id=chat_id,
                 target_id=target_id,
                 first_name=first_name,
+                nickname=nickname,
                 chat_title=title,
                 voice=voice or ModerationVoice.NEUTRAL,
                 admin_chat_id=admin_chat_id,
             )
-            for kind, chat_id, target_id, first_name, title, voice, admin_chat_id in rows
+            for kind, chat_id, target_id, first_name, nickname, title, voice, admin_chat_id in rows
         ]
 
     async def _due_warnings(self) -> list[DueExpiration]:
@@ -277,12 +288,18 @@ class ModerationRepository(Base):
                 warning.target_id,
                 left,
                 User.first_name,
+                ChatNickname.nickname,
                 Chat.title,
                 ModerationSettings.voice,
                 ModerationSettings.admin_chat_id,
                 ModerationSettings.warn_limit,
             )
             .outerjoin(User, User.telegram_id == warning.target_id)
+            .outerjoin(
+                ChatNickname,
+                (ChatNickname.chat_id == warning.chat_id)
+                & (ChatNickname.telegram_id == warning.target_id),
+            )
             .outerjoin(Chat, Chat.telegram_id == warning.chat_id)
             .outerjoin(ModerationSettings, ModerationSettings.chat_id == warning.chat_id)
             .where(
@@ -296,6 +313,7 @@ class ModerationRepository(Base):
                 warning.chat_id,
                 warning.target_id,
                 User.first_name,
+                ChatNickname.nickname,
                 Chat.title,
                 ModerationSettings.voice,
                 ModerationSettings.admin_chat_id,
@@ -309,13 +327,24 @@ class ModerationRepository(Base):
                 chat_id=chat_id,
                 target_id=target_id,
                 first_name=first_name,
+                nickname=nickname,
                 chat_title=title,
                 voice=voice or ModerationVoice.NEUTRAL,
                 admin_chat_id=admin_chat_id,
                 warns_left=warns_left,
                 warn_limit=warn_limit or 0,
             )
-            for chat_id, target_id, warns_left, first_name, title, voice, admin_chat_id, warn_limit in rows
+            for (
+                chat_id,
+                target_id,
+                warns_left,
+                first_name,
+                nickname,
+                title,
+                voice,
+                admin_chat_id,
+                warn_limit,
+            ) in rows
         ]
 
     async def count_listed(self, chat_id: int, kind: ModerationActionType) -> int:
@@ -334,6 +363,8 @@ class ModerationRepository(Base):
         record: Any = ModerationWarning if kind is ModerationActionType.WARN else ModerationAction
         target = aliased(User)
         moderator = aliased(User)
+        target_nickname = aliased(ChatNickname)
+        moderator_nickname = aliased(ChatNickname)
         not_expired = or_(record.expires_at.is_(None), record.expires_at > func.now())
         if kind is ModerationActionType.WARN:
             active = and_(record.revoked_at.is_(None), not_expired)
@@ -361,13 +392,25 @@ class ModerationRepository(Base):
             select(
                 record.target_id,
                 target.first_name,
+                target_nickname.nickname,
                 moderator.first_name,
+                moderator_nickname.nickname,
                 record.reason,
                 record.created_at,
                 record.expires_at,
             )
             .outerjoin(target, target.telegram_id == record.target_id)
             .outerjoin(moderator, moderator.telegram_id == record.moderator_id)
+            .outerjoin(
+                target_nickname,
+                (target_nickname.chat_id == record.chat_id)
+                & (target_nickname.telegram_id == record.target_id),
+            )
+            .outerjoin(
+                moderator_nickname,
+                (moderator_nickname.chat_id == record.chat_id)
+                & (moderator_nickname.telegram_id == record.moderator_id),
+            )
             .where(record.chat_id == chat_id, active)
             .order_by(record.created_at.desc(), record.id.desc())
         )

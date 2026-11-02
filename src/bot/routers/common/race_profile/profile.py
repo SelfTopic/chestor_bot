@@ -24,8 +24,9 @@ class RaceProfileHandler(MessageHandler[AppContext[UserMessage]]):
             raise RuntimeError(f"Unknown race bit: {user.race_bit}")
 
         balance = await self.ctx.user_service.balance(user.telegram_id)
+        name = await self.ctx.name(user.telegram_id, user.full_name)
         await self.ctx.say(
             Dialogs.profile.card(
-                name=user.full_name, race=RACE_NAMES[race], balance=format_amount(balance)
+                name=name, race=RACE_NAMES[race], balance=format_amount(balance)
             )
         )

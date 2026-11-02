@@ -32,6 +32,7 @@ from .repositories import (
 )
 from .game_configs import QUIZ_CONFIG
 from .repositories.fight import FightRepository
+from .repositories.nickname import NicknameRepository
 from .repositories.user_names import UserNameRepository
 from .services import (
     BanService,
@@ -58,6 +59,7 @@ from .services.language import LanguageService
 from .services.ghoul_game import CoffeeService, LotteryService
 from .services.level_up import LevelUpService
 from .services.moderation import ModerationService
+from .services.nickname import NicknameService
 from .services.notify import Notifier
 from .services.promo import PromoService
 from .services.quiz_streak import QuizStreakService
@@ -352,14 +354,22 @@ class SessionServices:
             battle_record_service=self.battle_record_service,
             duel_service=self.duel_service,
             families=self.family_repository,
+            names=UserNameRepository(self.session),
         )
 
     @cached_property
     def broadcast_service(self) -> BroadcastService:
         return BroadcastService(self.user_repository, self.chat_repository, self.notifier)
 
-    async def first_names(self, telegram_ids: Collection[int]) -> dict[int, str]:
-        return await UserNameRepository(self.session).first_names(telegram_ids)
+    @cached_property
+    def nickname_service(self) -> NicknameService:
+        return NicknameService(NicknameRepository(self.session))
+
+    # Ник чата chat_id, а у кого его нет — имя из Telegram.
+    async def player_names(
+        self, telegram_ids: Collection[int], chat_id: int | None
+    ) -> dict[int, str]:
+        return await UserNameRepository(self.session).names(telegram_ids, chat_id)
 
 
 __all__ = ["SessionServices", "current_session", "rp_commands_repository", "session_context"]

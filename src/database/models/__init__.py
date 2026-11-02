@@ -3,7 +3,7 @@ from .balances_log import BalancesLog
 from .base import Base
 from .battle import Battle
 from .chat import Chat
-from .chat_participant import ChatParticipant
+from .chat_participant import NICKNAME_MAX_LENGTH, ChatNickname, ChatParticipant
 from .cooldown import Cooldown
 from .death_log import DeathLog
 from .duel_session import DuelSession
@@ -41,7 +41,9 @@ __all__ = [
     "MusicTrack",
     "Battle",
     "Chat",
+    "ChatNickname",
     "ChatParticipant",
+    "NICKNAME_MAX_LENGTH",
     "Cooldown",
     "Ghoul",
     "User",

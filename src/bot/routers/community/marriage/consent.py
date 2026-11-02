@@ -107,7 +107,7 @@ class FamilyConsentLinkHandler(MessageHandler[AppContext[UserMessage]]):
             return
 
         proposer, target = state.required[:2]
-        who = await mentions(ctx, (proposer, target))
+        who = await mentions(ctx, (proposer, target), ctx.nickname_chat)
         vote = PHRASES.family_vote(proposer=who[proposer], target=who[target])
         proposal_id = state.proposal.id
         keyboard = InlineKeyboard().row(

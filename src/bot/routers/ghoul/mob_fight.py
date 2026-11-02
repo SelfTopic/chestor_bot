@@ -66,6 +66,7 @@ class MobFightHandler(MessageHandler[AppContext[TextUserMessage]]):
         battle = await ctx.battle_service.fight_mob(
             user,
             ghoul,
+            name=await ctx.name(user.telegram_id, user.full_name),
             mob_name=ctx.text(Dialogs.vocab.mob()),
             is_forced=False,
             reward_log="mob fight reward",

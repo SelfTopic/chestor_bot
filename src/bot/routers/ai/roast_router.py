@@ -1,3 +1,5 @@
+from dataclasses import replace
+
 from selfrot import BaseRouter, MessageHandler
 from selfrot.filter import HasText, HasUser
 
@@ -40,7 +42,8 @@ class RoastHandler(MessageHandler[AppContext[TextUserMessage]]):
             else None,
         )
         if roast.wants(incoming):
-            self.incoming = incoming
+            name = await self.ctx.name(message.user.id, message.user.first_name)
+            self.incoming = replace(incoming, first_name=name)
 
     async def after_handle(self) -> None:
         incoming = self.incoming

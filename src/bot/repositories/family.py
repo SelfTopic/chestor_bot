@@ -6,6 +6,7 @@ from sqlalchemy.dialects.postgresql import aggregate_order_by, insert
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from ...database.models import (
+    ChatNickname,
     ChatParticipant,
     Family,
     FamilyMember,
@@ -192,11 +193,16 @@ class FamilyRepository(Base):
             .join(ChatParticipant, ChatParticipant.telegram_id == FamilyMember.telegram_id)
             .where(ChatParticipant.chat_id == chat_id)
         )
-        names = func.array_agg(aggregate_order_by(User.first_name, FamilyMember.joined_at))
+        name = func.coalesce(ChatNickname.nickname, User.first_name)
+        names = func.array_agg(aggregate_order_by(name, FamilyMember.joined_at))
         rows = await self.session.execute(
             select(Family.id, Family.name, Family.created_at, names)
             .join(FamilyMember, FamilyMember.family_id == Family.id)
             .join(User, User.telegram_id == FamilyMember.telegram_id)
+            .outerjoin(
+                ChatNickname,
+                (ChatNickname.telegram_id == User.telegram_id) & (ChatNickname.chat_id == chat_id),
+            )
             .where(Family.id.in_(in_chat))
             .group_by(Family.id)
             .order_by(Family.created_at)

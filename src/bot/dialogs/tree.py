@@ -3831,6 +3831,54 @@ class _MusicDialogs:
         return Line("music.usage", {})
 
 
+class _NicknameDialogs:
+    def cleared(self, *, name: object) -> Line:
+        return Line("nickname.cleared", {"name": name})
+
+    def cleared_by_moderator(
+        self,
+        *,
+        moderator: object,
+        name: object,
+        nickname: object,
+    ) -> Line:
+        return Line(
+            "nickname.cleared_by_moderator",
+            {
+                "moderator": moderator,
+                "name": name,
+                "nickname": nickname,
+            },
+        )
+
+    def current(self, *, nickname: object) -> Line:
+        return Line("nickname.current", {"nickname": nickname})
+
+    def link(self) -> Line:
+        return Line("nickname.link", {})
+
+    def none(self, *, limit: object) -> Line:
+        return Line("nickname.none", {"limit": limit})
+
+    def nothing_to_clear(self) -> Line:
+        return Line("nickname.nothing_to_clear", {})
+
+    def only_group(self) -> Line:
+        return Line("nickname.only_group", {})
+
+    def set(self, *, nickname: object) -> Line:
+        return Line("nickname.set", {"nickname": nickname})
+
+    def target_has_none(self, *, name: object) -> Line:
+        return Line("nickname.target_has_none", {"name": name})
+
+    def too_long(self, *, limit: object) -> Line:
+        return Line("nickname.too_long", {"limit": limit})
+
+    def with_real(self, *, name: object, nickname: object) -> Line:
+        return Line("nickname.with_real", {"name": name, "nickname": nickname})
+
+
 class _NotInLanguageDialogs:
     def anime(self) -> Line:
         return Line("not_in_language.anime", {})
@@ -4660,6 +4708,7 @@ class _Dialogs:
     mob = _MobDialogs()
     moderation = _ModerationDialogs()
     music = _MusicDialogs()
+    nickname = _NicknameDialogs()
     not_in_language = _NotInLanguageDialogs()
     notify = _NotifyDialogs()
     profile = _ProfileDialogs()
@@ -5703,6 +5752,17 @@ PLACEHOLDERS: dict[str, frozenset[str]] = {
     "music.shazam.too_big": frozenset(),
     "music.shazam.usage": frozenset(),
     "music.usage": frozenset(),
+    "nickname.cleared": frozenset({"name"}),
+    "nickname.cleared_by_moderator": frozenset({"moderator", "name", "nickname"}),
+    "nickname.current": frozenset({"nickname"}),
+    "nickname.link": frozenset(),
+    "nickname.none": frozenset({"limit"}),
+    "nickname.nothing_to_clear": frozenset(),
+    "nickname.only_group": frozenset(),
+    "nickname.set": frozenset({"nickname"}),
+    "nickname.target_has_none": frozenset({"name"}),
+    "nickname.too_long": frozenset({"limit"}),
+    "nickname.with_real": frozenset({"name", "nickname"}),
     "not_in_language.anime": frozenset(),
     "not_in_language.quote": frozenset(),
     "not_in_language.wordle": frozenset(),

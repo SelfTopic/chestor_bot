@@ -32,6 +32,7 @@ from .lottery import (
     NotEnoughMoneyForBet,
     UnknownLotteryColor,
 )
+from .nickname import NicknameProblem, NicknameRejected
 from .media_not_found import MediaNotFound, MediaNotFoundInDatabase
 from .moderation import (
     AdminChatIsSelf,
@@ -116,6 +117,8 @@ __all__ = [
     "ValidationMediaError",
     "MediaNotFoundInDatabase",
     "MediaNotFound",
+    "NicknameProblem",
+    "NicknameRejected",
     "RpCommandLimitReached",
     "RpCommandNotFound",
     "RpCommandError",

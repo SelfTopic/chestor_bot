@@ -63,8 +63,14 @@ Postgres + SQLAlchemy (async), миграции Alembic, запуск в Docker 
 - Общие хелперы для любых роутеров: `ctx.say(line, reply=…)` (ответ фразой: гифка с подписью
   или текст, см. «Тексты»), `ctx.text(line)` (фраза → строка), `ctx.db_user()`, `ctx.addressee()` (кому адресована
   команда: ответ или @username/id), `ctx.answer_gif()` / `ctx.reply_gif()` (кэш file_id
-  с повтором при устаревшем id), `ctx.cooldown_remaining()`, `ctx.first_names(ids)` (имена
+  с повтором при устаревшем id), `ctx.cooldown_remaining()`, `ctx.names(ids)` (имена
   игроков одним запросом, а не `user_service.get` в цикле).
+- **Имя игрока в ответе — только через ник.** В группе у игрока может быть свой ник
+  (`chat_nicknames`, команды «ник» / «-ник»), и бот зовёт его им везде в этом чате. Поэтому
+  `first_name` / `full_name` в текст не подставлять: `await ctx.name(id, настоящее_имя)`,
+  `ctx.names(ids)`; в модерации — `ctx.moderated_name(id, имя)` («Ник (Имя)»). Где апдейта нет,
+  а чат известен (фоновые задачи, правка из лички, дуэль) — `player_names(ids, chat_id)` или
+  `coalesce(chat_nicknames.nickname, users.first_name)` в SQL. В личке ников нет.
 
 **Запросы — в `repositories/`.** Если нужно несколько чисел или имён, это один запрос в
 репозитории (`repositories/fight.py`, `repositories/user_names.py`), а не цикл в сервисе.

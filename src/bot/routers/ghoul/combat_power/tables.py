@@ -13,7 +13,7 @@ from src.bot.dialogs.vocab import STAT_NAMES
 from src.bot.services import BattleEngine, GhoulService
 from src.bot.services.battle_engine.core import StatBreakdown, compute_stat_breakdown
 from src.bot.utils import get_hunger_tier
-from src.database.models import Ghoul, User
+from src.database.models import Ghoul
 
 from ....context import AppContext
 from ...rich import paragraph, table_cell
@@ -27,13 +27,13 @@ def _fmt(value: float) -> str:
 
 def combat_power_rich(
     ctx: AppContext[Any],
-    user: User,
+    name: str,
     ghoul: Ghoul,
     danger_rank: str,
     ghoul_service: GhoulService,
     engine: BattleEngine,
 ) -> InputRichMessage:
-    fighter = engine.ghoul_to_fighter(ghoul, user.full_name, ghoul_service)
+    fighter = engine.ghoul_to_fighter(ghoul, name, ghoul_service)
     breakdown: dict[str, StatBreakdown] = compute_stat_breakdown(fighter.snapshot)
 
     vacuum_kagune = ghoul_service.total_kagune_strength(ghoul)
@@ -120,7 +120,7 @@ def combat_power_rich(
 
     blocks: list[InputRichBlock] = [
         InputRichBlockSectionHeading(
-            text=ctx.text(phrases.title(danger_rank=danger_rank, name=user.full_name)),
+            text=ctx.text(phrases.title(danger_rank=danger_rank, name=name)),
             size=3,
         ),
         vacuum_table,
