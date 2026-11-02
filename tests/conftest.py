@@ -1,25 +1,32 @@
 """
 Тесты бота. Telegram здесь фейковый (HTTP-сервер на localhost), настоящий токен не
 используется. Postgres настоящий (Docker, случайный порт), поднимается один раз на
-процесс pytest (`-n auto` — свой на каждый) и только если тесту нужна БД; каждый тест
-получает чистую схему.
+прогон и только если тесту нужна БД; у каждого процесса `-n auto` в нём своя база, каждый
+тест получает пустые таблицы.
 
 tests/*.py — бот целиком (апдейт → ответы в Telegram), tests/unit/ — домен и сервисы
 на одной сессии (фикстуры session, make_user, make_ghoul), tests/integration/ —
 несколько сессий сразу (гонки).
 """
 
+import fcntl
 import functools
 import json
 import os
 import re
+import shutil
 import string
+import tempfile
 import time
+import uuid
 from collections.abc import AsyncIterator, Callable, Awaitable, Iterator
-from typing import Any
+from pathlib import Path
+from typing import Any, TypeVar
 
 import docker
+from docker.errors import NotFound
 import psycopg
+from psycopg import sql
 import pytest
 from aiohttp import web
 from aiohttp.web_request import FileField
@@ -39,7 +46,6 @@ for name, value in {
 }.items():
     os.environ.setdefault(name, value)
 
-from sqlalchemy import text  # noqa: E402
 from sqlalchemy.ext.asyncio import (  # noqa: E402
     AsyncEngine,
     AsyncSession,
@@ -55,19 +61,46 @@ REPO_ROOT = os.path.dirname(os.path.dirname(__file__))
 # Ошибки приложения, которые тесты вызывают намеренно (ответ на них даёт on_error)
 from src.bot.__main__ import Dispatcher  # noqa: E402
 from src.bot.context import AppContext  # noqa: E402
-from src.bot.dialogs import Line, Phrase, load_texts  # noqa: E402
+from src.bot.dialogs import DIALOGS_DIR, Line, Phrase, load_texts  # noqa: E402
 from src.bot.exceptions import (  # noqa: E402
     ChatNotFoundInDatabase,
     UserNotFound,
 )
 from src.bot.repositories.ghoul import GhoulRepository  # noqa: E402
 from src.bot.repositories.user import UserRepository  # noqa: E402
+from src.bot.services import dialog as dialog_module  # noqa: E402
 from src.database.models import Ghoul, User  # noqa: E402
 
 EXPECTED_ERRORS: tuple[type[Exception], ...] = (
     ChatNotFoundInDatabase,
     UserNotFound,
 )
+
+
+T = TypeVar("T")
+
+
+def _parsed_once(load: Callable[[Path], T]) -> Callable[[Path], T]:
+    """Тексты бота разбираются один раз, пока их файлы не менялись: Dispatcher
+    создаётся в каждом тесте, а разбор всего YAML — 60 мс. Папки тестов (tmp_path)
+    разбираются как обычно."""
+    parsed: dict[tuple[tuple[str, int], ...], T] = {}
+
+    def load_cached(folder: Path = DIALOGS_DIR) -> T:
+        if folder != DIALOGS_DIR:
+            return load(folder)
+        stamp = tuple(
+            (str(path), path.stat().st_mtime_ns) for path in sorted(folder.rglob("*.yaml"))
+        )
+        if stamp not in parsed:
+            parsed[stamp] = load(folder)
+        return parsed[stamp]
+
+    return load_cached
+
+
+dialog_module.load_texts = _parsed_once(dialog_module.load_texts)
+dialog_module.load_translations = _parsed_once(dialog_module.load_translations)
 
 
 def _form_value(value: str | bytes | FileField) -> str:
@@ -206,10 +239,37 @@ async def telegram(monkeypatch: pytest.MonkeyPatch) -> AsyncIterator[FakeTelegra
     await runner.cleanup()
 
 
-@pytest.fixture(scope="session")
-def postgres_url() -> Iterator[str]:
-    client = docker.from_env()
-    container = client.containers.run(
+# Процессы xdist наследуют окружение главного: по этой метке они находят общий Postgres.
+TEST_RUN = "CHESTOR_TEST_RUN"
+
+
+def pytest_configure(config: pytest.Config) -> None:
+    os.environ.setdefault(TEST_RUN, uuid.uuid4().hex)
+
+
+def _run_dir() -> Path:
+    path = Path(tempfile.gettempdir()) / f"chestor-tests-{os.environ[TEST_RUN]}"
+    path.mkdir(exist_ok=True)
+    return path
+
+
+def pytest_unconfigure(config: pytest.Config) -> None:
+    if hasattr(config, "workerinput"):
+        return
+    run = _run_dir()
+    server = run / "postgres.json"
+    if server.exists():
+        # Вежливая остановка ждёт финального checkpoint за весь прогон (~5 с), а данные
+        # всё равно выбрасываются вместе с контейнером.
+        try:
+            docker.from_env().containers.get(json.loads(server.read_text())["id"]).kill()
+        except NotFound:
+            pass
+    shutil.rmtree(run, ignore_errors=True)
+
+
+def _start_postgres() -> dict[str, str]:
+    container = docker.from_env().containers.run(
         "postgres:16-alpine",
         # База одноразовая: долговечность не нужна, а fsync на каждый коммит и
         # TRUNCATE — основное время подготовки тестов.
@@ -218,6 +278,8 @@ def postgres_url() -> Iterator[str]:
             "-c", "fsync=off",
             "-c", "synchronous_commit=off",
             "-c", "full_page_writes=off",
+            # Сервер общий на все процессы xdist, у каждого свой пул соединений.
+            "-c", "max_connections=300",
         ],
         tmpfs={"/var/lib/postgresql/data": "rw"},
         ports={"5432/tcp": None},  # случайный порт: не мешает другим Postgres
@@ -233,31 +295,46 @@ def postgres_url() -> Iterator[str]:
         container.reload()
         bindings = container.ports["5432/tcp"]
         assert bindings, "Docker не пробросил порт Postgres"
-        port = bindings[0]["HostPort"]
+        server = f"test:test@127.0.0.1:{bindings[0]['HostPort']}"
 
         deadline = time.monotonic() + 60
         while True:
             try:
-                psycopg.connect(
-                    f"postgresql://test:test@127.0.0.1:{port}/test_db"
-                ).close()
+                psycopg.connect(f"postgresql://{server}/test_db").close()
                 break
             except psycopg.OperationalError:
                 if time.monotonic() > deadline:
                     raise
                 time.sleep(0.3)
-
-        yield f"postgresql+psycopg://test:test@127.0.0.1:{port}/test_db"
-    finally:
-        # Вежливая остановка ждёт финального checkpoint за весь прогон (~5 с), а данные
-        # всё равно выбрасываются вместе с контейнером.
+    except BaseException:
         container.kill()
+        raise
+    return {"id": container.id or "", "server": server}
+
+
+@pytest.fixture(scope="session")
+def postgres_url(worker_id: str) -> str:
+    """Postgres один на прогон: поднимает его первый процесс, которому нужна БД, а у
+    каждого процесса xdist в нём своя база. Свой контейнер на процесс — лишние секунды
+    запуска и сотни мегабайт памяти на каждый."""
+    run = _run_dir()
+    with open(run / "postgres.lock", "w") as lock:
+        fcntl.flock(lock, fcntl.LOCK_EX)
+        info = run / "postgres.json"
+        if not info.exists():
+            info.write_text(json.dumps(_start_postgres()))
+        server = json.loads(info.read_text())["server"]
+
+    database = f"test_{worker_id}"
+    with psycopg.connect(f"postgresql://{server}/test_db", autocommit=True) as conn:
+        conn.execute(sql.SQL("CREATE DATABASE {}").format(sql.Identifier(database)))
+    return f"postgresql+psycopg://{server}/{database}"
 
 
 @pytest.fixture(scope="session")
 def database_url(postgres_url: str) -> str:
     """Схема создаётся один раз на прогон. Пересоздавать её перед каждым тестом —
-    260 мс на тест (почти 2,5 минуты на весь набор); очистка таблиц — 50 мс."""
+    260 мс на тест (почти 2,5 минуты на весь набор); очистка таблиц — единицы мс."""
     from sqlalchemy import create_engine
 
     from src.database.models import Base
@@ -268,31 +345,65 @@ def database_url(postgres_url: str) -> str:
     return postgres_url
 
 
-async def _empty_database(url: str) -> AsyncEngine:
-    """Движок на базу, где все таблицы пусты, а id снова начинаются с 1."""
+# Таблицы с данными и таблицы, чей счётчик id уже сдвинут (строки могли удалить).
+# TRUNCATE стоит ~1,5 мс на таблицу даже пустую, а тест трогает лишь несколько из десятков.
+USED_SEQUENCES = """
+SELECT DISTINCT tbl.relname FROM pg_sequences seq
+JOIN pg_class seq_class ON seq_class.relname = seq.sequencename AND seq_class.relkind = 'S'
+JOIN pg_depend dep ON dep.objid = seq_class.oid AND dep.refclassid = 'pg_class'::regclass
+JOIN pg_class tbl ON tbl.oid = dep.refobjid
+WHERE seq.schemaname = 'public' AND seq.last_value IS NOT NULL
+"""
+
+
+@pytest.fixture(scope="session")
+def database_cleaner(database_url: str) -> Iterator[Callable[[], None]]:
+    """Опустошает таблицы и возвращает id к 1. Соединение одно на процесс: новое на
+    каждый тест стоило бы ещё 20 мс."""
     from src.database.models import Base
 
-    engine = create_async_engine(url)
-    async with engine.begin() as conn:
-        quote = conn.dialect.identifier_preparer.format_table
-        tables = ", ".join(quote(table) for table in Base.metadata.sorted_tables)
-        await conn.execute(text(f"TRUNCATE {tables} RESTART IDENTITY CASCADE"))
-    return engine
+    connection = psycopg.connect(database_url.replace("+psycopg", ""), autocommit=True)
+    quote = sql.Identifier
+    filled = sql.SQL(" UNION ALL ").join(
+        sql.SQL("SELECT {name} WHERE EXISTS (SELECT FROM {table})").format(
+            name=sql.Literal(table.name), table=quote(table.name)
+        )
+        for table in Base.metadata.sorted_tables
+    )
+    dirty_tables = sql.SQL("{} UNION {}").format(
+        filled, sql.SQL(USED_SEQUENCES)
+    )
+
+    def clean() -> None:
+        dirty = [row[0] for row in connection.execute(dirty_tables)]
+        if dirty:
+            connection.execute(
+                sql.SQL("TRUNCATE {} RESTART IDENTITY CASCADE").format(
+                    sql.SQL(", ").join(map(quote, dirty))
+                )
+            )
+
+    yield clean
+    connection.close()
 
 
 @pytest.fixture
 async def session_factory(
-    database_url: str,
+    database_url: str, database_cleaner: Callable[[], None]
 ) -> AsyncIterator[async_sessionmaker[AsyncSession]]:
-    engine = await _empty_database(database_url)
+    database_cleaner()
+    engine = create_async_engine(database_url)
     yield async_sessionmaker(engine, expire_on_commit=False)
     await engine.dispose()
 
 
 @pytest.fixture
-async def engine(database_url: str) -> AsyncIterator[AsyncEngine]:
+async def engine(
+    database_url: str, database_cleaner: Callable[[], None]
+) -> AsyncIterator[AsyncEngine]:
     """Для tests/unit и tests/integration: пустые таблицы, сессии тест открывает сам."""
-    engine = await _empty_database(database_url)
+    database_cleaner()
+    engine = create_async_engine(database_url)
     yield engine
     await engine.dispose()
 
