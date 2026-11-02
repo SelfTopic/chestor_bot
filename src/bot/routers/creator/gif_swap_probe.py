@@ -1,9 +1,10 @@
 import asyncio
 import io
 import math
+import random
 import time
 
-from PIL import Image, ImageDraw
+from PIL import Image, ImageDraw, ImageFont
 from selfrot import BaseRouter, CallbackPayload, InlineKeyboard, MessageHandler, button
 from selfrot.exceptions import TelegramAPIError
 from selfrot.filter import Command, HasMessageCallbackQuery
@@ -11,8 +12,10 @@ from selfrot.handlers import CallbackQueryHandler
 from selfrot.types import (
     InputFile,
     InputMediaAnimation,
+    InputMediaPhoto,
     InputRichBlockAnimation,
     InputRichBlockParagraph,
+    InputRichBlockPhoto,
     InputRichMessage,
     Message,
 )
@@ -56,9 +59,43 @@ def chart_gif(crash: bool) -> bytes:
     return buffer.getvalue()
 
 
+def history_strip() -> bytes:
+    font = ImageFont.truetype("src/assets/fonts/Rubik.ttf", 38)
+    font.set_variation_by_name(b"SemiBold")
+    image = Image.new("RGB", (1920, 168), (14, 10, 34))
+    draw = ImageDraw.Draw(image)
+    x = 32
+    for age in range(12):
+        multiplier = max(1.0, 0.96 / (1 - random.random()))
+        if multiplier < 1.01:
+            color = (255, 72, 96)
+        elif multiplier < 2:
+            color = (98, 132, 255)
+        elif multiplier < 10:
+            color = (168, 98, 255)
+        else:
+            color = (255, 186, 64)
+        fade = max(0.35, 1 - age * 0.07)
+        color = tuple(int(14 + (part - 14) * fade) for part in color)
+        label = f"x{multiplier:.2f}"
+        width = draw.textlength(label, font=font) + 60
+        if x + width > 1888:
+            break
+        draw.rounded_rectangle([x, 40, x + width, 128], radius=20, fill=color)
+        draw.text((x + width / 2, 84), label, font=font, fill=(255, 255, 255), anchor="mm")
+        x += width + 20
+
+    buffer = io.BytesIO()
+    image.resize((960, 84), Image.Resampling.LANCZOS).save(buffer, "PNG")
+    return buffer.getvalue()
+
+
 def probe_message(file_id: str, note: str) -> InputRichMessage:
     return InputRichMessage(
         blocks=[
+            InputRichBlockPhoto(
+                photo=InputMediaPhoto(media=InputFile(history_strip(), "history.png"))
+            ),
             InputRichBlockAnimation(animation=InputMediaAnimation(media=file_id)),
             InputRichBlockParagraph(text=note),
         ]
