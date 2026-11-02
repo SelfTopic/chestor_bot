@@ -4,6 +4,7 @@ from ...context import AppContext
 from .ban import BanRouter
 from .broadcast import BroadcastRouter
 from .cooldown_admin import CooldownAdminRouter
+from .gif_swap_probe import GifSwapProbeRouter
 from .kagune_admin import KaguneAdminRouter
 from .kill import KillRouter
 from .level_up import LevelUpRouter
@@ -33,4 +34,5 @@ class CreatorRouter(BaseRouter[AppContext]):
         RoastRatingRouter,
         PromoAdminRouter,
         ServiceFlagRouter,
+        GifSwapProbeRouter,
     )
