@@ -15,7 +15,7 @@ from src.bot.dialogs.vocab import HUNGER_NAMES, KAGUNE_NAMES, STAT_NAMES
 from src.bot.game_configs import STATS
 from src.bot.services import GhoulService
 from src.bot.utils import calculate_kagune, get_hunger_tier, level_progress_bar
-from src.database.models import Ghoul, User
+from src.database.models import Ghoul
 
 from ....context import AppContext
 from ...rich import paragraph
@@ -38,7 +38,7 @@ def kakuja_status(ghoul: Ghoul) -> Line:
 
 def rich_profile(
     ctx: AppContext[Any],
-    user: User,
+    name: str,
     ghoul: Ghoul,
     ghoul_service: GhoulService,
     danger_rank: str,
@@ -72,7 +72,7 @@ def rich_profile(
 
     blocks: list[Any] = [
         InputRichBlockSectionHeading(
-            text=ctx.text(phrases.title(danger_rank=danger_rank, name=user.full_name)),
+            text=ctx.text(phrases.title(danger_rank=danger_rank, name=name)),
             size=3,
         ),
         line(phrases.level(level=ghoul.level)),
@@ -113,7 +113,7 @@ def rich_profile(
 
 def plain_profile(
     ctx: AppContext[Any],
-    user: User,
+    name: str,
     ghoul: Ghoul,
     ghoul_service: GhoulService,
     danger_rank: str,
@@ -122,7 +122,7 @@ def plain_profile(
 ) -> str:
     return ctx.text(
         Dialogs.ghoul.profile(
-            name=user.full_name,
+            name=name,
             strength=ghoul.strength,
             snap_count=ghoul.snap_count,
             kagune_type=KAGUNE_NAMES[calculate_kagune(ghoul.kagune_type_bit)[0]],

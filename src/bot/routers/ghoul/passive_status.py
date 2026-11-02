@@ -69,9 +69,8 @@ class HungerStatusHandler(MessageHandler[AppContext[TextUserMessage]]):
                 duration=time_text(ctx.text, duration_parts(int(hours_left * 3600)))
             )
 
-        fighter = ctx.battle_engine.ghoul_to_fighter(
-            ghoul, full_name(ctx.message.user), ctx.ghoul_service
-        )
+        name = await ctx.name(ctx.message.user.id, full_name(ctx.message.user))
+        fighter = ctx.battle_engine.ghoul_to_fighter(ghoul, name, ctx.ghoul_service)
         stats = fighter.stats
 
         await ctx.say(

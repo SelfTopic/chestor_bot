@@ -1,7 +1,7 @@
 import logging
 import random
 import time
-from collections.abc import Awaitable, Callable
+from collections.abc import Awaitable, Callable, Collection
 from dataclasses import dataclass, field
 from functools import cached_property
 
@@ -10,7 +10,7 @@ from selfrot.exceptions import TelegramBadRequest
 from selfrot.types import ChatMember, InputFile, Message
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 
-from src.bot.dialogs import BASE_LANGUAGE, Line
+from src.bot.dialogs import BASE_LANGUAGE, Dialogs, Line
 from src.bot.exceptions import UserNotFound
 from src.bot.services import (
     MobService,
@@ -50,7 +50,7 @@ _GIF_RANDOM = random.Random()
 @dataclass(frozen=True)
 class Addressee:
     telegram_id: int
-    first_name: str
+    name: str
 
 
 # Сервисы создаются лениво, один раз на апдейт (SessionServices). Сессию БД кладёт
@@ -80,6 +80,9 @@ class AppContext(BaseContext[TEvent], SessionServices):
     _administrators: list[ChatMember] | None = field(
         default=None, init=False, repr=False, compare=False
     )
+    _nicknames: dict[int, str] | None = field(
+        default=None, init=False, repr=False, compare=False
+    )
 
     @cached_property
     def notifier(self) -> Notifier:
@@ -96,6 +99,38 @@ class AppContext(BaseContext[TEvent], SessionServices):
                 raise ValueError("У апдейта нет чата")
             self._administrators = await self.bot.get_chat_administrators(chat.id)
         return self._administrators
+
+    # Ник действует только в группе, где его поставили; в личке — имя из Telegram.
+    @property
+    def nickname_chat(self) -> int | None:
+        chat = self.chat
+        if chat is None or chat.type not in ("group", "supergroup"):
+            return None
+        return chat.id
+
+    # Ники чата нужны многим строкам одного ответа: запрос к базе один на апдейт.
+    async def nicknames(self) -> dict[int, str]:
+        if self._nicknames is None:
+            chat_id = self.nickname_chat
+            self._nicknames = (
+                {} if chat_id is None else await self.nickname_service.in_chat(chat_id)
+            )
+        return self._nicknames
+
+    async def name(self, telegram_id: int, real: str) -> str:
+        return (await self.nicknames()).get(telegram_id, real)
+
+    async def names(self, telegram_ids: Collection[int]) -> dict[int, str]:
+        return await self.player_names(telegram_ids, self.nickname_chat)
+
+    # Модератору важно, кто за ником на самом деле: ник «Админ» не должен никого запутать.
+    async def moderated_name(self, telegram_id: int, real: str) -> str:
+        return self.with_real_name((await self.nicknames()).get(telegram_id), real)
+
+    def with_real_name(self, nickname: str | None, real: str) -> str:
+        if nickname is None:
+            return real
+        return self.text(Dialogs.nickname.with_real(nickname=nickname, name=real))
 
     async def db_user(self) -> User:
         sender = self.user
@@ -126,7 +161,9 @@ class AppContext(BaseContext[TEvent], SessionServices):
         if isinstance(event, Message):
             replied = event.reply_to_message
             if replied is not None and replied.user is not None:
-                return Addressee(replied.user.id, replied.user.first_name)
+                return Addressee(
+                    replied.user.id, await self.name(replied.user.id, replied.user.first_name)
+                )
 
         if "@" not in mention:
             return None
@@ -135,7 +172,7 @@ class AppContext(BaseContext[TEvent], SessionServices):
         if user is None:
             raise UserNotFound(mention.lstrip("@"))
 
-        return Addressee(user.telegram_id, user.first_name)
+        return Addressee(user.telegram_id, await self.name(user.telegram_id, user.first_name))
 
     async def say(
         self,
@@ -159,8 +196,10 @@ class AppContext(BaseContext[TEvent], SessionServices):
     def _remember_addressee(self, sent: Message) -> Message:
         event = self.event
         if isinstance(event, Message) and event.user is not None:
+            # say() зовут и из on_error, где сессии уже нет: ник — только если уже загружен.
+            name = (self._nicknames or {}).get(event.user.id, event.user.first_name)
             self.roast_service.remember_bot_message(
-                event.chat.id, sent.message_id, event.user.id, event.user.first_name
+                event.chat.id, sent.message_id, event.user.id, name
             )
         return sent
 

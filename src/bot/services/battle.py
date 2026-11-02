@@ -23,6 +23,7 @@ from src.database.models import DuelSession, Ghoul, User
 
 from ..repositories import FamilyRepository
 from ..repositories.fight import FightRepository, Score
+from ..repositories.user_names import UserNameRepository
 from .level_up import LevelUpService
 
 logger = logging.getLogger(__name__)
@@ -31,14 +32,11 @@ logger = logging.getLogger(__name__)
 class Combatant:
     user: User
     ghoul: Ghoul
+    name: str
 
     @property
     def telegram_id(self) -> int:
         return self.user.telegram_id
-
-    @property
-    def name(self) -> str:
-        return self.user.full_name
 
 
 @dataclass(frozen=True)
@@ -136,6 +134,7 @@ class BattleService:
         battle_record_service: BattleRecordService,
         duel_service: DuelService,
         families: FamilyRepository,
+        names: UserNameRepository,
     ) -> None:
         self.engine = engine
         self._fights = fights
@@ -145,23 +144,26 @@ class BattleService:
         self._records = battle_record_service
         self._duels = duel_service
         self._families = families
+        self._names = names
 
 
-    async def _combatants(self, *telegram_ids: int) -> list[Combatant] | None:
+    # Дуэль принадлежит чату, где её начали: бойцы зовутся никами этого чата.
+    async def _combatants(self, duel: DuelSession) -> list[Combatant] | None:
+        telegram_ids = (duel.initiator_telegram_id, duel.target_telegram_id)
         found = await self._fights.participants(*telegram_ids)
+        nicknames = await self._names.nicknames(telegram_ids, duel.chat_id)
         combatants = []
         for telegram_id in telegram_ids:
             user, ghoul = found.get(telegram_id, (None, None))
             if user is None or ghoul is None:
                 return None
             ghoul = await self._ghouls.materialize_passive_stats(ghoul)
-            combatants.append(Combatant(user, ghoul))
+            name = nicknames.get(telegram_id, user.full_name)
+            combatants.append(Combatant(user, ghoul, name))
         return combatants
 
-    def _fighter(self, combatant: Combatant, name: str | None = None) -> Fighter:
-        return self.engine.ghoul_to_fighter(
-            combatant.ghoul, name or combatant.name, self._ghouls
-        )
+    def _fighter(self, combatant: Combatant) -> Fighter:
+        return self.engine.ghoul_to_fighter(combatant.ghoul, combatant.name, self._ghouls)
 
     def _rank(self, fighter: Fighter) -> str:
         return self._ghouls.get_danger_rank(self.engine.power_of(fighter.snapshot))
@@ -255,17 +257,22 @@ class BattleService:
             target_telegram_id=target_id,
             is_private_origin=private,
         )
-        return OpenedDuel(session, initiator_user.full_name, target_user.full_name)
+        nicknames = await self._names.nicknames((initiator_id, target_id), chat_id)
+        return OpenedDuel(
+            session,
+            nicknames.get(initiator_id, initiator_user.full_name),
+            nicknames.get(target_id, target_user.full_name),
+        )
 
     async def duel_odds(self, duel: DuelSession) -> DuelOdds | None:
-        combatants = await self._combatants(duel.initiator_telegram_id, duel.target_telegram_id)
+        combatants = await self._combatants(duel)
         if combatants is None:
             await self._abort_duel(duel, "awaiting_consent")
             return None
 
         initiator, target = combatants
-        power_a = self.engine.power_of(self._fighter(initiator, "a").snapshot)
-        power_b = self.engine.power_of(self._fighter(target, "b").snapshot)
+        power_a = self.engine.power_of(self._fighter(initiator).snapshot)
+        power_b = self.engine.power_of(self._fighter(target).snapshot)
         weaker, stronger = min(power_a, power_b), max(power_a, power_b)
         return DuelOdds(
             power_ratio=stronger / weaker if weaker > 0 else float("inf"),
@@ -275,7 +282,7 @@ class BattleService:
         )
 
     async def fight_duel(self, duel: DuelSession) -> DuelFight | None:
-        combatants = await self._combatants(duel.initiator_telegram_id, duel.target_telegram_id)
+        combatants = await self._combatants(duel)
         if combatants is None:
             await self._abort_duel(duel, "running")
             return None
@@ -356,10 +363,15 @@ class BattleService:
         await self._records.release(duel.initiator_telegram_id, duel.target_telegram_id)
 
         scores = await self._fights.scores([winner_id, loser_id], "duel")
+        nicknames = await self._names.nicknames((winner_id, loser_id), duel.chat_id)
         return DuelOutcome(
             action=action,
-            winner_name=winner_user.full_name if winner_user else str(winner_id),
-            loser_name=loser_user.full_name if loser_user else str(loser_id),
+            winner_name=nicknames.get(
+                winner_id, winner_user.full_name if winner_user else str(winner_id)
+            ),
+            loser_name=nicknames.get(
+                loser_id, loser_user.full_name if loser_user else str(loser_id)
+            ),
             reward_balance=reward_balance,
             reward_rc=reward_rc,
             hunger_restored=hunger_restored,
@@ -404,9 +416,16 @@ class BattleService:
     # Лок берёт вызывающий: у засады «занят» значит «засады не было», а у «бить моба» это
     # отказ.
     async def fight_mob(
-        self, user: User, ghoul: Ghoul, *, mob_name: str, is_forced: bool, reward_log: str
+        self,
+        user: User,
+        ghoul: Ghoul,
+        *,
+        name: str,
+        mob_name: str,
+        is_forced: bool,
+        reward_log: str,
     ) -> MobFight:
-        player = Combatant(user, ghoul)
+        player = Combatant(user, ghoul, name)
         fighter = self._fighter(player)
         result, mob = self.engine.run_against_mob(fighter, mob_name)
         await self._save_health(player, result.stats_a.health, result.final_hp_a)

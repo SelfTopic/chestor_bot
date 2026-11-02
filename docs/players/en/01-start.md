@@ -43,6 +43,19 @@ bot speaks your Telegram language, and in a new chat the language of whoever add
 Your card: name, race (human or ghoul), CheSton balance. The ghoul profile with stats is
 **race profile**.
 
+### nick, -nick (/nick)
+
+Your nickname in a group: the bot calls you by it everywhere in that chat — replies, tops,
+duels, RP and families. Each chat has its own, and in private the bot uses your Telegram name.
+
+- `nick <text>` — set or change it, up to 32 characters, no `@` or links.
+- `nick` — show the current one.
+- `-nick` — remove it.
+
+Moderation messages show the real name next to the nickname: "Admin (John)". A moderator
+removes someone's nickname by replying `-nick` to their message. The nickname stays even if
+you leave the chat and come back.
+
 ### /help
 
 Help right inside the bot.

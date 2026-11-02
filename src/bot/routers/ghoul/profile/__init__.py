@@ -40,9 +40,10 @@ class GhoulProfileHandler(MessageHandler[AppContext[UserMessage]]):
 
     async def send_ghoul_profile(self, user: User, ghoul: Ghoul) -> None:
         ghoul_service = self.ctx.ghoul_service
+        name = await self.ctx.name(user.telegram_id, user.full_name)
 
         if ghoul.is_dead:
-            await self.ctx.say(Dialogs.ghoul.dead_profile(name=user.full_name))
+            await self.ctx.say(Dialogs.ghoul.dead_profile(name=name))
             return
 
         power = ghoul_service.calculate_power(ghoul)
@@ -52,10 +53,10 @@ class GhoulProfileHandler(MessageHandler[AppContext[UserMessage]]):
         await answer_rich_or_text(
             self.ctx.message,
             rich_profile(
-                self.ctx, user, ghoul, ghoul_service, danger_rank, power, stats
+                self.ctx, name, ghoul, ghoul_service, danger_rank, power, stats
             ),
             lambda: plain_profile(
-                self.ctx, user, ghoul, ghoul_service, danger_rank, power, stats
+                self.ctx, name, ghoul, ghoul_service, danger_rank, power, stats
             ),
             what="ghoul profile",
         )

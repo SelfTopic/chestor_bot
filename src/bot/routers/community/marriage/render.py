@@ -14,8 +14,10 @@ PHRASES = Dialogs.marriage
 RENAME = Dialogs.family.rename
 
 
-async def mentions(services: SessionServices, telegram_ids: tuple[int, ...]) -> dict[int, str]:
-    names = await services.first_names(telegram_ids)
+async def mentions(
+    services: SessionServices, telegram_ids: tuple[int, ...], chat_id: int | None
+) -> dict[int, str]:
+    names = await services.player_names(telegram_ids, chat_id)
     return {tid: mention_html(tid, names.get(tid, str(tid))) for tid in telegram_ids}
 
 
@@ -37,7 +39,7 @@ async def proposal_view(
 ) -> tuple[str, InlineKeyboardMarkup | None]:
     # Сообщение живёт в группе, а правят его и из лички, и из фоновой задачи.
     text = await services.language_service.text_for(state.proposal.chat_id)
-    who = await mentions(services, state.required)
+    who = await mentions(services, state.required, state.proposal.chat_id)
     proposer, target = state.required[:2]
 
     if state.married:
@@ -88,12 +90,15 @@ async def rename_view(
     rename = state.rename
     text = await services.language_service.text_for(rename.chat_id)
     name = html.escape(rename.name)
-    who = await mentions(services, (*state.members, rename.proposer_telegram_id))
+    who = await mentions(
+        services, (*state.members, rename.proposer_telegram_id), rename.chat_id
+    )
 
     if state.renamed:
         return text(RENAME.renamed(name=name)), None
     if rename.declined_by is not None:
-        declined_by = (await mentions(services, (rename.declined_by,)))[rename.declined_by]
+        declined = await mentions(services, (rename.declined_by,), rename.chat_id)
+        declined_by = declined[rename.declined_by]
         return text(RENAME.declined(person=declined_by, name=name)), None
     if rename.stage != "awaiting":
         return text(RENAME.expired(name=name)), None

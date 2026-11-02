@@ -126,15 +126,15 @@ async def test_recent_battles_ignore_older_ones(session_factory):
         assert await fights.recent_battles(A, B, future) == RecentBattles(0, 0, 0)
 
 
-async def test_first_names_in_one_query(session_factory):
+async def test_names_in_one_query(session_factory):
     await seed(session_factory, A, "Вася")
     await seed(session_factory, B, "Петя")
 
     async with session_factory() as session:
         names = UserNameRepository(session)
         with count_queries(session) as statements:
-            found = await names.first_names([A, B, C])
-            empty = await names.first_names([])
+            found = await names.names([A, B, C])
+            empty = await names.names([])
 
     assert len(statements) == 1  # пустой список в БД не ходит
     assert found == {A: "Вася", B: "Петя"}  # C нет в users

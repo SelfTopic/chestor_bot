@@ -1,6 +1,7 @@
 from selfrot import BaseRouter
 
 from ...context import AppContext
+from .clear_nickname import ClearMemberNicknameHandler
 from .middleware import ModeratorMiddleware
 from .punishments import PunishmentRouter
 from .set_goodbye import SetGoodbyeHandler
@@ -14,6 +15,10 @@ class ChatTextRouter(BaseRouter[AppContext]):
     handlers = (SetRulesHandler, SetWelcomeHandler, SetGoodbyeHandler)
 
 
+class NicknameModerationRouter(BaseRouter[AppContext]):
+    handlers = (ClearMemberNicknameHandler,)
+
+
 class ModeratorRouter(BaseRouter[AppContext]):
     # Настройки раньше наказаний: «мут дефолт 1ч» иначе забрал бы «мут».
-    routers = (SettingsRouter, PunishmentRouter, ChatTextRouter)
+    routers = (SettingsRouter, PunishmentRouter, ChatTextRouter, NicknameModerationRouter)

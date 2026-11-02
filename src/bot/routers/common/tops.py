@@ -37,11 +37,12 @@ class TopBalanceHandler(MessageHandler[AppContext[TextUserMessage]]):
         chat_id = chat.id if local else None
         top = await self.ctx.user_service.get_top_balance(count, chat_id)
 
+        nicknames = await self.ctx.nicknames()
         rows = "\n".join(
             self.ctx.text(
                 Dialogs.tops.balance.row(
                     place=place,
-                    name=self.wallet_name(wallet),
+                    name=self.wallet_name(wallet, nicknames),
                     balance=format_amount(wallet.balance),
                 )
             )
@@ -54,12 +55,16 @@ class TopBalanceHandler(MessageHandler[AppContext[TextUserMessage]]):
         message = Dialogs.tops.balance.chat_message if local else Dialogs.tops.balance.message
         await self.ctx.say(message(count=count, rows=rows, you=you))
 
-    def wallet_name(self, wallet: TopWallet) -> str:
+    def wallet_name(self, wallet: TopWallet, nicknames: dict[int, str]) -> str:
+        names = [
+            nicknames.get(telegram_id, name)
+            for telegram_id, name in zip(wallet.member_ids, wallet.names, strict=True)
+        ]
         if not wallet.is_family:
-            return wallet.names[0]
+            return names[0]
         if wallet.family_name:
             return wallet.family_name
-        return self.ctx.text(Dialogs.family.top_name(members=", ".join(wallet.names)))
+        return self.ctx.text(Dialogs.family.top_name(members=", ".join(names)))
 
     async def on_error(self, exc: Exception) -> None:
         if isinstance(exc, CommandArgsError):
@@ -131,9 +136,14 @@ class MessageTopHandler(MessageHandler[AppContext[TextUserMessage]]):
             await self.ctx.say(self.empty)
             return
 
+        nicknames = await self.ctx.nicknames()
         rows = "\n".join(
             self.ctx.text(
-                Dialogs.tops.messages.row(place=place, name=row.first_name, messages=row.messages)
+                Dialogs.tops.messages.row(
+                    place=place,
+                    name=nicknames.get(row.telegram_id, row.first_name),
+                    messages=row.messages,
+                )
             )
             for place, row in enumerate(top, start=1)
         )

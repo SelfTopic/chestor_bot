@@ -51,6 +51,25 @@ profile:
     💵 Balance: {balance}
 
     Race profile: race profile or /race_profile
+nickname:
+  with_real: '{nickname} ({name})'
+  only_group: Nicknames are set in groups, one per chat. In private I already know who you are.
+  set:
+    - '✍️ Noted. In this chat you are {nickname} now.'
+    - '✍️ Okay, {nickname}. That''s what I''ll call you until you change your mind.'
+  current: |-
+    🏷 Your nickname in this chat: {nickname}
+    Change it with "nick <new>", remove it with "-nick".
+  none: |-
+    🏷 You have no nickname in this chat, I use your Telegram name.
+    Set one: "nick <text>", up to {limit} characters.
+  too_long: '✋ Too long. A nickname is at most {limit} characters.'
+  link: '✋ No @ or links in a nickname: free ads aren''t a thing here.'
+  cleared:
+    - '🏷 Nickname removed, {name}. Back to your real name.'
+  nothing_to_clear: Nothing to remove, you have no nickname in this chat.
+  cleared_by_moderator: '🏷 {moderator} removed the nickname "{nickname}" from {name}.'
+  target_has_none: '{name} has no nickname in this chat.'
 errors:
   unexpected: 'Error: {error}'
   cannot_process: Can't process the request

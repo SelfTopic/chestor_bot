@@ -33,7 +33,7 @@ class WarnFlow(PunishmentFlow):
             self.settings, moderator_id, telegram_id, reason
         )
 
-        name = member.user.first_name
+        name = await self.shown_name(member.user)
         who = dict(chat=self.chat_title, moderator=self.moderator_name, id=telegram_id)
         counts = dict(count=outcome.count, limit=outcome.limit)
         if reason is None:
@@ -147,7 +147,7 @@ class UnwarnFlow(PunishmentFlow):
         self.require(ModerationFeature.WARNS)
         moderator_id = await self.check_moderator()
         member = await self.target_member(telegram_id)
-        name = member.user.first_name
+        name = await self.shown_name(member.user)
         chat_id = self.ctx.message.chat.id
         left = await self.ctx.moderation_service.unwarn(chat_id, moderator_id, telegram_id)
         if left is None:

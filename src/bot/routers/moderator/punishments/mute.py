@@ -40,7 +40,7 @@ class MuteFlow(PunishmentFlow):
             reason=punishment.reason,
         )
 
-        name = member.user.first_name
+        name = await self.shown_name(member.user)
         term = self.term(punishment.seconds)
         who = dict(chat=self.chat_title, moderator=self.moderator_name, id=telegram_id)
         if punishment.reason is None:
@@ -88,7 +88,7 @@ class UnmuteFlow(PunishmentFlow):
         self.require(ModerationFeature.MUTE)
         moderator_id = await self.check_rights()
         member = await self.target_member(telegram_id)
-        name = member.user.first_name
+        name = await self.shown_name(member.user)
         if not isinstance(member, ChatMemberRestricted) or member.can_send_messages:
             raise TargetNotMuted(name)
 

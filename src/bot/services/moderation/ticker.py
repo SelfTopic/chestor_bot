@@ -49,6 +49,10 @@ class ModerationTicker:
             else Dialogs.moderation.neutral
         )
         raw_name = expiration.first_name or str(expiration.target_id)
+        if expiration.nickname is not None:
+            raw_name = self._dialog_service.text(
+                Dialogs.nickname.with_real(nickname=expiration.nickname, name=raw_name)
+            )
         name = html.escape(raw_name)
         mention = mention_html(expiration.target_id, raw_name)
         who = dict(

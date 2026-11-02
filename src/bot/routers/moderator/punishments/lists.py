@@ -65,10 +65,12 @@ class PunishmentPages:
         # Время в БД — UTC без зоны, как его пишет Postgres.
         now = datetime.now(timezone.utc).replace(tzinfo=None)
         unknown = ctx.text(PHRASES.unknown())
+        name = punishment.target_name or str(punishment.target_id)
+        moderator = punishment.moderator_name or unknown
         who = dict(
             place=place,
-            name=punishment.target_name or str(punishment.target_id),
-            moderator=punishment.moderator_name or unknown,
+            name=ctx.with_real_name(punishment.target_nickname, name),
+            moderator=ctx.with_real_name(punishment.moderator_nickname, moderator),
         )
         reason = punishment.reason
         if cls.kind is ModerationActionType.KICK:

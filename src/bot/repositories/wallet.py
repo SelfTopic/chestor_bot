@@ -15,6 +15,7 @@ from .chat_participant import in_chat
 class TopWallet:
     balance: int
     names: list[str]
+    member_ids: list[int]
     family_name: str | None
     is_family: bool
 
@@ -67,14 +68,18 @@ class WalletRepository(Base):
         wallets, order = self._ranking(chat_id)
         rows = await self.session.execute(
             select(
-                wallets.c.balance, wallets.c.names, wallets.c.family_name, wallets.c.is_family
+                wallets.c.balance,
+                wallets.c.names,
+                wallets.c.member_ids,
+                wallets.c.family_name,
+                wallets.c.is_family,
             )
             .order_by(*order)
             .limit(limit)
         )
         return [
-            TopWallet(balance, list(names), family_name, is_family)
-            for balance, names, family_name, is_family in rows
+            TopWallet(balance, list(names), list(member_ids), family_name, is_family)
+            for balance, names, member_ids, family_name, is_family in rows
         ]
 
     async def place(self, telegram_id: int, chat_id: int | None = None) -> int | None:
@@ -99,6 +104,7 @@ class WalletRepository(Base):
         singles = select(
             User.balance.label("balance"),
             array([User.first_name]).label("names"),
+            array([User.telegram_id]).label("member_ids"),
             literal(None, String).label("family_name"),
             literal(False).label("is_family"),
             User.telegram_id.label("telegram_id"),
@@ -112,6 +118,9 @@ class WalletRepository(Base):
                 func.array_agg(aggregate_order_by(User.first_name, FamilyMember.joined_at)).label(
                     "names"
                 ),
+                func.array_agg(
+                    aggregate_order_by(User.telegram_id, FamilyMember.joined_at)
+                ).label("member_ids"),
                 Family.name.label("family_name"),
                 literal(True).label("is_family"),
                 literal(None, BigInteger).label("telegram_id"),

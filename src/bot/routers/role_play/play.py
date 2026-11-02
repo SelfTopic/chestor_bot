@@ -27,9 +27,8 @@ class RolePlayHandler(MessageHandler[AppContext[TextUserMessage]]):
             return
 
         rp_command = found.rp
-        answer_text = (
-            f"{message.user.first_name} {rp_command.action} {addressee.first_name}"
-        )
+        actor = await self.ctx.name(message.user.id, message.user.first_name)
+        answer_text = f"{actor} {rp_command.action} {addressee.name}"
 
         await send_rp(
             message,

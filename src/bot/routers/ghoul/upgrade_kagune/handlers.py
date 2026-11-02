@@ -39,7 +39,7 @@ class RegisterOrRebirthHandler(MessageHandler[AppContext[TextUserMessage]]):
             kagune_type = calculate_kagune(new_ghoul.ghoul.kagune_type_bit)[0]
             await ctx.say(
                 Dialogs.ghoul.new(
-                    name=message.user.first_name,
+                    name=await ctx.name(telegram_id, message.user.first_name),
                     kagune_type=KAGUNE_NAMES[kagune_type],
                 ),
                 reply=True,

@@ -14,7 +14,8 @@ class StartHandler(MessageHandler[AppContext[UserMessage]]):
         user = await self.ctx.db_user()
 
         # Подсказка всегда по-английски: её поймут, даже если язык выбран неверно.
-        await self.ctx.say(Dialogs.start(name=user.first_name, hint=Dialogs.language.hint()))
+        name = await self.ctx.name(user.telegram_id, user.first_name)
+        await self.ctx.say(Dialogs.start(name=name, hint=Dialogs.language.hint()))
 
 
 class StartRouter(BaseRouter[AppContext]):

@@ -57,7 +57,7 @@ class WarnsListFlow(ModerationFlow):
     async def show_member(self, telegram_id: int) -> None:
         self.require(ModerationFeature.WARNS)
         member = await self.ctx.bot.get_chat_member(self.ctx.message.chat.id, telegram_id)
-        await self.show(telegram_id, member.user.first_name)
+        await self.show(telegram_id, await self.shown_name(member.user))
 
 
 class OwnWarnsHandler(WarnsListFlow, MessageHandler[AppContext[TextUserMessage]]):
@@ -71,7 +71,7 @@ class OwnWarnsHandler(WarnsListFlow, MessageHandler[AppContext[TextUserMessage]]
         if not self.settings.enabled(ModerationFeature.WARNS):
             return
         user = self.ctx.message.user
-        await self.show(user.id, user.first_name)
+        await self.show(user.id, await self.shown_name(user))
 
 
 class WarnsRepliedArgs(CommandArgs):

@@ -2,7 +2,7 @@ from selfrot import BaseRouter, MessageHandler
 from selfrot.filter import HasUser, Text
 
 from src.bot.dialogs import Dialogs
-from src.database.models import Ghoul, User
+from src.database.models import Ghoul
 
 from ....context import AppContext
 from ...types import TextUserMessage
@@ -15,16 +15,16 @@ class CombatPowerHandler(MessageHandler[AppContext[TextUserMessage]]):
         Text("боевая мощь", ignore_case=True) | Text("combat power", ignore_case=True)
     ) & HasUser()
 
-    def plain_text(self, user: User, ghoul: Ghoul, danger_rank: str) -> str:
+    def plain_text(self, name: str, ghoul: Ghoul, danger_rank: str) -> str:
         ctx = self.ctx
         ghoul_service = ctx.ghoul_service
         engine = ctx.battle_engine
 
-        fighter = engine.ghoul_to_fighter(ghoul, user.full_name, ghoul_service)
+        fighter = engine.ghoul_to_fighter(ghoul, name, ghoul_service)
         stats = fighter.stats
         return ctx.text(
             Dialogs.combat_power.full(
-                name=user.full_name,
+                name=name,
                 danger_rank=danger_rank,
                 vacuum_strength=ghoul.strength,
                 effective_strength=round(stats.strength, 1),
@@ -46,10 +46,11 @@ class CombatPowerHandler(MessageHandler[AppContext[TextUserMessage]]):
     async def handle(self) -> None:
         ctx = self.ctx
         user = await ctx.db_user()
+        name = await ctx.name(user.telegram_id, user.full_name)
         ghoul = await ctx.db_ghoul()
 
         if ghoul.is_dead:
-            await ctx.say(Dialogs.ghoul.dead_profile(name=user.full_name))
+            await ctx.say(Dialogs.ghoul.dead_profile(name=name))
             return
 
         ghoul_service = ctx.ghoul_service
@@ -60,9 +61,9 @@ class CombatPowerHandler(MessageHandler[AppContext[TextUserMessage]]):
         await answer_rich_or_text(
             ctx.message,
             combat_power_rich(
-                ctx, user, ghoul, danger_rank, ghoul_service, ctx.battle_engine
+                ctx, name, ghoul, danger_rank, ghoul_service, ctx.battle_engine
             ),
-            lambda: self.plain_text(user, ghoul, danger_rank),
+            lambda: self.plain_text(name, ghoul, danger_rank),
             what="combat power",
         )
 
@@ -73,15 +74,14 @@ class CombatPowerShortHandler(MessageHandler[AppContext[TextUserMessage]]):
     async def handle(self) -> None:
         ctx = self.ctx
         user = await ctx.db_user()
+        name = await ctx.name(user.telegram_id, user.full_name)
         ghoul = await ctx.db_ghoul()
 
         if ghoul.is_dead:
-            await ctx.say(Dialogs.ghoul.dead_profile(name=user.full_name))
+            await ctx.say(Dialogs.ghoul.dead_profile(name=name))
             return
 
-        fighter = ctx.battle_engine.ghoul_to_fighter(
-            ghoul, user.full_name, ctx.ghoul_service
-        )
+        fighter = ctx.battle_engine.ghoul_to_fighter(ghoul, name, ctx.ghoul_service)
         await ctx.say(
             Dialogs.combat_power.short(
                 vacuum_power=ctx.ghoul_service.calculate_power(ghoul),

@@ -57,7 +57,7 @@ class Proposal:
             await ctx.say(refusal_line(refused.reason), reply=True)
             return
 
-        who = await mentions(ctx, (proposer_id, telegram_id))
+        who = await mentions(ctx, (proposer_id, telegram_id), ctx.nickname_chat)
         price = MARRIAGE_CONFIG.proposal_price
         ask = PHRASES.ask(proposer=who[proposer_id], target=who[telegram_id], price=price)
         pay = ProposalPayment(proposer_id=proposer_id, target_id=telegram_id)

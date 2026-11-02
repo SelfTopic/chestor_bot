@@ -54,7 +54,7 @@ class PunishmentFlow(ModerationFlow):
     async def punishable(self, telegram_id: int) -> ChatMember:
         member = await self.target_member(telegram_id)
         if isinstance(member, (ChatMemberOwner, ChatMemberAdministrator)):
-            raise TargetIsAdmin(member.user.first_name)
+            raise TargetIsAdmin(await self.shown_name(member.user))
         return member
 
     def until_date(self, seconds: int | None) -> int | None:
