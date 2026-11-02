@@ -21,7 +21,7 @@ async def test_broken_edit_alerts_admins_once(
     for path in DIALOGS_DIR.glob("*.yaml"):
         (tmp_path / path.name).write_text(path.read_text("utf-8"), "utf-8")
     dispatcher.dialog_service = DialogService(
-        tmp_path, on_broken=dispatcher.report_broken_texts
+        tmp_path, on_broken=dispatcher.report_broken_texts, recheck_every=0
     )
 
     edited = tmp_path / "admin.yaml"
