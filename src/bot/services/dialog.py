@@ -1,6 +1,7 @@
 import logging
 import random
 import re
+import time
 from collections.abc import Callable
 from dataclasses import dataclass
 from functools import partial
@@ -42,12 +43,15 @@ class DialogService:
         expected: Placeholders = PLACEHOLDERS,
         animation_root: Path | None = None,
         on_broken: Callable[[Exception], None] | None = None,
+        recheck_every: float = 1.0,
     ) -> None:
         self._folder = folder
         self._on_broken = on_broken
         self._expected = expected
         self._animation_root = animation_root
         self._random = random.Random()
+        self._recheck_every = recheck_every
+        self._checked_at = time.monotonic()
         self._stamp = self._files_stamp()
         self._phrases, self._translations = self._load()
 
@@ -125,6 +129,11 @@ class DialogService:
         return phrases, translations
 
     def _reload_if_changed(self) -> None:
+        # Обход папки с stat каждого файла дороже самой фразы, а text() зовут на каждую строку.
+        now = time.monotonic()
+        if now - self._checked_at < self._recheck_every:
+            return
+        self._checked_at = now
         stamp = self._files_stamp()
         if stamp == self._stamp:
             return

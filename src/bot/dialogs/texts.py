@@ -45,9 +45,13 @@ def load_texts(folder: Path = DIALOGS_DIR) -> Phrases:
             raise DialogFileError(f"{path.name}: ожидались фразы вида «ключ: текст»")
         _collect(data, (), path.name, phrases)
 
-    for key in phrases:
-        if any(other.startswith(f"{key}.") for other in phrases):
-            raise DialogFileError(f"{key}: это и фраза, и раздел с другими фразами")
+    sections = {
+        key.rsplit(".", depth)[0]
+        for key in phrases
+        for depth in range(1, key.count(".") + 1)
+    }
+    if both := sections & phrases.keys():
+        raise DialogFileError(f"{min(both)}: это и фраза, и раздел с другими фразами")
     return phrases
 
 

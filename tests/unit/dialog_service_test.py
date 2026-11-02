@@ -52,7 +52,7 @@ def test_startup_rejects_texts_that_do_not_match_code(tmp_path, yaml_text, probl
 
 def test_broken_edit_keeps_previous_texts_until_fixed(tmp_path):
     write(tmp_path, "coffee:\n  cooldown: Жди {minutes} мин\nbot: Чо\n", mtime=1)
-    dialogs = DialogService(tmp_path, EXPECTED)
+    dialogs = DialogService(tmp_path, EXPECTED, recheck_every=0)
     cooldown = Line("coffee.cooldown", {"minutes": 5})
 
     write(tmp_path, "coffee:\n  cooldown: Жди {seconds} сек\nbot: Чо\n", mtime=2)
@@ -95,7 +95,7 @@ def test_translation_must_match_russian_phrases(tmp_path, translation, problem):
 
 def test_translation_added_on_the_fly(tmp_path):
     write(tmp_path, "coffee:\n  cooldown: Жди {minutes}\nbot: Чо\n", mtime=1)
-    dialogs = DialogService(tmp_path, EXPECTED)
+    dialogs = DialogService(tmp_path, EXPECTED, recheck_every=0)
     assert dialogs.text(Line("bot"), "en") == "Чо"
 
     write(tmp_path / "en", "bot: Wut\n", mtime=2)
