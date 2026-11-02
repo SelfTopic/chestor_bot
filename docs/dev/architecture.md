@@ -83,6 +83,9 @@
     награды, история, лок и стадии дуэли. Отдаёт итог одним объектом, роутер только показывает.
   - `admin/` — сервисы админ-команд; `ghoul_game/`, `wordle_game/`, `video/` — мини-игры
     и нарезка видео.
+  - `chart_game/` — игра «График» (`docs/design/chart-game.md`): ролик роста рендерится один
+    раз (`python -m src.bot.utils.render_chart_video`, сервис `bot` делает это при запуске,
+    если файла `src/assets/videos/chart/growth.mp4` нет).
   - Заметные одиночные файлы: `ghoul.py` (статы/голод/смерть/поедание), `level_up.py`,
     `battle_record.py` (история боёв и `ActiveBattle`-лок), `notification_ticker.py`
     (уведомления о голоде/здоровье), `broadcast.py`, `quiz.py`, `family.py` (семьи:

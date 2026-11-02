@@ -52,6 +52,8 @@ services:
         poetry run python -m src.bot.dialogs.generate &&
         ([ -f src/assets/data/quotes/quotes.json ] ||
          poetry run python -m src.bot.utils.fetch_quotes) &&
+        ([ -f src/assets/videos/chart/growth.mp4 ] ||
+         poetry run python -m src.bot.utils.render_chart_video) &&
         exec poetry run python -m src.bot
     env_file:
       - .env

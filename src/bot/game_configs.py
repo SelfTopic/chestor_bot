@@ -1,3 +1,4 @@
+import math
 from dataclasses import dataclass, field
 from random import randint, uniform
 from typing import Dict, Literal, Optional
@@ -128,6 +129,30 @@ class LotteryConfig:
 
 
 LOTTERY_CONFIG = LotteryConfig()
+
+
+@dataclass
+class ChartConfig:
+    growth_rate: float = 0.12
+    max_multiplier: float = 50.0
+    countdown_seconds: float = 3.0
+    preparation_seconds: float = 10.0
+    # Правка может опоздать, а Telegram крутит анимацию по кругу: без запаса в конце ролика
+    # игроки снова увидели бы его начало.
+    late_edit_seconds: float = 3.0
+
+    @property
+    def growth_seconds(self) -> float:
+        return self.seconds_to(self.max_multiplier)
+
+    def seconds_to(self, multiplier: float) -> float:
+        return math.log(multiplier) / self.growth_rate
+
+    def multiplier(self, seconds: float) -> float:
+        return min(math.exp(self.growth_rate * max(seconds, 0.0)), self.max_multiplier)
+
+
+CHART_CONFIG = ChartConfig()
 
 
 STAT_CAP_MULTIPLIER = {"max_health": 2.5}
