@@ -5,6 +5,7 @@ from .anime_episode import AnimeEpisodeRepository
 from .docs_post import DocsPostRepository, PublishedPost
 from .base import Base
 from .battle import BattleRepository
+from .chart import AbandonedMachine, ChartRepository, Refund, SettledBet
 from .chat import ChatRepository
 from .chat_participant import ChatParticipantRepository, MessageTopRow
 from .death_log import DeathLogRepository
@@ -49,6 +50,10 @@ __all__ = [
     "TopKind",
     "GhoulEditRepository",
     "UserCooldownRepository",
+    "AbandonedMachine",
+    "ChartRepository",
+    "Refund",
+    "SettledBet",
     "ChatRepository",
     "ChatParticipantRepository",
     "MessageTopRow",
