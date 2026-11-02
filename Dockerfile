@@ -1,20 +1,12 @@
-# syntax=docker/dockerfile:1
-# Два этапа: компиляторы нужны только на случай зависимости без готового колеса
-# (psycopg теперь [binary] — со своей libpq), в итоговый образ попадают готовое
-# окружение и ffmpeg. Кэши apt/pip/poetry — BuildKit cache mounts: в слои не попадают,
-# а при изменении poetry.lock пакеты не скачиваются заново.
 
 FROM python:3.11-slim AS base
 
 ENV PYTHONUNBUFFERED=1 \
     POETRY_NO_INTERACTION=1 \
-    # Окружение вне /app: сервисы монтируют туда код (.:/app) и закрыли бы его.
     POETRY_VIRTUALENVS_PATH=/opt/poetry-venvs
 
-# Иначе debian-образ удаляет скачанные .deb и кэш apt пуст.
 RUN rm -f /etc/apt/apt.conf.d/docker-clean
 
-# poetry остаётся и в итоговом образе: сервисы запускаются через `poetry run`.
 RUN --mount=type=cache,target=/root/.cache/pip \
     pip install poetry
 
@@ -44,8 +36,6 @@ RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
 
 COPY --from=builder /opt/poetry-venvs /opt/poetry-venvs
 
-# yt-dlp и gallery-dl (видео по ссылкам) — в своём venv: бот сам обновляет их раз в сутки,
-# не трогая свои зависимости из poetry.lock.
 RUN --mount=type=cache,target=/root/.cache/pip \
     python -m venv /opt/media-tools \
     && /opt/media-tools/bin/pip install "yt-dlp[default,curl-cffi]" gallery-dl

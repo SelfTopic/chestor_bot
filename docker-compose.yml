@@ -1,6 +1,4 @@
-# Один образ приложения на проект (у прода chestor_bot-app, у стенда chestor_test-app):
-# собирает его только migrations, остальные сервисы берут готовый и никогда не
-# скачивают. Раньше каждый сервис с build: . экспортировал свою копию на ~2 ГБ.
+
 x-app-image: &app-image
   image: ${COMPOSE_PROJECT_NAME}-app
   pull_policy: never
@@ -43,19 +41,10 @@ services:
     networks:
       - app_network
 
-  # Бот — порт на selfrotgram. ENV=DEV в .env — polling, иначе вебхук на 8999
-  # (nginx отдаёт https://chestor.site/webhook… сюда); тогда нужны WEBHOOK_URL и
-  # WEBHOOK_SECRET (см. .env.example).
   bot:
     <<: *app-image
     tty: true
-    # tini первым процессом: убитые ffmpeg, чей yt-dlp тоже убит, иначе висели бы зомби.
     init: true
-    # Перед ботом — дерево фраз из YAML: код смонтирован томом, так что новый tree.py
-    # появляется и в репозитории, его остаётся закоммитить.
-    # Цитаты тянутся с citaty.info только если файла ещё нет — иначе каждый
-    # перезапуск бота заново бы долбил внешний сайт; src/assets смонтирован тем же
-    # томом, что код, так что скачанное один раз остаётся на сервере навсегда.
     command:
       - sh
       - -c
@@ -95,8 +84,6 @@ services:
     depends_on:
       postgres:
         condition: service_healthy
-    # Адрес БД миграции собирают из POSTGRES_* (src.database), как бот; .env в образ
-    # не попадает (.dockerignore), поэтому он передаётся сюда явно.
     env_file:
       - .env
     environment:
@@ -134,9 +121,6 @@ services:
       - app_network
 
   userbot_parser:
-    # Базой не пользуется, поэтому от migrations не зависит: запуск без образа —
-    # сначала `docker compose build migrations`. Докачивает серии аниме, затем пересылает
-    # боту серии и эдиты из каналов и остаётся слушать новые посты.
     <<: *app-image
     command: ["poetry", "run", "python", "-m", "src.userbot_parser.src.main"]
     env_file:
