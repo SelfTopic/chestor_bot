@@ -5,6 +5,17 @@ from .battle import (
     FighterIsDeadError,
     FighterNotCombatReadyError,
 )
+from .chart import (
+    ChartAlreadyBet,
+    ChartAlreadyCashedOut,
+    ChartBetOutOfRange,
+    ChartBetsClosed,
+    ChartError,
+    ChartNoBet,
+    ChartNotGrowing,
+    ChartTargetOutOfRange,
+    ChartTooLate,
+)
 from .chat import ChatError, ChatTextLengthError
 from .chat_not_found import ChatNotFound, ChatNotFoundInDatabase
 from .media_download import (
@@ -101,6 +112,15 @@ __all__ = [
     "FighterHasPendingBattleError",
     "FighterIsDeadError",
     "FighterNotCombatReadyError",
+    "ChartAlreadyBet",
+    "ChartAlreadyCashedOut",
+    "ChartBetOutOfRange",
+    "ChartBetsClosed",
+    "ChartError",
+    "ChartNoBet",
+    "ChartNotGrowing",
+    "ChartTargetOutOfRange",
+    "ChartTooLate",
     "ChatError",
     "ChatTextLengthError",
     "ChatNotFound",

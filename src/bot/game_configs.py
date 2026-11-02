@@ -133,8 +133,15 @@ LOTTERY_CONFIG = LotteryConfig()
 
 @dataclass
 class ChartConfig:
+    # Дорасти хотя бы до m график должен с вероятностью return_rate / m: тогда, когда бы игрок
+    # ни забирал, в среднем он получает return_rate от ставки.
+    return_rate: float = 0.96
     growth_rate: float = 0.12
     max_multiplier: float = 50.0
+    min_target: float = 1.01
+    min_bet: int = 100
+    max_bet: int = 100_000
+    machine_lifetime_seconds: float = 300.0
     countdown_seconds: float = 3.0
     preparation_seconds: float = 10.0
     # Правка может опоздать, а Telegram крутит анимацию по кругу: без запаса в конце ролика
@@ -147,6 +154,10 @@ class ChartConfig:
 
     def seconds_to(self, multiplier: float) -> float:
         return math.log(multiplier) / self.growth_rate
+
+    @property
+    def max_cents(self) -> int:
+        return round(self.max_multiplier * 100)
 
     def multiplier(self, seconds: float) -> float:
         return min(math.exp(self.growth_rate * max(seconds, 0.0)), self.max_multiplier)
