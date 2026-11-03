@@ -90,24 +90,3 @@ A bet on a color: **bet <color> <amount>**, e.g. `bet red 500`.
 
 > On average the lottery returns less than you bet (white returns exactly as much): it's fun,
 > not a way to earn.
-
-### jet (/jet)
-
-A crash game for the whole chat: **jet** opens a machine — one message with a video. The line
-climbs, the multiplier grows from x1, and the chart can crash at any moment.
-
-- A round: 9 seconds of bets, a 3-2-1 countdown, then growth. Cash out before the crash and you
-  get bet × multiplier; too late and the bet is gone.
-- Bet with a button under the message: 100, 1,000, 5,000, 10,000 or 100,000 CheSton, one per round.
-  The money is taken right away.
-- **🎯 x1.5 … x10** — auto cash-out: the bot cashes out for you when the chart reaches the
-  target. This way you can play without watching the video. You can change the target while
-  bets are open.
-- **💰 Cash out** — during growth. It counts by the bot's clock, not by what's on your screen:
-  a popup shows the result.
-- The chart doesn't grow past x50: whoever held to the end gets x50.
-- One machine per chat, it lives 5 minutes. While it runs, another "jet" sends a link to it.
-  If the bot restarts mid-round, bets are returned.
-
-> The chart reaches multiplier m with a chance of 0.96 / m: on average the game returns 96 of
-> every 100 bet, whenever you cash out.
