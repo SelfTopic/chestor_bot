@@ -1,6 +1,7 @@
 import io
 import math
 import multiprocessing
+import os
 from concurrent.futures import ProcessPoolExecutor
 from pathlib import Path
 
@@ -93,6 +94,8 @@ def _render_raw(index: int) -> bytes:
 
 
 def render_growth_video(path: Path, fps: int = FPS, workers: int | None = None) -> None:
+    # Одно ядро остаётся серверу: иначе проверки здоровья контейнеров не успевают и копятся.
+    workers = workers or max(1, (os.cpu_count() or 2) - 1)
     # fork из процесса с потоками (бот, pytest-xdist) может зависнуть в дочернем процессе.
     spawn = multiprocessing.get_context("spawn")
     with ProcessPoolExecutor(workers, spawn, _start_worker, (fps,)) as pool:
