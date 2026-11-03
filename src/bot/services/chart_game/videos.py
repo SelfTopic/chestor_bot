@@ -25,6 +25,9 @@ URGENT, WARM = 0, 1
 WARM_CRASHES = (range(100, 301), range(301, 501))
 # Telegram пускает в канал около 20 сообщений в минуту: прогрев оставляет место срочным загрузкам.
 WARM_UPLOAD_GAP_SECONDS = 6.0
+# Хостинг ограничивает сервер, если процессор долго занят больше чем на 70%: после каждого
+# ролика прогрев отдыхает втрое дольше, чем рендерил, — около 6% сервера на 4 ядрах.
+WARM_REST_FACTOR = 3.0
 
 
 @dataclass(frozen=True)
@@ -84,6 +87,7 @@ class ChartVideos:
         executor: Callable[[], Executor] = _render_pool,
         warm: Iterable[range] = WARM_CRASHES,
         warm_gap: float = WARM_UPLOAD_GAP_SECONDS,
+        warm_rest: float = WARM_REST_FACTOR,
     ) -> None:
         self._session_factory = session_factory
         self._growth = growth
@@ -92,6 +96,7 @@ class ChartVideos:
         self._executor_factory = executor
         self._warm = warm
         self._warm_gap = warm_gap
+        self._warm_rest = warm_rest
         # Без загрузчика файлы уходят прямо в правке сообщения.
         self.uploader: Uploader | None = None
         self._unlabeled: StoredPicture | None = None
@@ -192,10 +197,15 @@ class ChartVideos:
             priority, _, crash = await self._queue.get()
             try:
                 path = self._crash_path(crash)
+                rest = 0.0
                 if not path.exists():
+                    started = loop.time()
                     await loop.run_in_executor(self._executor, self._render, path, crash)
-                if await self._upload(path) and priority == WARM:
-                    await asyncio.sleep(self._warm_gap)
+                    rest = (loop.time() - started) * self._warm_rest
+                if await self._upload(path):
+                    rest = max(rest, self._warm_gap)
+                if priority == WARM:
+                    await asyncio.sleep(rest)
             except Exception:
                 logger.exception("Ролик обвала x%.2f не подготовлен", crash / 100)
             finally:

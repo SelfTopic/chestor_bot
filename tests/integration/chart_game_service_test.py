@@ -1,3 +1,5 @@
+import asyncio
+import time
 from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 
@@ -19,6 +21,7 @@ from src.bot.services.chart_game.videos import (
     ChartVideos,
     Picture,
     StoredPicture,
+    WARM,
     StoredVideo,
     VideoFile,
     video_key,
@@ -326,3 +329,29 @@ async def test_crash_without_video_shows_numbered_picture_uploaded_ahead(session
     numbered = await videos.crash(611)
     assert isinstance(numbered, StoredPicture)
     assert numbered != await videos.crash(612)
+
+
+async def test_warm_up_rests_after_each_render_but_urgent_does_not(session_factory, tmp_path):
+    def slow_render(path: Path, crash: int) -> None:
+        time.sleep(0.1)
+        fake_render(path, crash)
+
+    videos = make_videos(session_factory, tmp_path)
+    videos._render = slow_render
+    videos._warm_rest = 4.0
+    loop = asyncio.get_running_loop()
+
+    videos.start()
+    started = loop.time()
+    videos.request(241)
+    await videos.idle()
+    urgent = loop.time() - started
+
+    videos._put(WARM, 242)
+    started = loop.time()
+    await videos.idle()
+    warm = loop.time() - started
+    await videos.close()
+
+    assert urgent < 0.4
+    assert warm >= 0.45
