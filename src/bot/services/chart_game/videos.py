@@ -23,6 +23,8 @@ logger = logging.getLogger(__name__)
 # Сначала то, что нужно раунду, потом прогрев частых значений.
 URGENT, WARM = 0, 1
 WARM_CRASHES = (range(100, 301), range(301, 501))
+# Telegram пускает в канал около 20 сообщений в минуту: прогрев оставляет место срочным загрузкам.
+WARM_UPLOAD_GAP_SECONDS = 6.0
 
 
 @dataclass(frozen=True)
@@ -81,6 +83,7 @@ class ChartVideos:
         render: Callable[[Path, int], None] = render_crash_video,
         executor: Callable[[], Executor] = _render_pool,
         warm: Iterable[range] = WARM_CRASHES,
+        warm_gap: float = WARM_UPLOAD_GAP_SECONDS,
     ) -> None:
         self._session_factory = session_factory
         self._growth = growth
@@ -88,9 +91,13 @@ class ChartVideos:
         self._render = render
         self._executor_factory = executor
         self._warm = warm
+        self._warm_gap = warm_gap
         # Без загрузчика файлы уходят прямо в правке сообщения.
         self.uploader: Uploader | None = None
         self._unlabeled: StoredPicture | None = None
+        # Картинка обвала с числом — на случай, если ролик к обвалу не успеет.
+        self._pictures: dict[int, StoredPicture] = {}
+        self._picture_tasks: set[asyncio.Task[None]] = set()
         self._queue: asyncio.PriorityQueue[tuple[int, int, int]] = asyncio.PriorityQueue()
         self._order = itertools.count()
         self._worker: asyncio.Task[None] | None = None
@@ -103,17 +110,23 @@ class ChartVideos:
         self._worker = asyncio.create_task(self._work())
 
     async def close(self) -> None:
-        if self._worker is not None:
-            self._worker.cancel()
-            await asyncio.gather(self._worker, return_exceptions=True)
+        tasks = [*self._picture_tasks, *([self._worker] if self._worker else [])]
+        for task in tasks:
+            task.cancel()
+        await asyncio.gather(*tasks, return_exceptions=True)
         if self._executor is not None:
             self._executor.shutdown(wait=False, cancel_futures=True)
 
     def request(self, crash: int) -> None:
         self._put(URGENT, crash)
+        if self.uploader is not None and crash not in self._pictures:
+            task = asyncio.create_task(self._prepare_picture(crash))
+            self._picture_tasks.add(task)
+            task.add_done_callback(self._picture_tasks.discard)
 
     async def idle(self) -> None:
         await self._queue.join()
+        await asyncio.gather(*self._picture_tasks, return_exceptions=True)
 
     @property
     def ready(self) -> bool:
@@ -128,6 +141,8 @@ class ChartVideos:
             media = await self._media(path)
             if isinstance(media, StoredVideo) or self.uploader is None:
                 return media
+        if (picture := self._pictures.get(crash)) is not None:
+            return picture
         return await self.unlabeled(crash)
 
     async def unlabeled(self, crash: int) -> Media:
@@ -172,16 +187,25 @@ class ChartVideos:
         await self._prepare_shared()
         loop = asyncio.get_running_loop()
         while True:
-            _, _, crash = await self._queue.get()
+            priority, _, crash = await self._queue.get()
             try:
                 path = self._crash_path(crash)
                 if not path.exists():
                     await loop.run_in_executor(self._executor, self._render, path, crash)
-                await self._upload(path)
+                if await self._upload(path) and priority == WARM:
+                    await asyncio.sleep(self._warm_gap)
             except Exception:
                 logger.exception("Ролик обвала x%.2f не подготовлен", crash / 100)
             finally:
                 self._queue.task_done()
+
+    async def _prepare_picture(self, crash: int) -> None:
+        assert self.uploader is not None
+        try:
+            png = await asyncio.to_thread(crash_picture, crash)
+            self._pictures[crash] = StoredPicture(await self.uploader.picture(png))
+        except Exception:
+            logger.exception("Картинка обвала x%.2f не загрузилась", crash / 100)
 
     async def _prepare_shared(self) -> None:
         if self.uploader is None:
@@ -194,9 +218,11 @@ class ChartVideos:
         except Exception:
             logger.exception("Общие ролики «Джета» не загрузились")
 
-    async def _upload(self, path: Path) -> None:
+    async def _upload(self, path: Path) -> bool:
         if self.uploader is None:
-            return
+            return False
         media = await self._media(path)
-        if isinstance(media, VideoFile):
-            await self.remember(media, await self.uploader.video(path))
+        if isinstance(media, StoredVideo):
+            return False
+        await self.remember(media, await self.uploader.video(path))
+        return True

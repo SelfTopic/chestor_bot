@@ -6,7 +6,6 @@ from selfrot.types import (
     InputMediaAnimation,
     InputMediaPhoto,
     InputRichBlockAnimation,
-    InputRichBlockDetails,
     InputRichBlockParagraph,
     InputRichBlock,
     InputRichBlockPhoto,
@@ -155,13 +154,10 @@ class TelegramMachineScreen:
         blocks.append(media_block(screen.media))
         blocks.append(InputRichBlockParagraph(text="\n".join(text(line) for line in self._headline(screen))))
         lines = [text(self._bet_line(screen.stage, bet, names)) for bet in screen.bets]
+        # Не сворачиваемым блоком: правка сообщения каждый раз сворачивает его заново.
         if lines:
-            blocks.append(
-                InputRichBlockDetails(
-                    summary=text(CHART.bets(count=len(lines))),
-                    blocks=[InputRichBlockParagraph(text="\n".join(lines))],
-                )
-            )
+            summary = text(CHART.bets(count=len(lines)))
+            blocks.append(InputRichBlockParagraph(text="\n".join([summary, *lines])))
         elif screen.stage is Stage.GROWTH:
             blocks.append(InputRichBlockParagraph(text=text(CHART.no_bets())))
         return blocks

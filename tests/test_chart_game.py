@@ -115,7 +115,7 @@ async def test_round_through_buttons(feed, telegram, chart, session_factory):
     (crashed,) = map(rich_body, telegram.bodies("editMessageText"))
     texts = rich_texts(crashed)
     assert only_text(CHART.crashed(crash="1.92")) in "\n".join(texts)
-    assert only_text(CHART.won_line(name="Вася", multiplier="1.50", payout="1.500")) in texts
+    assert only_text(CHART.won_line(name="Вася", multiplier="1.50", payout="1.500")) in "\n".join(texts)
     assert await popup(feed, cash_out) == only_text(CHART.already_cashed(multiplier="1.50"))
 
 

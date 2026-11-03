@@ -270,8 +270,8 @@ async def test_storage_uploads_ahead_and_crash_never_waits_for_upload(session_fa
         video_key(tmp_path / "crash" / "241.mp4"), "video:241.mp4"
     )
     assert isinstance(await videos.growth(), StoredVideo)
-    assert await videos.crash(300) == StoredPicture("picture:1")
-    assert await videos.history([241]) == StoredPicture("picture:2")
+    assert await videos.crash(300) == await videos.unlabeled(300)
+    assert isinstance(await videos.history([241]), StoredPicture)
 
 
 async def test_crash_edit_reuses_the_strip_of_the_growth_edit(session_factory, tmp_path):
@@ -303,3 +303,21 @@ async def test_crash_edit_reuses_the_strip_of_the_growth_edit(session_factory, t
     assert isinstance(second_growth.history, StoredPicture)
     assert second_crash.history == second_growth.history
     assert isinstance(second_crash.media, (StoredVideo, StoredPicture))
+
+
+async def test_crash_without_video_shows_numbered_picture_uploaded_ahead(session_factory, tmp_path):
+    def broken_render(path: Path, crash: int) -> None:
+        raise RuntimeError("no ffmpeg")
+
+    videos = make_videos(session_factory, tmp_path)
+    videos._render = broken_render
+    videos.uploader = FakeUploader()
+
+    videos.start()
+    videos.request(611)
+    await videos.idle()
+    await videos.close()
+
+    numbered = await videos.crash(611)
+    assert isinstance(numbered, StoredPicture)
+    assert numbered != await videos.crash(612)
