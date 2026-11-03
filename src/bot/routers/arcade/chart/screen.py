@@ -34,6 +34,7 @@ from src.bot.services.chart_game import (
     StoredVideo,
     VideoFile,
     bets_panel,
+    closed_picture,
 )
 from src.bot.services.dialog import DialogService
 from src.bot.services.language import LanguageService
@@ -149,6 +150,16 @@ class TelegramMachineScreen:
         ]
         bank = text(CHART.panel_bank(amount=format_amount(sum(bet.amount for bet in bets))))
         return await asyncio.to_thread(bets_panel, text(CHART.panel_title()), bank, rows)
+
+    async def closed_picture(self, chat_id: int, crash: int) -> bytes:
+        text, _ = await self._lookup(chat_id, [])
+        return await asyncio.to_thread(
+            closed_picture,
+            crash,
+            text(CHART.closed_title()),
+            text(CHART.closed_last(crash=multiplier(crash))),
+            text(CHART.closed_hint()),
+        )
 
     async def _context(self, screen: Screen) -> tuple[LineText, dict[int, str]]:
         return await self._lookup(screen.chat_id, screen.bets)

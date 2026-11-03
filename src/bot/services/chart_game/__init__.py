@@ -1,4 +1,5 @@
 from .bets_panel import PanelRow, bets_panel
+from .closed_picture import closed_picture
 from .growth_video import GROWTH_VIDEO, render_growth_video
 from .rounds import Bet
 from .screen import BetLine, MachineScreen, Screen, Shown, Stage
@@ -23,5 +24,6 @@ __all__ = [
     "Uploader",
     "VideoFile",
     "bets_panel",
+    "closed_picture",
     "render_growth_video",
 ]

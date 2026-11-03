@@ -49,6 +49,9 @@ class FakeScreen:
     async def bets_picture(self, chat_id: int, bets: list[BetLine]) -> bytes:
         return f"panel:{len(bets)}".encode()
 
+    async def closed_picture(self, chat_id: int, crash: int) -> bytes:
+        return f"closed:{crash}".encode()
+
 
 class FakeUploader:
     def __init__(self) -> None:
@@ -196,6 +199,7 @@ async def test_machine_closes_after_lifetime(game, monkeypatch):
     await service.idle()
 
     assert (screen.screens[-1].stage, screen.screens[-1].crash) == (Stage.CLOSED, 192)
+    assert screen.screens[-1].media == Picture(b"closed:192")
     assert not service.is_open(CHAT)
     async with sessions() as session:
         closed = await session.scalar(select(ChartMachine.closed_at))

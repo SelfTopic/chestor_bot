@@ -191,12 +191,13 @@ class ChartGameService:
             machine.strip = await strip
             growth = await self._videos.growth()
             await self._show(machine, Stage.GROWTH, growth, [BetLine.of(b) for b in game.bets.values()])
+            crash = game.crash
+            closing = game.crashes_at - machine.opened_at >= CHART_CONFIG.machine_lifetime_seconds
+            closed = asyncio.create_task(self._closed(machine, crash)) if closing else None
             upcoming = await self._prepare_round(machine)
 
             await self._sleep_until(game.crashes_at - CRASH_LEAD_SECONDS)
-            crash = game.crash
-            closing = game.crashes_at - machine.opened_at >= CHART_CONFIG.machine_lifetime_seconds
-            media = await (self._videos.unlabeled(crash) if closing else self._videos.crash(crash))
+            media = await (closed if closed is not None else self._videos.crash(crash))
             await self._sleep_until(game.crashes_at)
             round_id = machine.round_id
             waiting = {user_id for user_id, bet in game.bets.items() if bet.cashed_at is None}
@@ -230,6 +231,14 @@ class ChartGameService:
         except Exception:
             logger.exception("Панель ставок не подготовилась")
             return None
+
+    async def _closed(self, machine: Machine, crash: int) -> Media:
+        assert self.screen is not None
+        try:
+            return await self._videos.picture(await self.screen.closed_picture(machine.chat_id, crash))
+        except Exception:
+            logger.exception("Картинка закрытого автомата не подготовилась")
+            return await self._videos.unlabeled(crash)
 
     async def _strip(self, machine: Machine) -> Media | None:
         if not machine.history:

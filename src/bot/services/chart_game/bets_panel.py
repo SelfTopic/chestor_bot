@@ -1,4 +1,5 @@
 import io
+import unicodedata
 from dataclasses import dataclass
 from functools import cache
 
@@ -38,6 +39,8 @@ def _drawable(char: str) -> bool:
 
 
 def _clean(name: str) -> str:
+    # NFKC переводит «декоративные» буквы (𝕮𝖍𝖊𝕾𝖙𝖔𝖗, ｆｕｌｌ) в обычные, которые шрифт знает.
+    name = unicodedata.normalize("NFKC", name)
     return " ".join("".join(char for char in name if _drawable(char)).split())
 
 

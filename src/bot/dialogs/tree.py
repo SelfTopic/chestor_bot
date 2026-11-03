@@ -744,6 +744,15 @@ class _ChartDialogs:
     def closed(self) -> Line:
         return Line("chart.closed", {})
 
+    def closed_hint(self) -> Line:
+        return Line("chart.closed_hint", {})
+
+    def closed_last(self, *, crash: object) -> Line:
+        return Line("chart.closed_last", {"crash": crash})
+
+    def closed_title(self) -> Line:
+        return Line("chart.closed_title", {})
+
     def crashed(self, *, crash: object) -> Line:
         return Line("chart.crashed", {"crash": crash})
 
@@ -5061,6 +5070,9 @@ PLACEHOLDERS: dict[str, frozenset[str]] = {
     "chart.cash_out_button": frozenset(),
     "chart.cashed": frozenset({"multiplier", "payout"}),
     "chart.closed": frozenset(),
+    "chart.closed_hint": frozenset(),
+    "chart.closed_last": frozenset({"crash"}),
+    "chart.closed_title": frozenset(),
     "chart.crashed": frozenset({"crash"}),
     "chart.growth": frozenset(),
     "chart.lost_line": frozenset({"amount", "name"}),

@@ -15,6 +15,9 @@ chart:
   bets: 'Ставки: {count}'
   no_bets: Ставок нет.
   panel_title: СТАВКИ
+  closed_title: АВТОМАТ ЗАКРЫТ
+  closed_last: 'последний обвал x{crash}'
+  closed_hint: 'напиши «джет», чтобы открыть новый'
   panel_bank: 'банк {amount}'
   panel_target: 'авто x{target}'
   bet_line: '{name} — {amount}'

@@ -15,6 +15,9 @@ chart:
   bets: 'Bets: {count}'
   no_bets: No bets.
   panel_title: BETS
+  closed_title: MACHINE CLOSED
+  closed_last: 'last crash x{crash}'
+  closed_hint: 'type "jet" to open a new one'
   panel_bank: 'pot {amount}'
   panel_target: 'auto x{target}'
   bet_line: '{name} — {amount}'
