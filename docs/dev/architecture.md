@@ -90,7 +90,7 @@
     (`screen.py`), который реализуют роутеры. `videos.py` — кэш `file_id` и очередь рендера
     роликов обвала в одном процессе с пониженным приоритетом. Ролик роста рендерится один раз
     (`python -m src.bot.utils.render_chart_video`, сервис `bot` делает это при запуске, если
-    файла `src/assets/videos/chart/growth.mp4` нет).
+    файла `src/assets/videos/chart/25fps/growth.mp4` нет).
   - Заметные одиночные файлы: `ghoul.py` (статы/голод/смерть/поедание), `level_up.py`,
     `battle_record.py` (история боёв и `ActiveBattle`-лок), `notification_ticker.py`
     (уведомления о голоде/здоровье), `broadcast.py`, `quiz.py`, `family.py` (семьи:

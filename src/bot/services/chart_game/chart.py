@@ -2,14 +2,20 @@ import math
 import random
 from collections.abc import Callable
 from dataclasses import dataclass
+from pathlib import Path
 
 from PIL import Image, ImageChops, ImageDraw, ImageFilter
 
+from src.bot.config import game_config
 from src.bot.game_configs import CHART_CONFIG
 
 from .style import LABEL, WHITE, Color, background, font
 
 WIDTH, HEIGHT = 960, 540
+# Ролик на 30 кадрах Telegram проигрывал на 25: к x50 он отставал от времени бота на 5 секунд.
+FPS = 25
+# Частота в пути: ролики с другой частотой не подхватятся вместо новых.
+VIDEOS = Path(game_config.path_to_assets) / "videos" / "chart" / f"{FPS}fps"
 # Линии и текст рисуются вдвое крупнее и уменьшаются: в Pillow у линий нет сглаживания.
 SCALE = 2
 # Свечение размывается на холсте в четыре раза меньше: на полном размере это дороже всего кадра.

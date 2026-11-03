@@ -6,12 +6,13 @@ from pathlib import Path
 
 from PIL import Image, ImageDraw
 
-from src.bot.config import game_config
 from src.bot.game_configs import CHART_CONFIG
 
 from .chart import (
     CENTER,
+    FPS,
     SCALE,
+    VIDEOS,
     ChartPainter,
     Viewport,
     curve_glow,
@@ -24,7 +25,7 @@ from .chart import (
 from .encoder import write_video
 from .style import PURPLE, WHITE, accent
 
-GROWTH_VIDEO = Path(game_config.path_to_assets) / "videos" / "chart" / "growth.mp4"
+GROWTH_VIDEO = VIDEOS / "growth.mp4"
 
 
 def frame_count(fps: int) -> int:
@@ -91,7 +92,7 @@ def _render_raw(index: int) -> bytes:
     return _frames.render(index).tobytes()
 
 
-def render_growth_video(path: Path, fps: int = 30, workers: int | None = None) -> None:
+def render_growth_video(path: Path, fps: int = FPS, workers: int | None = None) -> None:
     # fork из процесса с потоками (бот, pytest-xdist) может зависнуть в дочернем процессе.
     spawn = multiprocessing.get_context("spawn")
     with ProcessPoolExecutor(workers, spawn, _start_worker, (fps,)) as pool:

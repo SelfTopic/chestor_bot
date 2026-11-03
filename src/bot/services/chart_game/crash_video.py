@@ -5,13 +5,14 @@ from pathlib import Path
 
 from PIL import Image, ImageDraw
 
-from src.bot.config import game_config
 from src.bot.game_configs import CHART_CONFIG
 
 from .chart import (
     BOTTOM,
     CENTER,
+    FPS,
     SCALE,
+    VIDEOS,
     ChartPainter,
     Viewport,
     curve_glow,
@@ -24,7 +25,7 @@ from .chart import (
 from .encoder import write_video
 from .style import GOLD, LABEL, PURPLE, RED, WHITE, accent, font, mix
 
-CRASH_VIDEOS = Path(game_config.path_to_assets) / "videos" / "chart" / "crash"
+CRASH_VIDEOS = VIDEOS / "crash"
 
 FALL_SECONDS = 0.8
 SPARKS = 14
@@ -137,7 +138,7 @@ class CrashFrames:
         image.paste(canvas, (round(CENTER[0] - BAR_WIDTH / 2), round(BAR_Y - height / 2)), canvas)
 
 
-def render_crash_video(path: Path, crash: int, fps: int = 30) -> None:
+def render_crash_video(path: Path, crash: int, fps: int = FPS) -> None:
     write_video(path, fps, CrashFrames(crash, fps).frames(), preset="medium")
 
 
