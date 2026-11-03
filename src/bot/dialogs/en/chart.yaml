@@ -1,16 +1,16 @@
 chart:
   already_open:
-    - '📈 A chart is already running in this chat — bet under it.'
-    - '📈 One chart per chat. It''s already going, scroll up.'
+    - '📈 A jet is already running in this chat — bet under it.'
+    - '📈 One jet per chat. It''s already going, scroll up.'
   already_open_link:
-    - '📈 A chart is already running in this chat — <a href="{link}">here it is</a>, bet under it.'
-    - '📈 One chart per chat, and it''s already going: <a href="{link}">tap here</a>.'
-  unavailable: '📈 The chart is still being drawn, try in a couple of minutes.'
+    - '📈 A jet is already running in this chat — <a href="{link}">here it is</a>, bet under it.'
+    - '📈 One jet per chat, and it''s already going: <a href="{link}">tap here</a>.'
+  unavailable: '📈 The jet is still getting ready, try in a couple of minutes.'
   preparation: '📈 Bets are open: 10 seconds to start. The machine closes in {minutes} min.'
   crashed: '💥 Crashed at x{crash}!'
   capped: '🏆 The chart hit x{crash} — everyone still holding cashed out!'
   growth: '🚀 It''s growing! Hit "Cash out" before it crashes.'
-  closed: '🔒 The machine is closed. Want more — type "chart".'
+  closed: '🔒 The machine is closed. Want more — type "jet".'
   abandoned: '🔒 The bot restarted, the machine is closed. Bets returned.'
   bets: 'Bets: {count}'
   no_bets: No bets.

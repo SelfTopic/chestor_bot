@@ -31,7 +31,7 @@ TContext = TypeVar("TContext", bound=AppContext[DataMessageCallbackQuery])
 
 class OpenChartHandler(MessageHandler[AppContext[TextUserMessage]]):
     query = (
-        Text("график", ignore_case=True) | Text("chart", ignore_case=True) | Command("chart")
+        Text("джет", ignore_case=True) | Text("jet", ignore_case=True) | Command("jet")
     ) & HasUser()
 
     async def handle(self) -> None:

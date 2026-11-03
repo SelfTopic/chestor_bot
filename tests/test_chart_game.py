@@ -67,7 +67,7 @@ async def chart(dispatcher, telegram, session_factory, tmp_path):
 
 async def open_machine(feed, telegram, chart, session_factory, money: int = 10_000):
     service, clock, _ = chart
-    await feed(message_update("график", uid=PLAYER, chat=CHAT))
+    await feed(message_update("джет", uid=PLAYER, chat=CHAT))
     await clock.until_blocked(service)
     async with session_factory() as session:
         await WalletRepository(session).change(PLAYER, money)
@@ -130,7 +130,7 @@ async def test_not_enough_money_for_bet(feed, telegram, chart, session_factory):
 async def test_second_machine_links_to_the_running_one(feed, telegram, chart, session_factory):
     await open_machine(feed, telegram, chart, session_factory)
 
-    await feed(message_update("график", uid=PLAYER, chat=CHAT))
+    await feed(message_update("джет", uid=PLAYER, chat=CHAT))
 
     (reply,) = telegram.bodies("sendMessage")
     assert reply["text"] in phrase_texts(CHART.already_open_link(link="https://t.me/c/1234567890/100"))
@@ -139,10 +139,10 @@ async def test_second_machine_links_to_the_running_one(feed, telegram, chart, se
 
 async def test_second_machine_in_private_chat_has_no_link(chart, send):
     service, clock, _ = chart
-    await send("график", uid=PLAYER)
+    await send("джет", uid=PLAYER)
     await clock.until_blocked(service)
 
-    (reply,) = await send("график", uid=PLAYER)
+    (reply,) = await send("джет", uid=PLAYER)
 
     assert reply in phrase_texts(CHART.already_open())
 
@@ -155,6 +155,6 @@ async def test_no_machine_without_growth_video(chart, send):
     _, _, growth = chart
     growth.unlink()
 
-    (reply,) = await send("график", uid=PLAYER, chat=CHAT)
+    (reply,) = await send("джет", uid=PLAYER, chat=CHAT)
 
     assert reply == only_text(CHART.unavailable())
