@@ -47,13 +47,14 @@ from .middlewares import (
     UpdateLoggingMiddleware,
 )
 from .repositories import UserRepository
-from .routers import RootRouter
+from .routers import RootRouter, TelegramChartStorage, TelegramMachineScreen
 from .session_services import rp_commands_repository
 from .tasks import TASKS, MediaToolsUpdate
 from .services.notify import NotifyError, SelfrotBotNotifier
 from .services.quiz import QuizService
 from .services.llm import LlmClient
 from .services.analytics import AnalyticsRecorder
+from .services.chart_game import ChartGameService, ChartVideos
 from .services.notify import TelegramDocsChannel
 from .services.player_docs import PlayerDocsService
 from .services.link_media import Downloader, LinkMediaService
@@ -172,6 +173,8 @@ class Dispatcher(BaseDispatcher[AppContext]):
             session_factory,
             enabled=self.link_media_service.enabled,
         )
+        self.chart_videos = ChartVideos(session_factory)
+        self.chart_service = ChartGameService(session_factory, self.chart_videos)
 
     def report_broken_texts(self, error: Exception) -> None:
         # Тексты перечитываются внутри синхронного text(), поэтому отправка — отдельной
@@ -228,6 +231,7 @@ class Dispatcher(BaseDispatcher[AppContext]):
             search_service=self.search_service,
             link_media_service=self.link_media_service,
             music_service=self.music_service,
+            chart_service=self.chart_service,
             player_docs=self.player_docs,
             quote_service=self.quote_service,
             rp_commands_service=self.rp_commands_service,
@@ -260,6 +264,12 @@ class Dispatcher(BaseDispatcher[AppContext]):
         task.add_done_callback(self.alerts.discard)
         self.roast_service.bot_id = (await self.api.get_me()).id
         await self.roast_service.cleanup()
+        self.chart_service.screen = TelegramMachineScreen(
+            self.api, self.session_factory, self.dialog_service
+        )
+        if settings.CHART_STORAGE_CHAT:
+            self.chart_videos.uploader = TelegramChartStorage(self.api, settings.CHART_STORAGE_CHAT)
+        await self.chart_service.start()
 
     async def mark_service_admins(self) -> None:
         if not settings.ADMIN_IDS:
@@ -284,6 +294,7 @@ class Dispatcher(BaseDispatcher[AppContext]):
         )
 
     async def on_shutdown(self) -> None:
+        await self.chart_service.close()
         await self.video_worker.stop()
         await self.analytics.flush()
         await self.quiz_service.close()

@@ -1,3 +1,4 @@
+import math
 from dataclasses import dataclass, field
 from random import randint, uniform
 from typing import Dict, Literal, Optional
@@ -128,6 +129,55 @@ class LotteryConfig:
 
 
 LOTTERY_CONFIG = LotteryConfig()
+
+
+@dataclass
+class ChartConfig:
+    # Дорасти хотя бы до m график должен с вероятностью return_rate / m: тогда, когда бы игрок
+    # ни забирал, в среднем он получает return_rate от ставки.
+    return_rate: float = 0.96
+    growth_rate: float = 0.12
+    max_multiplier: float = 50.0
+    min_target: float = 1.01
+    min_bet: int = 100
+    max_bet: int = 100_000
+    machine_lifetime_seconds: float = 300.0
+    # Суммы и цели стоят парами в двух колонках клавиатуры: их поровну.
+    bet_buttons: tuple[int, ...] = (100, 1_000, 5_000, 10_000, 100_000)
+    # Цели автовывода в сотых: 150 — x1.5.
+    target_buttons: tuple[int, ...] = (150, 200, 300, 500, 1000)
+    countdown_seconds: float = 3.0
+    # Ролик начинает играть позже, чем бот отправил правку: столько бот ждёт сверх отсчёта,
+    # чтобы его рост шёл вровень с тем, что видят игроки. Подобрано на стенде.
+    playback_delay_seconds: float = 0.8
+    preparation_seconds: float = 10.0
+    # Ставки закрываются раньше конца подготовки: за остаток бот рисует и загружает панель
+    # ставок, и правка роста уходит без загрузки.
+    bets_seconds: float = 9.0
+    # Правка может опоздать, а Telegram крутит анимацию по кругу: без запаса в конце ролика
+    # игроки снова увидели бы его начало.
+    late_edit_seconds: float = 3.0
+
+    @property
+    def until_growth_seconds(self) -> float:
+        return self.preparation_seconds + self.countdown_seconds + self.playback_delay_seconds
+
+    @property
+    def growth_seconds(self) -> float:
+        return self.seconds_to(self.max_multiplier)
+
+    def seconds_to(self, multiplier: float) -> float:
+        return math.log(multiplier) / self.growth_rate
+
+    @property
+    def max_cents(self) -> int:
+        return round(self.max_multiplier * 100)
+
+    def multiplier(self, seconds: float) -> float:
+        return min(math.exp(self.growth_rate * max(seconds, 0.0)), self.max_multiplier)
+
+
+CHART_CONFIG = ChartConfig()
 
 
 STAT_CAP_MULTIPLIER = {"max_health": 2.5}
