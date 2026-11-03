@@ -3,7 +3,7 @@ import subprocess
 from collections.abc import Iterable
 from pathlib import Path
 
-from .chart import HEIGHT, WIDTH
+from .style import HEIGHT, WIDTH
 
 
 # x264 по умолчанию кодирует в потоках на все ядра: threads ограничивает его.

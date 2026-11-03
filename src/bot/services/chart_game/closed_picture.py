@@ -4,7 +4,7 @@ from PIL import Image, ImageDraw, ImageEnhance, ImageFilter
 
 from .chart import HEIGHT, SCALE, WIDTH, paste
 from .crash_video import CrashFrames
-from .style import LABEL, RED, WHITE, font
+from ..arcade_art.style import LABEL, RED, WHITE, font
 
 LOCK_Y = 150
 SHACKLE, BODY_WIDTH, BODY_HEIGHT, STROKE = 30, 84, 64, 10

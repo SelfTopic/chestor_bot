@@ -22,8 +22,8 @@ from .chart import (
     layer,
     paste,
 )
-from .encoder import write_video
-from .style import PURPLE, WHITE, accent
+from ..arcade_art.encoder import write_video
+from ..arcade_art.style import PURPLE, WHITE, accent
 
 GROWTH_VIDEO = VIDEOS / "growth.mp4"
 

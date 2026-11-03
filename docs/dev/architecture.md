@@ -91,6 +91,8 @@
     роликов обвала в одном процессе с пониженным приоритетом. Ролик роста рендерится один раз
     (`python -m src.bot.utils.render_chart_video`, сервис `bot` делает это при запуске, если
     файла `src/assets/videos/chart/25fps/growth.mp4` нет).
+  - `arcade_art/` — общее для экранов автоматов (джет, рулетка): размер экрана, палитра,
+    шрифт, фон (`style.py`) и кодирование кадров в mp4 одним потоком x264 (`encoder.py`).
   - Заметные одиночные файлы: `ghoul.py` (статы/голод/смерть/поедание), `level_up.py`,
     `battle_record.py` (история боёв и `ActiveBattle`-лок), `notification_ticker.py`
     (уведомления о голоде/здоровье), `broadcast.py`, `quiz.py`, `family.py` (семьи:
