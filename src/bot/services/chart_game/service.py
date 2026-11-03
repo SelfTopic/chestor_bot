@@ -131,6 +131,17 @@ class ChartGameService:
             raise
         return bet
 
+    async def set_target(self, chat_id: int, user_id: int, target: int) -> Bet:
+        machine = self._machine(chat_id)
+        if machine.round is None:
+            raise ChartBetsClosed()
+        round_id = machine.round_id
+        bet = machine.round.set_target(user_id, target, self._clock())
+        async with self._session_factory() as session:
+            await ChartRepository(session).set_target(round_id, user_id, target)
+            await session.commit()
+        return bet
+
     async def cash_out(self, chat_id: int, user_id: int) -> Bet:
         machine = self._machine(chat_id)
         game, round_id = machine.round, machine.round_id
@@ -217,7 +228,7 @@ class ChartGameService:
         crash: int | None = None,
     ) -> None:
         assert self.screen is not None
-        strip = await asyncio.to_thread(history_strip, machine.history)
+        strip = await asyncio.to_thread(history_strip, machine.history) if machine.history else None
         closes_in = machine.opened_at + CHART_CONFIG.machine_lifetime_seconds - self._clock()
 
         def screen(media: Media) -> Screen:
@@ -275,7 +286,7 @@ class ChartGameService:
                         machine.chat_id,
                         machine.message_id,
                         Picture(await asyncio.to_thread(opening_picture)),
-                        await asyncio.to_thread(history_strip, []),
+                        None,
                         refunded,
                     )
                 )

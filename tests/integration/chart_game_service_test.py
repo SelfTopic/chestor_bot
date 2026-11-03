@@ -1,7 +1,4 @@
-import asyncio
-import random
 from concurrent.futures import ThreadPoolExecutor
-from pathlib import Path
 
 import pytest
 from sqlalchemy import select
@@ -25,45 +22,10 @@ from src.bot.services.chart_game.videos import (
     video_key,
 )
 from src.database.models import ChartMachine
+from tests.chart_fakes import FakeTime, FixedRandom, fake_render
 
 CHAT = -1001
 PLAYER, OTHER = 700001, 700002
-
-
-class FixedRandom(random.Random):
-    def __init__(self, value: float) -> None:
-        super().__init__()
-        self.value = value
-
-    def random(self) -> float:
-        return self.value
-
-
-class FakeTime:
-    def __init__(self) -> None:
-        self.now = 1000.0
-        self._sleepers: list[tuple[float, asyncio.Future[None]]] = []
-
-    def clock(self) -> float:
-        return self.now
-
-    async def sleep(self, seconds: float) -> None:
-        future = asyncio.get_running_loop().create_future()
-        self._sleepers.append((self.now + seconds, future))
-        await future
-
-    async def advance_to(self, moment: float, service: ChartGameService) -> None:
-        self.now = moment
-        woken = [(d, f) for d, f in self._sleepers if d <= moment]
-        for entry in woken:
-            self._sleepers.remove(entry)
-            entry[1].set_result(None)
-        await self.until_blocked(service)
-
-    async def until_blocked(self, service: ChartGameService) -> None:
-        async with asyncio.timeout(10):
-            while len(self._sleepers) < len(service._tasks):
-                await asyncio.sleep(0.01)
 
 
 class FakeScreen:
@@ -78,11 +40,6 @@ class FakeScreen:
             raise ChartStaleVideo()
         file_id = "uploaded" if isinstance(screen.media, VideoFile) else None
         return Shown(message_id=42, file_id=file_id)
-
-
-def fake_render(path: Path, crash: int) -> None:
-    path.parent.mkdir(parents=True, exist_ok=True)
-    path.write_bytes(b"video")
 
 
 @pytest.fixture
@@ -163,7 +120,8 @@ async def test_auto_cash_out_pays_at_crash(game):
     started = clock.now
     await service.open(CHAT, PLAYER)
     await clock.until_blocked(service)
-    await service.bet(CHAT, PLAYER, 1000, 150)
+    await service.bet(CHAT, PLAYER, 1000, None)
+    await service.set_target(CHAT, PLAYER, 150)
     await service.bet(CHAT, OTHER, 1000, 200)
 
     await clock.advance_to(started + CHART_CONFIG.preparation_seconds, service)

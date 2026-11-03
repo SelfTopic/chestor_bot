@@ -134,3 +134,17 @@ def test_cap_cashes_everyone_still_in():
     payouts = {bet.user_id: bet.payout for bet in game.settle()}
 
     assert payouts == {1: 50_000, 2: 3000}
+
+
+def test_target_changes_only_on_own_bet_during_preparation():
+    game = Round(crash=241, started_at=0.0)
+    game.place(1, 1000, None, now=0.0)
+
+    assert game.set_target(1, 300, now=1.0).target == 300
+    assert game.set_target(1, 150, now=2.0).target == 150
+    with pytest.raises(ChartNoBet):
+        game.set_target(2, 200, now=2.0)
+    with pytest.raises(ChartTargetOutOfRange):
+        game.set_target(1, 100, now=2.0)
+    with pytest.raises(ChartBetsClosed):
+        game.set_target(1, 200, now=PREPARATION)

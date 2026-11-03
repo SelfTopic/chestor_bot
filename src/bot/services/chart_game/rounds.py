@@ -81,11 +81,25 @@ class Round:
             raise ChartAlreadyBet()
         if not CHART_CONFIG.min_bet <= amount <= CHART_CONFIG.max_bet:
             raise ChartBetOutOfRange(CHART_CONFIG.min_bet, CHART_CONFIG.max_bet)
+        self._check_target(target)
+        bet = self.bets[user_id] = Bet(user_id, amount, target)
+        return bet
+
+    def set_target(self, user_id: int, target: int, now: float) -> Bet:
+        if self.phase(now) is not Phase.PREPARATION:
+            raise ChartBetsClosed()
+        bet = self.bets.get(user_id)
+        if bet is None:
+            raise ChartNoBet()
+        self._check_target(target)
+        bet.target = target
+        return bet
+
+    @staticmethod
+    def _check_target(target: int | None) -> None:
         min_target = round(CHART_CONFIG.min_target * ONE)
         if target is not None and not min_target <= target <= CHART_CONFIG.max_cents:
             raise ChartTargetOutOfRange(min_target, CHART_CONFIG.max_cents)
-        bet = self.bets[user_id] = Bet(user_id, amount, target)
-        return bet
 
     def cash_out(self, user_id: int, now: float) -> Bet:
         bet = self.bets.get(user_id)

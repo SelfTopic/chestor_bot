@@ -32,6 +32,7 @@ from .services.media_paths import media_for, random_file
 from .services.notify import Notifier, SelfrotBotNotifier
 from .session_services import SessionServices
 from .services.analytics import AnalyticsRecorder
+from .services.chart_game import ChartGameService
 from .services.quiz import QuizService
 from .services.link_media import LinkMediaService
 from .services.music import MusicService
@@ -65,6 +66,7 @@ class AppContext(BaseContext[TEvent], SessionServices):
     search_service: SearchService
     link_media_service: LinkMediaService
     music_service: MusicService
+    chart_service: ChartGameService
     player_docs: dict[str, PlayerDocsService]
     quote_service: QuoteService
     rp_commands_service: RpCommandsService

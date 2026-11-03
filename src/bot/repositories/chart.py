@@ -66,6 +66,13 @@ class ChartRepository(Base):
             )
         )
 
+    async def set_target(self, round_id: int, telegram_id: int, target: int) -> None:
+        await self.session.execute(
+            update(ChartBet)
+            .where(ChartBet.round_id == round_id, ChartBet.telegram_id == telegram_id)
+            .values(target=target)
+        )
+
     async def cash_out(self, round_id: int, telegram_id: int, cashed_at: int, payout: int) -> None:
         await self.session.execute(
             update(ChartBet)

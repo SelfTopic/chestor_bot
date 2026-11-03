@@ -28,14 +28,14 @@ class BetLine:
 
 # Что показать в сообщении автомата. В подготовке и после закрытия bets — итоги прошлого
 # раунда (crash — его обвал), в росте — ставки текущего. message_id нет — сообщение ещё не
-# отправлено.
+# отправлено; history нет — раундов ещё не было.
 @dataclass(frozen=True)
 class Screen:
     stage: Stage
     chat_id: int
     message_id: int | None
     media: Media
-    history: bytes
+    history: bytes | None
     bets: list[BetLine]
     crash: int | None = None
     closes_in: float = 0.0

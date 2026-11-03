@@ -682,6 +682,115 @@ class _BannedDialogs:
         return Line("banned.until", {"date": date})
 
 
+class _ChartDialogs:
+    def abandoned(self) -> Line:
+        return Line("chart.abandoned", {})
+
+    def already_bet(self) -> Line:
+        return Line("chart.already_bet", {})
+
+    def already_cashed(self, *, multiplier: object) -> Line:
+        return Line("chart.already_cashed", {"multiplier": multiplier})
+
+    def already_open(self) -> Line:
+        return Line("chart.already_open", {})
+
+    def amount_button(self, *, amount: object) -> Line:
+        return Line("chart.amount_button", {"amount": amount})
+
+    def bet_line(self, *, amount: object, name: object) -> Line:
+        return Line("chart.bet_line", {"amount": amount, "name": name})
+
+    def bet_line_target(self, *, amount: object, name: object, target: object) -> Line:
+        return Line(
+            "chart.bet_line_target",
+            {
+                "amount": amount,
+                "name": name,
+                "target": target,
+            },
+        )
+
+    def bet_out_of_range(self, *, max_bet: object, min_bet: object) -> Line:
+        return Line("chart.bet_out_of_range", {"max_bet": max_bet, "min_bet": min_bet})
+
+    def bet_placed(self, *, amount: object) -> Line:
+        return Line("chart.bet_placed", {"amount": amount})
+
+    def bets(self, *, count: object) -> Line:
+        return Line("chart.bets", {"count": count})
+
+    def bets_closed(self) -> Line:
+        return Line("chart.bets_closed", {})
+
+    def capped(self, *, crash: object) -> Line:
+        return Line("chart.capped", {"crash": crash})
+
+    def cash_out_button(self) -> Line:
+        return Line("chart.cash_out_button", {})
+
+    def cashed(self, *, multiplier: object, payout: object) -> Line:
+        return Line("chart.cashed", {"multiplier": multiplier, "payout": payout})
+
+    def closed(self) -> Line:
+        return Line("chart.closed", {})
+
+    def crashed(self, *, crash: object) -> Line:
+        return Line("chart.crashed", {"crash": crash})
+
+    def growth(self) -> Line:
+        return Line("chart.growth", {})
+
+    def lost_line(self, *, amount: object, name: object) -> Line:
+        return Line("chart.lost_line", {"amount": amount, "name": name})
+
+    def machine_closed(self) -> Line:
+        return Line("chart.machine_closed", {})
+
+    def no_bet(self) -> Line:
+        return Line("chart.no_bet", {})
+
+    def no_bet_for_target(self) -> Line:
+        return Line("chart.no_bet_for_target", {})
+
+    def no_bets(self) -> Line:
+        return Line("chart.no_bets", {})
+
+    def not_enough_money(self) -> Line:
+        return Line("chart.not_enough_money", {})
+
+    def not_growing(self) -> Line:
+        return Line("chart.not_growing", {})
+
+    def preparation(self, *, minutes: object) -> Line:
+        return Line("chart.preparation", {"minutes": minutes})
+
+    def refunded_line(self, *, amount: object, name: object) -> Line:
+        return Line("chart.refunded_line", {"amount": amount, "name": name})
+
+    def target_button(self, *, target: object) -> Line:
+        return Line("chart.target_button", {"target": target})
+
+    def target_set(self, *, target: object) -> Line:
+        return Line("chart.target_set", {"target": target})
+
+    def too_late(self, *, crash: object) -> Line:
+        return Line("chart.too_late", {"crash": crash})
+
+    def unavailable(self) -> Line:
+        return Line("chart.unavailable", {})
+
+    def won_line(self, *, multiplier: object, name: object, payout: object) -> Line:
+        return Line(
+            "chart.won_line",
+            {
+                "multiplier": multiplier,
+                "name": name,
+                "payout": payout,
+            },
+        )
+
+
 class _CoffeeDialogs:
     def cooldown(self, *, hours: object, minutes: object, seconds: object) -> Line:
         return Line(
@@ -4688,6 +4797,7 @@ class _Dialogs:
     admin = _AdminDialogs()
     anime = _AnimeDialogs()
     banned = _BannedDialogs()
+    chart = _ChartDialogs()
     coffee = _CoffeeDialogs()
     combat_power = _CombatPowerDialogs()
     cult = _CultDialogs()
@@ -4909,6 +5019,37 @@ PLACEHOLDERS: dict[str, frozenset[str]] = {
     "banned.notice": frozenset({"reason", "term"}),
     "banned.until": frozenset({"date"}),
     "bot": frozenset(),
+    "chart.abandoned": frozenset(),
+    "chart.already_bet": frozenset(),
+    "chart.already_cashed": frozenset({"multiplier"}),
+    "chart.already_open": frozenset(),
+    "chart.amount_button": frozenset({"amount"}),
+    "chart.bet_line": frozenset({"amount", "name"}),
+    "chart.bet_line_target": frozenset({"amount", "name", "target"}),
+    "chart.bet_out_of_range": frozenset({"max_bet", "min_bet"}),
+    "chart.bet_placed": frozenset({"amount"}),
+    "chart.bets": frozenset({"count"}),
+    "chart.bets_closed": frozenset(),
+    "chart.capped": frozenset({"crash"}),
+    "chart.cash_out_button": frozenset(),
+    "chart.cashed": frozenset({"multiplier", "payout"}),
+    "chart.closed": frozenset(),
+    "chart.crashed": frozenset({"crash"}),
+    "chart.growth": frozenset(),
+    "chart.lost_line": frozenset({"amount", "name"}),
+    "chart.machine_closed": frozenset(),
+    "chart.no_bet": frozenset(),
+    "chart.no_bet_for_target": frozenset(),
+    "chart.no_bets": frozenset(),
+    "chart.not_enough_money": frozenset(),
+    "chart.not_growing": frozenset(),
+    "chart.preparation": frozenset({"minutes"}),
+    "chart.refunded_line": frozenset({"amount", "name"}),
+    "chart.target_button": frozenset({"target"}),
+    "chart.target_set": frozenset({"target"}),
+    "chart.too_late": frozenset({"crash"}),
+    "chart.unavailable": frozenset(),
+    "chart.won_line": frozenset({"multiplier", "name", "payout"}),
     "coffee.cooldown": frozenset({"hours", "minutes", "seconds"}),
     "coffee.done": frozenset({"count", "money"}),
     "coffee.snap_limit": frozenset(),
