@@ -22,7 +22,7 @@ from src.bot.utils import format_amount
 
 from ....context import AppContext
 from ...types import DataMessageCallbackQuery, TextUserMessage
-from .payloads import BetPress, CashOutPress, TargetPress
+from .payloads import BetPress, CashOutPress, HintPress, TargetPress
 from .screen import multiplier
 
 CHART = Dialogs.chart
@@ -142,3 +142,12 @@ class CashOutHandler(ChartPressHandler[AppContext[DataMessageCallbackQuery]]):
         bet = await self.ctx.chart_service.cash_out(self.chat_id, self.user_id)
         assert bet.cashed_at is not None
         return CHART.cashed(multiplier=multiplier(bet.cashed_at), payout=format_amount(bet.payout))
+
+
+class HintHandler(CallbackQueryHandler[AppContext[DataMessageCallbackQuery]]):
+    payload = HintPress.filter()
+    query = payload & HasMessageCallbackQuery()
+
+    async def handle(self) -> None:
+        hint = CHART.target_hint() if self.payload.parse(self.ctx).target else CHART.bet_hint()
+        await self.ctx.callback_query.answer(self.ctx.text(hint))

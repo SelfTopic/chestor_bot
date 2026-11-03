@@ -161,3 +161,14 @@ async def test_no_machine_without_growth_video(chart, send):
     (reply,) = await send("джет", uid=PLAYER, chat=CHAT)
 
     assert reply == only_text(CHART.unavailable())
+
+
+async def test_keyboard_pairs_amounts_with_targets_under_hint_headers(feed, telegram, chart, session_factory):
+    opened = await open_machine(feed, telegram, chart, session_factory)
+
+    rows = opened["reply_markup"]["inline_keyboard"]
+    assert [len(row) for row in rows] == [2] * (len(CHART_CONFIG.bet_buttons) + 1)
+    header = button_data(opened, only_text(CHART.target_header()))
+    assert await popup(feed, header) == only_text(CHART.target_hint())
+    header = button_data(opened, only_text(CHART.bet_header()))
+    assert await popup(feed, header) == only_text(CHART.bet_hint())

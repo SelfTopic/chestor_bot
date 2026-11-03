@@ -98,7 +98,7 @@ climbs, the multiplier grows from x1, and the chart can crash at any moment.
 
 - A round: 9 seconds of bets, a 3-2-1 countdown, then growth. Cash out before the crash and you
   get bet × multiplier; too late and the bet is gone.
-- Bet with a button under the message: 100, 1,000, 10,000 or 100,000 CheSton, one per round.
+- Bet with a button under the message: 100, 1,000, 5,000, 10,000 or 100,000 CheSton, one per round.
   The money is taken right away.
 - **🎯 x1.5 … x10** — auto cash-out: the bot cashes out for you when the chart reaches the
   target. This way you can play without watching the video. You can change the target while

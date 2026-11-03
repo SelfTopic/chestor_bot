@@ -142,7 +142,8 @@ class ChartConfig:
     min_bet: int = 100
     max_bet: int = 100_000
     machine_lifetime_seconds: float = 300.0
-    bet_buttons: tuple[int, ...] = (100, 1_000, 10_000, 100_000)
+    # Суммы и цели стоят парами в двух колонках клавиатуры: их поровну.
+    bet_buttons: tuple[int, ...] = (100, 1_000, 5_000, 10_000, 100_000)
     # Цели автовывода в сотых: 150 — x1.5.
     target_buttons: tuple[int, ...] = (150, 200, 300, 500, 1000)
     countdown_seconds: float = 3.0

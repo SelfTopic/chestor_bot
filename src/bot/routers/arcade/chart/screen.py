@@ -39,7 +39,7 @@ from src.bot.services.dialog import DialogService
 from src.bot.services.language import LanguageService
 from src.bot.utils import format_amount
 
-from .payloads import BetPress, CashOutPress, TargetPress
+from .payloads import BetPress, CashOutPress, HintPress, TargetPress
 
 CHART = Dialogs.chart
 
@@ -69,17 +69,14 @@ def keyboard(stage: Stage, text: LineText) -> InlineKeyboardMarkup:
     board = InlineKeyboard()
     if stage is Stage.PREPARATION:
         board.row(
-            *(
-                button(text(CHART.amount_button(amount=format_amount(amount))), BetPress(amount=amount))
-                for amount in CHART_CONFIG.bet_buttons
-            )
+            button(text(CHART.bet_header()), HintPress(target=False)),
+            button(text(CHART.target_header()), HintPress(target=True)),
         )
-        board.row(
-            *(
-                button(text(CHART.target_button(target=f"{target / 100:g}")), TargetPress(target=target))
-                for target in CHART_CONFIG.target_buttons
+        for amount, target in zip(CHART_CONFIG.bet_buttons, CHART_CONFIG.target_buttons, strict=True):
+            board.row(
+                button(text(CHART.amount_button(amount=format_amount(amount))), BetPress(amount=amount)),
+                button(text(CHART.target_button(target=f"{target / 100:g}")), TargetPress(target=target)),
             )
-        )
     elif stage is Stage.GROWTH:
         board.row(button(text(CHART.cash_out_button()), CashOutPress()))
     return board.markup()

@@ -11,3 +11,7 @@ class TargetPress(CallbackPayload, prefix="chart_target"):
 
 class CashOutPress(CallbackPayload, prefix="chart_cash"):
     pass
+
+
+class HintPress(CallbackPayload, prefix="chart_hint"):
+    target: bool

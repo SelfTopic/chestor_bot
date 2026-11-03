@@ -701,6 +701,12 @@ class _ChartDialogs:
     def amount_button(self, *, amount: object) -> Line:
         return Line("chart.amount_button", {"amount": amount})
 
+    def bet_header(self) -> Line:
+        return Line("chart.bet_header", {})
+
+    def bet_hint(self) -> Line:
+        return Line("chart.bet_hint", {})
+
     def bet_line(self, *, amount: object, name: object) -> Line:
         return Line("chart.bet_line", {"amount": amount, "name": name})
 
@@ -782,6 +788,12 @@ class _ChartDialogs:
 
     def target_button(self, *, target: object) -> Line:
         return Line("chart.target_button", {"target": target})
+
+    def target_header(self) -> Line:
+        return Line("chart.target_header", {})
+
+    def target_hint(self) -> Line:
+        return Line("chart.target_hint", {})
 
     def target_set(self, *, target: object) -> Line:
         return Line("chart.target_set", {"target": target})
@@ -5037,6 +5049,8 @@ PLACEHOLDERS: dict[str, frozenset[str]] = {
     "chart.already_open": frozenset(),
     "chart.already_open_link": frozenset({"link"}),
     "chart.amount_button": frozenset({"amount"}),
+    "chart.bet_header": frozenset(),
+    "chart.bet_hint": frozenset(),
     "chart.bet_line": frozenset({"amount", "name"}),
     "chart.bet_line_target": frozenset({"amount", "name", "target"}),
     "chart.bet_out_of_range": frozenset({"max_bet", "min_bet"}),
@@ -5062,6 +5076,8 @@ PLACEHOLDERS: dict[str, frozenset[str]] = {
     "chart.preparation": frozenset({"minutes"}),
     "chart.refunded_line": frozenset({"amount", "name"}),
     "chart.target_button": frozenset({"target"}),
+    "chart.target_header": frozenset(),
+    "chart.target_hint": frozenset(),
     "chart.target_set": frozenset({"target"}),
     "chart.too_late": frozenset({"crash"}),
     "chart.unavailable": frozenset(),
