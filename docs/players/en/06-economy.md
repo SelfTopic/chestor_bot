@@ -106,7 +106,8 @@ climbs, the multiplier grows from x1, and the chart can crash at any moment.
 - **💰 Cash out** — during growth. It counts by the bot's clock, not by what's on your screen:
   a popup shows the result.
 - The chart doesn't grow past x50: whoever held to the end gets x50.
-- One machine per chat, it lives 5 minutes. If the bot restarts mid-round, bets are returned.
+- One machine per chat, it lives 5 minutes. While it runs, another "chart" sends a link to it.
+  If the bot restarts mid-round, bets are returned.
 
 > The chart reaches multiplier m with a chance of 0.96 / m: on average the game returns 96 of
 > every 100 bet, whenever you cash out.

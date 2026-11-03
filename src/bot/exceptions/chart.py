@@ -39,7 +39,10 @@ class ChartTooLate(ChartError):
         self.crash = crash
 
 
-class ChartMachineOpen(ChartError): ...
+class ChartMachineOpen(ChartError):
+    def __init__(self, message_id: int | None) -> None:
+        super().__init__(message_id)
+        self.message_id = message_id
 
 
 class ChartNoMachine(ChartError): ...

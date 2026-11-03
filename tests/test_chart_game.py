@@ -23,7 +23,7 @@ from tests.conftest import (
 )
 
 CHART = Dialogs.chart
-CHAT = -1001
+CHAT = -1001234567890
 PLAYER = 700001
 
 
@@ -127,10 +127,22 @@ async def test_not_enough_money_for_bet(feed, telegram, chart, session_factory):
     assert await popup(feed, bet) == only_text(CHART.not_enough_money())
 
 
-async def test_second_machine_in_chat(feed, telegram, chart, session_factory, send):
+async def test_second_machine_links_to_the_running_one(feed, telegram, chart, session_factory):
     await open_machine(feed, telegram, chart, session_factory)
 
-    (reply,) = await send("график", uid=PLAYER, chat=CHAT)
+    await feed(message_update("график", uid=PLAYER, chat=CHAT))
+
+    (reply,) = telegram.bodies("sendMessage")
+    assert reply["text"] in phrase_texts(CHART.already_open_link(link="https://t.me/c/1234567890/100"))
+    assert reply["parse_mode"] == "HTML"
+
+
+async def test_second_machine_in_private_chat_has_no_link(chart, send):
+    service, clock, _ = chart
+    await send("график", uid=PLAYER)
+    await clock.until_blocked(service)
+
+    (reply,) = await send("график", uid=PLAYER)
 
     assert reply in phrase_texts(CHART.already_open())
 

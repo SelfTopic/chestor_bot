@@ -38,8 +38,21 @@ class OpenChartHandler(MessageHandler[AppContext[TextUserMessage]]):
         message = self.ctx.message
         await self.ctx.chart_service.open(message.chat.id, message.user.id)
 
+    def machine_link(self, message_id: int) -> str | None:
+        chat = self.ctx.message.chat
+        if chat.username:
+            return f"https://t.me/{chat.username}/{message_id}"
+        # У приватной супергруппы id вида -100…: ссылка t.me/c/ берёт его без -100.
+        if chat.type == "supergroup" and str(chat.id).startswith("-100"):
+            return f"https://t.me/c/{str(chat.id)[4:]}/{message_id}"
+        return None
+
     async def on_error(self, exc: Exception) -> None:
         match exc:
+            case ChartMachineOpen(message_id=int(message_id)) if (
+                link := self.machine_link(message_id)
+            ):
+                await self.ctx.say(CHART.already_open_link(link=link), reply=True, parse_mode="HTML")
             case ChartMachineOpen():
                 await self.ctx.say(CHART.already_open(), reply=True)
             case ChartUnavailable():

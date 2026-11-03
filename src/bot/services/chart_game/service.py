@@ -104,13 +104,13 @@ class ChartGameService:
     async def open(self, chat_id: int, user_id: int) -> None:
         if not self._videos.ready:
             raise ChartUnavailable()
-        if chat_id in self._machines:
-            raise ChartMachineOpen()
+        if (running := self._machines.get(chat_id)) is not None:
+            raise ChartMachineOpen(running.message_id)
         async with self._session_factory() as session:
             machine_id = await ChartRepository(session).open_machine(chat_id, user_id)
             await session.commit()
         if machine_id is None:
-            raise ChartMachineOpen()
+            raise ChartMachineOpen(None)
         machine = self._machines[chat_id] = Machine(machine_id, chat_id, self._clock())
         self._tasks[chat_id] = asyncio.create_task(self._run(machine))
 

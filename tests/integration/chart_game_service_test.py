@@ -149,8 +149,9 @@ async def test_one_machine_per_chat(game):
     await service.open(CHAT, PLAYER)
     await clock.until_blocked(service)
 
-    with pytest.raises(ChartMachineOpen):
+    with pytest.raises(ChartMachineOpen) as error:
         await service.open(CHAT, OTHER)
+    assert error.value.message_id == 42
 
 
 async def test_machine_closes_after_lifetime(game, monkeypatch):

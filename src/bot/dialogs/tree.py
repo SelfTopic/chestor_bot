@@ -695,6 +695,9 @@ class _ChartDialogs:
     def already_open(self) -> Line:
         return Line("chart.already_open", {})
 
+    def already_open_link(self, *, link: object) -> Line:
+        return Line("chart.already_open_link", {"link": link})
+
     def amount_button(self, *, amount: object) -> Line:
         return Line("chart.amount_button", {"amount": amount})
 
@@ -5023,6 +5026,7 @@ PLACEHOLDERS: dict[str, frozenset[str]] = {
     "chart.already_bet": frozenset(),
     "chart.already_cashed": frozenset({"multiplier"}),
     "chart.already_open": frozenset(),
+    "chart.already_open_link": frozenset({"link"}),
     "chart.amount_button": frozenset({"amount"}),
     "chart.bet_line": frozenset({"amount", "name"}),
     "chart.bet_line_target": frozenset({"amount", "name", "target"}),
