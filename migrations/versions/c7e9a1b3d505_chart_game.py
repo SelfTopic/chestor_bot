@@ -1,4 +1,4 @@
-"""chart_game — machines, rounds, bets and crash video cache of the chart game
+"""chart_game — machines, rounds, bets and video cache of the chart game
 
 Revision ID: c7e9a1b3d505
 Revises: b4d6f8a0c293
@@ -63,16 +63,16 @@ def upgrade() -> None:
         sa.UniqueConstraint("round_id", "telegram_id"),
     )
     op.create_table(
-        "chart_crash_videos",
-        sa.Column("multiplier", sa.Integer(), autoincrement=False, nullable=False),
+        "chart_videos",
+        sa.Column("key", sa.String(), nullable=False),
         sa.Column("file_id", sa.String(), nullable=False),
         sa.Column("added_at", sa.DateTime(), server_default=sa.text("now()"), nullable=False),
-        sa.PrimaryKeyConstraint("multiplier"),
+        sa.PrimaryKeyConstraint("key"),
     )
 
 
 def downgrade() -> None:
-    op.drop_table("chart_crash_videos")
+    op.drop_table("chart_videos")
     op.drop_table("chart_bets")
     op.drop_index("ix_chart_rounds_machine_id", table_name="chart_rounds")
     op.drop_table("chart_rounds")

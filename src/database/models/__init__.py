@@ -2,7 +2,7 @@ from .active_battle import ActiveBattle
 from .balances_log import BalancesLog
 from .base import Base
 from .battle import Battle
-from .chart import ChartBet, ChartCrashVideo, ChartMachine, ChartRound
+from .chart import ChartBet, ChartMachine, ChartRound, ChartVideo
 from .chat import Chat
 from .chat_participant import NICKNAME_MAX_LENGTH, ChatNickname, ChatParticipant
 from .cooldown import Cooldown
@@ -42,9 +42,9 @@ __all__ = [
     "MusicTrack",
     "Battle",
     "ChartBet",
-    "ChartCrashVideo",
     "ChartMachine",
     "ChartRound",
+    "ChartVideo",
     "Chat",
     "ChatNickname",
     "ChatParticipant",

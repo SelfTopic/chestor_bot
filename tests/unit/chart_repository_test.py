@@ -41,12 +41,12 @@ async def test_refunds_unsettled_bets_not_cashed_out(session, make_user):
     assert await charts.abandoned_machines() == []
 
 
-async def test_crash_video_cache(session):
+async def test_video_cache(session):
     charts = ChartRepository(session)
 
-    await charts.save_crash_video(241, "old")
-    await charts.save_crash_video(241, "new")
-    assert await charts.crash_video(241) == "new"
+    await charts.save_video("crash/241.mp4@1", "old")
+    await charts.save_video("crash/241.mp4@1", "new")
+    assert await charts.video("crash/241.mp4@1") == "new"
 
-    await charts.forget_crash_video(241)
-    assert await charts.crash_video(241) is None
+    await charts.forget_video("crash/241.mp4@1")
+    assert await charts.video("crash/241.mp4@1") is None

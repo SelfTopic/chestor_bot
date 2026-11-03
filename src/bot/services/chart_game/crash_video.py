@@ -1,3 +1,4 @@
+import io
 import math
 from collections.abc import Iterator
 from pathlib import Path
@@ -31,8 +32,8 @@ BAR_WIDTH, BAR_HEIGHT = 320, 10
 BAR_Y = CENTER[1] + 100
 
 
-def crash_video_path(multiplier: float) -> Path:
-    return CRASH_VIDEOS / f"{round(multiplier * 100)}.mp4"
+def crash_video_path(crash: int) -> Path:
+    return CRASH_VIDEOS / f"{crash}.mp4"
 
 
 def _ease_out(share: float) -> float:
@@ -40,9 +41,9 @@ def _ease_out(share: float) -> float:
 
 
 class CrashFrames:
-    def __init__(self, multiplier: float, fps: int) -> None:
+    def __init__(self, crash: int, fps: int) -> None:
         self.fps = fps
-        self.multiplier = multiplier
+        self.multiplier = multiplier = crash / 100
         self.painter = ChartPainter()
         seconds = CHART_CONFIG.seconds_to(multiplier)
         self.view = Viewport.at(seconds)
@@ -57,6 +58,9 @@ class CrashFrames:
     def frames(self) -> Iterator[bytes]:
         for index in range(self.count):
             yield self.render(index).tobytes()
+
+    def still(self) -> Image.Image:
+        return self._falling(1.0)
 
     def render(self, index: int) -> Image.Image:
         clock = index / self.fps
@@ -133,5 +137,11 @@ class CrashFrames:
         image.paste(canvas, (round(CENTER[0] - BAR_WIDTH / 2), round(BAR_Y - height / 2)), canvas)
 
 
-def render_crash_video(path: Path, multiplier: float, fps: int = 30) -> None:
-    write_video(path, fps, CrashFrames(multiplier, fps).frames(), preset="medium")
+def render_crash_video(path: Path, crash: int, fps: int = 30) -> None:
+    write_video(path, fps, CrashFrames(crash, fps).frames(), preset="medium")
+
+
+def crash_picture(crash: int) -> bytes:
+    buffer = io.BytesIO()
+    CrashFrames(crash, fps=1).still().save(buffer, "PNG")
+    return buffer.getvalue()

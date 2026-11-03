@@ -60,9 +60,11 @@ class ChartBet(Base):
     placed_at: Mapped[datetime] = mapped_column(nullable=False, server_default=func.now())
 
 
-class ChartCrashVideo(Base):
-    __tablename__ = "chart_crash_videos"
+# file_id роликов игры: ключ — путь файла и время его изменения, так перерендеренный ролик
+# не получит file_id прежнего.
+class ChartVideo(Base):
+    __tablename__ = "chart_videos"
 
-    multiplier: Mapped[int] = mapped_column(primary_key=True, autoincrement=False)
+    key: Mapped[str] = mapped_column(primary_key=True)
     file_id: Mapped[str] = mapped_column(nullable=False)
     added_at: Mapped[datetime] = mapped_column(nullable=False, server_default=func.now())

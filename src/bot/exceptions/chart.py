@@ -37,3 +37,19 @@ class ChartTooLate(ChartError):
     def __init__(self, crash: int) -> None:
         super().__init__(crash)
         self.crash = crash
+
+
+class ChartMachineOpen(ChartError): ...
+
+
+class ChartNoMachine(ChartError): ...
+
+
+class ChartNotEnoughMoney(ChartError): ...
+
+
+# file_id ролика устарел: Telegram его больше не принимает, ролик надо загрузить заново.
+class ChartStaleVideo(ChartError): ...
+
+
+class ChartUnavailable(ChartError): ...

@@ -37,11 +37,11 @@ def test_growth_video_lasts_countdown_growth_and_late_edit(tmp_path):
     assert list(tmp_path.iterdir()) == [video]
 
 
-@pytest.mark.parametrize("multiplier", [1.0, 2.94])
-def test_crash_video_lasts_preparation_and_late_edit(tmp_path, multiplier):
+@pytest.mark.parametrize("crash", [100, 294])
+def test_crash_video_lasts_preparation_and_late_edit(tmp_path, crash):
     video = tmp_path / "crash.mp4"
 
-    render_crash_video(video, multiplier, fps=2)
+    render_crash_video(video, crash, fps=2)
 
     size, duration = video_size_and_duration(video)
     expected = CHART_CONFIG.preparation_seconds + CHART_CONFIG.late_edit_seconds

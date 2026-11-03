@@ -4,7 +4,7 @@ from sqlalchemy import delete, func, select, text, update
 from sqlalchemy.dialects.postgresql import insert
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from ...database.models import ChartBet, ChartCrashVideo, ChartMachine, ChartRound
+from ...database.models import ChartBet, ChartMachine, ChartRound, ChartVideo
 from .base import Base
 
 
@@ -112,20 +112,14 @@ class ChartRepository(Base):
             .values(settled_at=func.now())
         )
 
-    async def crash_video(self, multiplier: int) -> str | None:
-        return await self.session.scalar(
-            select(ChartCrashVideo.file_id).where(ChartCrashVideo.multiplier == multiplier)
+    async def video(self, key: str) -> str | None:
+        return await self.session.scalar(select(ChartVideo.file_id).where(ChartVideo.key == key))
+
+    async def save_video(self, key: str, file_id: str) -> None:
+        stmt = insert(ChartVideo).values(key=key, file_id=file_id)
+        await self.session.execute(
+            stmt.on_conflict_do_update(index_elements=[ChartVideo.key], set_={"file_id": file_id})
         )
 
-    async def save_crash_video(self, multiplier: int, file_id: str) -> None:
-        stmt = insert(ChartCrashVideo).values(multiplier=multiplier, file_id=file_id)
-        await self.session.execute(
-            stmt.on_conflict_do_update(
-                index_elements=[ChartCrashVideo.multiplier], set_={"file_id": file_id}
-            )
-        )
-
-    async def forget_crash_video(self, multiplier: int) -> None:
-        await self.session.execute(
-            delete(ChartCrashVideo).where(ChartCrashVideo.multiplier == multiplier)
-        )
+    async def forget_video(self, key: str) -> None:
+        await self.session.execute(delete(ChartVideo).where(ChartVideo.key == key))
