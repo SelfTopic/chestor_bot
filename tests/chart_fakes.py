@@ -25,6 +25,9 @@ class FakeTime:
         return self.now
 
     async def sleep(self, seconds: float) -> None:
+        if seconds <= 0:
+            await asyncio.sleep(0)
+            return
         future = asyncio.get_running_loop().create_future()
         self._sleepers.append((self.now + seconds, future))
         await future

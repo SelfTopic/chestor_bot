@@ -47,7 +47,7 @@ from .middlewares import (
     UpdateLoggingMiddleware,
 )
 from .repositories import UserRepository
-from .routers import RootRouter, TelegramMachineScreen
+from .routers import RootRouter, TelegramChartStorage, TelegramMachineScreen
 from .session_services import rp_commands_repository
 from .tasks import TASKS, MediaToolsUpdate
 from .services.notify import NotifyError, SelfrotBotNotifier
@@ -173,7 +173,8 @@ class Dispatcher(BaseDispatcher[AppContext]):
             session_factory,
             enabled=self.link_media_service.enabled,
         )
-        self.chart_service = ChartGameService(session_factory, ChartVideos(session_factory))
+        self.chart_videos = ChartVideos(session_factory)
+        self.chart_service = ChartGameService(session_factory, self.chart_videos)
 
     def report_broken_texts(self, error: Exception) -> None:
         # Тексты перечитываются внутри синхронного text(), поэтому отправка — отдельной
@@ -266,6 +267,8 @@ class Dispatcher(BaseDispatcher[AppContext]):
         self.chart_service.screen = TelegramMachineScreen(
             self.api, self.session_factory, self.dialog_service
         )
+        if settings.CHART_STORAGE_CHAT:
+            self.chart_videos.uploader = TelegramChartStorage(self.api, settings.CHART_STORAGE_CHAT)
         await self.chart_service.start()
 
     async def mark_service_admins(self) -> None:

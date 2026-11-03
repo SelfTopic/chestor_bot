@@ -29,14 +29,16 @@ from src.bot.repositories import (
 )
 
 from ..user import UserService
-from .crash_video import crash_picture
 from .growth_video import opening_picture
-from .history import HISTORY_LENGTH, history_strip
+from .history import HISTORY_LENGTH
 from .rounds import Bet, Phase, Round, draw_crash
 from .screen import BetLine, MachineScreen, Screen, Stage
 from .videos import ChartVideos, Media, Picture, StoredVideo, VideoFile
 
 logger = logging.getLogger(__name__)
+
+# Правка в момент обвала не должна ждать базу и отрисовку: что показать, решается заранее.
+CRASH_LEAD_SECONDS = 0.5
 
 
 def _wallet(session: AsyncSession) -> UserService:
@@ -61,6 +63,7 @@ class Machine:
     # Раунд, который только что обвалился: «забрать» после обвала ответит про него.
     previous: Round | None = None
     history: list[int] = field(default_factory=list)
+    strip: Media | None = None
 
 
 class ChartGameService:
@@ -177,47 +180,70 @@ class ChartGameService:
             self._tasks.pop(machine.chat_id, None)
 
     async def _play(self, machine: Machine) -> None:
-        media: Media = Picture(await asyncio.to_thread(opening_picture))
-        crash: int | None = None
-        results: list[BetLine] = []
+        game = self._start(machine, *await self._prepare_round(machine))
+        opening = Picture(await asyncio.to_thread(opening_picture))
+        await self._show(machine, Stage.PREPARATION, opening, [])
         while True:
-            game = await self._new_round(machine)
-            await self._show(machine, Stage.PREPARATION, media, results, crash)
+            strip = asyncio.create_task(self._strip(machine))
             await self._sleep_until(game.started_at + CHART_CONFIG.preparation_seconds)
+            machine.strip = await strip
             growth = await self._videos.growth()
             await self._show(machine, Stage.GROWTH, growth, [BetLine.of(b) for b in game.bets.values()])
-            await self._sleep_until(game.crashes_at)
-            results = await self._settle(machine, game)
+            upcoming = await self._prepare_round(machine)
+
+            await self._sleep_until(game.crashes_at - CRASH_LEAD_SECONDS)
             crash = game.crash
-            machine.history = [crash, *machine.history][:HISTORY_LENGTH]
-            if self._clock() - machine.opened_at >= CHART_CONFIG.machine_lifetime_seconds:
-                picture = Picture(await asyncio.to_thread(crash_picture, crash))
-                await self._show(machine, Stage.CLOSED, picture, results, crash)
+            closing = game.crashes_at - machine.opened_at >= CHART_CONFIG.machine_lifetime_seconds
+            media = await (self._videos.unlabeled(crash) if closing else self._videos.crash(crash))
+            await self._sleep_until(game.crashes_at)
+            round_id = machine.round_id
+            waiting = {user_id for user_id, bet in game.bets.items() if bet.cashed_at is None}
+            bets = game.settle()
+            results = [BetLine.of(bet) for bet in bets]
+            # Правка с обвалом — это и подготовка следующего раунда: ставки идут уже в него.
+            finished, game = game, (game if closing else self._start(machine, *upcoming))
+            try:
+                stage = Stage.CLOSED if closing else Stage.PREPARATION
+                await self._show(machine, stage, media, results, crash)
+            finally:
+                won = [bet for bet in bets if bet.user_id in waiting and bet.cashed_at is not None]
+                await self._settle(round_id, won)
+            machine.history = [finished.crash, *machine.history][:HISTORY_LENGTH]
+            if closing:
                 await self._close(machine.id)
                 return
-            media = await self._videos.crash(crash)
 
-    async def _new_round(self, machine: Machine) -> Round:
-        game = Round(draw_crash(self._rng), self._clock())
-        async with self._session_factory() as session:
-            machine.round_id = await ChartRepository(session).start_round(machine.id, game.crash)
-            await session.commit()
-        machine.previous, machine.round = machine.round, game
-        self._videos.request(game.crash)
+    def _start(self, machine: Machine, game: Round, round_id: int) -> Round:
+        game.started_at = self._clock()
+        machine.previous, machine.round, machine.round_id = machine.round, game, round_id
         return game
 
-    async def _settle(self, machine: Machine, game: Round) -> list[BetLine]:
-        waiting = {user_id for user_id, bet in game.bets.items() if bet.cashed_at is None}
-        bets = game.settle()
-        won = [bet for bet in bets if bet.user_id in waiting and bet.cashed_at is not None]
+    async def _strip(self, machine: Machine) -> Media | None:
+        if not machine.history:
+            return None
+        try:
+            return await self._videos.history(machine.history)
+        except Exception:
+            logger.exception("Полоска истории не подготовилась")
+            return None
+
+    # Раунд заводится в базе заранее, во время роста прошлого: обвал не ждёт этой записи.
+    async def _prepare_round(self, machine: Machine) -> tuple[Round, int]:
+        game = Round(draw_crash(self._rng), started_at=0.0)
+        async with self._session_factory() as session:
+            round_id = await ChartRepository(session).start_round(machine.id, game.crash)
+            await session.commit()
+        self._videos.request(game.crash)
+        return game, round_id
+
+    async def _settle(self, round_id: int, won: list[Bet]) -> None:
         async with self._session_factory() as session:
             wallet = _wallet(session)
             for bet in won:
                 await wallet.plus_balance(bet.user_id, bet.payout, "chart win")
             settled = [SettledBet(bet.user_id, bet.cashed_at, bet.payout) for bet in won]
-            await ChartRepository(session).settle_round(machine.round_id, settled)
+            await ChartRepository(session).settle_round(round_id, settled)
             await session.commit()
-        return [BetLine.of(bet) for bet in bets]
 
     async def _show(
         self,
@@ -228,21 +254,22 @@ class ChartGameService:
         crash: int | None = None,
     ) -> None:
         assert self.screen is not None
-        strip = await asyncio.to_thread(history_strip, machine.history) if machine.history else None
         closes_in = machine.opened_at + CHART_CONFIG.machine_lifetime_seconds - self._clock()
 
-        def screen(media: Media) -> Screen:
+        def screen(media: Media, strip: Media | None) -> Screen:
             return Screen(
                 stage, machine.chat_id, machine.message_id, media, strip, bets, crash, closes_in
             )
 
         try:
-            shown = await self.screen.show(screen(media))
+            shown = await self.screen.show(screen(media, machine.strip))
         except ChartStaleVideo:
-            assert isinstance(media, StoredVideo)
-            await self._videos.forget(media)
-            media = await self._videos.crash(crash) if crash is not None else await self._videos.growth()
-            shown = await self.screen.show(screen(media))
+            # Какой из file_id устарел, Telegram не говорит: правка уходит с загрузкой файлов.
+            if isinstance(media, StoredVideo):
+                await self._videos.forget(media)
+            media = await self._videos.fresh(media, crash)
+            machine.strip = None
+            shown = await self.screen.show(screen(media, None))
 
         if isinstance(media, VideoFile) and shown.file_id is not None:
             await self._videos.remember(media, shown.file_id)
@@ -257,7 +284,9 @@ class ChartGameService:
 
     async def _close(self, machine_id: int) -> None:
         async with self._session_factory() as session:
-            await ChartRepository(session).close_machine(machine_id)
+            charts = ChartRepository(session)
+            await charts.abandon_rounds(machine_id)
+            await charts.close_machine(machine_id)
             await session.commit()
 
     async def _refund_and_close(self, machine_id: int) -> list[BetLine]:

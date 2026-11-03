@@ -42,8 +42,9 @@ def _ease_out(share: float) -> float:
 
 
 class CrashFrames:
-    def __init__(self, crash: int, fps: int) -> None:
+    def __init__(self, crash: int, fps: int, labeled: bool = True) -> None:
         self.fps = fps
+        self.labeled = labeled
         self.multiplier = multiplier = crash / 100
         self.painter = ChartPainter()
         seconds = CHART_CONFIG.seconds_to(multiplier)
@@ -107,8 +108,9 @@ class CrashFrames:
 
         shake = math.sin(share * 40) * 10 * (1 - share) ** 2
         text = f"x{self.multiplier:.2f}"
-        paste(image, glow(lambda draw, k: label(draw, k, text, 120, RED, shake), 18))
-        label(draw, SCALE, text, 120, RED, shake)
+        if self.labeled:
+            paste(image, glow(lambda draw, k: label(draw, k, text, 120, RED, shake), 18))
+            label(draw, SCALE, text, 120, RED, shake)
         paste(image, front)
         return image
 
@@ -142,7 +144,11 @@ def render_crash_video(path: Path, crash: int, fps: int = FPS) -> None:
     write_video(path, fps, CrashFrames(crash, fps).frames(), preset="medium")
 
 
-def crash_picture(crash: int) -> bytes:
+# Без числа: общая картинка обвала, пока ролика с нужным числом нет; число — в тексте.
+UNLABELED_CRASH = 300
+
+
+def crash_picture(crash: int, labeled: bool = True) -> bytes:
     buffer = io.BytesIO()
-    CrashFrames(crash, fps=1).still().save(buffer, "PNG")
+    CrashFrames(crash, fps=1, labeled=labeled).still().save(buffer, "PNG")
     return buffer.getvalue()

@@ -35,7 +35,7 @@ class Screen:
     chat_id: int
     message_id: int | None
     media: Media
-    history: bytes | None
+    history: Media | None
     bets: list[BetLine]
     crash: int | None = None
     closes_in: float = 0.0

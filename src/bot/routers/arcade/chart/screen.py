@@ -28,6 +28,7 @@ from src.bot.services.chart_game import (
     Screen,
     Shown,
     Stage,
+    StoredPicture,
     StoredVideo,
     VideoFile,
 )
@@ -53,6 +54,12 @@ def media_block(media: Media) -> InputRichBlockPhoto | InputRichBlockAnimation:
             )
         case StoredVideo(file_id=file_id):
             return InputRichBlockAnimation(animation=InputMediaAnimation(media=file_id))
+        case StoredPicture(file_id=file_id):
+            return InputRichBlockPhoto(photo=InputMediaPhoto(media=file_id))
+
+
+def stored(media: Media | None) -> bool:
+    return isinstance(media, (StoredVideo, StoredPicture))
 
 
 def keyboard(stage: Stage, text: LineText) -> InlineKeyboardMarkup:
@@ -94,16 +101,15 @@ class TelegramMachineScreen:
         self._bot = bot
         self._session_factory = session_factory
         self._dialog_service = dialog_service
+        # Язык и имена берутся из базы раз на автомат: правка в момент обвала её не ждёт.
+        self._texts: dict[int, LineText] = {}
+        self._names: dict[int, dict[int, str]] = {}
 
     async def show(self, screen: Screen) -> Shown:
-        async with self._session_factory() as session:
-            languages = LanguageService(
-                UserRepository(session), ChatRepository(session), self._dialog_service
-            )
-            text = await languages.text_for(screen.chat_id)
-            names = await UserNameRepository(session).names(
-                [bet.telegram_id for bet in screen.bets], screen.chat_id
-            )
+        text, names = await self._context(screen)
+        if screen.stage in (Stage.CLOSED, Stage.ABANDONED):
+            self._texts.pop(screen.chat_id, None)
+            self._names.pop(screen.chat_id, None)
         rich = InputRichMessage(blocks=self._blocks(screen, text, names))
         markup = keyboard(screen.stage, text)
         try:
@@ -120,21 +126,32 @@ class TelegramMachineScreen:
                 )
                 message = edited if isinstance(edited, Message) else None
         except TelegramBadRequest:
-            if isinstance(screen.media, StoredVideo):
+            if stored(screen.media) or stored(screen.history):
                 raise ChartStaleVideo() from None
             raise
         message_id = message.message_id if message is not None else screen.message_id
         assert message_id is not None
         return Shown(message_id, animation_file_id(message))
 
+    async def _context(self, screen: Screen) -> tuple[LineText, dict[int, str]]:
+        names = self._names.setdefault(screen.chat_id, {})
+        missing = [bet.telegram_id for bet in screen.bets if bet.telegram_id not in names]
+        text = self._texts.get(screen.chat_id)
+        if text is not None and not missing:
+            return text, names
+        async with self._session_factory() as session:
+            if text is None:
+                languages = LanguageService(
+                    UserRepository(session), ChatRepository(session), self._dialog_service
+                )
+                text = self._texts[screen.chat_id] = await languages.text_for(screen.chat_id)
+            names.update(await UserNameRepository(session).names(missing, screen.chat_id))
+        return text, names
+
     def _blocks(self, screen: Screen, text: LineText, names: dict[int, str]) -> list[InputRichBlock]:
         blocks: list[InputRichBlock] = []
         if screen.history is not None:
-            blocks.append(
-                InputRichBlockPhoto(
-                    photo=InputMediaPhoto(media=InputFile(screen.history, "history.png"))
-                )
-            )
+            blocks.append(media_block(screen.history))
         blocks.append(media_block(screen.media))
         blocks.append(InputRichBlockParagraph(text="\n".join(text(line) for line in self._headline(screen))))
         lines = [text(self._bet_line(screen.stage, bet, names)) for bet in screen.bets]

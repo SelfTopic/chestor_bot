@@ -36,6 +36,9 @@ class Settings(BaseSettings):
     DOCS_CHANNEL_EN: str = Field(default="")
     DOCS_DIR: str = Field(default="docs/players")
     SUBSCRIPTION_CHANNEL: str = Field(default="")
+    # Закрытый канал, куда бот заранее загружает ролики и картинки «Джета» ради file_id: в
+    # момент обвала правка не должна ничего загружать. 0 — грузить прямо в правке.
+    CHART_STORAGE_CHAT: int = Field(default=-1004318056534)
 
     HTTP_PROXY: str = Field(default="")
     HTTPS_PROXY: str = Field(default="")

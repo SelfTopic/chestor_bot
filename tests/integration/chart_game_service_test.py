@@ -1,4 +1,5 @@
 from concurrent.futures import ThreadPoolExecutor
+from pathlib import Path
 
 import pytest
 from sqlalchemy import select
@@ -17,6 +18,7 @@ from src.bot.services.chart_game.service import ChartGameService
 from src.bot.services.chart_game.videos import (
     ChartVideos,
     Picture,
+    StoredPicture,
     StoredVideo,
     VideoFile,
     video_key,
@@ -42,18 +44,34 @@ class FakeScreen:
         return Shown(message_id=42, file_id=file_id)
 
 
-@pytest.fixture
-async def game(session_factory, tmp_path):
+class FakeUploader:
+    def __init__(self) -> None:
+        self.pictures = 0
+
+    async def video(self, path: Path) -> str:
+        return f"video:{path.name}"
+
+    async def picture(self, png: bytes) -> str:
+        self.pictures += 1
+        return f"picture:{self.pictures}"
+
+
+def make_videos(session_factory, tmp_path: Path, warm=()) -> ChartVideos:
     growth = tmp_path / "growth.mp4"
     growth.write_bytes(b"growth")
-    videos = ChartVideos(
+    return ChartVideos(
         session_factory,
         growth=growth,
         crash_path=lambda crash: tmp_path / "crash" / f"{crash}.mp4",
         render=fake_render,
         executor=lambda: ThreadPoolExecutor(1),
-        warm=(),
+        warm=warm,
     )
+
+
+@pytest.fixture
+async def game(session_factory, tmp_path):
+    videos = make_videos(session_factory, tmp_path)
     clock = FakeTime()
     service = ChartGameService(
         session_factory, videos, clock=clock.clock, sleep=clock.sleep, rng=FixedRandom(0.5)
@@ -225,16 +243,7 @@ async def test_no_machine_without_growth_video(game, tmp_path):
 
 
 async def test_requested_crash_video_is_rendered_and_picture_meanwhile(session_factory, tmp_path):
-    growth = tmp_path / "growth.mp4"
-    growth.write_bytes(b"growth")
-    videos = ChartVideos(
-        session_factory,
-        growth=growth,
-        crash_path=lambda crash: tmp_path / "crash" / f"{crash}.mp4",
-        render=fake_render,
-        executor=lambda: ThreadPoolExecutor(1),
-        warm=(range(100, 103),),
-    )
+    videos = make_videos(session_factory, tmp_path, warm=(range(100, 103),))
     assert isinstance(await videos.crash(241), Picture)
 
     videos.start()
@@ -246,3 +255,51 @@ async def test_requested_crash_video_is_rendered_and_picture_meanwhile(session_f
     assert sorted(path.name for path in (tmp_path / "crash").iterdir()) == [
         "100.mp4", "101.mp4", "102.mp4", "241.mp4",
     ]
+
+
+async def test_storage_uploads_ahead_and_crash_never_waits_for_upload(session_factory, tmp_path):
+    videos = make_videos(session_factory, tmp_path)
+    videos.uploader = FakeUploader()
+
+    videos.start()
+    videos.request(241)
+    await videos.idle()
+    await videos.close()
+
+    assert await videos.crash(241) == StoredVideo(
+        video_key(tmp_path / "crash" / "241.mp4"), "video:241.mp4"
+    )
+    assert isinstance(await videos.growth(), StoredVideo)
+    assert await videos.crash(300) == StoredPicture("picture:1")
+    assert await videos.history([241]) == StoredPicture("picture:2")
+
+
+async def test_crash_edit_reuses_the_strip_of_the_growth_edit(session_factory, tmp_path):
+    videos = make_videos(session_factory, tmp_path)
+    videos.uploader = FakeUploader()
+    clock = FakeTime()
+    service = ChartGameService(
+        session_factory, videos, clock=clock.clock, sleep=clock.sleep, rng=FixedRandom(0.5)
+    )
+    service.screen = screen = FakeScreen()
+    async with session_factory() as session:
+        await UserRepository(session).upsert(telegram_id=PLAYER, first_name="P")
+        await session.commit()
+    await service.start()
+    started = clock.now
+    await service.open(CHAT, PLAYER)
+    await clock.until_blocked(service)
+    for _ in range(2):
+        await clock.advance_to(started + CHART_CONFIG.preparation_seconds, service)
+        await clock.advance_to(growth_at(started, 1.92), service)
+        started = clock.now
+    await clock.advance_to(started + CHART_CONFIG.preparation_seconds, service)
+    await service.close()
+
+    # Раунд — две правки: рост и обвал, он же подготовка следующего.
+    stages = [shown.stage for shown in screen.screens]
+    assert stages == [Stage.PREPARATION, *[Stage.GROWTH, Stage.PREPARATION] * 2, Stage.GROWTH]
+    second_growth, second_crash = screen.screens[3:5]
+    assert isinstance(second_growth.history, StoredPicture)
+    assert second_crash.history == second_growth.history
+    assert isinstance(second_crash.media, (StoredVideo, StoredPicture))
