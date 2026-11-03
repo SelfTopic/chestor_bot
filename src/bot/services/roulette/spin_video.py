@@ -6,7 +6,7 @@ from PIL import Image
 
 from src.bot.config import game_config
 
-from ..arcade_art.encoder import write_video
+from ..arcade.encoder import write_video
 from .positions import CENTER, POSITIONS, Spin, spin
 from .ribbon import CARD_WIDTH, PITCH, RibbonPainter
 

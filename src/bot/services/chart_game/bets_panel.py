@@ -5,7 +5,7 @@ from functools import cache
 
 from PIL import Image, ImageDraw
 
-from ..arcade_art.style import BACKGROUND_BOTTOM, BACKGROUND_TOP, LABEL, WHITE, accent, font, mix
+from ..arcade.style import BACKGROUND_BOTTOM, BACKGROUND_TOP, LABEL, WHITE, accent, font, mix
 
 WIDTH, SCALE = 960, 2
 ROW, HEAD, PAD = 58, 64, 16

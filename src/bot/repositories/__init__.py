@@ -2,6 +2,7 @@ from .active_battle import ActiveBattleRepository
 from .balances_log import BalancesLogRepository
 from .analytics import ActivityKey, AnalyticsRepository, EventRecord, MessageHourKey
 from .anime_episode import AnimeEpisodeRepository
+from .arcade import ArcadeVideoRepository
 from .docs_post import DocsPostRepository, PublishedPost
 from .base import Base
 from .battle import BattleRepository
@@ -51,6 +52,7 @@ __all__ = [
     "GhoulEditRepository",
     "UserCooldownRepository",
     "AbandonedMachine",
+    "ArcadeVideoRepository",
     "ChartRepository",
     "Refund",
     "SettledBet",

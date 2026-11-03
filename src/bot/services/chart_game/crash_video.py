@@ -22,8 +22,8 @@ from .chart import (
     layer,
     paste,
 )
-from ..arcade_art.encoder import write_video
-from ..arcade_art.style import GOLD, RED, accent, mix
+from ..arcade.encoder import write_video
+from ..arcade.style import GOLD, RED, accent, mix
 
 CRASH_VIDEOS = VIDEOS / "crash"
 

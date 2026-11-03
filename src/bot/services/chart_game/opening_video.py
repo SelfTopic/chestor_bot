@@ -7,8 +7,8 @@ from PIL import Image, ImageDraw
 from src.bot.game_configs import CHART_CONFIG
 
 from .chart import FPS, SCALE, VIDEOS, ChartPainter, Viewport, draw_timer, glow, label, layer, paste
-from ..arcade_art.encoder import write_video
-from ..arcade_art.style import BLUE
+from ..arcade.encoder import write_video
+from ..arcade.style import BLUE
 
 OPENING_VIDEO = VIDEOS / "opening.mp4"
 START = "x1.00"

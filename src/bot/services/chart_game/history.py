@@ -2,7 +2,7 @@ import io
 
 from PIL import Image, ImageDraw
 
-from ..arcade_art.style import BACKGROUND_TOP, RED, WHITE, accent, font, mix
+from ..arcade.style import BACKGROUND_TOP, RED, WHITE, accent, font, mix
 
 WIDTH, HEIGHT = 960, 84
 # Больше в полоску всё равно не влезает.

@@ -7,7 +7,7 @@ from PIL import Image, ImageDraw, ImageFilter
 from src.bot.game_configs import LOTTERY_CONFIG
 from src.bot.types.dep import DepColor
 
-from ..arcade_art.style import BACKGROUND_TOP, GOLD, HEIGHT, WIDTH, Color, background, font, mix
+from ..arcade.style import BACKGROUND_TOP, GOLD, HEIGHT, WIDTH, Color, background, font, mix
 
 # Плашки рисуются вдвое крупнее и уменьшаются: в Pillow у фигур нет сглаживания.
 SCALE = 2

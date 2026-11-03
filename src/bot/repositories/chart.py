@@ -1,10 +1,10 @@
 from dataclasses import dataclass
 
-from sqlalchemy import delete, func, select, text, update
+from sqlalchemy import func, select, text, update
 from sqlalchemy.dialects.postgresql import insert
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from ...database.models import ChartBet, ChartMachine, ChartRound, ChartVideo
+from ...database.models import ChartBet, ChartMachine, ChartRound
 from .base import Base
 
 
@@ -118,15 +118,3 @@ class ChartRepository(Base):
             .where(ChartRound.machine_id == machine_id, ChartRound.settled_at.is_(None))
             .values(settled_at=func.now())
         )
-
-    async def video(self, key: str) -> str | None:
-        return await self.session.scalar(select(ChartVideo.file_id).where(ChartVideo.key == key))
-
-    async def save_video(self, key: str, file_id: str) -> None:
-        stmt = insert(ChartVideo).values(key=key, file_id=file_id)
-        await self.session.execute(
-            stmt.on_conflict_do_update(index_elements=[ChartVideo.key], set_={"file_id": file_id})
-        )
-
-    async def forget_video(self, key: str) -> None:
-        await self.session.execute(delete(ChartVideo).where(ChartVideo.key == key))
