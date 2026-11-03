@@ -28,7 +28,7 @@ class BetLine:
 
 # Что показать в сообщении автомата. В подготовке и после закрытия bets — итоги прошлого
 # раунда (crash — его обвал), в росте — ставки текущего. message_id нет — сообщение ещё не
-# отправлено; history нет — раундов ещё не было.
+# отправлено; history нет — раундов ещё не было; panel — картинка ставок раунда.
 @dataclass(frozen=True)
 class Screen:
     stage: Stage
@@ -39,6 +39,7 @@ class Screen:
     bets: list[BetLine]
     crash: int | None = None
     closes_in: float = 0.0
+    panel: Media | None = None
 
 
 @dataclass(frozen=True)
@@ -49,3 +50,6 @@ class Shown:
 
 class MachineScreen(Protocol):
     async def show(self, screen: Screen) -> Shown: ...
+
+    # Картинка ставок: имена и подписи на языке чата знает только экран.
+    async def bets_picture(self, chat_id: int, bets: list[BetLine]) -> bytes: ...

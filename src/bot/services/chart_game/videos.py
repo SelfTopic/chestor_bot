@@ -159,7 +159,9 @@ class ChartVideos:
         return Picture(await asyncio.to_thread(crash_picture, crash))
 
     async def history(self, crashes: list[int]) -> Media:
-        png = await asyncio.to_thread(history_strip, crashes)
+        return await self.picture(await asyncio.to_thread(history_strip, crashes))
+
+    async def picture(self, png: bytes) -> Media:
         if self.uploader is None:
             return Picture(png)
         return StoredPicture(await self.uploader.picture(png))

@@ -103,6 +103,9 @@ async def test_round_through_buttons(feed, telegram, chart, session_factory):
     await clock.advance_to(started + CHART_CONFIG.preparation_seconds, service)
     (growing,) = map(rich_body, telegram.bodies("editMessageText"))
     cash_out = button_data(growing, only_text(CHART.cash_out_button()))
+    blocks = growing["rich_message"]["blocks"]
+    assert [block["type"] for block in blocks][:2] == ["animation", "photo"]
+    assert only_text(CHART.bet_line_target(name="Вася", amount="1.000", target="3.00")) not in rich_texts(growing)
     assert await popup(feed, cash_out) == only_text(CHART.not_growing())
 
     await clock.advance_to(growth_at(started, 1.5), service)

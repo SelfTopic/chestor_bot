@@ -1,3 +1,5 @@
+import asyncio
+
 from selfrot import Bot, InlineKeyboard, button
 from selfrot.exceptions import TelegramBadRequest
 from selfrot.types import (
@@ -23,6 +25,7 @@ from src.bot.repositories.user_names import UserNameRepository
 from src.bot.services.chart_game import (
     BetLine,
     Media,
+    PanelRow,
     Picture,
     Screen,
     Shown,
@@ -30,6 +33,7 @@ from src.bot.services.chart_game import (
     StoredPicture,
     StoredVideo,
     VideoFile,
+    bets_panel,
 )
 from src.bot.services.dialog import DialogService
 from src.bot.services.language import LanguageService
@@ -125,17 +129,34 @@ class TelegramMachineScreen:
                 )
                 message = edited if isinstance(edited, Message) else None
         except TelegramBadRequest:
-            if stored(screen.media) or stored(screen.history):
+            if stored(screen.media) or stored(screen.history) or stored(screen.panel):
                 raise ChartStaleVideo() from None
             raise
         message_id = message.message_id if message is not None else screen.message_id
         assert message_id is not None
         return Shown(message_id, animation_file_id(message))
 
+    async def bets_picture(self, chat_id: int, bets: list[BetLine]) -> bytes:
+        text, names = await self._lookup(chat_id, bets)
+        rows = [
+            PanelRow(
+                names.get(bet.telegram_id, str(bet.telegram_id)),
+                format_amount(bet.amount),
+                None if bet.target is None else text(CHART.panel_target(target=multiplier(bet.target))),
+                bet.target,
+            )
+            for bet in bets
+        ]
+        bank = text(CHART.panel_bank(amount=format_amount(sum(bet.amount for bet in bets))))
+        return await asyncio.to_thread(bets_panel, text(CHART.panel_title()), bank, rows)
+
     async def _context(self, screen: Screen) -> tuple[LineText, dict[int, str]]:
-        names = self._names.setdefault(screen.chat_id, {})
-        missing = [bet.telegram_id for bet in screen.bets if bet.telegram_id not in names]
-        text = self._texts.get(screen.chat_id)
+        return await self._lookup(screen.chat_id, screen.bets)
+
+    async def _lookup(self, chat_id: int, bets: list[BetLine]) -> tuple[LineText, dict[int, str]]:
+        names = self._names.setdefault(chat_id, {})
+        missing = [bet.telegram_id for bet in bets if bet.telegram_id not in names]
+        text = self._texts.get(chat_id)
         if text is not None and not missing:
             return text, names
         async with self._session_factory() as session:
@@ -143,8 +164,8 @@ class TelegramMachineScreen:
                 languages = LanguageService(
                     UserRepository(session), ChatRepository(session), self._dialog_service
                 )
-                text = self._texts[screen.chat_id] = await languages.text_for(screen.chat_id)
-            names.update(await UserNameRepository(session).names(missing, screen.chat_id))
+                text = self._texts[chat_id] = await languages.text_for(chat_id)
+            names.update(await UserNameRepository(session).names(missing, chat_id))
         return text, names
 
     def _blocks(self, screen: Screen, text: LineText, names: dict[int, str]) -> list[InputRichBlock]:
@@ -152,13 +173,18 @@ class TelegramMachineScreen:
         if screen.history is not None:
             blocks.append(media_block(screen.history))
         blocks.append(media_block(screen.media))
+        if screen.panel is not None:
+            blocks.append(media_block(screen.panel))
         blocks.append(InputRichBlockParagraph(text="\n".join(text(line) for line in self._headline(screen))))
-        lines = [text(self._bet_line(screen.stage, bet, names)) for bet in screen.bets]
+        # В росте ставки на картинке панели; текстом — если панель не подготовилась.
+        shown_on_panel = screen.stage is Stage.GROWTH and screen.panel is not None
+        bets = [] if shown_on_panel else screen.bets
+        lines = [text(self._bet_line(screen.stage, bet, names)) for bet in bets]
         # Не сворачиваемым блоком: правка сообщения каждый раз сворачивает его заново.
         if lines:
             summary = text(CHART.bets(count=len(lines)))
             blocks.append(InputRichBlockParagraph(text="\n".join([summary, *lines])))
-        elif screen.stage is Stage.GROWTH:
+        elif screen.stage is Stage.GROWTH and not screen.bets:
             blocks.append(InputRichBlockParagraph(text=text(CHART.no_bets())))
         return blocks
 

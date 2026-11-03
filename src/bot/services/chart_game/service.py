@@ -64,6 +64,7 @@ class Machine:
     previous: Round | None = None
     history: list[int] = field(default_factory=list)
     strip: Media | None = None
+    panel: Media | None = None
 
 
 class ChartGameService:
@@ -185,6 +186,8 @@ class ChartGameService:
         await self._show(machine, Stage.PREPARATION, opening, [])
         while True:
             strip = asyncio.create_task(self._strip(machine))
+            await self._sleep_until(game.bets_close_at)
+            machine.panel = await self._panel(machine, game)
             await self._sleep_until(game.started_at + CHART_CONFIG.preparation_seconds)
             machine.strip = await strip
             growth = await self._videos.growth()
@@ -217,6 +220,17 @@ class ChartGameService:
         game.started_at = self._clock()
         machine.previous, machine.round, machine.round_id = machine.round, game, round_id
         return game
+
+    async def _panel(self, machine: Machine, game: Round) -> Media | None:
+        assert self.screen is not None
+        if not game.bets:
+            return None
+        try:
+            bets = [BetLine.of(bet) for bet in game.bets.values()]
+            return await self._videos.picture(await self.screen.bets_picture(machine.chat_id, bets))
+        except Exception:
+            logger.exception("Панель ставок не подготовилась")
+            return None
 
     async def _strip(self, machine: Machine) -> Media | None:
         if not machine.history:
@@ -256,20 +270,22 @@ class ChartGameService:
         assert self.screen is not None
         closes_in = machine.opened_at + CHART_CONFIG.machine_lifetime_seconds - self._clock()
 
-        def screen(media: Media, strip: Media | None) -> Screen:
+        panel = machine.panel if stage is not Stage.PREPARATION or crash is not None else None
+
+        def screen(media: Media, strip: Media | None, panel: Media | None) -> Screen:
             return Screen(
-                stage, machine.chat_id, machine.message_id, media, strip, bets, crash, closes_in
+                stage, machine.chat_id, machine.message_id, media, strip, bets, crash, closes_in, panel
             )
 
         try:
-            shown = await self.screen.show(screen(media, machine.strip))
+            shown = await self.screen.show(screen(media, machine.strip, panel))
         except ChartStaleVideo:
             # Какой из file_id устарел, Telegram не говорит: правка уходит с загрузкой файлов.
             if isinstance(media, StoredVideo):
                 await self._videos.forget(media)
             media = await self._videos.fresh(media, crash)
-            machine.strip = None
-            shown = await self.screen.show(screen(media, None))
+            machine.strip = machine.panel = None
+            shown = await self.screen.show(screen(media, None, None))
 
         if isinstance(media, VideoFile) and shown.file_id is not None:
             await self._videos.remember(media, shown.file_id)

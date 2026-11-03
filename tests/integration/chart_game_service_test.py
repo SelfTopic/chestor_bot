@@ -43,6 +43,9 @@ class FakeScreen:
         file_id = "uploaded" if isinstance(screen.media, VideoFile) else None
         return Shown(message_id=42, file_id=file_id)
 
+    async def bets_picture(self, chat_id: int, bets: list[BetLine]) -> bytes:
+        return f"panel:{len(bets)}".encode()
+
 
 class FakeUploader:
     def __init__(self) -> None:
@@ -113,6 +116,7 @@ async def test_round_bets_cash_out_crash_and_next_preparation(game):
     growth = screen.screens[-1]
     assert growth.stage is Stage.GROWTH and growth.message_id == 42
     assert isinstance(growth.media, VideoFile)
+    assert growth.panel == Picture(b"panel:2")
 
     await clock.advance_to(growth_at(started, 1.5), service)
     cashed = await service.cash_out(CHAT, PLAYER)
@@ -122,6 +126,7 @@ async def test_round_bets_cash_out_crash_and_next_preparation(game):
     await clock.advance_to(growth_at(started, 1.92), service)
     crash = screen.screens[-1]
     assert (crash.stage, crash.crash) == (Stage.PREPARATION, 192)
+    assert crash.panel == growth.panel
     assert {line.telegram_id: line.payout for line in crash.bets} == {
         PLAYER: 1500,
         OTHER: 0,

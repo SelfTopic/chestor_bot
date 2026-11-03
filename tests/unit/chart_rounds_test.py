@@ -66,7 +66,7 @@ def test_bets_only_during_preparation_once_per_player():
     with pytest.raises(ChartAlreadyBet):
         game.place(1, 1000, None, now=2.0)
     with pytest.raises(ChartBetsClosed):
-        game.place(2, 1000, None, now=PREPARATION)
+        game.place(2, 1000, None, now=CHART_CONFIG.bets_seconds)
 
 
 @pytest.mark.parametrize("amount", [CHART_CONFIG.min_bet - 1, CHART_CONFIG.max_bet + 1])
@@ -147,4 +147,4 @@ def test_target_changes_only_on_own_bet_during_preparation():
     with pytest.raises(ChartTargetOutOfRange):
         game.set_target(1, 100, now=2.0)
     with pytest.raises(ChartBetsClosed):
-        game.set_target(1, 200, now=PREPARATION)
+        game.set_target(1, 200, now=CHART_CONFIG.bets_seconds)

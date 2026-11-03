@@ -14,6 +14,9 @@ chart:
   abandoned: '🔒 Бот перезапускался, автомат закрыт. Ставки вернул.'
   bets: 'Ставки: {count}'
   no_bets: Ставок нет.
+  panel_title: СТАВКИ
+  panel_bank: 'банк {amount}'
+  panel_target: 'авто x{target}'
   bet_line: '{name} — {amount}'
   bet_line_target: '{name} — {amount}, авто x{target}'
   won_line: '{name} — забрал на x{multiplier}: +{payout}'

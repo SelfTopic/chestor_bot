@@ -96,7 +96,7 @@ A bet on a color: **bet <color> <amount>**, e.g. `bet red 500`.
 A crash game for the whole chat: **jet** opens a machine — one message with a video. The line
 climbs, the multiplier grows from x1, and the chart can crash at any moment.
 
-- A round: 10 seconds of bets, a 3-2-1 countdown, then growth. Cash out before the crash and you
+- A round: 9 seconds of bets, a 3-2-1 countdown, then growth. Cash out before the crash and you
   get bet × multiplier; too late and the bet is gone.
 - Bet with a button under the message: 100, 1,000, 10,000 or 100,000 CheSton, one per round.
   The money is taken right away.

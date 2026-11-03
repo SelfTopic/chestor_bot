@@ -14,6 +14,9 @@ chart:
   abandoned: '🔒 The bot restarted, the machine is closed. Bets returned.'
   bets: 'Bets: {count}'
   no_bets: No bets.
+  panel_title: BETS
+  panel_bank: 'pot {amount}'
+  panel_target: 'auto x{target}'
   bet_line: '{name} — {amount}'
   bet_line_target: '{name} — {amount}, auto x{target}'
   won_line: '{name} — cashed out at x{multiplier}: +{payout}'

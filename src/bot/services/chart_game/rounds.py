@@ -74,8 +74,12 @@ class Round:
         grown = CHART_CONFIG.multiplier(now - self.growth_starts_at)
         return min(math.floor(grown * ONE), self.crash)
 
+    @property
+    def bets_close_at(self) -> float:
+        return self.started_at + CHART_CONFIG.bets_seconds
+
     def place(self, user_id: int, amount: int, target: int | None, now: float) -> Bet:
-        if self.phase(now) is not Phase.PREPARATION:
+        if now >= self.bets_close_at:
             raise ChartBetsClosed()
         if user_id in self.bets:
             raise ChartAlreadyBet()
@@ -86,7 +90,7 @@ class Round:
         return bet
 
     def set_target(self, user_id: int, target: int, now: float) -> Bet:
-        if self.phase(now) is not Phase.PREPARATION:
+        if now >= self.bets_close_at:
             raise ChartBetsClosed()
         bet = self.bets.get(user_id)
         if bet is None:

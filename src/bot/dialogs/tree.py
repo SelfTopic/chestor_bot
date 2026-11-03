@@ -765,6 +765,15 @@ class _ChartDialogs:
     def not_growing(self) -> Line:
         return Line("chart.not_growing", {})
 
+    def panel_bank(self, *, amount: object) -> Line:
+        return Line("chart.panel_bank", {"amount": amount})
+
+    def panel_target(self, *, target: object) -> Line:
+        return Line("chart.panel_target", {"target": target})
+
+    def panel_title(self) -> Line:
+        return Line("chart.panel_title", {})
+
     def preparation(self, *, minutes: object) -> Line:
         return Line("chart.preparation", {"minutes": minutes})
 
@@ -5047,6 +5056,9 @@ PLACEHOLDERS: dict[str, frozenset[str]] = {
     "chart.no_bets": frozenset(),
     "chart.not_enough_money": frozenset(),
     "chart.not_growing": frozenset(),
+    "chart.panel_bank": frozenset({"amount"}),
+    "chart.panel_target": frozenset({"target"}),
+    "chart.panel_title": frozenset(),
     "chart.preparation": frozenset({"minutes"}),
     "chart.refunded_line": frozenset({"amount", "name"}),
     "chart.target_button": frozenset({"target"}),
