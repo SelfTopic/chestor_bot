@@ -21,6 +21,7 @@ from .media import MediaRepository
 from .moderation import DueExpiration, ListedPunishment, ModerationRepository
 from .music_track import MusicTrackRepository
 from .quiz_streak import ExpiredStreak, HeldStreak, QuizStreakRepository
+from .roulette import OpenRoulette, RouletteRepository
 from .scheduled_notification import ScheduledNotificationRepository
 from .transfer import TransferRepository
 from .user import UserRepository
@@ -54,6 +55,8 @@ __all__ = [
     "AbandonedMachine",
     "ArcadeVideoRepository",
     "ChartRepository",
+    "OpenRoulette",
+    "RouletteRepository",
     "Refund",
     "SettledBet",
     "ChatRepository",

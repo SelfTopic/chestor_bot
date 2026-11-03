@@ -26,6 +26,7 @@ from .link_media import LinkMediaCache
 from .music_track import MusicTrack
 from .quiz_streak import QuizStreak
 from .roast_log import RoastLog
+from .roulette import RouletteMachine
 from .rp_commands import Rp
 from .promo import PromoActivation, PromoCode
 from .moderation import ModerationAction, ModerationSettings, ModerationWarning
@@ -58,6 +59,7 @@ __all__ = [
     "Lottery",
     "Rp",
     "RoastLog",
+    "RouletteMachine",
     "BalancesLog",
     "Transfer",
     "QuizStreak",

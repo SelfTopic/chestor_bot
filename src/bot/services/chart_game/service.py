@@ -17,18 +17,9 @@ from src.bot.exceptions import (
     ChartUnavailable,
 )
 from src.bot.game_configs import CHART_CONFIG
-from src.bot.repositories import (
-    BalancesLogRepository,
-    ChartRepository,
-    ChatRepository,
-    GhoulRepository,
-    SettledBet,
-    UserCooldownRepository,
-    UserRepository,
-    WalletRepository,
-)
+from src.bot.repositories import ChartRepository, SettledBet
 
-from ..user import UserService
+from ..arcade.wallet import wallet as _wallet
 from .opening_video import opening_picture
 from .history import HISTORY_LENGTH
 from .rounds import Bet, Phase, Round, draw_crash
@@ -39,17 +30,6 @@ logger = logging.getLogger(__name__)
 
 # Правка в момент обвала не должна ждать базу и отрисовку: что показать, решается заранее.
 CRASH_LEAD_SECONDS = 0.5
-
-
-def _wallet(session: AsyncSession) -> UserService:
-    return UserService(
-        UserRepository(session),
-        GhoulRepository(session),
-        UserCooldownRepository(session),
-        ChatRepository(session),
-        BalancesLogRepository(session),
-        WalletRepository(session),
-    )
 
 
 @dataclass

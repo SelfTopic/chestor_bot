@@ -22,6 +22,16 @@ from .chart import (
     ChartUnavailable,
 )
 from .chat import ChatError, ChatTextLengthError
+from .roulette import (
+    RouletteBetOutOfRange,
+    RouletteBusy,
+    RouletteError,
+    RouletteNoChoice,
+    RouletteNoMachine,
+    RouletteNotEnoughMoney,
+    RouletteNotYours,
+    RouletteStaleMedia,
+)
 from .chat_not_found import ChatNotFound, ChatNotFoundInDatabase
 from .media_download import (
     CollectionNotFoundError,
@@ -132,6 +142,14 @@ __all__ = [
     "ChartTooLate",
     "ChartUnavailable",
     "ChatError",
+    "RouletteBetOutOfRange",
+    "RouletteBusy",
+    "RouletteError",
+    "RouletteNoChoice",
+    "RouletteNoMachine",
+    "RouletteNotEnoughMoney",
+    "RouletteNotYours",
+    "RouletteStaleMedia",
     "ChatTextLengthError",
     "ChatNotFound",
     "ChatNotFoundInDatabase",
