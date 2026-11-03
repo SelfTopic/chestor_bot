@@ -27,7 +27,7 @@ from src.bot.services.chart_game.videos import (
     video_key,
 )
 from src.database.models import ChartMachine
-from tests.chart_fakes import FakeTime, FixedRandom, fake_render
+from tests.chart_fakes import FakeTime, FixedRandom, fake_opening, fake_render
 
 CHAT = -1001
 PLAYER, OTHER = 700001, 700002
@@ -68,6 +68,8 @@ def make_videos(session_factory, tmp_path: Path, warm=()) -> ChartVideos:
     return ChartVideos(
         session_factory,
         growth=growth,
+        opening=tmp_path / "opening.mp4",
+        render_opening=fake_opening,
         crash_path=lambda crash: tmp_path / "crash" / f"{crash}.mp4",
         render=fake_render,
         executor=lambda: ThreadPoolExecutor(1),
@@ -106,10 +108,12 @@ def growth_at(started: float, multiplier: float) -> float:
 async def test_round_bets_cash_out_crash_and_next_preparation(game):
     service, clock, screen, sessions = game
     started = clock.now
+    opening = service._videos._opening
+    await service._videos.idle()
     await service.open(CHAT, PLAYER)
     await clock.until_blocked(service)
     assert screen.screens[-1].stage is Stage.PREPARATION
-    assert isinstance(screen.screens[-1].media, Picture)
+    assert screen.screens[-1].media == VideoFile(video_key(opening), opening)
 
     await service.bet(CHAT, PLAYER, 1000, None)
     await service.bet(CHAT, OTHER, 1000, None)
@@ -227,7 +231,14 @@ async def test_restart_refunds_unfinished_round(session_factory, tmp_path):
         await session.commit()
     growth = tmp_path / "growth.mp4"
     growth.write_bytes(b"growth")
-    videos = ChartVideos(session_factory, growth=growth, executor=lambda: ThreadPoolExecutor(1), warm=())
+    videos = ChartVideos(
+        session_factory,
+        growth=growth,
+        opening=tmp_path / "opening.mp4",
+        render_opening=fake_opening,
+        executor=lambda: ThreadPoolExecutor(1),
+        warm=(),
+    )
     service = ChartGameService(session_factory, videos)
     service.screen = screen = FakeScreen()
 

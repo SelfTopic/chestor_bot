@@ -9,7 +9,6 @@ from src.bot.game_configs import CHART_CONFIG
 
 from .chart import (
     BOTTOM,
-    CENTER,
     FPS,
     SCALE,
     VIDEOS,
@@ -17,20 +16,19 @@ from .chart import (
     Viewport,
     curve_glow,
     draw_curve,
+    draw_timer,
     glow,
     label,
     layer,
     paste,
 )
 from .encoder import write_video
-from .style import GOLD, LABEL, PURPLE, RED, WHITE, accent, font, mix
+from .style import GOLD, RED, accent, mix
 
 CRASH_VIDEOS = VIDEOS / "crash"
 
 FALL_SECONDS = 0.8
 SPARKS = 14
-BAR_WIDTH, BAR_HEIGHT = 320, 10
-BAR_Y = CENTER[1] + 100
 
 
 def crash_video_path(crash: int) -> Path:
@@ -72,7 +70,7 @@ class CrashFrames:
             if self.frozen is None:
                 self.frozen = self._falling(1.0)
             image = self.frozen.copy()
-        self._timer(image, clock)
+        draw_timer(image, clock)
         return image
 
     def _falling(self, share: float) -> Image.Image:
@@ -113,31 +111,6 @@ class CrashFrames:
             label(draw, SCALE, text, 120, RED, shake)
         paste(image, front)
         return image
-
-    @staticmethod
-    def _timer(image: Image.Image, clock: float) -> None:
-        remaining = max(CHART_CONFIG.preparation_seconds - clock, 0.0)
-        share = remaining / CHART_CONFIG.preparation_seconds
-        # Полоска меняется на каждом кадре, а остальной кадр стоит: рисуется только её область.
-        width, height = BAR_WIDTH + 70, BAR_HEIGHT + 30
-        canvas = Image.new("RGBA", (width * SCALE, height * SCALE))
-        draw = ImageDraw.Draw(canvas)
-        top = (height - BAR_HEIGHT) / 2 * SCALE
-        right, bottom = BAR_WIDTH * SCALE, top + BAR_HEIGHT * SCALE
-        radius = BAR_HEIGHT / 2 * SCALE
-        draw.rounded_rectangle([0, top, right, bottom], radius=radius, fill=(255, 255, 255, 30))
-        if share > 0:
-            filled = max(right * share, 2 * radius)
-            draw.rounded_rectangle([0, top, filled, bottom], radius=radius, fill=PURPLE)
-        draw.text(
-            (right + 18 * SCALE, height / 2 * SCALE),
-            str(math.ceil(remaining)),
-            font=font(20 * SCALE, "SemiBold"),
-            fill=WHITE if remaining else LABEL,
-            anchor="lm",
-        )
-        canvas = canvas.resize((width, height), Image.Resampling.LANCZOS)
-        image.paste(canvas, (round(CENTER[0] - BAR_WIDTH / 2), round(BAR_Y - height / 2)), canvas)
 
 
 def render_crash_video(path: Path, crash: int, fps: int = FPS) -> None:

@@ -1,4 +1,3 @@
-import io
 import math
 import multiprocessing
 import os
@@ -71,12 +70,6 @@ class GrowthFrames:
         r = 120 * SCALE
         sweep = 360 * remaining / CHART_CONFIG.countdown_seconds
         draw.arc([x - r, y - r, x + r, y + r], -90, -90 + sweep, fill=PURPLE, width=8 * SCALE)
-
-
-def opening_picture() -> bytes:
-    buffer = io.BytesIO()
-    GrowthFrames(fps=1).render(0).save(buffer, "PNG")
-    return buffer.getvalue()
 
 
 # Кадры рисуют несколько процессов, у каждого свои фон и шрифты: шрифты Pillow не передать pickle.

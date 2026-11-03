@@ -9,7 +9,7 @@ from PIL import Image, ImageChops, ImageDraw, ImageFilter
 from src.bot.config import game_config
 from src.bot.game_configs import CHART_CONFIG
 
-from .style import LABEL, WHITE, Color, background, font
+from .style import LABEL, PURPLE, WHITE, Color, background, font
 
 WIDTH, HEIGHT = 960, 540
 # Ролик на 30 кадрах Telegram проигрывал на 25: к x50 он отставал от времени бота на 5 секунд.
@@ -23,6 +23,8 @@ GLOW_SCALE = 0.25
 LEFT, RIGHT, TOP, BOTTOM = 70, WIDTH - 40, 40, HEIGHT - 50
 CENTER = (WIDTH / 2, HEIGHT * 0.30)
 CURVE_POINTS = 160
+BAR_WIDTH, BAR_HEIGHT = 320, 10
+BAR_Y = CENTER[1] + 100
 
 Point = tuple[float, float]
 Paint = Callable[[ImageDraw.ImageDraw, float], None]
@@ -158,3 +160,29 @@ class ChartPainter:
         ImageDraw.Draw(mask).polygon(outline + [(outline[-1][0], BOTTOM), (LEFT, BOTTOM)], fill=255)
         tint = Image.new("RGB", (WIDTH, HEIGHT), color)
         image.paste(tint, (0, 0), ImageChops.multiply(mask, self.fill_gradient))
+
+
+# Полоска подготовки следующего раунда: тает за preparation_seconds.
+def draw_timer(image: Image.Image, clock: float) -> None:
+    remaining = max(CHART_CONFIG.preparation_seconds - clock, 0.0)
+    share = remaining / CHART_CONFIG.preparation_seconds
+    # Полоска меняется на каждом кадре, а остальной кадр стоит: рисуется только её область.
+    width, height = BAR_WIDTH + 70, BAR_HEIGHT + 30
+    canvas = Image.new("RGBA", (width * SCALE, height * SCALE))
+    draw = ImageDraw.Draw(canvas)
+    top = (height - BAR_HEIGHT) / 2 * SCALE
+    right, bottom = BAR_WIDTH * SCALE, top + BAR_HEIGHT * SCALE
+    radius = BAR_HEIGHT / 2 * SCALE
+    draw.rounded_rectangle([0, top, right, bottom], radius=radius, fill=(255, 255, 255, 30))
+    if share > 0:
+        filled = max(right * share, 2 * radius)
+        draw.rounded_rectangle([0, top, filled, bottom], radius=radius, fill=PURPLE)
+    draw.text(
+        (right + 18 * SCALE, height / 2 * SCALE),
+        str(math.ceil(remaining)),
+        font=font(20 * SCALE, "SemiBold"),
+        fill=WHITE if remaining else LABEL,
+        anchor="lm",
+    )
+    canvas = canvas.resize((width, height), Image.Resampling.LANCZOS)
+    image.paste(canvas, (round(CENTER[0] - BAR_WIDTH / 2), round(BAR_Y - height / 2)), canvas)

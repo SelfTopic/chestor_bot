@@ -16,6 +16,7 @@ from src.bot.repositories import ChartRepository
 
 from .crash_video import UNLABELED_CRASH, crash_picture, crash_video_path, render_crash_video
 from .growth_video import GROWTH_VIDEO
+from .opening_video import OPENING_VIDEO, opening_picture, render_opening_video
 from .history import history_strip
 
 logger = logging.getLogger(__name__)
@@ -82,6 +83,8 @@ class ChartVideos:
         self,
         session_factory: async_sessionmaker[AsyncSession],
         growth: Path = GROWTH_VIDEO,
+        opening: Path = OPENING_VIDEO,
+        render_opening: Callable[[Path], None] = render_opening_video,
         crash_path: Callable[[int], Path] = crash_video_path,
         render: Callable[[Path, int], None] = render_crash_video,
         executor: Callable[[], Executor] = _render_pool,
@@ -91,6 +94,8 @@ class ChartVideos:
     ) -> None:
         self._session_factory = session_factory
         self._growth = growth
+        self._opening = opening
+        self._render_opening = render_opening
         self._crash_path = crash_path
         self._render = render
         self._executor_factory = executor
@@ -107,6 +112,7 @@ class ChartVideos:
         self._order = itertools.count()
         self._worker: asyncio.Task[None] | None = None
         self._executor: Executor | None = None
+        self._shared_ready = asyncio.Event()
 
     def start(self) -> None:
         for crash in itertools.chain.from_iterable(self._warm):
@@ -130,6 +136,8 @@ class ChartVideos:
             task.add_done_callback(self._picture_tasks.discard)
 
     async def idle(self) -> None:
+        if self._worker is not None:
+            await self._shared_ready.wait()
         await self._queue.join()
         await asyncio.gather(*self._picture_tasks, return_exceptions=True)
 
@@ -139,6 +147,11 @@ class ChartVideos:
 
     async def growth(self) -> Media:
         return await self._media(self._growth)
+
+    async def opening(self) -> Media:
+        if self._opening.exists():
+            return await self._media(self._opening)
+        return Picture(await asyncio.to_thread(opening_picture))
 
     async def crash(self, crash: int) -> Media:
         path = self._crash_path(crash)
@@ -220,15 +233,21 @@ class ChartVideos:
             logger.exception("Картинка обвала x%.2f не загрузилась", crash / 100)
 
     async def _prepare_shared(self) -> None:
-        if self.uploader is None:
-            return
         try:
+            if not self._opening.exists():
+                loop = asyncio.get_running_loop()
+                await loop.run_in_executor(self._executor, self._render_opening, self._opening)
+            if self.uploader is None:
+                return
             png = await asyncio.to_thread(crash_picture, UNLABELED_CRASH, False)
             self._unlabeled = StoredPicture(await self.uploader.picture(png))
+            await self._upload(self._opening)
             if self.ready:
                 await self._upload(self._growth)
         except Exception:
-            logger.exception("Общие ролики «Джета» не загрузились")
+            logger.exception("Общие ролики «Джета» не подготовились")
+        finally:
+            self._shared_ready.set()
 
     async def _upload(self, path: Path) -> bool:
         if self.uploader is None:

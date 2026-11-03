@@ -46,6 +46,11 @@ class FakeTime:
                 await asyncio.sleep(0.01)
 
 
+def fake_opening(path: Path) -> None:
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_bytes(b"opening")
+
+
 def fake_render(path: Path, crash: int) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
     path.write_bytes(b"video")

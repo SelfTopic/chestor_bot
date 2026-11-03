@@ -15,7 +15,7 @@ def test_panel_grows_with_players_and_draws_any_name():
         "T",
         "B",
         [
-            PanelRow("🍆🍆", "100", "x3.00", 300),
+            PanelRow("🍆🍆", "100", "x3.00", 300, "eggplant"),
             PanelRow("山田太郎", "100", None, None),
             PanelRow("Очень длинный ник " * 10, "100 000", "x50.00", 5000),
         ],

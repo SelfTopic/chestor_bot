@@ -135,12 +135,15 @@ class TelegramMachineScreen:
 
     async def bets_picture(self, chat_id: int, bets: list[BetLine]) -> bytes:
         text, names = await self._lookup(chat_id, bets)
+        async with self._session_factory() as session:
+            usernames = await UserNameRepository(session).usernames([bet.telegram_id for bet in bets])
         rows = [
             PanelRow(
                 names.get(bet.telegram_id, str(bet.telegram_id)),
                 format_amount(bet.amount),
                 None if bet.target is None else text(CHART.panel_target(target=multiplier(bet.target))),
                 bet.target,
+                usernames.get(bet.telegram_id),
             )
             for bet in bets
         ]

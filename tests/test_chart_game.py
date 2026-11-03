@@ -10,7 +10,7 @@ from src.bot.repositories import WalletRepository
 from src.bot.routers import TelegramMachineScreen
 from src.bot.routers.arcade.chart.payloads import CashOutPress
 from src.bot.services.chart_game import ChartGameService, ChartVideos
-from tests.chart_fakes import FakeTime, FixedRandom, fake_render
+from tests.chart_fakes import FakeTime, FixedRandom, fake_opening, fake_render
 from tests.conftest import (
     button_data,
     callback_update,
@@ -49,6 +49,8 @@ async def chart(dispatcher, telegram, session_factory, tmp_path):
     videos = ChartVideos(
         session_factory,
         growth=growth,
+        opening=tmp_path / "opening.mp4",
+        render_opening=fake_opening,
         crash_path=lambda crash: tmp_path / "crash" / f"{crash}.mp4",
         render=fake_render,
         executor=lambda: ThreadPoolExecutor(1),

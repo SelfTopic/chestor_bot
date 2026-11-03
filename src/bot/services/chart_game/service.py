@@ -29,7 +29,7 @@ from src.bot.repositories import (
 )
 
 from ..user import UserService
-from .growth_video import opening_picture
+from .opening_video import opening_picture
 from .history import HISTORY_LENGTH
 from .rounds import Bet, Phase, Round, draw_crash
 from .screen import BetLine, MachineScreen, Screen, Stage
@@ -182,8 +182,7 @@ class ChartGameService:
 
     async def _play(self, machine: Machine) -> None:
         game = self._start(machine, *await self._prepare_round(machine))
-        opening = Picture(await asyncio.to_thread(opening_picture))
-        await self._show(machine, Stage.PREPARATION, opening, [])
+        await self._show(machine, Stage.PREPARATION, await self._videos.opening(), [])
         while True:
             strip = asyncio.create_task(self._strip(machine))
             await self._sleep_until(game.bets_close_at)

@@ -26,6 +26,8 @@ class PanelRow:
     amount: str
     target: str | None
     target_cents: int | None
+    # Если ник целиком из символов, которых нет в шрифте, на панели — username.
+    username: str | None = None
 
 
 @cache
@@ -36,7 +38,7 @@ def _drawable(char: str) -> bool:
 
 
 def _clean(name: str) -> str:
-    return " ".join("".join(char for char in name if _drawable(char)).split()) or "?"
+    return " ".join("".join(char for char in name if _drawable(char)).split())
 
 
 def _fit(draw: ImageDraw.ImageDraw, text: str, width: float, size: int) -> str:
@@ -87,7 +89,7 @@ def _row(draw: ImageDraw.ImageDraw, index: int, row: PanelRow) -> None:
         radius=14 * SCALE,
         fill=(255, 255, 255, 14 if index % 2 == 0 else 8),
     )
-    name = _clean(row.name)
+    name = _clean(row.name) or _clean(row.username or "") or "?"
     radius = 18 * SCALE
     color = AVATARS[sum(map(ord, name)) % len(AVATARS)]
     draw.ellipse([36 * SCALE, middle - radius, 36 * SCALE + 2 * radius, middle + radius], fill=color)

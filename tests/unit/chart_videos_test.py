@@ -7,14 +7,25 @@ from src.bot.game_configs import CHART_CONFIG
 from src.bot.services.chart_game import render_growth_video
 from src.bot.services.chart_game import growth_video
 from src.bot.services.chart_game.crash_video import render_crash_video
+from src.bot.services.chart_game.opening_video import render_opening_video
 from src.bot.services.chart_game.chart import HEIGHT, WIDTH
 
 
 def video_size_and_duration(video):
     probe = subprocess.run(
-        ["ffprobe", "-v", "error", "-show_entries", "stream=width,height:format=duration",
-         "-of", "json", str(video)],
-        capture_output=True, check=True, text=True,
+        [
+            "ffprobe",
+            "-v",
+            "error",
+            "-show_entries",
+            "stream=width,height:format=duration",
+            "-of",
+            "json",
+            str(video),
+        ],
+        capture_output=True,
+        check=True,
+        text=True,
     )
     info = json.loads(probe.stdout)
     stream = info["streams"][0]
@@ -37,11 +48,17 @@ def test_growth_video_lasts_countdown_growth_and_late_edit(tmp_path):
     assert list(tmp_path.iterdir()) == [video]
 
 
-@pytest.mark.parametrize("crash", [100, 294])
-def test_crash_video_lasts_preparation_and_late_edit(tmp_path, crash):
-    video = tmp_path / "crash.mp4"
+@pytest.mark.parametrize(
+    "render",
+    [
+        lambda path: render_opening_video(path, fps=2),
+        lambda path: render_crash_video(path, 294, fps=2),
+    ],
+)
+def test_preparation_videos_last_preparation_and_late_edit(tmp_path, render):
+    video = tmp_path / "preparation.mp4"
 
-    render_crash_video(video, crash, fps=2)
+    render(video)
 
     size, duration = video_size_and_duration(video)
     expected = CHART_CONFIG.preparation_seconds + CHART_CONFIG.late_edit_seconds

@@ -29,6 +29,14 @@ class UserNameRepository:
         )
         return {telegram_id: name for telegram_id, name in rows.tuples()}
 
+    async def usernames(self, telegram_ids: Collection[int]) -> dict[int, str]:
+        rows = await self.session.execute(
+            select(User.telegram_id, User.username).where(
+                User.telegram_id.in_(telegram_ids), User.username.is_not(None)
+            )
+        )
+        return {telegram_id: username for telegram_id, username in rows.tuples() if username}
+
     async def nicknames(self, telegram_ids: Collection[int], chat_id: int) -> dict[int, str]:
         rows = await self.session.execute(
             select(ChatNickname.telegram_id, ChatNickname.nickname).where(
