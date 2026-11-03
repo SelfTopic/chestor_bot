@@ -83,7 +83,7 @@ async def popup(feed, data: str) -> str:
 
 
 def growth_at(started: float, multiplier: float) -> float:
-    growth = started + CHART_CONFIG.preparation_seconds + CHART_CONFIG.countdown_seconds
+    growth = started + CHART_CONFIG.until_growth_seconds
     return growth + CHART_CONFIG.seconds_to(multiplier) + 0.001
 
 

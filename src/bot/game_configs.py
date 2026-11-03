@@ -146,10 +146,17 @@ class ChartConfig:
     # Цели автовывода в сотых: 150 — x1.5.
     target_buttons: tuple[int, ...] = (150, 200, 300, 500, 1000)
     countdown_seconds: float = 3.0
+    # Ролик начинает играть позже, чем бот отправил правку: столько бот ждёт сверх отсчёта,
+    # чтобы его рост шёл вровень с тем, что видят игроки. Подобрано на стенде.
+    playback_delay_seconds: float = 0.8
     preparation_seconds: float = 10.0
     # Правка может опоздать, а Telegram крутит анимацию по кругу: без запаса в конце ролика
     # игроки снова увидели бы его начало.
     late_edit_seconds: float = 3.0
+
+    @property
+    def until_growth_seconds(self) -> float:
+        return self.preparation_seconds + self.countdown_seconds + self.playback_delay_seconds
 
     @property
     def growth_seconds(self) -> float:

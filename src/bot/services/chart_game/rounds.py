@@ -51,7 +51,7 @@ class Round:
 
     @property
     def growth_starts_at(self) -> float:
-        return self.started_at + CHART_CONFIG.preparation_seconds + CHART_CONFIG.countdown_seconds
+        return self.started_at + CHART_CONFIG.until_growth_seconds
 
     @property
     def crashes_at(self) -> float:

@@ -75,7 +75,7 @@ async def balance(session_factory, telegram_id: int) -> int | None:
 
 
 def growth_at(started: float, multiplier: float) -> float:
-    growth = started + CHART_CONFIG.preparation_seconds + CHART_CONFIG.countdown_seconds
+    growth = started + CHART_CONFIG.until_growth_seconds
     return growth + CHART_CONFIG.seconds_to(multiplier) + 0.001
 
 

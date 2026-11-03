@@ -16,7 +16,7 @@ from src.bot.game_configs import CHART_CONFIG
 from src.bot.services.chart_game.rounds import Phase, Round, draw_crash
 
 PREPARATION = CHART_CONFIG.preparation_seconds
-GROWTH = PREPARATION + CHART_CONFIG.countdown_seconds
+GROWTH = CHART_CONFIG.until_growth_seconds
 
 
 class FixedRandom(random.Random):
