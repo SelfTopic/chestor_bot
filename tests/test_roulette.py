@@ -7,7 +7,7 @@ from src.bot.dialogs import Dialogs
 from src.bot.game_configs import LOTTERY_CONFIG
 from src.bot.repositories import WalletRepository
 from src.bot.routers import TelegramRouletteScreen
-from src.bot.services.roulette import RouletteService
+from src.bot.services.roulette import Clip, RouletteService
 from src.bot.services.roulette.positions import positions_of
 from src.bot.services.roulette.spin_video import LANDED_SECONDS
 from src.bot.types.dep import DepColor
@@ -22,7 +22,15 @@ from tests.conftest import (
     phrase_texts,
     rich_texts,
 )
-from tests.roulette_fakes import START, FakeTime, ScriptedRandom, eventually, fake_render, make_videos
+from tests.roulette_fakes import (
+    START,
+    FakeTime,
+    ScriptedRandom,
+    clip_path,
+    eventually,
+    fake_render,
+    make_videos,
+)
 
 ROULETTE = Dialogs.roulette
 CHAT = -1001234567890
@@ -103,7 +111,8 @@ async def test_machine_through_buttons(feed, telegram, roulette, session_factory
     assert choice in rich_texts(chosen)[0].split("\n")
     assert only_text(ROULETTE.amount_button_chosen(amount="1.000")) in [b["text"] for b in buttons(chosen)]
 
-    fake_render(START, positions_of(DepColor.RED)[-1], tmp_path / f"{START}-{positions_of(DepColor.RED)[-1]}.mp4")
+    clip = Clip(START, positions_of(DepColor.RED)[-1], 0)
+    fake_render(clip, clip_path(tmp_path, clip))
     await feed(press(spin))
     (spinning,) = map(rich_body, telegram.bodies("editMessageText"))
     assert spinning["rich_message"]["blocks"][0]["type"] == "animation"

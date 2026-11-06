@@ -14,12 +14,21 @@ from src.bot.exceptions import (
 from src.bot.game_configs import LOTTERY_CONFIG
 from src.bot.repositories import RouletteRepository, UserRepository, WalletRepository
 from src.bot.services.arcade.media import Picture, StoredPicture, StoredVideo, VideoFile
-from src.bot.services.roulette import Choice, RouletteService, Stage
-from src.bot.services.roulette.positions import color_of, positions_of
-from src.bot.services.roulette.spin_video import LANDED_SECONDS
+from src.bot.services.roulette import Choice, Clip, RouletteService, Stage
+from src.bot.services.roulette.positions import VARIANTS, color_of, positions_of
+from src.bot.services.roulette.spin_video import LANDED_SECONDS, spin_video_name
 from src.bot.types.dep import DepColor
 from src.database.models import Lottery, RouletteMachine
-from tests.roulette_fakes import START, FakeScreen, FakeTime, ScriptedRandom, eventually, fake_render, make_videos
+from tests.roulette_fakes import (
+    START,
+    FakeScreen,
+    FakeTime,
+    ScriptedRandom,
+    clip_path,
+    eventually,
+    fake_render,
+    make_videos,
+)
 
 CHAT = -1001
 PLAYER, OTHER = 700001, 700002
@@ -60,14 +69,15 @@ async def balance(session_factory, telegram_id: int) -> int | None:
         return await WalletRepository(session).balance(telegram_id)
 
 
-def ready_video(tmp_path: Path, start: int, end: int) -> None:
-    fake_render(start, end, tmp_path / f"{start}-{end}.mp4")
+def ready_video(tmp_path: Path, start: int, end: int) -> Path:
+    clip = Clip(start, end, 0)
+    return fake_render(clip, clip_path(tmp_path, clip))
 
 
 async def test_spin_plays_the_video_then_lands_with_the_old_lottery_payout(roulette, session_factory):
     service, clock, screen, rng, tmp_path = roulette
     end = positions_of(DepColor.RED)[-1]
-    ready_video(tmp_path, START, end)
+    video = ready_video(tmp_path, START, end)
 
     await service.open(CHAT, PLAYER, DepColor.RED, 1000)
     opened = screen.last
@@ -79,7 +89,7 @@ async def test_spin_plays_the_video_then_lands_with_the_old_lottery_payout(roule
     spinning = screen.last
     assert spinning.stage is Stage.SPINNING and spinning.message_id == 42
     assert isinstance(spinning.media, VideoFile)
-    assert spinning.media.path == tmp_path / f"{START}-{end}.mp4"
+    assert spinning.media.path == video
     # Выигрыш ×1.8 сверх ставки, как у прежней лотереи.
     assert await balance(session_factory, PLAYER) == 11_800
 
@@ -117,7 +127,7 @@ async def test_next_spin_starts_where_the_ribbon_stopped_and_loses_the_bet(roule
     rng.winning = DepColor.WHITE
     await service.spin(machine_id, PLAYER)
     spinning = screen.last.media
-    assert isinstance(spinning, VideoFile) and spinning.path.name == f"{first}-{second}.mp4"
+    assert isinstance(spinning, VideoFile) and spinning.path.name == spin_video_name(Clip(first, second, 0))
     await clock.advance(FLIGHT)
     await eventually(lambda: screen.last.stage is Stage.READY)
     outcome = screen.last.outcome
@@ -145,7 +155,7 @@ async def test_spin_needs_a_full_choice_and_remembers_it(roulette, session_facto
     assert landed.stage is Stage.READY and landed.choice == Choice(DepColor.BLUE, 500)
     assert landed.outcome is not None and landed.outcome.earned == 1250
     await service._videos.idle()
-    assert (tmp_path / f"{START}-{positions_of(DepColor.BLUE)[-1]}.mp4").exists()
+    assert clip_path(tmp_path, Clip(START, positions_of(DepColor.BLUE)[-1], VARIANTS - 1)).exists()
 
 
 async def test_machine_is_personal_and_busy_while_spinning(roulette, session_factory):
@@ -227,8 +237,7 @@ async def test_stale_file_ids_are_uploaded_again(roulette, session_factory):
     service, clock, screen, rng, tmp_path = roulette
     service._videos.uploader = FakeUploader()
     end = positions_of(DepColor.RED)[-1]
-    ready_video(tmp_path, START, end)
-    await service._videos._cache.upload(tmp_path / f"{START}-{end}.mp4")
+    await service._videos._cache.upload(ready_video(tmp_path, START, end))
 
     screen.stale_once = True
     await service.open(CHAT, PLAYER, DepColor.RED, 100)
@@ -240,7 +249,7 @@ async def test_stale_file_ids_are_uploaded_again(roulette, session_factory):
     await service.spin(fresh.machine_id, PLAYER)
     stale, fresh = screen.screens[-2:]
     assert isinstance(stale.media, StoredVideo) and isinstance(fresh.media, VideoFile)
-    assert await service._videos.spin(START, end) == StoredVideo(fresh.media.key, "uploaded")
+    assert await service._videos.spin(Clip(START, end, 0)) == StoredVideo(fresh.media.key, "uploaded")
 
 
 async def test_restart_closes_machines_left_open(session_factory, tmp_path):

@@ -60,7 +60,7 @@ from .services.quiz import QuizService
 from .services.llm import LlmClient
 from .services.analytics import AnalyticsRecorder
 from .services.chart_game import ChartGameService, ChartVideos
-from .services.roulette import RouletteService, RouletteVideos
+from .services.roulette import RouletteService, RouletteVideos, VideoSet, release_url
 from .services.notify import TelegramDocsChannel
 from .services.player_docs import PlayerDocsService
 from .services.link_media import Downloader, LinkMediaService
@@ -181,7 +181,9 @@ class Dispatcher(BaseDispatcher[AppContext]):
         )
         self.chart_videos = ChartVideos(session_factory)
         self.chart_service = ChartGameService(session_factory, self.chart_videos)
-        self.roulette_videos = RouletteVideos(session_factory)
+        self.roulette_videos = RouletteVideos(
+            session_factory, VideoSet(release_url(settings.ROULETTE_VIDEOS_REPO))
+        )
         self.roulette_service = RouletteService(session_factory, self.roulette_videos)
 
     def report_broken_texts(self, error: Exception) -> None:

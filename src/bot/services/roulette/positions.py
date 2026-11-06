@@ -1,5 +1,7 @@
 import random
+from collections.abc import Iterator
 from dataclasses import dataclass
+from typing import NamedTuple
 
 from src.bot.game_configs import LOTTERY_CONFIG
 from src.bot.types.dep import DepColor
@@ -32,6 +34,8 @@ POSITIONS: tuple[tuple[DepColor, ...], ...] = (
 )
 
 FILLER = (22, 28)
+# Роликов на каждую пару положений: иначе частый игрок узнаёт ролик по началу и знает исход.
+VARIANTS = 5
 # Насколько лента не доезжает до центра плашки или проезжает его, пока магнит не дотянет.
 MISS = (0.15, 0.4)
 
@@ -61,9 +65,23 @@ class Spin:
         return len(self.cards) - VISIBLE + CENTER
 
 
-# Путь между положениями всегда один и тот же: ролик для пары рендерится один раз.
-def spin(start: int, end: int) -> Spin:
-    rng = random.Random(f"spin-{start}-{end}")
+class Clip(NamedTuple):
+    start: int
+    end: int
+    variant: int
+
+
+def clips() -> Iterator[Clip]:
+    for start in range(len(POSITIONS)):
+        for end in range(len(POSITIONS)):
+            for variant in range(VARIANTS):
+                yield Clip(start, end, variant)
+
+
+# Путь зависит только от ролика: где бы набор ни рендерился, он выходит тем же.
+def spin(clip: Clip) -> Spin:
+    start, end, variant = clip
+    rng = random.Random(f"spin-{start}-{end}-{variant}")
     colors = list(DepColor)
     weights = [LOTTERY_CONFIG.get_chance(color.value) for color in colors]
     filler = rng.choices(colors, weights, k=rng.randint(*FILLER))

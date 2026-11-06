@@ -5,7 +5,10 @@ from PIL import Image
 from src.bot.services.roulette.positions import (
     CENTER,
     POSITIONS,
+    VARIANTS,
     VISIBLE,
+    Clip,
+    clips,
     color_of,
     positions_of,
     spin,
@@ -30,21 +33,25 @@ def test_every_color_has_two_rest_positions_with_different_neighbours():
 
 
 def test_every_spin_runs_from_one_rest_position_to_another():
-    for start in range(len(POSITIONS)):
-        for end in range(len(POSITIONS)):
-            path = spin(start, end)
-            assert path.cards[:VISIBLE] == POSITIONS[start]
-            assert path.cards[-VISIBLE:] == POSITIONS[end]
-            assert path.cards[path.start_card] is color_of(start)
-            assert path.cards[path.end_card] is color_of(end)
-            # Лента останавливается на выпавшей плашке, а не на соседней.
-            assert 0 < abs(path.miss) < 0.5
-            assert path == spin(start, end)
+    for clip in clips():
+        path = spin(clip)
+        assert path.cards[:VISIBLE] == POSITIONS[clip.start]
+        assert path.cards[-VISIBLE:] == POSITIONS[clip.end]
+        assert path.cards[path.start_card] is color_of(clip.start)
+        assert path.cards[path.end_card] is color_of(clip.end)
+        # Лента останавливается на выпавшей плашке, а не на соседней.
+        assert 0 < abs(path.miss) < 0.5
+        assert path == spin(clip)
 
 
-@pytest.mark.parametrize(("start", "end"), [(0, 6), (6, 6), (9, 2)])
-def test_spin_starts_and_ends_on_the_rest_pictures(painter, start, end):
-    frames = SpinFrames(spin(start, end), painter=painter)
+def test_variants_of_one_spin_take_different_paths():
+    paths = {spin(Clip(0, 6, variant)) for variant in range(VARIANTS)}
+    assert len({path.cards for path in paths}) == VARIANTS
+
+
+@pytest.mark.parametrize(("start", "end", "variant"), [(0, 6, 0), (6, 6, 2), (9, 2, VARIANTS - 1)])
+def test_spin_starts_and_ends_on_the_rest_pictures(painter, start, end, variant):
+    frames = SpinFrames(spin(Clip(start, end, variant)), painter=painter)
     assert np.array_equal(np.asarray(frames.render(0)), np.asarray(rest_frame(start, painter)))
     last = frames.render(frames.count - 1)
     assert np.array_equal(np.asarray(last), np.asarray(rest_frame(end, painter)))

@@ -8,7 +8,8 @@ from pathlib import Path
 
 from src.bot.exceptions import RouletteStaleMedia
 from src.bot.services.arcade.media import StoredPicture, StoredVideo, VideoFile
-from src.bot.services.roulette import RouletteVideos, Screen, Shown
+from src.bot.services.roulette import Clip, RouletteVideos, Screen, Shown
+from src.bot.services.roulette.spin_video import spin_video_name
 from src.bot.types.dep import DepColor
 
 START = 0
@@ -74,7 +75,11 @@ class FakeScreen:
         return self.screens[-1]
 
 
-def fake_render(start: int, end: int, path: Path) -> Path:
+def clip_path(folder: Path, clip: Clip) -> Path:
+    return folder / spin_video_name(clip)
+
+
+def fake_render(clip: Clip, path: Path) -> Path:
     path.parent.mkdir(parents=True, exist_ok=True)
     path.write_bytes(b"video")
     return path
@@ -83,7 +88,7 @@ def fake_render(start: int, end: int, path: Path) -> Path:
 def make_videos(session_factory, tmp_path: Path) -> RouletteVideos:
     return RouletteVideos(
         session_factory,
-        spin_path=lambda start, end: tmp_path / f"{start}-{end}.mp4",
+        spin_path=lambda clip: clip_path(tmp_path, clip),
         render=fake_render,
         picture=lambda position: f"rest:{position}".encode(),
         executor=lambda: ThreadPoolExecutor(1),

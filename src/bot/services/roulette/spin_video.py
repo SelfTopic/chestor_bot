@@ -7,13 +7,16 @@ from PIL import Image
 from src.bot.config import game_config
 
 from ..arcade.encoder import write_video
-from .positions import CENTER, POSITIONS, Spin, spin
+from .positions import CENTER, POSITIONS, Clip, Spin, spin
 from .ribbon import CARD_WIDTH, PITCH, RibbonPainter
 
 # Telegram проигрывает ролики на 25 кадрах, какой бы ни была их частота.
 FPS = 25
 # Частота в пути: ролики с другой частотой не подхватятся вместо новых.
-VIDEOS = Path(game_config.path_to_assets) / "videos" / "roulette" / f"{FPS}fps"
+# Набор роликов рендерит GitHub в релиз, бот его скачивает. Поменялась картинка или путь
+# прокрута — новый номер: иначе бот оставит у себя старый набор.
+VIDEO_SET = 1
+VIDEOS = Path(game_config.path_to_assets) / "videos" / "roulette" / f"set-{VIDEO_SET}"
 
 REST, ACCEL, DECEL, MAGNET, FLASH = 0.4, 0.7, 4.0, 0.45, 0.35
 # Плашка уже горит, когда ролик доходит до этого времени: дальше он стоит на последнем кадре.
@@ -24,8 +27,12 @@ BLUR_SHARE = 0.3
 MIN_BLUR = 3.0
 
 
-def spin_video_path(start: int, end: int) -> Path:
-    return VIDEOS / f"{start}-{end}.mp4"
+def spin_video_path(clip: Clip) -> Path:
+    return VIDEOS / spin_video_name(clip)
+
+
+def spin_video_name(clip: Clip) -> str:
+    return "{}-{}-{}.mp4".format(*clip)
 
 
 def _ease_out(share: float) -> float:
@@ -101,7 +108,7 @@ def rest_picture(position: int) -> bytes:
     return buffer.getvalue()
 
 
-def render_spin_video(start: int, end: int, path: Path | None = None) -> Path:
-    path = path or spin_video_path(start, end)
-    write_video(path, FPS, SpinFrames(spin(start, end)).frames(), preset="medium")
+def render_spin_video(clip: Clip, path: Path | None = None) -> Path:
+    path = path or spin_video_path(clip)
+    write_video(path, FPS, SpinFrames(spin(clip)).frames(), preset="medium")
     return path

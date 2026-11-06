@@ -23,7 +23,7 @@ from src.bot.types.dep import DepColor
 
 from ..arcade.media import Media, Picture, StoredPicture, StoredVideo, VideoFile
 from ..arcade.wallet import wallet
-from .positions import POSITIONS, positions_of
+from .positions import POSITIONS, VARIANTS, Clip, positions_of
 from .screen import RouletteScreen, Screen, Stage
 from .spin_video import LANDED_SECONDS
 from .spins import Choice, Outcome, draw_color, winnings
@@ -149,18 +149,18 @@ class RouletteService:
         except BaseException:
             machine.spinning = False
             raise
-        start, end = machine.position, self._end_position(machine.position, winning)
-        video = await self._videos.spin(start, end)
+        clip = self._clip(machine.position, winning)
+        video = await self._videos.spin(clip)
         if video is None:
-            await self._land(machine, end, outcome)
+            await self._land(machine, clip.end, outcome)
             return
         try:
-            await self._show(machine, Stage.SPINNING, video, outcome, (start, end))
+            await self._show(machine, Stage.SPINNING, video, outcome, clip)
         except Exception:
             logger.exception("Прокрут рулетки в чате %s не показался", machine.chat_id)
-            await self._land(machine, end, outcome)
+            await self._land(machine, clip.end, outcome)
             return
-        task = asyncio.create_task(self._land_later(machine, end, outcome, flight))
+        task = asyncio.create_task(self._land_later(machine, clip.end, outcome, flight))
         self._landings.add(task)
         task.add_done_callback(self._landings.discard)
 
@@ -180,9 +180,13 @@ class RouletteService:
             raise RouletteNotYours()
         return machine
 
-    def _end_position(self, start: int, winning: DepColor) -> int:
-        candidates = positions_of(winning)
-        ready = [end for end in candidates if self._videos.ready(start, end)]
+    def _clip(self, start: int, winning: DepColor) -> Clip:
+        candidates = [
+            Clip(start, end, variant)
+            for end in positions_of(winning)
+            for variant in range(VARIANTS)
+        ]
+        ready = [clip for clip in candidates if self._videos.ready(clip)]
         return self._rng.choice(ready or candidates)
 
     # Выплата прежней лотереи: при выигрыше игрок получает ставку × коэффициент сверх ставки.
@@ -258,7 +262,7 @@ class RouletteService:
         stage: Stage,
         media: Media,
         outcome: Outcome | None,
-        pair: tuple[int, int] | None = None,
+        clip: Clip | None = None,
     ) -> None:
         assert self.screen is not None
         async with self._session_factory() as session:
@@ -277,8 +281,8 @@ class RouletteService:
         try:
             shown = await self.screen.show(screen)
         except RouletteStaleMedia:
-            if isinstance(media, StoredVideo) and pair is not None:
-                media = await self._videos.fresh_spin(media, *pair)
+            if isinstance(media, StoredVideo) and clip is not None:
+                media = await self._videos.fresh_spin(media, clip)
             elif isinstance(media, StoredPicture):
                 media = await self._videos.fresh_rest(machine.position)
             else:
