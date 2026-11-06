@@ -86,7 +86,7 @@ def test_quiet_console_does_not_silence_the_file(root, log_file, monkeypatch, ca
 
 
 def test_replaces_handlers_set_up_before(root, log_file, monkeypatch):
-    logging.basicConfig(level=logging.DEBUG)  # как делает lottery_video_genertor при импорте
+    logging.basicConfig(level=logging.DEBUG)  # так делают некоторые библиотеки при импорте
     monkeypatch.setenv("LOG_LEVEL", "INFO")
     setup_logging()
 

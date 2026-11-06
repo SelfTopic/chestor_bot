@@ -328,9 +328,6 @@ JSON, `.get()`) сужай через `isinstance` / `assert`, прежде че
 
 - `/ban_bot` разбирает срок своим `BanService.parse_duration` (`7d`), а не `DurationParser`,
   которым сроки читает модерация чатов («30 мин», `2h`, `1d`).
-- `utils/generate_lottery_video.py` не импортируется, но это скрипт
-  (`python -m src.bot.utils.generate_lottery_video`), генерирует видео для лотереи
-  через `services/lottery_video_genertor.py`.
 
 ## Git
 
