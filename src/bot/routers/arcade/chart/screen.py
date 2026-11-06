@@ -4,16 +4,10 @@ from selfrot import Bot, InlineKeyboard, button
 from selfrot.exceptions import TelegramBadRequest
 from selfrot.types import (
     InlineKeyboardMarkup,
-    InputFile,
-    InputMediaAnimation,
-    InputMediaPhoto,
-    InputRichBlockAnimation,
-    InputRichBlockParagraph,
     InputRichBlock,
-    InputRichBlockPhoto,
+    InputRichBlockParagraph,
     InputRichMessage,
     Message,
-    RichBlockAnimation,
 )
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 
@@ -24,15 +18,10 @@ from src.bot.repositories import ChatRepository, UserRepository
 from src.bot.repositories.user_names import UserNameRepository
 from src.bot.services.chart_game import (
     BetLine,
-    Media,
     PanelRow,
-    Picture,
     Screen,
     Shown,
     Stage,
-    StoredPicture,
-    StoredVideo,
-    VideoFile,
     bets_panel,
     closed_picture,
 )
@@ -40,30 +29,14 @@ from src.bot.services.dialog import DialogService
 from src.bot.services.language import LanguageService
 from src.bot.utils import format_amount
 
+from ..media import animation_file_id, media_block, stored
 from .payloads import BetPress, CashOutPress, HintPress, TargetPress
 
 CHART = Dialogs.chart
 
+
 def multiplier(cents: int) -> str:
     return f"{cents / 100:.2f}"
-
-
-def media_block(media: Media) -> InputRichBlockPhoto | InputRichBlockAnimation:
-    match media:
-        case Picture(png=png):
-            return InputRichBlockPhoto(photo=InputMediaPhoto(media=InputFile(png, "chart.png")))
-        case VideoFile(path=path):
-            return InputRichBlockAnimation(
-                animation=InputMediaAnimation(media=InputFile.from_path(path))
-            )
-        case StoredVideo(file_id=file_id):
-            return InputRichBlockAnimation(animation=InputMediaAnimation(media=file_id))
-        case StoredPicture(file_id=file_id):
-            return InputRichBlockPhoto(photo=InputMediaPhoto(media=file_id))
-
-
-def stored(media: Media | None) -> bool:
-    return isinstance(media, (StoredVideo, StoredPicture))
 
 
 def keyboard(stage: Stage, text: LineText) -> InlineKeyboardMarkup:
@@ -81,15 +54,6 @@ def keyboard(stage: Stage, text: LineText) -> InlineKeyboardMarkup:
     elif stage is Stage.GROWTH:
         board.row(button(text(CHART.cash_out_button()), CashOutPress()))
     return board.markup()
-
-
-def animation_file_id(message: Message | None) -> str | None:
-    if message is None or message.rich_message is None:
-        return None
-    for block in message.rich_message.blocks:
-        if isinstance(block, RichBlockAnimation):
-            return block.animation.file_id
-    return None
 
 
 class TelegramMachineScreen:

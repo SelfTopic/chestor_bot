@@ -52,10 +52,7 @@ from .ghoul import (
 from .link_media import LinkMediaError, LinkMediaTooLarge
 from .media_tools import MediaToolError
 from .lottery import (
-    BetOutOfRange,
     LotteryError,
-    LotteryPlayerMissing,
-    NotEnoughMoneyForBet,
     UnknownLotteryColor,
 )
 from .nickname import NicknameProblem, NicknameRejected
@@ -191,9 +188,6 @@ __all__ = [
     "LinkMediaTooLarge",
     "MediaToolError",
     "LotteryError",
-    "BetOutOfRange",
-    "NotEnoughMoneyForBet",
-    "LotteryPlayerMissing",
     "UnknownLotteryColor",
     "TransferError",
     "InvalidTransferAmountError",

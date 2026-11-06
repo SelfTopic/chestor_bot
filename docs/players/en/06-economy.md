@@ -73,12 +73,17 @@ cancel the transfer. That way you won't give money away by accident.
 
 A family member sends from the family account, and transfers to them land there too.
 
-### bet (lottery)
+### bet (roulette)
 
-A bet on a color: **bet <color> <amount>**, e.g. `bet red 500`.
+**bet** opens your personal machine: a ribbon of colored cards with buttons under it. Pick a
+color and an amount, press «🎰 Spin» — the ribbon runs and stops on the color that came up, and
+the result and your balance show up right in the message. Spin as much as you like: the ribbon
+moves on from where it stopped, and your bet is remembered.
 
-- A bet is from 100 to 100,000 CheSton, the money is taken right away.
-- The bot spins a wheel (a video), the result comes when it stops.
+- With a bet right away: `bet red 500` — this is also how you bet an amount that has no button.
+- A bet is from 100 to 100,000 CheSton, the money is taken when you press.
+- Only the owner can spin. A new `bet` moves the machine down the chat.
+- The machine closes after 2 minutes without a spin.
 
 | Color | Payout | Chance |
 |:--|:--:|:--:|
@@ -88,5 +93,5 @@ A bet on a color: **bet <color> <amount>**, e.g. `bet red 500`.
 | 🟡 yellow | ×5 | 13% |
 | ⚪ white | ×10 | 10% |
 
-> On average the lottery returns less than you bet (white returns exactly as much): it's fun,
+> On average the roulette returns less than you bet (white returns exactly as much): it's fun,
 > not a way to earn.

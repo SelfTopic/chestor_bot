@@ -1,8 +1,19 @@
 import random
 from dataclasses import dataclass
 
+from src.bot.exceptions import UnknownLotteryColor
 from src.bot.game_configs import LOTTERY_CONFIG
 from src.bot.types.dep import DepColor
+
+# Цвет можно назвать на любом языке бота: «депнуть красный» и «bet red» — одна ставка.
+COLOR_WORDS = {
+    **{color.value: color for color in DepColor},
+    "red": DepColor.RED,
+    "blue": DepColor.BLUE,
+    "green": DepColor.GREEN,
+    "white": DepColor.WHITE,
+    "yellow": DepColor.YELLOW,
+}
 
 
 @dataclass(frozen=True)
@@ -40,3 +51,12 @@ def draw_color(rng: random.Random) -> DepColor:
 
 def winnings(color: DepColor, bet: int) -> int:
     return int(bet * LOTTERY_CONFIG.get_multiplier(color.value))
+
+
+# Слово ищется внутри написанного: «красный!» и «красныйй» — тоже красный.
+def parse_color(word: str) -> DepColor:
+    written = word.lower().strip()
+    for name, color in COLOR_WORDS.items():
+        if name in written:
+            return color
+    raise UnknownLotteryColor(written)

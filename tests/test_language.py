@@ -90,9 +90,8 @@ async def test_group_speaks_chat_language_not_sender_language(
         ("race profile", "profile.card"),
         ("bal", "balance"),
         ("send", "transfer.usage"),
-        ("bet", "lottery.usage"),
         # цвет понят, раз дошло до проверки ставки
-        ("bet red 1", "lottery.bet_out_of_range"),
+        ("bet red 1", "roulette.bet_out_of_range"),
         ("grow kagune", "ghoul.new"),
         ("snap", "ghoul.not_a_ghoul"),
         ("drink coffee", "ghoul.not_a_ghoul"),

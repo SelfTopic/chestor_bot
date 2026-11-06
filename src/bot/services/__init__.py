@@ -13,7 +13,7 @@ from .dialog import DialogService
 from .duel import DuelService
 from .duration_parser import DurationParser
 from .ghoul import GhoulService
-from .ghoul_game import CoffeeService, LotteryService
+from .ghoul_game import CoffeeService
 from .media import MediaService
 from .quotes import QuoteService
 from .rp_commands import RpCommandsService
@@ -36,7 +36,6 @@ __all__ = [
     "ChatService",
     "MediaService",
     "CoffeeService",
-    "LotteryService",
     "PlayerLookupService",
     "BanService",
     "StatsEditService",

@@ -33,6 +33,7 @@ from .services.notify import Notifier, SelfrotBotNotifier
 from .session_services import SessionServices
 from .services.analytics import AnalyticsRecorder
 from .services.chart_game import ChartGameService
+from .services.roulette import RouletteService
 from .services.quiz import QuizService
 from .services.link_media import LinkMediaService
 from .services.music import MusicService
@@ -67,6 +68,7 @@ class AppContext(BaseContext[TEvent], SessionServices):
     link_media_service: LinkMediaService
     music_service: MusicService
     chart_service: ChartGameService
+    roulette_service: RouletteService
     player_docs: dict[str, PlayerDocsService]
     quote_service: QuoteService
     rp_commands_service: RpCommandsService

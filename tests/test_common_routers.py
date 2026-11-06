@@ -1,4 +1,4 @@
-"""Остальные роутеры routers/common: start, help, tops, правила, депнуть, перевод,
+"""Остальные роутеры routers/common: start, help, tops, правила, перевод,
 Role-Play, кагуне и расовый профиль, wordle, anime. Ошибки приложения проверяются
 через Dispatcher.on_error (замена error_router)."""
 
@@ -12,8 +12,6 @@ from sqlalchemy import update
 from src.bot.config import game_config
 from src.bot.dialogs import Dialogs
 from src.bot.repositories import GhoulRepository, UserRepository
-from src.bot.services.ghoul_game.lottery import COLOR_TO_FOLDER
-from src.bot.services.lottery_video_genertor import LotteryGenerator
 from src.bot.services.wikipedia import WikipediaSummary
 from src.database.models import Chat
 from src.bot.routers.media.anime.guard import cut_guard
@@ -136,79 +134,6 @@ class TestCheckRules:
             await session.commit()
 
         assert await send("правила", uid=42, chat=-100123) == ["Не спамить"]
-
-
-class TestDep:
-    async def test_bad_format(self, send):
-        (reply,) = await send("депнуть красный")
-        assert matches_phrase(reply, "lottery.usage")
-
-    async def test_unknown_color(self, send):
-        (reply,) = await send("депнуть фиолетовый 100")
-
-        assert matches_phrase(reply, "lottery.unknown_color") and "фиолетовый" in reply
-
-    async def test_bet_out_of_range(self, send):
-        (reply,) = await send("депнуть красный 99")
-        assert matches_phrase(reply, "lottery.bet_out_of_range")
-        assert "100" in reply and "100000" in reply
-
-    async def test_not_enough_money(self, send):
-        (reply,) = await send("депнуть красный 100")
-        assert matches_phrase(reply, "lottery.not_enough_money")
-
-    @pytest.fixture
-    def lottery_videos(self, tmp_path, monkeypatch):
-        """Видео лотереи в git не лежат: генератор делает по крошечному ролику на цвет."""
-        LotteryGenerator(
-            output_dir=tmp_path / "videos" / "lottery",
-            videos_per_color=1,
-            video_size=(96, 96),
-            fps=4,
-            spin_duration=0.5,
-            pause_duration=0.25,
-        ).generate_all()
-        assert {p.parent.name for p in tmp_path.rglob("*.mp4")} == set(COLOR_TO_FOLDER.values())
-        monkeypatch.setattr(game_config, "path_to_assets", str(tmp_path))
-
-    async def test_bet_changes_balance_and_result_arrives_later(
-        self, feed, telegram, session_factory, lottery_videos
-    ):
-        await seed(session_factory, 42, balance=1000)
-        # гифка длительностью 0 с: итог придёт через duration + 1 = 1 секунду
-        telegram.results["sendAnimation"] = {
-            "message_id": 101,
-            "date": 5,
-            "chat": {"id": 42, "type": "private"},
-            "animation": {
-                "file_id": "A",
-                "file_unique_id": "u",
-                "width": 1,
-                "height": 1,
-                "duration": 0,
-            },
-        }
-
-        await feed(message_update("депнуть красный 100", uid=42))
-
-        user = await get_user(session_factory, 42)
-        assert user is not None and user.balance != 1000  # выиграл или проиграл
-        assert telegram.bodies("sendAnimation")  # гифка ушла сразу
-        assert telegram.sent == []  # а итог ещё нет: он отложен (self.defer)
-
-        # BackgroundTasks.drain при остановке отменяет спящие таймеры, поэтому ждём сами
-        await asyncio.sleep(1.5)
-        (result,) = telegram.sent
-        assert "100" in result  # ставка есть и в тексте выигрыша, и проигрыша
-
-    async def test_upload_failure_is_reported(self, send, telegram, session_factory):
-        await seed(session_factory, 42, balance=1000)
-        telegram.errors["sendAnimation"] = (400, "Bad Request: wrong file")
-
-        replies = await send("депнуть красный 100", uid=42)
-
-        # при ошибке загрузки гифки (или её отсутствии) пользователь не остаётся без ответа
-        assert replies
 
 
 class TestTransfer:
