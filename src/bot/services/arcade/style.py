@@ -4,6 +4,8 @@ from functools import cache
 from PIL import Image, ImageDraw, ImageFilter, ImageFont
 
 FONT = "src/assets/fonts/Rubik.ttf"
+# Экран у всех автоматов один: ролики и картинки сменяют друг друга в одном сообщении.
+WIDTH, HEIGHT = 960, 540
 
 Color = tuple[int, int, int]
 

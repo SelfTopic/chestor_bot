@@ -14,18 +14,17 @@ from src.bot.exceptions import (
     ChartUnavailable,
 )
 from src.bot.game_configs import CHART_CONFIG
-from src.bot.repositories import ChartRepository, UserRepository, WalletRepository
+from src.bot.repositories import ArcadeVideoRepository, ChartRepository, UserRepository, WalletRepository
 from src.bot.services.chart_game.screen import BetLine, Screen, Shown, Stage
 from src.bot.services.chart_game.service import ChartGameService
-from src.bot.services.chart_game.videos import (
-    ChartVideos,
+from src.bot.services.arcade.media import (
     Picture,
     StoredPicture,
-    WARM,
     StoredVideo,
     VideoFile,
     video_key,
 )
+from src.bot.services.chart_game.videos import WARM, ChartVideos
 from src.database.models import ChartMachine
 from tests.chart_fakes import FakeTime, FixedRandom, fake_opening, fake_render
 
@@ -211,7 +210,7 @@ async def test_stale_video_is_uploaded_again(game, tmp_path):
     service, clock, screen, sessions = game
     started = clock.now
     async with sessions() as session:
-        await ChartRepository(session).save_video(video_key(growth_file), "stale")
+        await ArcadeVideoRepository(session).save(video_key(growth_file), "stale")
         await session.commit()
     screen.stale_once = True
     await service.open(CHAT, PLAYER)

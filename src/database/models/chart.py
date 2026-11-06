@@ -58,13 +58,3 @@ class ChartBet(Base):
     cashed_at: Mapped[Optional[int]] = mapped_column(nullable=True)
     payout: Mapped[int] = mapped_column(BigInteger, nullable=False, default=0)
     placed_at: Mapped[datetime] = mapped_column(nullable=False, server_default=func.now())
-
-
-# file_id роликов игры: ключ — путь файла и время его изменения, так перерендеренный ролик
-# не получит file_id прежнего.
-class ChartVideo(Base):
-    __tablename__ = "chart_videos"
-
-    key: Mapped[str] = mapped_column(primary_key=True)
-    file_id: Mapped[str] = mapped_column(nullable=False)
-    added_at: Mapped[datetime] = mapped_column(nullable=False, server_default=func.now())

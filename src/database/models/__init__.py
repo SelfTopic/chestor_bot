@@ -2,7 +2,8 @@ from .active_battle import ActiveBattle
 from .balances_log import BalancesLog
 from .base import Base
 from .battle import Battle
-from .chart import ChartBet, ChartMachine, ChartRound, ChartVideo
+from .arcade import ArcadeVideo
+from .chart import ChartBet, ChartMachine, ChartRound
 from .chat import Chat
 from .chat_participant import NICKNAME_MAX_LENGTH, ChatNickname, ChatParticipant
 from .cooldown import Cooldown
@@ -25,6 +26,7 @@ from .link_media import LinkMediaCache
 from .music_track import MusicTrack
 from .quiz_streak import QuizStreak
 from .roast_log import RoastLog
+from .roulette import RouletteMachine
 from .rp_commands import Rp
 from .promo import PromoActivation, PromoCode
 from .moderation import ModerationAction, ModerationSettings, ModerationWarning
@@ -41,10 +43,10 @@ __all__ = [
     "LinkMediaCache",
     "MusicTrack",
     "Battle",
+    "ArcadeVideo",
     "ChartBet",
     "ChartMachine",
     "ChartRound",
-    "ChartVideo",
     "Chat",
     "ChatNickname",
     "ChatParticipant",
@@ -57,6 +59,7 @@ __all__ = [
     "Lottery",
     "Rp",
     "RoastLog",
+    "RouletteMachine",
     "BalancesLog",
     "Transfer",
     "QuizStreak",

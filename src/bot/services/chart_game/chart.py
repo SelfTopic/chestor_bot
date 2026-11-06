@@ -9,9 +9,8 @@ from PIL import Image, ImageChops, ImageDraw, ImageFilter
 from src.bot.config import game_config
 from src.bot.game_configs import CHART_CONFIG
 
-from .style import LABEL, PURPLE, WHITE, Color, background, font
+from ..arcade.style import HEIGHT, LABEL, PURPLE, WHITE, WIDTH, Color, background, font
 
-WIDTH, HEIGHT = 960, 540
 # Ролик на 30 кадрах Telegram проигрывал на 25: к x50 он отставал от времени бота на 5 секунд.
 FPS = 25
 # Частота в пути: ролики с другой частотой не подхватятся вместо новых.

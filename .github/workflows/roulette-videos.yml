@@ -1,0 +1,63 @@
+name: Roulette videos
+
+# Набор роликов ленты рендерится здесь, а не на сервере: сервер общий для прода и стенда.
+# Релиз создаётся один раз на номер набора (VIDEO_SET), бот скачивает его при запуске.
+on:
+  push:
+    paths:
+      - src/bot/services/roulette/**
+      - src/bot/services/arcade/**
+      - src/bot/utils/render_roulette_videos.py
+      - .github/workflows/roulette-videos.yml
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: roulette-videos
+  cancel-in-progress: false
+
+jobs:
+  render:
+    name: Roulette videos
+    runs-on: ubuntu-24.04
+    timeout-minutes: 90
+    env:
+      GH_TOKEN: ${{ github.token }}
+    steps:
+      - uses: actions/checkout@v7
+
+      - id: release
+        run: |
+          set_number=$(grep -oP '^VIDEO_SET = \K\d+' src/bot/services/roulette/spin_video.py)
+          tag="roulette-videos-${set_number}"
+          echo "tag=${tag}" >> "$GITHUB_OUTPUT"
+          if gh release view "$tag" > /dev/null 2>&1; then
+            echo "exists=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      - if: steps.release.outputs.exists != 'true'
+        run: pipx install poetry==2.3.4
+
+      - if: steps.release.outputs.exists != 'true'
+        uses: actions/setup-python@v7
+        with:
+          python-version: "3.11"
+          cache: poetry
+
+      - if: steps.release.outputs.exists != 'true'
+        run: sudo apt-get update && sudo apt-get install -y --no-install-recommends ffmpeg
+
+      - if: steps.release.outputs.exists != 'true'
+        run: poetry install --no-interaction --no-root
+
+      - if: steps.release.outputs.exists != 'true'
+        run: poetry run python -m src.bot.utils.render_roulette_videos "${{ steps.release.outputs.tag }}.tar"
+
+      - if: steps.release.outputs.exists != 'true'
+        run: |
+          tag="${{ steps.release.outputs.tag }}"
+          gh release create "$tag" "${tag}.tar" --target "$GITHUB_SHA" --latest=false \
+            --title "Roulette videos ${tag#roulette-videos-}" \
+            --notes "Ролики ленты рулетки, набор ${tag#roulette-videos-}. Бот скачивает их сам."

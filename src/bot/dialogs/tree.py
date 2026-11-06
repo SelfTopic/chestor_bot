@@ -1924,72 +1924,6 @@ class _LinkMediaDialogs:
         return Line("link_media.too_large", {})
 
 
-class _LotteryDialogs:
-    def bet_out_of_range(self, *, max_bet: object, min_bet: object) -> Line:
-        return Line(
-            "lottery.bet_out_of_range",
-            {
-                "max_bet": max_bet,
-                "min_bet": min_bet,
-            },
-        )
-
-    def failed(self) -> Line:
-        return Line("lottery.failed", {})
-
-    def lose(
-        self,
-        *,
-        balance: object,
-        bet: object,
-        chosen_color: object,
-        winning_color: object,
-    ) -> Line:
-        return Line(
-            "lottery.lose",
-            {
-                "balance": balance,
-                "bet": bet,
-                "chosen_color": chosen_color,
-                "winning_color": winning_color,
-            },
-        )
-
-    def not_enough_money(self) -> Line:
-        return Line("lottery.not_enough_money", {})
-
-    def player_missing(self) -> Line:
-        return Line("lottery.player_missing", {})
-
-    def unknown_color(self, *, color: object, colors: object) -> Line:
-        return Line("lottery.unknown_color", {"color": color, "colors": colors})
-
-    def usage(self) -> Line:
-        return Line("lottery.usage", {})
-
-    def win(
-        self,
-        *,
-        balance: object,
-        bet: object,
-        chosen_color: object,
-        earned: object,
-        multiplier: object,
-        winning_color: object,
-    ) -> Line:
-        return Line(
-            "lottery.win",
-            {
-                "balance": balance,
-                "bet": bet,
-                "chosen_color": chosen_color,
-                "earned": earned,
-                "multiplier": multiplier,
-                "winning_color": winning_color,
-            },
-        )
-
-
 class _MarriageButtonsDialogs:
     def decline(self) -> Line:
         return Line("marriage.buttons.decline", {})
@@ -4234,6 +4168,124 @@ class _RoastDialogs:
         return Line("roast.bored", {})
 
 
+class _RouletteDialogs:
+    def amount_button(self, *, amount: object) -> Line:
+        return Line("roulette.amount_button", {"amount": amount})
+
+    def amount_button_chosen(self, *, amount: object) -> Line:
+        return Line("roulette.amount_button_chosen", {"amount": amount})
+
+    def amount_header(self) -> Line:
+        return Line("roulette.amount_header", {})
+
+    def amount_hint(self) -> Line:
+        return Line("roulette.amount_hint", {})
+
+    def balance(self, *, balance: object) -> Line:
+        return Line("roulette.balance", {"balance": balance})
+
+    def bet_out_of_range(self, *, max_bet: object, min_bet: object) -> Line:
+        return Line(
+            "roulette.bet_out_of_range",
+            {
+                "max_bet": max_bet,
+                "min_bet": min_bet,
+            },
+        )
+
+    def busy(self) -> Line:
+        return Line("roulette.busy", {})
+
+    def choice(self, *, amount: object, color: object, multiplier: object) -> Line:
+        return Line(
+            "roulette.choice",
+            {
+                "amount": amount,
+                "color": color,
+                "multiplier": multiplier,
+            },
+        )
+
+    def choose(self) -> Line:
+        return Line("roulette.choose", {})
+
+    def choose_amount(self, *, color: object) -> Line:
+        return Line("roulette.choose_amount", {"color": color})
+
+    def choose_color(self, *, amount: object) -> Line:
+        return Line("roulette.choose_color", {"amount": amount})
+
+    def closed(self) -> Line:
+        return Line("roulette.closed", {})
+
+    def closed_hint(self) -> Line:
+        return Line("roulette.closed_hint", {})
+
+    def closed_title(self) -> Line:
+        return Line("roulette.closed_title", {})
+
+    def color_button(self, *, color: object, emoji: object, multiplier: object) -> Line:
+        return Line(
+            "roulette.color_button",
+            {
+                "color": color,
+                "emoji": emoji,
+                "multiplier": multiplier,
+            },
+        )
+
+    def color_button_chosen(self, *, color: object, multiplier: object) -> Line:
+        return Line(
+            "roulette.color_button_chosen",
+            {
+                "color": color,
+                "multiplier": multiplier,
+            },
+        )
+
+    def color_header(self) -> Line:
+        return Line("roulette.color_header", {})
+
+    def color_hint(self) -> Line:
+        return Line("roulette.color_hint", {})
+
+    def failed(self) -> Line:
+        return Line("roulette.failed", {})
+
+    def lost(self, *, bet: object, winning: object) -> Line:
+        return Line("roulette.lost", {"bet": bet, "winning": winning})
+
+    def machine_closed(self) -> Line:
+        return Line("roulette.machine_closed", {})
+
+    def no_choice(self) -> Line:
+        return Line("roulette.no_choice", {})
+
+    def not_enough_money(self) -> Line:
+        return Line("roulette.not_enough_money", {})
+
+    def not_yours(self) -> Line:
+        return Line("roulette.not_yours", {})
+
+    def spin_button(self) -> Line:
+        return Line("roulette.spin_button", {})
+
+    def spinning(self, *, amount: object, color: object) -> Line:
+        return Line("roulette.spinning", {"amount": amount, "color": color})
+
+    def title(self, *, name: object) -> Line:
+        return Line("roulette.title", {"name": name})
+
+    def unknown_color(self, *, color: object, colors: object) -> Line:
+        return Line("roulette.unknown_color", {"color": color, "colors": colors})
+
+    def usage(self) -> Line:
+        return Line("roulette.usage", {})
+
+    def won(self, *, earned: object, winning: object) -> Line:
+        return Line("roulette.won", {"earned": earned, "winning": winning})
+
+
 class _RpDialogs:
     def created(self, *, action: object, command: object) -> Line:
         return Line("rp.created", {"action": action, "command": command})
@@ -4846,7 +4898,6 @@ class _Dialogs:
     kagune = _KaguneDialogs()
     language = _LanguageDialogs()
     link_media = _LinkMediaDialogs()
-    lottery = _LotteryDialogs()
     marriage = _MarriageDialogs()
     mob = _MobDialogs()
     moderation = _ModerationDialogs()
@@ -4859,6 +4910,7 @@ class _Dialogs:
     quiz = _QuizDialogs()
     rich = _RichDialogs()
     roast = _RoastDialogs()
+    roulette = _RouletteDialogs()
     rp = _RpDialogs()
     rules = _RulesDialogs()
     snap = _SnapDialogs()
@@ -5378,23 +5430,6 @@ PLACEHOLDERS: dict[str, frozenset[str]] = {
     "language.name.ru": frozenset(),
     "language.private_set": frozenset({"language"}),
     "link_media.too_large": frozenset(),
-    "lottery.bet_out_of_range": frozenset({"max_bet", "min_bet"}),
-    "lottery.failed": frozenset(),
-    "lottery.lose": frozenset({"balance", "bet", "chosen_color", "winning_color"}),
-    "lottery.not_enough_money": frozenset(),
-    "lottery.player_missing": frozenset(),
-    "lottery.unknown_color": frozenset({"color", "colors"}),
-    "lottery.usage": frozenset(),
-    "lottery.win": frozenset(
-        {
-            "balance",
-            "bet",
-            "chosen_color",
-            "earned",
-            "multiplier",
-            "winning_color",
-        }
-    ),
     "marriage.ask": frozenset({"price", "proposer", "target"}),
     "marriage.buttons.decline": frozenset(),
     "marriage.buttons.family": frozenset(),
@@ -5995,6 +6030,36 @@ PLACEHOLDERS: dict[str, frozenset[str]] = {
     "rich.too_long": frozenset({"limit"}),
     "rich.usage": frozenset(),
     "roast.bored": frozenset(),
+    "roulette.amount_button": frozenset({"amount"}),
+    "roulette.amount_button_chosen": frozenset({"amount"}),
+    "roulette.amount_header": frozenset(),
+    "roulette.amount_hint": frozenset(),
+    "roulette.balance": frozenset({"balance"}),
+    "roulette.bet_out_of_range": frozenset({"max_bet", "min_bet"}),
+    "roulette.busy": frozenset(),
+    "roulette.choice": frozenset({"amount", "color", "multiplier"}),
+    "roulette.choose": frozenset(),
+    "roulette.choose_amount": frozenset({"color"}),
+    "roulette.choose_color": frozenset({"amount"}),
+    "roulette.closed": frozenset(),
+    "roulette.closed_hint": frozenset(),
+    "roulette.closed_title": frozenset(),
+    "roulette.color_button": frozenset({"color", "emoji", "multiplier"}),
+    "roulette.color_button_chosen": frozenset({"color", "multiplier"}),
+    "roulette.color_header": frozenset(),
+    "roulette.color_hint": frozenset(),
+    "roulette.failed": frozenset(),
+    "roulette.lost": frozenset({"bet", "winning"}),
+    "roulette.machine_closed": frozenset(),
+    "roulette.no_choice": frozenset(),
+    "roulette.not_enough_money": frozenset(),
+    "roulette.not_yours": frozenset(),
+    "roulette.spin_button": frozenset(),
+    "roulette.spinning": frozenset({"amount", "color"}),
+    "roulette.title": frozenset({"name"}),
+    "roulette.unknown_color": frozenset({"color", "colors"}),
+    "roulette.usage": frozenset(),
+    "roulette.won": frozenset({"earned", "winning"}),
     "rp.created": frozenset({"action", "command"}),
     "rp.delete_usage": frozenset(),
     "rp.deleted": frozenset({"command"}),

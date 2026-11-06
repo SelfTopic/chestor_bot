@@ -2,7 +2,12 @@ from selfrot import BaseRouter
 
 from ..context import AppContext
 from .ai import AIRouter
-from .arcade import ArcadeRouter, TelegramChartStorage, TelegramMachineScreen
+from .arcade import (
+    ArcadeRouter,
+    TelegramArcadeStorage,
+    TelegramMachineScreen,
+    TelegramRouletteScreen,
+)
 from .chat_member_update import ChatMemberUpdateRouter
 from .common import CommonRouter, reward_cult_hashtags
 from .community import CommunityRouter, expire_overdue_votes
@@ -40,8 +45,9 @@ class RootRouter(BaseRouter[AppContext]):
 
 __all__ = [
     "RootRouter",
-    "TelegramChartStorage",
+    "TelegramArcadeStorage",
     "TelegramMachineScreen",
+    "TelegramRouletteScreen",
     "expire_overdue_duels",
     "expire_overdue_streaks",
     "expire_overdue_votes",

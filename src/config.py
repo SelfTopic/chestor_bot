@@ -39,6 +39,7 @@ class Settings(BaseSettings):
     # Закрытый канал, куда бот заранее загружает ролики и картинки «Джета» ради file_id: в
     # момент обвала правка не должна ничего загружать. 0 — грузить прямо в правке.
     CHART_STORAGE_CHAT: int = Field(default=-1004318056534)
+    ROULETTE_VIDEOS_REPO: str = Field(default="SelfTopic/chestor_bot")
 
     HTTP_PROXY: str = Field(default="")
     HTTPS_PROXY: str = Field(default="")

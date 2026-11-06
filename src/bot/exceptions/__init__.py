@@ -22,6 +22,16 @@ from .chart import (
     ChartUnavailable,
 )
 from .chat import ChatError, ChatTextLengthError
+from .roulette import (
+    RouletteBetOutOfRange,
+    RouletteBusy,
+    RouletteError,
+    RouletteNoChoice,
+    RouletteNoMachine,
+    RouletteNotEnoughMoney,
+    RouletteNotYours,
+    RouletteStaleMedia,
+)
 from .chat_not_found import ChatNotFound, ChatNotFoundInDatabase
 from .media_download import (
     CollectionNotFoundError,
@@ -42,10 +52,7 @@ from .ghoul import (
 from .link_media import LinkMediaError, LinkMediaTooLarge
 from .media_tools import MediaToolError
 from .lottery import (
-    BetOutOfRange,
     LotteryError,
-    LotteryPlayerMissing,
-    NotEnoughMoneyForBet,
     UnknownLotteryColor,
 )
 from .nickname import NicknameProblem, NicknameRejected
@@ -132,6 +139,14 @@ __all__ = [
     "ChartTooLate",
     "ChartUnavailable",
     "ChatError",
+    "RouletteBetOutOfRange",
+    "RouletteBusy",
+    "RouletteError",
+    "RouletteNoChoice",
+    "RouletteNoMachine",
+    "RouletteNotEnoughMoney",
+    "RouletteNotYours",
+    "RouletteStaleMedia",
     "ChatTextLengthError",
     "ChatNotFound",
     "ChatNotFoundInDatabase",
@@ -173,9 +188,6 @@ __all__ = [
     "LinkMediaTooLarge",
     "MediaToolError",
     "LotteryError",
-    "BetOutOfRange",
-    "NotEnoughMoneyForBet",
-    "LotteryPlayerMissing",
     "UnknownLotteryColor",
     "TransferError",
     "InvalidTransferAmountError",

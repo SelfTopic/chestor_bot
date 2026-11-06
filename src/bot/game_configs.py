@@ -91,6 +91,12 @@ QUIZ_CONFIG = QuizConfig()
 class LotteryConfig:
     min_bet: int = 100
     max_bet: int = 100000
+    # Автомат закрывается, если игрок столько не крутил и не менял ставку.
+    idle_seconds: float = 120.0
+    bet_buttons: tuple[int, ...] = (100, 1_000, 5_000, 10_000, 100_000)
+    # Ролик начинает играть позже, чем бот отправил правку (подобрано на стенде для джета):
+    # итог приходит, когда лента у игроков уже остановилась.
+    playback_delay_seconds: float = 0.8
     colors: Optional[list[str]] = None
 
     color_multipliers: Optional[dict[str, tuple[float, int]]] = None

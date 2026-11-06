@@ -1,19 +1,22 @@
 import asyncio
 import itertools
 import logging
-import multiprocessing
-import os
 from collections.abc import Callable, Iterable
-from concurrent.futures import Executor, ProcessPoolExecutor
-from dataclasses import dataclass
+from concurrent.futures import Executor
 from pathlib import Path
-from typing import Protocol
 
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 
-from src.bot.config import game_config
-from src.bot.repositories import ChartRepository
-
+from ..arcade.media import (
+    Media,
+    Picture,
+    StoredPicture,
+    StoredVideo,
+    Uploader,
+    VideoCache,
+    VideoFile,
+    render_pool,
+)
 from .crash_video import UNLABELED_CRASH, crash_picture, crash_video_path, render_crash_video
 from .growth_video import GROWTH_VIDEO
 from .opening_video import OPENING_VIDEO, opening_picture, render_opening_video
@@ -31,53 +34,6 @@ WARM_UPLOAD_GAP_SECONDS = 6.0
 WARM_REST_FACTOR = 3.0
 
 
-@dataclass(frozen=True)
-class StoredVideo:
-    key: str
-    file_id: str
-
-
-@dataclass(frozen=True)
-class StoredPicture:
-    file_id: str
-
-
-@dataclass(frozen=True)
-class VideoFile:
-    key: str
-    path: Path
-
-
-@dataclass(frozen=True)
-class Picture:
-    png: bytes
-
-
-Media = StoredVideo | StoredPicture | VideoFile | Picture
-
-
-# Загружает файл в Telegram мимо игры и отдаёт его file_id.
-class Uploader(Protocol):
-    async def video(self, path: Path) -> str: ...
-
-    async def picture(self, png: bytes) -> str: ...
-
-
-def _lower_priority() -> None:
-    os.nice(10)
-
-
-def _render_pool() -> Executor:
-    # fork из процесса с потоками может зависнуть в дочернем процессе.
-    return ProcessPoolExecutor(1, multiprocessing.get_context("spawn"), _lower_priority)
-
-
-def video_key(path: Path) -> str:
-    assets = Path(game_config.path_to_assets)
-    name = path.relative_to(assets) if path.is_relative_to(assets) else path
-    return f"{name}@{path.stat().st_mtime_ns}"
-
-
 class ChartVideos:
     def __init__(
         self,
@@ -87,12 +43,12 @@ class ChartVideos:
         render_opening: Callable[[Path], None] = render_opening_video,
         crash_path: Callable[[int], Path] = crash_video_path,
         render: Callable[[Path, int], None] = render_crash_video,
-        executor: Callable[[], Executor] = _render_pool,
+        executor: Callable[[], Executor] = render_pool,
         warm: Iterable[range] = WARM_CRASHES,
         warm_gap: float = WARM_UPLOAD_GAP_SECONDS,
         warm_rest: float = WARM_REST_FACTOR,
     ) -> None:
-        self._session_factory = session_factory
+        self._cache = VideoCache(session_factory)
         self._growth = growth
         self._opening = opening
         self._render_opening = render_opening
@@ -102,8 +58,6 @@ class ChartVideos:
         self._warm = warm
         self._warm_gap = warm_gap
         self._warm_rest = warm_rest
-        # Без загрузчика файлы уходят прямо в правке сообщения.
-        self.uploader: Uploader | None = None
         self._unlabeled: StoredPicture | None = None
         # Картинка обвала с числом — на случай, если ролик к обвалу не успеет.
         self._pictures: dict[int, StoredPicture] = {}
@@ -113,6 +67,14 @@ class ChartVideos:
         self._worker: asyncio.Task[None] | None = None
         self._executor: Executor | None = None
         self._shared_ready = asyncio.Event()
+
+    @property
+    def uploader(self) -> Uploader | None:
+        return self._cache.uploader
+
+    @uploader.setter
+    def uploader(self, uploader: Uploader | None) -> None:
+        self._cache.uploader = uploader
 
     def start(self) -> None:
         for crash in itertools.chain.from_iterable(self._warm):
@@ -180,25 +142,16 @@ class ChartVideos:
         return await self.picture(await asyncio.to_thread(history_strip, crashes))
 
     async def picture(self, png: bytes) -> Media:
-        if self.uploader is None:
-            return Picture(png)
-        return StoredPicture(await self.uploader.picture(png))
+        return await self._cache.picture(png)
 
     async def remember(self, video: VideoFile, file_id: str) -> None:
-        async with self._session_factory() as session:
-            await ChartRepository(session).save_video(video.key, file_id)
-            await session.commit()
+        await self._cache.remember(video, file_id)
 
     async def forget(self, video: StoredVideo) -> None:
-        async with self._session_factory() as session:
-            await ChartRepository(session).forget_video(video.key)
-            await session.commit()
+        await self._cache.forget(video)
 
     async def _media(self, path: Path) -> StoredVideo | VideoFile:
-        key = video_key(path)
-        async with self._session_factory() as session:
-            file_id = await ChartRepository(session).video(key)
-        return VideoFile(key, path) if file_id is None else StoredVideo(key, file_id)
+        return await self._cache.media(path)
 
     def _put(self, priority: int, crash: int) -> None:
         self._queue.put_nowait((priority, next(self._order), crash))
@@ -250,10 +203,4 @@ class ChartVideos:
             self._shared_ready.set()
 
     async def _upload(self, path: Path) -> bool:
-        if self.uploader is None:
-            return False
-        media = await self._media(path)
-        if isinstance(media, StoredVideo):
-            return False
-        await self.remember(media, await self.uploader.video(path))
-        return True
+        return await self._cache.upload(path)

@@ -1,13 +1,14 @@
 from selfrot import BaseRouter
 
 from ...context import AppContext
-from .chart import ChartRouter, TelegramChartStorage, TelegramMachineScreen
-from .dep_router import DepRouter
+from .chart import ChartRouter, TelegramMachineScreen
+from .roulette import RouletteRouter, TelegramRouletteScreen
+from .storage import TelegramArcadeStorage
 from .wordle import WordleRouter
 
 
 class ArcadeRouter(BaseRouter[AppContext]):
-    routers = (WordleRouter, DepRouter, ChartRouter)
+    routers = (WordleRouter, RouletteRouter, ChartRouter)
 
 
-__all__ = ["ArcadeRouter", "TelegramChartStorage", "TelegramMachineScreen"]
+__all__ = ["ArcadeRouter", "TelegramArcadeStorage", "TelegramMachineScreen", "TelegramRouletteScreen"]

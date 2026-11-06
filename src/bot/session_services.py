@@ -19,7 +19,6 @@ from .repositories import (
     GhoulEditRepository,
     GhoulRepository,
     LevelUpLogRepository,
-    LotteryRepository,
     MediaRepository,
     PromoRepository,
     ModerationRepository,
@@ -56,7 +55,7 @@ from .services.dialog import DialogService
 from .services.cult import CultService
 from .services.family import FamilyService
 from .services.language import LanguageService
-from .services.ghoul_game import CoffeeService, LotteryService
+from .services.ghoul_game import CoffeeService
 from .services.level_up import LevelUpService
 from .services.moderation import ModerationService
 from .services.nickname import NicknameService
@@ -144,10 +143,6 @@ class SessionServices:
     @cached_property
     def moderation_repository(self) -> ModerationRepository:
         return ModerationRepository(self.session)
-
-    @cached_property
-    def lottery_repository(self) -> LotteryRepository:
-        return LotteryRepository(self.session)
 
     @cached_property
     def balances_log_repository(self) -> BalancesLogRepository:
@@ -283,15 +278,6 @@ class SessionServices:
             user_service=self.user_service,
             ghoul_service=self.ghoul_service,
             cooldown_service=self.cooldown_service,
-        )
-
-    @cached_property
-    def lottery_service(self) -> LotteryService:
-        return LotteryService(
-            user_service=self.user_service,
-            cooldown_service=self.cooldown_service,
-            media_service=self.media_service,
-            lottery_repository=self.lottery_repository,
         )
 
     @cached_property

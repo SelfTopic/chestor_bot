@@ -1,5 +1,5 @@
 from .coffee import CoffeeResult
-from .dep import DepColor, DepResult
+from .dep import DepColor
 from .kagune import KaguneType
 from .link_media import CachedMedia, CachedSlideshow, CachedVideo
 from .media import MediaCollection, MediaDownloadType, MediaSaveRequest, VideoCutJob
@@ -31,7 +31,6 @@ __all__ = [
     "MediaDownloadType",
     "CoffeeResult",
     "DepColor",
-    "DepResult",
     "Duration",
     "VideoCutJob",
     "NotificationType",

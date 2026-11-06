@@ -72,21 +72,3 @@ cancel the transfer. That way you won't give money away by accident.
 - you can't send to yourself or your spouse: the family already shares an account.
 
 A family member sends from the family account, and transfers to them land there too.
-
-### bet (lottery)
-
-A bet on a color: **bet <color> <amount>**, e.g. `bet red 500`.
-
-- A bet is from 100 to 100,000 CheSton, the money is taken right away.
-- The bot spins a wheel (a video), the result comes when it stops.
-
-| Color | Payout | Chance |
-|:--|:--:|:--:|
-| 🔴 red | ×1.8 | 28% |
-| 🔵 blue | ×2.5 | 22% |
-| 🟢 green | ×3 | 20% |
-| 🟡 yellow | ×5 | 13% |
-| ⚪ white | ×10 | 10% |
-
-> On average the lottery returns less than you bet (white returns exactly as much): it's fun,
-> not a way to earn.
