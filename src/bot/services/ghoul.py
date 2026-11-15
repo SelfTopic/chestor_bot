@@ -150,6 +150,7 @@ class GhoulService(Base):
                 killer_telegram_id=killer_telegram_id,
             )
 
+        await self.cooldown_repository.delete_all_ghoul_cooldowns(telegram_id)
         await self.increment_fields(telegram_id, deaths=1)
         updated = await self.set_fields(telegram_id, is_dead=True)
 

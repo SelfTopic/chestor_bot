@@ -1,8 +1,7 @@
 from datetime import datetime
 
-from sqlalchemy import func
+from sqlalchemy import String, func
 from sqlalchemy.orm import Mapped, mapped_column
-from sqlalchemy.types import BigInteger
 
 from .base import Base
 
@@ -25,6 +24,13 @@ class Cooldown(Base):
 
     duration: Mapped[int] = mapped_column(
         nullable=False
+    )
+
+    category: Mapped[str] = mapped_column(
+        String(20),
+        default="user",
+        server_default="user",
+        nullable=False,
     )
 
     created_at: Mapped[datetime] = mapped_column(

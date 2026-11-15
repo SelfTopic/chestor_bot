@@ -217,6 +217,19 @@ class UserCooldownRepository(Base):
         logger.debug(f"All cooldowns cleared for user {user_id}: {result.rowcount} row(s)")
         return result.rowcount
 
+    async def delete_all_ghoul_cooldowns(self, user_id: int) -> int:
+        ghoul_cooldown_ids = select(Cooldown.id).where(Cooldown.category == "ghoul")
+        result = await self.session.execute(
+            delete(UserCooldown).where(
+                UserCooldown.user_id == user_id,
+                UserCooldown.cooldown_id.in_(ghoul_cooldown_ids),
+            )
+        )
+        logger.debug(
+            f"Ghoul cooldowns cleared for user {user_id}: {result.rowcount} row(s)"
+        )
+        return result.rowcount
+
     async def list_cooldown_types(self) -> list[str]:
         result = await self.session.scalars(select(Cooldown.name).order_by(Cooldown.name))
         return list(result)
