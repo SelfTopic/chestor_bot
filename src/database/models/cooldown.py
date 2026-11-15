@@ -28,7 +28,6 @@ class Cooldown(Base):
 
     category: Mapped[str] = mapped_column(
         String(20),
-        default="user",
         server_default="user",
         nullable=False,
     )
