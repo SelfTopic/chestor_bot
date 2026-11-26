@@ -33,7 +33,10 @@ class LlmClient:
         # стоит дороже самого короткого ответа модели.
         if self._session is None:
             self._session = aiohttp.ClientSession(
-                headers={"Authorization": f"Bearer {self._api_key}"}
+                headers={
+                    "Authorization": f"Bearer {self._api_key}",
+                    "User-Agent": "chestor_bot/1.0.0",
+                }
             )
         body = {
             "model": model,
