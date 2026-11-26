@@ -1,4 +1,4 @@
-from typing import List
+from typing import List, Literal
 
 from pydantic import Field, SecretStr
 from pydantic_settings import BaseSettings, SettingsConfigDict
@@ -19,8 +19,10 @@ class Settings(BaseSettings):
     GHOUL_QUIZ_API_KEY: SecretStr = Field(default=...)
     LLM_API_KEY: SecretStr = Field(default=SecretStr(""))
     LLM_BASE_URL: str = Field(default="https://foundation-models.api.cloud.ru/v1")
+    GROQ_API_KEY: SecretStr = Field(default=SecretStr(""))
     ROAST_ENABLED: bool = Field(default=False)
-    ROAST_MODEL: str = Field(default="deepseek-ai/DeepSeek-V4-Pro")
+    ROAST_PROVIDER: Literal["cloudru", "groq"] = Field(default="cloudru")
+    ROAST_MODEL: str = Field(default="")
     ROAST_DAILY_LIMIT: int = Field(default=500)
     ROAST_TIMEOUT: float = Field(default=25.0)
     TAVILY_API_KEY: SecretStr = Field(default=SecretStr(""))

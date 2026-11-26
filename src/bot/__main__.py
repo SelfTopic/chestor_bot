@@ -147,13 +147,24 @@ class Dispatcher(BaseDispatcher[AppContext]):
         )
         api_key = settings.LLM_API_KEY.get_secret_value()
         self.llm = LlmClient(settings.LLM_BASE_URL, api_key)
+        if settings.ROAST_PROVIDER == "groq":
+            roast_key = settings.GROQ_API_KEY.get_secret_value()
+            roast_llm = LlmClient(
+                "https://api.groq.com/openai/v1", roast_key, disable_thinking=False
+            )
+            roast_model = settings.ROAST_MODEL or "openai/gpt-oss-20b"
+        else:
+            roast_key = api_key
+            roast_llm = self.llm
+            roast_model = settings.ROAST_MODEL or "deepseek-ai/DeepSeek-V4-Pro"
+        self.roast_llm = roast_llm
         self.roast_service = RoastService(
             session_factory,
-            self.llm,
+            roast_llm,
             RoastPrompts(),
             self.player_docs[BASE_LANGUAGE],
-            enabled=settings.ROAST_ENABLED and bool(api_key),
-            model=settings.ROAST_MODEL,
+            enabled=settings.ROAST_ENABLED and bool(roast_key),
+            model=roast_model,
             daily_limit=settings.ROAST_DAILY_LIMIT,
             timeout=settings.ROAST_TIMEOUT,
         )
@@ -317,6 +328,8 @@ class Dispatcher(BaseDispatcher[AppContext]):
         await self.quiz_service.close()
         await self.search_service.close()
         await self.llm.close()
+        if self.roast_llm is not self.llm:
+            await self.roast_llm.close()
 
     async def on_error(self, ctx: AppContext, exc: Exception) -> None:
         await super().on_error(ctx, exc)

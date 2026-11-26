@@ -12,10 +12,18 @@ class LlmError(Exception):
 
 
 class LlmClient:
-    def __init__(self, base_url: str, api_key: str, *, retry_delay: float = 2.5) -> None:
+    def __init__(
+        self,
+        base_url: str,
+        api_key: str,
+        *,
+        retry_delay: float = 2.5,
+        disable_thinking: bool = True,
+    ) -> None:
         self._url = base_url.rstrip("/") + "/chat/completions"
         self._api_key = api_key
         self._retry_delay = retry_delay
+        self._disable_thinking = disable_thinking
         self._session: aiohttp.ClientSession | None = None
 
     async def complete(
@@ -31,13 +39,14 @@ class LlmClient:
             "model": model,
             "max_tokens": max_tokens,
             "temperature": temperature,
-            # Qwen3 без этого флага тратит весь лимит на скрытые рассуждения и отвечает пусто.
-            "chat_template_kwargs": {"enable_thinking": False},
             "messages": [
                 {"role": "system", "content": system},
                 {"role": "user", "content": user},
             ],
         }
+        if self._disable_thinking:
+            # Qwen3 без этого флага тратит весь лимит на скрытые рассуждения и отвечает пусто.
+            body["chat_template_kwargs"] = {"enable_thinking": False}
         data = await self._post(self._session, model, body)
         try:
             content = data["choices"][0]["message"]["content"]
