@@ -63,6 +63,14 @@ class RoastHandler(MessageHandler[AppContext[TextUserMessage]]):
             await self.ctx.message.reply(self.ctx.text(Dialogs.roast.bored()))
             return
         if outcome.reply is None or outcome.log_id is None:
+            logger.debug(
+                "Ответ огрызания не отправлен: reply_present=%s log_present=%s "
+                "(chat_id=%s user_id=%s)",
+                outcome.reply is not None,
+                outcome.log_id is not None,
+                incoming.chat_id,
+                incoming.telegram_id,
+            )
             return
 
         sent = await self.ctx.message.reply(outcome.reply)

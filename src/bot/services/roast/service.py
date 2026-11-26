@@ -339,6 +339,22 @@ class RoastService:
             await session.commit()
             log_id = entry.id
 
+        if not reply:
+            logger.debug(
+                "Огрызание пропущено: ответ модели пуст после очистки "
+                "(chat_id=%s user_id=%s model=%s)",
+                incoming.chat_id,
+                incoming.telegram_id,
+                self._model,
+            )
+        elif filtered:
+            logger.debug(
+                "Огрызание пропущено: ответ модели отфильтрован "
+                "(chat_id=%s user_id=%s model=%s)",
+                incoming.chat_id,
+                incoming.telegram_id,
+                self._model,
+            )
         if not reply or filtered:
             return RoastOutcome(log_id=log_id)
         argument.turns += 1
@@ -402,7 +418,9 @@ class RoastService:
                     max_tokens=max_tokens,
                     temperature=0.9,
                 )
-                logger.debug("Модель огрызаний ответила")
+                logger.debug(
+                    "Модель огрызаний ответила: content_chars=%s", len(reply)
+                )
                 return reply
         except (LlmError, TimeoutError):
             logger.warning("Модель огрызаний не ответила", exc_info=True)
