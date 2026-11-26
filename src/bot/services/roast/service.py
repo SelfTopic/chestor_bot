@@ -201,19 +201,64 @@ class RoastService:
         return self.bot_id is not None and user_id == self.bot_id
 
     def wants(self, incoming: Incoming) -> bool:
-        if not self._enabled or TRIVIAL.match(incoming.text) is not None:
+        if not self._enabled:
+            logger.debug(
+                "Огрызание пропущено: сервис выключен (chat_id=%s user_id=%s)",
+                incoming.chat_id,
+                incoming.telegram_id,
+            )
+            return False
+        if TRIVIAL.match(incoming.text) is not None:
+            logger.debug(
+                "Огрызание пропущено: короткий или пустой текст (chat_id=%s user_id=%s)",
+                incoming.chat_id,
+                incoming.telegram_id,
+            )
             return False
         argument = self._arguments.get((incoming.chat_id, incoming.telegram_id))
         if argument is not None and argument.silent_until > self._clock():
+            logger.debug(
+                "Огрызание пропущено: пауза спора (chat_id=%s user_id=%s)",
+                incoming.chat_id,
+                incoming.telegram_id,
+            )
             return False
         if MENTION.search(incoming.text) is not None:
+            logger.debug(
+                "Огрызание вызвано упоминанием (chat_id=%s user_id=%s)",
+                incoming.chat_id,
+                incoming.telegram_id,
+            )
             return True
         replied = incoming.replied
         if replied is None:
+            logger.debug(
+                "Огрызание пропущено: нет упоминания или реплая боту "
+                "(chat_id=%s user_id=%s)",
+                incoming.chat_id,
+                incoming.telegram_id,
+            )
             return False
         # Реплай на игровое сообщение бота, адресованное другому игроку, обычно обращён к
         # этому игроку («ну ты и задрот»), а не к боту.
-        return replied.quarrel or replied.addressee_id in (None, incoming.telegram_id)
+        addressed_to_bot = replied.quarrel or replied.addressee_id in (
+            None,
+            incoming.telegram_id,
+        )
+        if not addressed_to_bot:
+            logger.debug(
+                "Огрызание пропущено: реплай адресован другому игроку "
+                "(chat_id=%s user_id=%s)",
+                incoming.chat_id,
+                incoming.telegram_id,
+            )
+        else:
+            logger.debug(
+                "Огрызание вызвано реплаем боту (chat_id=%s user_id=%s)",
+                incoming.chat_id,
+                incoming.telegram_id,
+            )
+        return addressed_to_bot
 
     async def respond(self, incoming: Incoming) -> RoastOutcome:
         key = (incoming.chat_id, incoming.telegram_id)
@@ -256,6 +301,11 @@ class RoastService:
             request = f"{request}\n\n{self._help(incoming.text)}"
 
         if not self._spend():
+            logger.debug(
+                "Огрызание пропущено: достигнут дневной лимит (chat_id=%s user_id=%s)",
+                incoming.chat_id,
+                incoming.telegram_id,
+            )
             return RoastOutcome()
         started = time.monotonic()
         reply = await self._generate(
@@ -344,13 +394,16 @@ class RoastService:
     async def _generate(self, request: str, *, max_tokens: int) -> str | None:
         try:
             async with asyncio.timeout(self._timeout):
-                return await self._llm.complete(
+                logger.debug("Отправляю запрос модели огрызаний: model=%s", self._model)
+                reply = await self._llm.complete(
                     self._model,
                     self._prompts.persona,
                     request,
                     max_tokens=max_tokens,
                     temperature=0.9,
                 )
+                logger.debug("Модель огрызаний ответила")
+                return reply
         except (LlmError, TimeoutError):
             logger.warning("Модель огрызаний не ответила", exc_info=True)
             return None

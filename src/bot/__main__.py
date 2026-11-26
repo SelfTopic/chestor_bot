@@ -227,6 +227,20 @@ class Dispatcher(BaseDispatcher[AppContext]):
 
     def observe(self, ctx: AppContext, handler: BaseHandler[Any] | None, seconds: float) -> None:
         user, chat, event = ctx.user, ctx.chat, ctx.event
+        if isinstance(event, Message):
+            route = (
+                f"{type(handler).__module__}.{type(handler).__name__}"
+                if handler is not None
+                else "no handler"
+            )
+            logger.debug(
+                "Update %s routed to %s (chat_id=%s, chat_type=%s, language=%s)",
+                ctx.update.update_id,
+                route,
+                chat.id if chat is not None else None,
+                chat.type if chat is not None else None,
+                ctx.language,
+            )
         if user is not None:
             self.analytics.touch(user.id)
         if isinstance(event, Message) and user is not None and chat is not None:

@@ -1,3 +1,4 @@
+import logging
 from dataclasses import replace
 
 from selfrot import BaseRouter, MessageHandler
@@ -11,6 +12,7 @@ from ..language import RUSSIAN_ONLY
 from ..types import TextUserMessage
 
 GROUP_CHATS = ("group", "supergroup")
+logger = logging.getLogger(__name__)
 
 
 class RoastHandler(MessageHandler[AppContext[TextUserMessage]]):
@@ -26,6 +28,11 @@ class RoastHandler(MessageHandler[AppContext[TextUserMessage]]):
         message = self.ctx.message
         roast = self.ctx.roast_service
         if message.chat.type not in GROUP_CHATS:
+            logger.debug(
+                "Огрызание пропущено: тип чата %s не поддерживается (chat_id=%s)",
+                message.chat.type,
+                message.chat.id,
+            )
             return
 
         replied = message.reply_to_message
