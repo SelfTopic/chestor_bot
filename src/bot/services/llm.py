@@ -19,11 +19,13 @@ class LlmClient:
         *,
         retry_delay: float = 2.5,
         disable_thinking: bool = True,
+        reasoning_effort: str | None = None,
     ) -> None:
         self._url = base_url.rstrip("/") + "/chat/completions"
         self._api_key = api_key
         self._retry_delay = retry_delay
         self._disable_thinking = disable_thinking
+        self._reasoning_effort = reasoning_effort
         self._session: aiohttp.ClientSession | None = None
 
     async def complete(
@@ -50,6 +52,8 @@ class LlmClient:
         if self._disable_thinking:
             # Qwen3 без этого флага тратит весь лимит на скрытые рассуждения и отвечает пусто.
             body["chat_template_kwargs"] = {"enable_thinking": False}
+        if self._reasoning_effort is not None:
+            body["reasoning_effort"] = self._reasoning_effort
         data = await self._post(self._session, model, body)
         try:
             content = data["choices"][0]["message"]["content"]

@@ -150,7 +150,10 @@ class Dispatcher(BaseDispatcher[AppContext]):
         if settings.ROAST_PROVIDER == "groq":
             roast_key = settings.GROQ_API_KEY.get_secret_value()
             roast_llm = LlmClient(
-                "https://api.groq.com/openai/v1", roast_key, disable_thinking=False
+                "https://api.groq.com/openai/v1",
+                roast_key,
+                disable_thinking=False,
+                reasoning_effort="low",
             )
             roast_model = settings.ROAST_MODEL or "openai/gpt-oss-20b"
         else:
