@@ -34,16 +34,16 @@ LOG_RETENTION = timedelta(days=180)
 MENTION = re.compile(
     r"\b(?:бот|честор)(?:а|у|ом|е|ы|ов|ам|ами|ах)?\b", re.IGNORECASE
 )
-# Вопрос о самом боте: к запросу добавляется справка по командам. Только к таким
-# сообщениям — справка удлиняет запрос, а платится каждый токен.
+# Вопрос о боте или игровой механике: модель получает отдельный запрос со справкой.
 HELP = re.compile(
-    r"команд|умееш|помо[гщ]|подскаж|туториал|научи|объясни|как\b.{0,30}?\b(?:игра|получ|восполн|голод|характеристик|сдела"
-    r"|купи|прокач|стать|начат|зараб|работа|пользова|качат|скача|узна|вызв|перевест|кинуть)"
+    r"команд|умееш|помо[гщ]|подскаж|туториал|научи|объясни|как\b.{0,50}?\b(?:игра|получ|восполн|восстанов"
+    r"|голод|характеристик|сдела|купи|прокач|стать|начат|зараб|работа|пользова|качат|скача|узна|вызв|перевест|кинуть"
+    r"|раст|выраст|кагун|кофе|пить|съест|охот|здоров|уров|стат|щелк|дуэл|кулдаун)"
     r"|что такое"
     r"|что (?:ты )?(?:можешь|делаешь)|зачем ты|где (?:взять|найти)",
     re.IGNORECASE,
 )
-HELP_MAX_TOKENS = 300
+HELP_MAX_TOKENS = 160
 ROAST_MAX_TOKENS = 120
 # Смех и междометия в реплае боту: отвечать на них нечем.
 TRIVIAL = re.compile(
@@ -279,26 +279,30 @@ class RoastService:
             argument.turns = 0
             return RoastOutcome(bored=True)
 
+        help_asked = HELP.search(incoming.text) is not None
         async with self._session_factory() as session:
             repository = RoastRepository(session)
             if argument.last_log_id is not None:
                 await repository.add_followup(argument.last_log_id)
-            facts = await repository.player_facts(incoming.telegram_id)
-            history = await repository.argument_history(
-                incoming.chat_id,
-                incoming.telegram_id,
-                timedelta(seconds=ARGUMENT_WINDOW),
-                HISTORY_LIMIT,
-            )
-            good = await repository.good_examples(GOOD_EXAMPLES_PER_REQUEST)
+            if help_asked:
+                facts, history, good = None, [], []
+            else:
+                facts = await repository.player_facts(incoming.telegram_id)
+                history = await repository.argument_history(
+                    incoming.chat_id,
+                    incoming.telegram_id,
+                    timedelta(seconds=ARGUMENT_WINDOW),
+                    HISTORY_LIMIT,
+                )
+                good = await repository.good_examples(GOOD_EXAMPLES_PER_REQUEST)
             await session.commit()
 
         chat = render_chat(incoming, history)
         facts_text = "; ".join(fact_lines(facts, argument.turns))
-        request = self._request(chat, facts_text, good)
-        help_asked = HELP.search(incoming.text) is not None
         if help_asked:
-            request = f"{request}\n\n{self._help(incoming.text)}"
+            request = self._help_request(incoming.text)
+        else:
+            request = self._request(chat, facts_text, good)
 
         if not self._spend():
             logger.debug(
@@ -391,8 +395,11 @@ class RoastService:
         return True
 
     def _help(self, question: str) -> str:
-        commands, topics = self._docs.guide(question)
-        return self._prompts.help.replace("{index}", commands).replace("{topics}", topics)
+        _, topics = self._docs.guide(question)
+        return self._prompts.help.replace("{topics}", topics)
+
+    def _help_request(self, question: str) -> str:
+        return self._help(question).replace("{question}", question)
 
     def _request(self, chat: str, facts: str, good: list[RoastLog]) -> str:
         examples = self._prompts.examples()

@@ -112,7 +112,7 @@ async def test_busy_provider_is_retried(feed, settle, telegram, llm):
     assert len(llm.asked(GENERATOR)) == 2
 
 
-async def test_question_about_the_bot_gets_the_commands_guide_and_keeps_punctuation(
+async def test_question_about_the_bot_gets_relevant_help_without_roast_context(
     feed, settle, telegram, llm
 ):
     llm.reply = "Сам разберёшься. /anime 1 12 18:37 18:47 — отрывок."
@@ -129,11 +129,33 @@ async def test_question_about_the_bot_gets_the_commands_guide_and_keeps_punctuat
         if "anime" in topic.words
     )
     assert anime.markdown in asked  # подраздел про то, о чём спросили
-    assert "- Деньги: " in asked  # и оглавление всех команд
+    assert "- Деньги: " not in asked
+    assert "Примеры хода мысли" not in asked
+    assert "Варианты обращений" not in asked
 
     await feed(insult("сам ты бомжиха"))
     await settle()
     assert anime.markdown not in llm.asked(GENERATOR)[1]
+
+
+@pytest.mark.parametrize(
+    ("question", "heading"),
+    [
+        ("бот как восполнить голод", "голод"),
+        ("бот как вырастить кагуне", "растить кагуне"),
+        ("как мне блять кофе пить", "пить кофе"),
+    ],
+)
+async def test_game_questions_get_relevant_help_without_roast_examples(
+    question, heading, feed, settle, llm
+):
+    await feed(insult(question))
+    await settle()
+
+    asked = llm.asked(GENERATOR)[0]
+    assert heading in asked
+    assert "Примеры хода мысли" not in asked
+    assert "Что ты знаешь о собеседнике" not in asked
 
 
 async def test_reply_to_bots_message_about_another_player_needs_a_mention(
